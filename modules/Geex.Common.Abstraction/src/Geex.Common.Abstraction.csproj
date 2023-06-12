@@ -43,7 +43,7 @@
 
   <ItemGroup>
     <Reference Include="KellermanSoftware.Compare-NET-Objects">
-      <HintPath>..\MongoDB.Entities\tempDlls\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+      <HintPath>..\MongoDB.Entities\src\tempDlls\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
     </Reference>
   </ItemGroup>
 

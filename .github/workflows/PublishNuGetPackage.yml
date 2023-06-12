@@ -19,6 +19,6 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore ./modules/Geex.Platform/server/Geex.Bms.sln
-
+        
       - name: Build projects
-        run: dotnet build --configuration Release --no-restore ./modules/Geex.Platform/server/Geex.Bms.sln
+        run: dotnet build --configuration Release ./modules/Geex.Platform/server/Geex.Bms.sln
