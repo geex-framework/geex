@@ -25,7 +25,7 @@ jobs:
           
       - name: Generate NuGet packages
         env:
-          PACKAGE_VERSION: ${{ env.GITHUB_REF/refs/tags/v/ }}
+          PACKAGE_VERSION: ${{ env.GITHUB_REF/refs\/tags\/v/ }}
         run: |
           dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg  /p:PackageVersion=$PACKAGE_VERSION
           dotnet pack ./modules/MongoDB.Entities/src/MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg
