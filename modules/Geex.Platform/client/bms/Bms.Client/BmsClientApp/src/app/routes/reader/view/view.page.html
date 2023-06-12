@@ -1,0 +1,38 @@
+<div class="modal-header">
+  <div class="modal-title">查看 {{ record.id }} 信息</div>
+</div>
+
+<div sv-container>
+  <sv label="书名">{{ bookEntity.name }}</sv>
+  <sv label="性别">{{ bookEntity.gender }}</sv>
+  <sv label="手机号">{{ bookEntity.phone }}</sv>
+  <sv label="出生日期">{{ bookEntity.birthDate | date:'yyyy-MM-dd' }}</sv>
+</div>
+
+<div>
+  <h2>借阅记录</h2>
+</div>
+
+<nz-table #basicTable
+          [nzData]="bookEntity.borrowRecords">
+  <thead>
+    <tr>
+      <th>借阅书籍</th>
+      <th>借阅时间</th>
+      <th>还书时间</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let data of basicTable.data">
+      <td style="text-align: center;">{{ data.book.name }}</td>
+      <td style="text-align: center;">{{ data.readersDate | date:'yyyy-MM-dd HH:ss' }}</td>
+      <td style="text-align: center;">{{ data.returnDate | date:'yyyy-MM-dd HH:ss'}}</td>
+    </tr>
+  </tbody>
+</nz-table>
+
+<div class="modal-footer">
+  <button nz-button
+          type="button"
+          (click)="close()">关闭</button>
+</div>

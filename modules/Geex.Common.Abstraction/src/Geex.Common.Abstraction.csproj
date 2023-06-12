@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <!--<Version>3.0.43</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageOutputPath>\\kuforedev\shared\dev_packages</PackageOutputPath>-->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoEquality" Version="0.5.4" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.1.0" />
+    <PackageReference Include="Autofac.Extras.DynamicProxy" Version="6.0.0" />
+    <PackageReference Include="fasterflect" Version="3.0.0" />
+    <PackageReference Include="Flurl.Http" Version="3.2.3" />
+    <PackageReference Include="HonkSharp" Version="1.0.3" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="10.5.5" />
+    <PackageReference Include="HotChocolate.Data" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.Language" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.Stitching" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.Stitching.Redis" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.Subscriptions.InMemory" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.Types.Scalars" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.Types.Scalars.Upload" Version="13.1.0" />
+    <PackageReference Include="HotChocolate.Validation" Version="13.1.0" />
+    <PackageReference Include="Humanizer.Core" Version="2.8.26" />
+    <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
+    <PackageReference Include="MediatR" Version="9.0.0" />
+    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="3.1.31" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
+    <PackageReference Include="morelinq" Version="3.3.2" />
+    <PackageReference Include="RestSharp" Version="106.12.0" />
+    <PackageReference Include="StackExchange.Redis.Extensions.Core" Version="7.0.0" />
+    <PackageReference Include="StackExchange.Redis.Extensions.System.Text.Json" Version="7.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="KellermanSoftware.Compare-NET-Objects">
+      <HintPath>..\MongoDB.Entities\tempDlls\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Desensitization\" />
+    <Folder Include="Gql\Interceptors\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Geex.Casbin\src\NetCasbin.csproj" />
+    <ProjectReference Include="..\..\MongoDB.Entities\src\MongoDB.Entities.csproj" />
+  </ItemGroup>
+
+</Project>

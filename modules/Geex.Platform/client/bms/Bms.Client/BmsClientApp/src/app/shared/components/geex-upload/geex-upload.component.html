@@ -1,0 +1,11 @@
+<nz-upload [nzCustomRequest]="uploadGeexBlobObject"
+           [nzShowUploadList]="nzShowUploadList"
+           (nzChange)="change($event)"
+           [nzRemove]="nzRemove || handleRemove"
+           [nzPreview]="handlePreview"
+           [nzDisabled]="disabled">
+
+
+<ng-container *ngTemplateOutlet="uploadButton"></ng-container>
+
+</nz-upload>

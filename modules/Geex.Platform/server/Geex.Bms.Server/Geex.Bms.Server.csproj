@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>fa2ed191-7e42-48d0-b0e9-5a5ec803e0fb</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="Properties\launchSettings.example.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_WebToolingArtifacts Remove="Properties\launchSettings.example.json" />
+    <_WebToolingArtifacts Remove="Properties\PublishProfiles\bms.api.dev.geex.cn.pubxml" />
+    <_WebToolingArtifacts Remove="Properties\PublishProfiles\bms.api.geex.com.pubxml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Include="Properties\launchSettings.example.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Geex.Bms.Core\Geex.Bms.Core.csproj" />
+  </ItemGroup>
+
+  <Target Name="PreBuildForPublish" BeforeTargets="PreBuildEvent" Condition="'$(EnvironmentName)' == ''">
+    <Exec WorkingDirectory="$(ProjectDir)" Command="pwsh ../modules/Geex.Bms.ConnectedServices/PreBuild.ps1 -env Development"></Exec>
+  </Target>
+
+  <Target Name="PreBuildForPublish" BeforeTargets="PreBuildEvent" Condition="'$(EnvironmentName)' == 'Production'">
+    <Exec WorkingDirectory="$(ProjectDir)" Command="pwsh ../modules/Geex.Bms.ConnectedServices/PreBuild.ps1 -env Production"></Exec>
+  </Target>
+
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties appsettings_1json__JsonSchema="" />
+    </VisualStudio>
+  </ProjectExtensions>
+
+</Project>

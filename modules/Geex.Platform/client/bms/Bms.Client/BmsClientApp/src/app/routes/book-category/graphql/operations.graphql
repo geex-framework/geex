@@ -1,0 +1,54 @@
+# 获取bookCategory列表
+query bookCategorys($input: QueryBookCategoryInput!, $skip: Int, $take: Int, $where: BookCategoryFilterInput, $order: [BookCategorySortInput!] = [{ createdOn: DESC }]) {
+  bookCategorys(input: $input, skip: $skip, take: $take, where: $where, order: $order) {
+    items {
+      ...BookCategoryBrief
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+
+# 获取全量的bookCategory （用于数据导出等场景）
+# query bookCategorys($where: IBookCategoryFilterInput) {
+#   bookCategorys(skip: 0, take: 999, where: $where, order: { createdOn: DESC }) {
+#     items {
+#       ...BookCategoryBrief
+#     }
+#   }
+# }
+# bookCategory详情
+query bookCategoryById($id: String!) {
+  bookCategoryById(id: $id) {
+    ...BookCategoryDetail
+  }
+}
+# 新增bookCategory
+mutation createBookCategorys($input: CreateBookCategoryInput!) {
+  createBookCategory(input: $input) {
+    id
+  }
+}
+# 删除bookCategory
+mutation deleteBookCategorys($ids: [String!]!) {
+  deleteBookCategory(ids: $ids)
+}
+# 编辑bookCategory
+mutation editBookCategorys($id: String!,$input: EditBookCategoryInput!) {
+  editBookCategory(id: $id, input: $input)
+}
+
+
+fragment BookCategoryBrief on BookCategory {
+  id
+  name
+  describe
+}
+
+fragment BookCategoryDetail on BookCategory {
+  id
+  name
+  describe
+}

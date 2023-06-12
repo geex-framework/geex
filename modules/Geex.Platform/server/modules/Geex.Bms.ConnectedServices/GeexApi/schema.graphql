@@ -1,0 +1,1972 @@
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+scalar ObjectId
+
+scalar Any
+
+enum AppPermission {
+  settings_mutation_editSetting
+  settings_query_settings
+}
+
+enum GeexExceptionType {
+  Conflict
+  ExternalError
+  NotFound
+  OnPurpose
+  Unknown
+  ValidationFailed
+}
+
+enum GeexClaimType {
+  Expires
+  FullName
+  Nickname
+  Org
+  Provider
+  Role
+  Sub
+  Tenant
+}
+
+enum LoginProviderEnum {
+  Local
+  Trusted
+}
+
+enum SettingsPermission {
+  settings_mutation_editSetting
+  settings_query_settings
+}
+
+enum SettingDefinition {
+  CityTaxRatesAdminDistrict
+  OrdersEditionPrices
+  ProjectIndicators
+  RecommendDemands
+  RecommendTags
+  RecommendUsers
+  Tags
+}
+
+enum SettingScopeEnumeration {
+  Global
+  Tenant
+  User
+}
+
+"项目阶段"
+enum ProjectStage {
+  Contracted
+  Handover
+  Licensed
+  Opening
+  PreContract
+}
+
+"订单设置"
+enum OrdersSettings {
+  OrdersEditionPrices
+}
+
+"计费周期"
+enum BillingCycle {
+  Monthly
+  Unlimited
+  Yearly
+}
+
+"规格值类型"
+enum SpecificationValueType {
+  Bool
+  Number
+  String
+}
+
+enum OperationType {
+  Cancel
+  Create
+  Modify
+  Pay
+  Refund
+}
+
+"订单状态"
+enum OrderStatus {
+  Cancel
+  Completed
+  Refunded
+  ToBePaid
+}
+
+"订单类型"
+enum OrderType {
+  Renew
+  Upgrade
+}
+
+"支付方式"
+enum PaymentType {
+  AliPay
+  Offline
+}
+
+enum NotificationType {
+  DirectMessage
+  Todo
+}
+
+"版本"
+enum Edition {
+  Enterprise
+  Free
+  Group
+}
+
+enum EnterpriseServiceType {
+  AssetAcquisition
+  CapitalLoan
+  CommercialOperationServices
+  ConstructionServices
+  CooperativeDevelopment
+  DistressedAssetAcquisition
+  EquityAcquisitions
+  EscrowServices
+  FinancialConsulting
+  FinancingAdvisory
+  HotelOperationServices
+  InvestmentConsulting
+  MerchandisingServices
+  MergersandAcquisitions
+  OperationConsulting
+  OtherConsulting
+  PropertyManagement
+  TaxConsulting
+}
+
+enum EnterpriseType {
+  CommercialOperationServices
+  ConstructionManagement
+  ConsultingServices
+  Financialinstitutions
+  HotelOperationServices
+  Independents
+  InvestmentInstitutions
+  MerchandisingAgency
+  PropertyServices
+  RealEstateDevelopers
+}
+
+"服务应用类型"
+enum ServiceAppType {
+  Bms
+  Rms
+}
+
+enum CommunitySettings {
+  ProjectIndicators
+  RecommendDemands
+  RecommendTags
+  RecommendUsers
+  Tags
+}
+
+"城市费率设置"
+enum CityTaxRatesSettings {
+  CityTaxRatesAdminDistrict
+}
+
+enum CityTaxRateLandDivType {
+  LandArea
+  SalableAmount
+  SalableArea
+  StructArea
+}
+
+enum ApproveStatus {
+  Approved
+  Refused
+  Submitted
+}
+
+"企业用户状态"
+enum EnterpriseUserStatus {
+  Disabled
+  Enabled
+}
+
+"C#的代码生成器会忽略没有参与operation的代码相关逻辑, 这里单独来对没有的类型进行hint"
+type Query {
+  _: String
+  settings(skip: Int take: Int input: GetSettingsInput where: ISettingFilterInput): SettingCollectionSegment
+  initSettings: [ISetting]
+  "根据ID获取项目信息"
+  projectById(id: String!): Project!
+  "获取项目列表"
+  projectPagedList(input: GetProjectPagedListInput!): PagedListOfProject!
+  "根据版本获取产品信息"
+  commerceByEdition(edition: Edition!): Commerce!
+  "根据ID获取产品信息"
+  commerceById(id: String!): Commerce!
+  "获取产品列表"
+  commercePagedList(input: GetCommercePagedListInput!): PagedListOfCommerce!
+  "根据ID获取订单信息"
+  orderById(id: String!): Order!
+  "根据支付流水号获取订单信息"
+  orderByPaymentNumber(paymentNumber: String!): Order!
+  "获取订单列表"
+  orderPagedList(input: GetOrderPagedListInput!): PagedListOfOrder!
+  "获取消息列表"
+  notificationPagedList(input: GetNotificationPagedListInput!): PagedListOfNotification!
+  "获取消息"
+  notificationList(input: GetNotificationPagedListInput!): [Notification!]!
+  "获取消息列表"
+  directMessagePagedList(input: GetDirectMessagesPagedListInput!): PagedListOfDirectMessage!
+  "获取指定消息之后更新的消息列表"
+  directMessageListAfterItem(input: GetDirectMessageListAfterItemInput!): PagedListOfDirectMessage!
+  "根据ID获取项目信息"
+  demandById(id: String!): Demand!
+  "获取项目列表"
+  demandPagedList(input: GetDemandPagedListInput!): PagedListOfDemand!
+  "根据Id获取投资人信息"
+  communityUserById(openId: String!): CommunityUser!
+  "分页获取投资人列表"
+  communityUserPagedList(input: CommunityUserPagedListInput!): PagedListOfCommunityUser!
+  _hint: HintType
+  "根据ID获取费金税率信息"
+  cityTaxRateByAdCode(adCode: String!): CityTaxRate!
+  "获取费金税率列表"
+  cityTaxRatePagedList(input: GetCityTaxRatePagedListInput!): PagedListOfCityTaxRate!
+  myEnterprises: [Enterprise!]!
+  "根据ID获取企业信息"
+  enterpriseById(id: String!): Enterprise!
+  "根据企业空间目录获取企业信息"
+  enterpriseByPath(path: String!): Enterprise!
+  "获取企业列表"
+  enterprisePagedList(input: GetEnterprisePagedListInput!): PagedListOfEnterprise!
+  "根据ID获取企业申请信息"
+  enterpriseApplyById(id: String!): EnterpriseApply
+  "获取企业申请列表"
+  enterpriseApplyPagedList(input: GetEnterpriseApplyPagedListInput!): PagedListOfEnterpriseApply!
+  "根据ID获取企业认证信息"
+  enterpriseCertificationById(id: String!): EnterpriseCertification!
+  "获取企业认证列表"
+  enterpriseCertificationPagedList(input: GetEnterpriseCertificationPagedListInput!): PagedListOfEnterpriseCertification!
+  "根据ID获取企业角色信息"
+  enterpriseRoleById(id: String!): EnterpriseRole!
+  "获取企业角色列表"
+  enterpriseRolePagedList(input: GetEnterpriseRolePagedListInput!): PagedListOfEnterpriseRole!
+  "根据ID获取企业用户信息"
+  enterpriseUserById(enterpriseId: String! openId: String!): EnterpriseUser!
+  "获取企业用户列表"
+  enterpriseUserPagedList(input: GetEnterpriseUserPagedListInput!): PagedListOfEnterpriseUser!
+  "根据ID获取企业用户申请信息"
+  enterpriseUserApplyById(id: String!): EnterpriseUserApply!
+  "获取企业用户申请列表"
+  enterpriseUserApplyPagedList(input: GetEnterpriseUserApplyPagedListInput!): PagedListOfEnterpriseUserApply!
+}
+
+"私信相关操作"
+type Mutation {
+  _: String
+  editSetting(input: EditSettingRequestInput): ISetting
+  "审核批准项目"
+  projectApprove(input: ProjectApproveInput!): Project!
+  "创建项目"
+  projectCreate(input: ProjectCreateInput!): Project!
+  "审核拒绝项目"
+  projectRefuse(input: ProjectRefuseInput!): Project!
+  "项目设置标签"
+  projectSetTags(input: ProjectSetTagsInput!): Project!
+  "更新项目"
+  projectUpdate(input: ProjectUpdateInput!): Project!
+  "删除项目"
+  projectDelete(input: ProjectDeleteInput!): Project!
+  "创建产品"
+  commerceCreate(input: CommerceCreateInput!): Commerce!
+  "更新产品"
+  commerceUpdate(input: CommerceUpdateInput!): Commerce!
+  "创建订单"
+  orderCreate(input: OrderCreateInput!): Order!
+  "更新订单"
+  orderUpdate(input: OrderUpdateInput!): Order!
+  "支付订单"
+  orderPay(input: OrderPayInput!): Payment!
+  "取消订单"
+  orderCancel(id: String! remark: String): Order!
+  "刷新订单支付二维码"
+  tryReloadPaymentStatus("订单id" id: String!): Order!
+  "退款"
+  orderRefund(id: String! remark: String): Order!
+  "创建消息"
+  notificationCreate(input: NotificationCreateInput!): [Notification!]!
+  notificationUpdateRead(input: NotificationUpdateReadInput!): [Notification!]!
+  "创建私信"
+  directMessageCreate(input: DirectMessageCreateInput!): DirectMessage!
+  directMessageMarkRead(input: DirectMessageMarkReadInput!): [DirectMessage!]!
+  "上线需求"
+  demandOnline(input: DemandOnlineInput!): Demand!
+  "创建项目"
+  demandCreate(input: DemandCreateInput!): Demand!
+  "下线需求"
+  demandOffline(input: DemandOfflineInput!): Demand!
+  "更新项目"
+  demandUpdate(input: DemandUpdateInput!): Demand!
+  "删除项目"
+  demandDelete(input: DemandDeleteInput!): Demand!
+  "创建投资人"
+  communityUserCreate(input: CommunityUserCreateInput!): CommunityUser!
+  "更新投资人"
+  communityUserUpdate(input: CommunityUserUpdateInput!): CommunityUser!
+  "启用投资人"
+  communityUserEnable(input: CommunityUserEnableInput!): CommunityUser!
+  "禁用投资人"
+  communityUserDisable(input: CommunityUserEnableInput!): CommunityUser!
+  "创建费金税率"
+  cityTaxRateCreate(input: CityTaxRateCreateInput!): CityTaxRate!
+  "更新费金税率"
+  cityTaxRateUpdate(input: CityTaxRateUpdateInput!): CityTaxRate!
+  "新增企业角色"
+  enterpriseAddRole(enterpriseId: String! code: String! name: String! isReadOnly: Boolean): EnterpriseRole!
+  "新增企业用户"
+  addEnterpriseUser(enterpriseId: String! openId: String!): EnterpriseUser!
+  "更新企业信息"
+  enterpriseUpdate(input: EnterpriseUpdateInput!): Enterprise!
+  "审核通过企业申请"
+  enterpriseApplyApprove(input: EnterpriseApplyApproveInput!): EnterpriseApply!
+  "审核拒绝企业申请"
+  enterpriseApplyRefuse(input: EnterpriseApplyRefuseInput!): EnterpriseApply!
+  "创建企业申请"
+  enterpriseApplyCreate(input: EnterpriseApplyCreateInput!): EnterpriseApply!
+  "更新企业申请"
+  enterpriseApplyUpdate(input: EnterpriseApplyUpdateInput!): EnterpriseApply!
+  "审核通过企业认证"
+  enterpriseCertificationApprove(input: EnterpriseCertificationApproveInput!): EnterpriseCertification!
+  "审核拒绝企业认证"
+  enterpriseCertificationRefuse(input: EnterpriseCertificationRefuseInput!): EnterpriseCertification!
+  "创建企业认证"
+  enterpriseCertificationCreate(input: EnterpriseCertificationCreateInput!): EnterpriseCertification!
+  "更新企业认证"
+  enterpriseCertificationUpdate(input: EnterpriseCertificationUpdateInput!): EnterpriseCertification!
+  "创建企业角色"
+  enterpriseRoleCreate(input: EnterpriseRoleCreateInput!): EnterpriseRole!
+  "删除企业角色"
+  enterpriseRoleDelete(input: EnterpriseRoleDeleteInput!): Boolean!
+  "设置默认角色"
+  enterpriseRoleSetDefault(input: EnterpriseRoleSetDefaultInput!): EnterpriseRole!
+  "更新企业角色"
+  enterpriseRoleUpdate(input: EnterpriseRoleUpdateInput!): EnterpriseRole!
+  "更新企业用户"
+  enterpriseUserUpdate(input: EnterpriseUserUpdateInput!): EnterpriseUser!
+  "启用\/取消投资人"
+  enterpriseUserToggleInvestor(input: EnterpriseUserToggleInvestorInput!): EnterpriseUser!
+  "审核通过企业用户申请"
+  enterpriseUserApplyApprove(input: EnterpriseUserApplyApproveInput!): EnterpriseUser!
+  "审核拒绝企业用户申请"
+  enterpriseUserApplyRefuse(input: EnterpriseUserApplyRefuseInput!): EnterpriseUserApply!
+  "创建企业用户申请"
+  enterpriseUserApplyCreate(input: EnterpriseUserApplyCreateInput!): EnterpriseUserApply!
+}
+
+type Subscription {
+  _: String
+}
+
+interface IEntity {
+  id: String
+  createdOn: DateTime!
+}
+
+interface IAuditEntity {
+  auditStatus: AuditStatus!
+  submittable: Boolean!
+  id: String
+  createdOn: DateTime!
+}
+
+interface IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"^\\[1\\]\\(\\[3-9\\]\\)[0-9]{9}$"
+scalar ChinesePhoneNumberType
+
+type Setting implements ISetting & IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  scope: SettingScopeEnumeration
+  scopedKey: String
+  name: SettingDefinition
+  value: Any
+}
+
+"项目"
+type Project implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  creatorOpenId: String!
+  "审核状态\nSubmitted,Refused,Approved\n已提交，已拒绝，已通过"
+  status: ApproveStatus!
+  "审核备注"
+  approveRemark: String!
+  "详细地址"
+  address: String!
+  "描述"
+  description: String!
+  "所属用户"
+  createEnterpriseUser: EnterpriseUser!
+  "所属企业"
+  enterprise: Enterprise
+  "所属企业id"
+  enterpriseId: String!
+  "项目阶段"
+  projectStage: ProjectStage!
+  "标题"
+  title: String!
+  "项目指标"
+  indicators: [KeyValuePairOfStringAndString!]!
+  "宗地图"
+  parcelOfLand: String
+  "附件"
+  attachments: [String!]
+  "区县行政编码"
+  areaCode: String
+  demandId: String
+  demand: Demand
+}
+
+"订单"
+type Order implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "订单类型"
+  enterprise: Enterprise
+  "企业ID"
+  enterpriseId: String!
+  "订单类型"
+  orderType: OrderType!
+  "订单状态"
+  orderStatus: OrderStatus!
+  "订单金额"
+  amount: Decimal!
+  "支付信息"
+  payment: Payment
+  commerceSnapshot: Commerce!
+}
+
+"产品套餐"
+type Commerce implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "名称"
+  name: String!
+  "版本\nFree\/Enterprise\/Group\n体验版\/企业版\/集团版"
+  edition: Edition!
+  "描述"
+  description: String!
+  "笔记"
+  notes: [String!]!
+  "规格"
+  specifications: [KeyValuePairOfStringAndSpecification!]!
+  "价格"
+  price: Decimal!
+  "计费周期\nMonthly\/Yearly\/Unlimited\n月\/年\/永久"
+  billingCycle: BillingCycle!
+  "是否推荐"
+  isRecommended: Boolean!
+  "是否启用"
+  isEnabled: Boolean!
+}
+
+"订单操作日志"
+type OrderLog implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "操作人"
+  operatorOpenId: String
+  "订单id"
+  orderId: String!
+  "元数据"
+  metadata: Any
+  "操作类型"
+  operationType: OperationType!
+  "备注"
+  remark: String
+}
+
+"消息通知"
+type Notification implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  notificationType: NotificationType!
+  title: String!
+  "接收人"
+  toUserId: String!
+  time: DateTime!
+  "消息跳转链接"
+  link: String!
+  "是否已读"
+  isRead: Boolean!
+}
+
+"企业申请"
+type EnterpriseApply implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "企业(申请审核通过才有企业信息)"
+  enterprise: Enterprise
+  "申请人"
+  applicantUser: UserIdentity
+  "审核状态\nSubmitted,Refused,Approved\n已提交，已拒绝，已通过"
+  status: ApproveStatus
+  "审核备注"
+  approveRemark: String
+  "空间目录"
+  path: String!
+  "名称"
+  name: String!
+  "地址"
+  address: String
+  "电话"
+  tEL: String
+  "联系人"
+  contactName: String
+  "联系人电话"
+  contactTEL: String
+  enterpriseId: String
+  applicantUserId: String
+  "企业类型"
+  enterpriseType: EnterpriseType!
+  "企业服务类型"
+  enterpriseServiceTypes: [EnterpriseServiceType!]!
+  "企业介绍"
+  introduction: String
+  "是否公开(是否接收服务咨询)"
+  isOpenForService: Boolean!
+  "省市区编码"
+  enterpriseAd: String!
+  "企业logo"
+  logoUrl: String!
+}
+
+"企业认证"
+type EnterpriseCertification implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "申请人"
+  applicantUser: UserIdentity
+  "企业"
+  enterprise: Enterprise
+  "审核状态\nSubmitted,Refused,Approved\n已提交，已拒绝，已通过"
+  status: ApproveStatus!
+  "审核备注"
+  approveRemark: String!
+  applicantUserId: String!
+  enterpriseId: String!
+  "营业执照"
+  businessLicense: String!
+  "开户行名称"
+  bankName: String!
+  "开户行账户"
+  bankAccount: String!
+}
+
+"企业"
+type Enterprise implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "申请人"
+  applicantUser: UserIdentity
+  "所有者"
+  ownerUser: UserIdentity
+  "企业认证(申请企业认证才有企业认证信息)"
+  enterpriseCertification: EnterpriseCertification
+  "空间目录"
+  path: String!
+  "名称"
+  name: String!
+  "地址"
+  address: String
+  "电话"
+  tEL: String
+  "联系人"
+  contactName: String
+  "联系人电话"
+  contactNameTEL: String
+  applicantUserId: String!
+  ownerUserId: String!
+  activeEdition: Edition
+  editionExpireAt: DateTime
+  isEditionExpired: Boolean!
+  "是否认证"
+  isCertification: Boolean!
+  "企业类型"
+  enterpriseType: EnterpriseType!
+  "企业服务类型"
+  enterpriseServiceTypes: [EnterpriseServiceType!]!
+  "企业介绍"
+  introduction: String
+  "是否公开接收服务咨询"
+  isOpenForService: Boolean!
+  "企业logoUrl"
+  logoUrl: String
+  "省市区编码"
+  enterpriseAd: String!
+  "企业最后更新时间, 包括企业角色相关变更"
+  lastUpdateTime: DateTime
+}
+
+"企业角色"
+type EnterpriseRole implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  enterprise: Enterprise
+  enterpriseId: String!
+  "code\n规则 ent.开头 字母+数字"
+  code: String!
+  "名称"
+  name: String!
+  "是否只读(禁止修改基本信息)"
+  isReadOnly: Boolean!
+  "是否默认角色"
+  isDefault: Boolean!
+  "编号"
+  number: Int!
+}
+
+"企业用户申请"
+type EnterpriseUserApply implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "企业"
+  enterprise: Enterprise
+  "申请人"
+  applicant: UserIdentity
+  "审核状态\nSubmitted,Refused,Approved\n已提交，已拒绝，已通过"
+  status: ApproveStatus!
+  "审核备注"
+  approveRemark: String!
+  applicantOpenId: String!
+  enterpriseId: String!
+}
+
+"企业用户"
+type EnterpriseUser implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "企业"
+  enterprise: Enterprise
+  "会员用户身份信息"
+  userIdentity: UserIdentity
+  enterpriseId: String!
+  openId: String!
+  "企业用户名称"
+  name: String!
+  "企业用户状态\nEnabled\/Disabled\/Quitted\n已启用\/已禁用\/已离职"
+  status: EnterpriseUserStatus!
+  roleCodes: [String!]!
+  "企业角色集合"
+  roles: [EnterpriseRole!]!
+  "是否是投资人"
+  isInvestor: Boolean!
+}
+
+"私信通知"
+type DirectMessage implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  fromUser: UserIdentity!
+  "发送人"
+  fromUserId: String!
+  "接收人"
+  toUserId: String!
+  "存放内容体独有的JSON"
+  metadata: Any
+  messageContent: String!
+  "是否已读"
+  isRead: Boolean!
+}
+
+"社区用户"
+type CommunityUser implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  "标签"
+  tags: [String!]
+  enabled: Boolean!
+  activeEnterpriseId: String
+  openId: String!
+  activeEnterprise: Enterprise
+  user: UserIdentity!
+  "头像"
+  avatar: String
+  "简介"
+  description: String
+  "昵称"
+  nickname: String
+}
+
+"项目发布"
+type Demand implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  tags: [String!]!
+  isOnline: Boolean!
+  enterpriseId: String!
+  creatorOpenId: String!
+  enterprise: Enterprise!
+  creatorUser: UserIdentity!
+  attachments: [String!]
+  description: String
+  "需求标题"
+  title: String!
+  "详细地址"
+  address: String
+  "需求备注(仅企业内部可见)"
+  internalRemark: String
+  "是否接受电话咨询"
+  phoneConsultationEnabled: Boolean!
+  "需求归属地(省市区编码)"
+  demandAd: String!
+  "需求类型"
+  demandServiceType: EnterpriseServiceType!
+}
+
+"费金税率"
+type CityTaxRate implements IEntity {
+  id: String
+  createdOn: DateTime!
+  modifiedOn: DateTime!
+  creatorOpenId: String!
+  "简述"
+  description: String!
+  "所属用户"
+  createEnterpriseUser: EnterpriseUser!
+  "所属企业"
+  enterprise: Enterprise!
+  "所属企业id"
+  enterpriseId: String!
+  "行政区划编码"
+  adCode: String!
+  "土地成本分摊方式（所得税）"
+  landDivStyle: CityTaxRateLandDivType!
+  "地下室是否分摊土地成本（所得税）"
+  isUndergroundDivLand: Boolean!
+  "地下分摊土地成本系数（所得税）"
+  undergroundDivPercent: Decimal
+  "土地成本分摊方式(土增税）"
+  landDivStyleOnVat: CityTaxRateLandDivType!
+  "地下室是否分摊土地成本(土增税）"
+  isUndergroundDivLandOnVat: Boolean!
+  "地下分摊土地成本系数(土增税）"
+  undergroundDivPercentOnVat: Decimal
+  "土地进项是否抵减成本"
+  isLandVatDeductCost: Boolean!
+  "增值税率（房地产）"
+  valueAddedTax: Decimal!
+  "服务业增值税率"
+  vatOnServices: Decimal!
+  "增值税简易征收率"
+  vatsimply: Decimal!
+  "增值税预征率"
+  vatpreCollect: Decimal!
+  "城建及地方附加税率"
+  cityAndAdditional: Decimal!
+  "所得税率"
+  inComeTax: Decimal!
+  "计税毛利率"
+  grossProfit: Decimal!
+  "土增预征率(普通住宅)"
+  landPreColNormalHouse: Decimal!
+  "土增预征率(非普通住宅)"
+  landPreColUnNormalHouse: Decimal!
+  "土增预征率(非住宅)"
+  landPreColOther: Decimal!
+  "房产税率(从租)"
+  propertyTaxRent: Decimal!
+  "房产税率(持有)"
+  propertyTaxHold: Decimal!
+  "管理费率"
+  adminExpense: Decimal!
+  "营销费率"
+  marketExpense: Decimal!
+  "营销费用资本化率（占收入比）"
+  capitalMarketExpenseRatio: Decimal!
+  "集团服务费率"
+  groupServiceFee: Decimal!
+  "融资服务费率"
+  financialServiceRatio: Decimal
+  "管理费用增值税专票比例"
+  adminExpenseVatratio: Decimal!
+  "营销费用增值税专票比"
+  marketExpenseVatratio: Decimal!
+  "管理费用计入开间费比例"
+  adminCostRatio: Decimal!
+  "契税"
+  contractRatio: Decimal!
+  "土地使用税"
+  landUseTax: Decimal!
+  "印花税"
+  stampTax: Decimal!
+}
+
+interface ISetting {
+  scope: SettingScopeEnumeration
+  scopedKey: String
+  value: Any
+  name: SettingDefinition
+  id: String
+}
+
+enum ApplyPolicy {
+  BEFORE_RESOLVER
+  AFTER_RESOLVER
+}
+
+input ISettingFilterInput {
+  and: [ISettingFilterInput!]
+  or: [ISettingFilterInput!]
+  id: StringOperationFilterInput
+  name: SettingDefinitionOperationFilterInput
+  scope: SettingScopeEnumerationOperationFilterInput
+  scopedKey: StringOperationFilterInput
+}
+
+type SettingCollectionSegment {
+  items: [Setting]
+  "Information to aid in pagination."
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+type HintType {
+  serviceAppType: ServiceAppType!
+}
+
+input StringOperationFilterInput {
+  and: [StringOperationFilterInput!]
+  or: [StringOperationFilterInput!]
+  eq: String
+  neq: String
+  contains: String
+  ncontains: String
+  in: [String]
+  nin: [String]
+  startsWith: String
+  nstartsWith: String
+  endsWith: String
+  nendsWith: String
+}
+
+input SettingDefinitionOperationFilterInput {
+  eq: SettingDefinition
+  neq: SettingDefinition
+  in: [SettingDefinition]
+  nin: [SettingDefinition]
+}
+
+input SettingScopeEnumerationOperationFilterInput {
+  eq: SettingScopeEnumeration
+  neq: SettingScopeEnumeration
+  in: [SettingScopeEnumeration]
+  nin: [SettingScopeEnumeration]
+}
+
+"Information about the offset pagination."
+type CollectionSegmentInfo {
+  "Indicates whether more items exist following the set defined by the clients arguments."
+  hasNextPage: Boolean!
+  "Indicates whether more items exist prior the set defined by the clients arguments."
+  hasPreviousPage: Boolean!
+}
+
+"The `DateTime` scalar represents an ISO-8601 compliant date time type."
+scalar DateTime
+
+enum AuditStatus {
+  DEFAULT
+  SUBMITTED
+  AUDITED
+}
+
+type KeyValuePairOfStringAndString {
+  key: String!
+  value: String!
+}
+
+"The built-in `Decimal` scalar type."
+scalar Decimal
+
+"支付信息"
+type Payment {
+  "支付流水号"
+  paymentNumber: String
+  "支付方式"
+  paymentType: PaymentType
+  "支付金额"
+  amount: Decimal
+  "支付二维码"
+  qrCode: String
+  "二维码过期时间"
+  qrCodeExpireTime: DateTime
+  "支付时间"
+  payTime: DateTime
+}
+
+type KeyValuePairOfStringAndSpecification {
+  key: String!
+  value: Specification!
+}
+
+"用户身份"
+type UserIdentity {
+  "昵称"
+  nickname: String!
+  "邮箱"
+  email: String!
+  "电话"
+  mobile: String!
+  "地址"
+  avatarUrl: String!
+  "拼音"
+  pinYin: String
+  "用户名"
+  username: String!
+  modifiedOn: DateTime!
+  id: String!
+}
+
+input EditSettingRequestInput {
+  name: SettingDefinition
+  value: String
+  scopedKey: String
+  scope: SettingScopeEnumeration
+}
+
+input GetSettingsInput {
+  scope: SettingScopeEnumeration
+  settingDefinitions: [SettingDefinition]
+  _: String
+}
+
+"审核批准项目"
+input ProjectApproveInput {
+  "项目ID"
+  id: String!
+  "审核备注"
+  remark: String!
+}
+
+"创建项目"
+input ProjectCreateInput {
+  "申请人"
+  enterpriseUserId: String!
+  "标题"
+  title: String!
+  "描述"
+  description: String
+  "是否公开"
+  isPublic: Boolean
+  "地址"
+  address: String
+  "项目指标"
+  indicators: [KeyValuePairOfStringAndStringInput!]
+  "项目阶段集合\nPreContract\/Contracted\/Handover\/Licensed\/Opening\n未签土地合同\/已签土地合同\/已交地\/已办土地证\/已开盘"
+  projectStage: ProjectStage!
+  "宗地图"
+  parcelOfLand: String
+  "附件"
+  attachments: [String!]
+  "区县行政编码"
+  areaCode: String
+}
+
+"审核拒绝项目"
+input ProjectRefuseInput {
+  "项目ID"
+  id: String!
+  "审核备注"
+  remark: String!
+}
+
+"项目设置标签"
+input ProjectSetTagsInput {
+  "项目ID"
+  id: String!
+  "标签"
+  tags: [String!]!
+}
+
+"更新项目"
+input ProjectUpdateInput {
+  "项目ID"
+  id: String!
+  "标题"
+  title: String
+  "描述"
+  description: String
+  "项目阶段集合\nPreContract\/Contracted\/Handover\/Licensed\/Opening\n未签土地合同\/已签土地合同\/已交地\/已办土地证\/已开盘"
+  projectStage: ProjectStage
+  "地址"
+  address: String
+  "项目指标"
+  indicators: [KeyValuePairOfStringAndStringInput!]
+  "宗地图"
+  parcelOfLand: String
+  "附件"
+  attachments: [String!]
+  "区县行政编码"
+  areaCode: String
+}
+
+"删除项目"
+input ProjectDeleteInput {
+  "项目ID"
+  id: String!
+}
+
+type PagedListOfProject implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [Project!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取项目列表"
+input GetProjectPagedListInput {
+  "企业信息Id"
+  enterpriseId: String
+  "项目阶段集合\nPreContract\/Contracted\/Handover\/Licensed\/Opening\n未签土地合同\/已签土地合同\/已交地\/已办土地证\/已开盘"
+  projectStageArray: [ProjectStage!]
+  "审核状态集合\nSubmitted\/Refused\/Approved\n已提交\/已拒绝\/已通过"
+  approveStatusArray: [ApproveStatus!]
+  "标题\/描述（模糊查询）"
+  searchText: String
+  "是否通过CreatedOn desc排序"
+  orderByCreatedAt: Boolean
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"创建产品套餐"
+input CommerceCreateInput {
+  "名称"
+  name: String!
+  "版本\nFree\/Enterprise\/Group\n体验版\/企业版\/集团版"
+  edition: Edition!
+  "描述"
+  description: String
+  "笔记"
+  notes: [String!]!
+  "规格"
+  specifications: [KeyValuePairOfStringAndSpecificationInput!]!
+  "价格"
+  price: Decimal!
+  "计费周期\nMonthly\/Yearly\/Unlimited\n月\/年\/永久"
+  billingCycle: BillingCycle
+  "是否推荐"
+  isRecommended: Boolean
+  "是否启用"
+  isEnabled: Boolean
+}
+
+"更新产品套餐"
+input CommerceUpdateInput {
+  id: String!
+  "名称"
+  name: String
+  "版本\nFree\/Enterprise\/Group\n体验版\/企业版\/集团版"
+  edition: Edition
+  "描述"
+  description: String
+  "笔记"
+  notes: [String!]
+  "规格"
+  specifications: [KeyValuePairOfStringAndSpecificationInput!]
+  "价格"
+  price: Decimal
+  "计费周期\nMonthly\/Yearly\/Unlimited\n月\/年\/永久"
+  billingCycle: BillingCycle
+  "是否推荐"
+  isRecommended: Boolean
+  "是否启用"
+  isEnabled: Boolean
+}
+
+type PagedListOfCommerce implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [Commerce!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取产品列表"
+input GetCommercePagedListInput {
+  "是否启用"
+  isEnabled: Boolean
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"创建订单"
+input OrderCreateInput {
+  "企业ID"
+  enterpriseId: String!
+  "产品ID"
+  commerceId: String!
+  "支付方式"
+  paymentType: PaymentType
+  "备注"
+  remark: String
+}
+
+"更新订单"
+input OrderUpdateInput {
+  "订单ID"
+  id: String!
+  "订单类型\nUpgrade\/Renew\n升级\/续费"
+  orderType: OrderType
+  "订单状态\nToBePaid\/Paid\/Completed\/Cancel\n待支付\/已支付\/已完成\/已取消"
+  orderStatus: OrderStatus
+  "订单金额"
+  amount: Decimal
+  "支付方式"
+  paymentType: PaymentType
+  "备注"
+  remark: String
+}
+
+"支付订单"
+input OrderPayInput {
+  "订单编号"
+  id: String!
+  "支付流水号"
+  paymentNumber: String
+  "支付金额"
+  paymentAmount: Decimal!
+  "支付方式\nOffline 银行转账"
+  paymentType: PaymentType
+  "备注"
+  remark: String
+}
+
+type PagedListOfOrder implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [Order!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"查询订单列表"
+input GetOrderPagedListInput {
+  "订单号(模糊匹配)"
+  filter: String
+  "买家企业信息Id"
+  enterpriseId: String
+  "订单类型集合\nBuy\/Upgrade\/Renew\n新购\/升级\/续费"
+  orderTypeArray: [OrderType!]
+  "订单状态集合\nToBePaid\/Paid\/Completed\/Cancel\n待支付\/已支付\/已完成\/已取消"
+  orderStatusArray: [OrderStatus!]
+  "是否通过ModifiedOn ASC排序"
+  orderByUpdatedAt: Boolean
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"创建消息"
+input NotificationCreateInput {
+  notificationType: NotificationType!
+  title: String!
+  userIds: [String!]!
+  metadata: Any!
+}
+
+input NotificationUpdateReadInput {
+  notificationId: [String!]!
+}
+
+type PagedListOfNotification implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [Notification!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取消息列表"
+input GetNotificationPagedListInput {
+  userId: String!
+  notificationType: NotificationType
+  "是否已读"
+  isRead: Boolean
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"创建私信"
+input DirectMessageCreateInput {
+  fromUserId: String!
+  metadata: Any
+  messageContent: String!
+  toUserId: String!
+}
+
+input DirectMessageMarkReadInput {
+  directMessageIds: [String!]!
+}
+
+type PagedListOfDirectMessage implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [DirectMessage!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取私信列表"
+input GetDirectMessagesPagedListInput {
+  userId: String!
+  "发消息人userId"
+  fromUserId: String
+  isRead: Boolean
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+input GetDirectMessageListAfterItemInput {
+  userId: String!
+  "发消息人userId"
+  fromUserId: String!
+  messageId: String!
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"需求上线"
+input DemandOnlineInput {
+  "需求ID"
+  id: String!
+  "备注"
+  remark: String
+}
+
+"创建项目"
+input DemandCreateInput {
+  "需求标题"
+  title: String!
+  "需求类型"
+  demandServiceType: EnterpriseServiceType!
+  "申请人"
+  creatorOpenId: String!
+  "需求简述"
+  description: String!
+  enterpriseId: String!
+  "需求归属地(省市区编码)"
+  demandAd: String!
+  "详细地址"
+  address: String
+  tags: [String!]
+  "需求备注（仅企业内部可见）"
+  internalRemark: String
+  "公开附件"
+  attachments: [String!]
+  "是否接受电话咨询"
+  phoneConsultationEnabled: Boolean!
+}
+
+"下线需求"
+input DemandOfflineInput {
+  "需求ID"
+  id: String!
+  "备注"
+  remark: String
+}
+
+"更新项目"
+input DemandUpdateInput {
+  "项目ID"
+  id: String!
+  "需求标题"
+  title: String
+  "需求类型"
+  demandServiceType: EnterpriseServiceType
+  "需求简述"
+  description: String
+  "需求归属地(省市区编码)"
+  demandAd: String
+  "详细地址"
+  address: String
+  tags: [String!]
+  "需求备注（仅企业内部可见）"
+  internalRemark: String
+  "公开附件"
+  attachments: [String!]
+  "是否接受电话咨询"
+  phoneConsultationEnabled: Boolean
+}
+
+"删除需求"
+input DemandDeleteInput {
+  "需求ID"
+  id: String!
+}
+
+type PagedListOfDemand implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [Demand!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取项目列表"
+input GetDemandPagedListInput {
+  keyword: String
+  orderBy: DemandSortType!
+  "是否隐藏(已上线、未上线)"
+  isOnline: Boolean
+  "CreatorOpenId"
+  openId: String
+  "需求类型集合"
+  demandServiceTypeArray: [EnterpriseServiceType!]
+  "省市区编码"
+  areaFilters: [String!]
+  "企业id"
+  enterpiseId: String
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"创建投资人"
+input CommunityUserCreateInput {
+  openId: String!
+  "头像"
+  avatar: String
+  "昵称"
+  nickname: String
+  "简介"
+  description: String
+  "标签"
+  tags: [String!]
+  activeEnterpriseId: String
+}
+
+"更新投资人"
+input CommunityUserUpdateInput {
+  id: String!
+  "头像"
+  avatar: String
+  "昵称"
+  nickname: String
+  "简介"
+  description: String
+  "标签"
+  tags: [String!]
+  activeEnterpriseId: String
+}
+
+input CommunityUserEnableInput {
+  id: String!
+}
+
+type PagedListOfCommunityUser implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [CommunityUser!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+input CommunityUserPagedListInput {
+  keyword: String
+  pageIndex: Int!
+  pageSize: Int!
+  tags: [String!]
+  openId: String
+  isEnabled: Boolean
+}
+
+"创建费金税率"
+input CityTaxRateCreateInput {
+  "行政区划编码"
+  adCode: String!
+  "简述"
+  description: String!
+  "土地成本分摊方式（所得税）"
+  landDivStyle: CityTaxRateLandDivType!
+  "地下室是否分摊土地成本（所得税）"
+  isUndergroundDivLand: Boolean!
+  "地下分摊土地成本系数（所得税）"
+  undergroundDivPercent: Decimal
+  "土地成本分摊方式(土增税）"
+  landDivStyleOnVat: CityTaxRateLandDivType!
+  "地下室是否分摊土地成本(土增税）"
+  isUndergroundDivLandOnVat: Boolean!
+  "地下分摊土地成本系数(土增税）"
+  undergroundDivPercentOnVat: Decimal
+  "土地进项是否抵减成本"
+  isLandVatDeductCost: Boolean!
+  "增值税率（房地产）"
+  valueAddedTax: Decimal!
+  "服务业增值税率"
+  vatOnServices: Decimal!
+  "增值税简易征收率"
+  vatsimply: Decimal!
+  "增值税预征率"
+  vatpreCollect: Decimal!
+  "城建及地方附加税率"
+  cityAndAdditional: Decimal!
+  "所得税率"
+  inComeTax: Decimal!
+  "计税毛利率"
+  grossProfit: Decimal!
+  "土增预征率(普通住宅)"
+  landPreColNormalHouse: Decimal!
+  "土增预征率(非普通住宅)"
+  landPreColUnNormalHouse: Decimal!
+  "土增预征率(非住宅)"
+  landPreColOther: Decimal!
+  "房产税率(从租)"
+  propertyTaxRent: Decimal!
+  "房产税率(持有)"
+  propertyTaxHold: Decimal!
+  "管理费率"
+  adminExpense: Decimal!
+  "营销费率"
+  marketExpense: Decimal!
+  "营销费用资本化率（占收入比）"
+  capitalMarketExpenseRatio: Decimal!
+  "集团服务费率"
+  groupServiceFee: Decimal!
+  "融资服务费率"
+  financialServiceRatio: Decimal
+  "管理费用增值税专票比例"
+  adminExpenseVatratio: Decimal!
+  "营销费用增值税专票比"
+  marketExpenseVatratio: Decimal!
+  "管理费用计入开间费比例"
+  adminCostRatio: Decimal!
+  "契税"
+  contractRatio: Decimal!
+  "土地使用税"
+  landUseTax: Decimal!
+  "印花税"
+  stampTax: Decimal!
+}
+
+"更新费金税率"
+input CityTaxRateUpdateInput {
+  "费金税率ID"
+  id: String!
+  "行政区划编码"
+  adCode: String!
+  "简述"
+  description: String!
+  "土地成本分摊方式（所得税）"
+  landDivStyle: CityTaxRateLandDivType!
+  "地下室是否分摊土地成本（所得税）"
+  isUndergroundDivLand: Boolean!
+  "地下分摊土地成本系数（所得税）"
+  undergroundDivPercent: Decimal
+  "土地成本分摊方式(土增税）"
+  landDivStyleOnVat: CityTaxRateLandDivType!
+  "地下室是否分摊土地成本(土增税）"
+  isUndergroundDivLandOnVat: Boolean!
+  "地下分摊土地成本系数(土增税）"
+  undergroundDivPercentOnVat: Decimal
+  "土地进项是否抵减成本"
+  isLandVatDeductCost: Boolean!
+  "增值税率（房地产）"
+  valueAddedTax: Decimal!
+  "服务业增值税率"
+  vatOnServices: Decimal!
+  "增值税简易征收率"
+  vatsimply: Decimal!
+  "增值税预征率"
+  vatpreCollect: Decimal!
+  "城建及地方附加税率"
+  cityAndAdditional: Decimal!
+  "所得税率"
+  inComeTax: Decimal!
+  "计税毛利率"
+  grossProfit: Decimal!
+  "土增预征率(普通住宅)"
+  landPreColNormalHouse: Decimal!
+  "土增预征率(非普通住宅)"
+  landPreColUnNormalHouse: Decimal!
+  "土增预征率(非住宅)"
+  landPreColOther: Decimal!
+  "房产税率(从租)"
+  propertyTaxRent: Decimal!
+  "房产税率(持有)"
+  propertyTaxHold: Decimal!
+  "管理费率"
+  adminExpense: Decimal!
+  "营销费率"
+  marketExpense: Decimal!
+  "营销费用资本化率（占收入比）"
+  capitalMarketExpenseRatio: Decimal!
+  "集团服务费率"
+  groupServiceFee: Decimal!
+  "融资服务费率"
+  financialServiceRatio: Decimal
+  "管理费用增值税专票比例"
+  adminExpenseVatratio: Decimal!
+  "营销费用增值税专票比"
+  marketExpenseVatratio: Decimal!
+  "管理费用计入开间费比例"
+  adminCostRatio: Decimal!
+  "契税"
+  contractRatio: Decimal!
+  "土地使用税"
+  landUseTax: Decimal!
+  "印花税"
+  stampTax: Decimal!
+}
+
+type PagedListOfCityTaxRate implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [CityTaxRate!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取费金税率列表"
+input GetCityTaxRatePagedListInput {
+  "行政区划编码\/名称(包含)"
+  searchText: String
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+type PagedListOfEnterprise implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [Enterprise!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取企业列表"
+input GetEnterprisePagedListInput {
+  "空间目录"
+  path: String
+  "名称"
+  name: String
+  "企业所有者 会员用户身份Id"
+  ownerOpenId: String
+  "最小更新时间"
+  minUpdatedAt: DateTime
+  "是否通过ModifiedOn ASC排序"
+  orderByUpdatedAt: Boolean
+  "名称\/空间目录\/地址\/电话\/联系人\/联系人电话"
+  searchText: String
+  "是否公开接收服务咨询"
+  isOpenForService: Boolean
+  "企业服务类型"
+  enterpriseServiceTypes: [EnterpriseServiceType!]
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"更新企业信息"
+input EnterpriseUpdateInput {
+  "企业ID"
+  enterpriseId: String!
+  "企业名称"
+  name: String
+  "企业空间目录"
+  path: String
+  "企业地址"
+  address: String
+  "联系人"
+  contactName: String
+  "联系人电话"
+  contactNameTEL: String
+  "电话"
+  tEL: String
+  "版本"
+  activeEdition: Edition
+  "版本到期时间"
+  editionExpireAt: DateTime
+  "是否公开接收服务咨询"
+  isOpenForService: Boolean
+  "企业服务类型"
+  enterpriseServiceTypes: [EnterpriseServiceType!]
+  "企业类型"
+  enterpriseType: EnterpriseType
+  "企业介绍"
+  introduction: String
+  "企业logoUrl"
+  logoUrl: String
+  "省市区编码"
+  enterpriseAd: String
+}
+
+type PagedListOfEnterpriseApply implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [EnterpriseApply!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取企业申请列表"
+input GetEnterpriseApplyPagedListInput {
+  "申请人  会员用户身份Id"
+  applicantUserIdentityId: String
+  "审核状态集合\nSubmitted\/Refused\/Approved\n已提交\/已拒绝\/已通过"
+  statusArray: [ApproveStatus!]
+  "空间目录"
+  path: String
+  "名称"
+  name: String
+  "名称\/空间目录\/地址\/电话\/联系人\/联系人电话"
+  searchText: String
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"审核通过企业申请"
+input EnterpriseApplyApproveInput {
+  "企业申请ID"
+  id: String!
+  "审核备注"
+  remark: String
+}
+
+"审核拒绝企业申请"
+input EnterpriseApplyRefuseInput {
+  "企业申请ID"
+  id: String!
+  "审核备注"
+  remark: String
+}
+
+"创建企业申请"
+input EnterpriseApplyCreateInput {
+  "申请人"
+  applicantOpenId: String!
+  "空间目录"
+  path: String!
+  "名称"
+  name: String!
+  "地址"
+  address: String
+  "电话"
+  tEL: String
+  "联系人"
+  contactName: String
+  "联系人电话"
+  contactNameTEL: String
+  "企业类型"
+  enterpriseType: EnterpriseType!
+  "企业服务类型"
+  enterpriseServiceTypes: [EnterpriseServiceType!]!
+  "是否公开(是否接收服务咨询)"
+  isOpenForService: Boolean!
+  "企业介绍"
+  introduction: String
+  "省市区编码"
+  enterpriseAd: String!
+  "企业logo"
+  logoUrl: String!
+}
+
+"更新企业申请"
+input EnterpriseApplyUpdateInput {
+  "企业申请ID"
+  id: String!
+  "空间目录"
+  path: String
+  "名称"
+  name: String
+  "地址"
+  address: String
+  "电话"
+  tEL: String
+  "联系人"
+  contactName: String
+  "联系人电话"
+  contactTEL: String
+  "企业类型"
+  enterpriseType: EnterpriseType
+  "企业服务类型"
+  enterpriseServiceTypes: [EnterpriseServiceType!]
+  "是否公开(是否接收服务咨询)"
+  isOpenForService: Boolean
+  "企业介绍"
+  introduction: String
+}
+
+type PagedListOfEnterpriseCertification implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [EnterpriseCertification!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取企业认证列表"
+input GetEnterpriseCertificationPagedListInput {
+  "企业Id"
+  enterpriseId: String
+  "申请人  会员用户身份Id"
+  applicantUserIdentityId: String
+  "审核状态集合\nSubmitted\/Refused\/Approved\n已提交\/已拒绝\/已通过"
+  auditStatusArray: [String!]
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"审核通过企业认证"
+input EnterpriseCertificationApproveInput {
+  "企业认证编号"
+  id: String!
+  "审核备注"
+  remark: String
+}
+
+"审核拒绝企业认证"
+input EnterpriseCertificationRefuseInput {
+  "企业认证编号"
+  id: String!
+  "审核备注"
+  remark: String
+}
+
+"创建企业认证"
+input EnterpriseCertificationCreateInput {
+  userOpenId: String!
+  "企业ID"
+  enterpriseId: String!
+  "营业执照"
+  businessLicense: String
+  "开户行名称"
+  bankName: String
+  "开户行账户"
+  bankAccount: String
+}
+
+"更新企业认证信息"
+input EnterpriseCertificationUpdateInput {
+  "企业认证ID"
+  id: String!
+  "申请人  会员用户身份Id"
+  applicantUserIdentityId: String
+  "营业执照"
+  businessLicense: String
+  "开户行名称"
+  bankName: String
+  "开户行账户"
+  bankAccount: String
+}
+
+type PagedListOfEnterpriseRole implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [EnterpriseRole!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取企业角色列表"
+input GetEnterpriseRolePagedListInput {
+  "企业ID"
+  enterpriseId: String!
+  "最小更新时间"
+  minUpdatedAt: DateTime
+  "是否只读(禁止修改基本信息)"
+  isReadOnly: Boolean
+  "是否默认角色"
+  isDefault: Boolean
+  "使用ModifiedOn排序 true ASC"
+  orderByUpdatedAt: Boolean
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"创建企业角色"
+input EnterpriseRoleCreateInput {
+  "企业ID"
+  enterpriseId: String!
+  "编号"
+  code: String!
+  "姓名"
+  name: String!
+}
+
+"删除企业角色"
+input EnterpriseRoleDeleteInput {
+  "企业ID"
+  enterpriseId: String!
+  "编号"
+  code: String!
+}
+
+"设置企业默认角色"
+input EnterpriseRoleSetDefaultInput {
+  "企业ID"
+  enterpriseId: String!
+  "编号"
+  code: String!
+}
+
+"更新企业角色"
+input EnterpriseRoleUpdateInput {
+  "企业角色ID"
+  id: String!
+  "角色名称"
+  name: String
+}
+
+type PagedListOfEnterpriseUser implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [EnterpriseUser!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取企业用户列表"
+input GetEnterpriseUserPagedListInput {
+  "企业ID"
+  enterpriseId: String
+  "状态集合 Enabled\/Disabled\/Quitted"
+  statusArray: [EnterpriseUserStatus!]
+  "最小更新时间"
+  minUpdatedAt: DateTime
+  "使用ModifiedOn排序 true ASC"
+  orderByUpdatedAt: Boolean
+  "过滤字符串"
+  filter: String
+  openId: String
+  isInvestor: Boolean
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"更新企业用户"
+input EnterpriseUserUpdateInput {
+  "企业Id"
+  enterpriseId: String!
+  "会员用户身份Id"
+  userIdentityId: String!
+  "企业用户备注名"
+  name: String
+  "角色Code集合"
+  roleCodes: [String!]
+  "企业用户状态\nEnabled 已启用\nDisabled 已禁用"
+  userStatus: EnterpriseUserStatus
+}
+
+input EnterpriseUserToggleInvestorInput {
+  id: String!
+  "社区用户id，为空则禁用，不为空则启用"
+  communityUserId: String
+}
+
+type PagedListOfEnterpriseUserApply implements IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  items: [EnterpriseUserApply!]!
+  totalPage: Int!
+  totalCount: Int!
+}
+
+"获取企业用户申请列表"
+input GetEnterpriseUserApplyPagedListInput {
+  "企业Id"
+  enterpriseId: String
+  "申请人  会员用户身份Id"
+  applicantUserIdentityId: String
+  "审核状态集合\nSubmitted\/Refused\/Approved\n已提交\/已拒绝\/已通过"
+  statusArray: [ApproveStatus!]
+  pageIndex: Int!
+  pageSize: Int!
+}
+
+"审核通过企业用户申请"
+input EnterpriseUserApplyApproveInput {
+  "企业用户申请ID"
+  id: String!
+  "审核备注"
+  remark: String
+}
+
+"审核拒绝企业用户申请"
+input EnterpriseUserApplyRefuseInput {
+  "企业用户申请ID"
+  id: String!
+  "审核备注"
+  remark: String
+}
+
+"创建企业用户申请"
+input EnterpriseUserApplyCreateInput {
+  "会员用户身份Id"
+  userIdentityId: String!
+  "企业Id"
+  enterpriseId: String
+  "企业空间目录"
+  enterprisePath: String!
+}
+
+enum DemandSortType {
+  DEFAULT
+  TIME
+}
+
+input KeyValuePairOfStringAndSpecificationInput {
+  key: String!
+  value: SpecificationInput!
+}
+
+input KeyValuePairOfStringAndStringInput {
+  key: String!
+  value: String!
+}
+
+"规格"
+type Specification {
+  valueType: SpecificationValueType!
+  value: String!
+}
+
+"规格"
+input SpecificationInput {
+  valueType: SpecificationValueType!
+  value: String!
+}
+
+directive @first(count: Int = 1) on FIELD
+
+directive @last(count: Int = 1) on FIELD
+
+directive @authorize("The name of the authorization policy that determines access to the annotated resource." policy: String "Roles that are allowed to access the annotated resource." roles: [String!] "Defines when when the resolver shall be executed.By default the resolver is executed after the policy has determined that the current user is allowed to access the field." apply: ApplyPolicy! = BEFORE_RESOLVER) repeatable on SCHEMA | OBJECT | FIELD_DEFINITION

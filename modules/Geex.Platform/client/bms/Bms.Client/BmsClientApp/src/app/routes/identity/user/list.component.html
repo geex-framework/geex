@@ -1,0 +1,78 @@
+<page-header>
+  <form style="display: block;"
+        nz-form
+        *ngIf="params"
+        [formGroup]="params"
+        nzLayout="inline">
+    <div nz-row
+         nzGutter="24">
+      <div nz-col
+           nzSm="24"
+           nzMd="12"
+           nzLg="8"
+           nzXl="6"
+           nzXXl="4">
+        <nz-form-item>
+          <nz-form-label>名称</nz-form-label>
+          <nz-form-control>
+            <input nz-input
+                   formControlName="username" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+      <div nz-col>
+        <button (click)="refresh()"
+                nz-button
+                nzType="primary">
+          <i nz-icon
+             nzType="reload"></i>
+          刷新</button>
+      </div>
+    </div>
+  </form>
+</page-header>
+<nz-card>
+  <nz-alert [nzType]="'info'"
+            [nzShowIcon]="true"
+            [nzMessage]="message">
+    <ng-template #message>
+      <div class="tm-page-header">
+        <div>
+          <span [innerHTML]="'已选择 '+selectedData?.length+' 项'"></span>
+          <nz-divider nzType="vertical"></nz-divider>
+          <a (click)="st.reset($event)"
+             [acl]="AppPermission.IdentityQueryUsers"><i nz-icon
+               nzType="reload"></i>
+            刷新
+          </a>
+          <!-- *ngIf="isGranted('Messages.BatchAudit')" -->
+          <!-- <ng-container>
+            <nz-divider nzType="vertical"></nz-divider>
+            <a (click)="batchAudit(true)"><i nz-icon
+                 nzType="audit"></i>
+              审批
+            </a>
+          </ng-container>
+          <ng-container>
+            <nz-divider nzType="vertical"></nz-divider>
+            <a (click)="batchAudit(false)"><i nz-icon
+                 nzType="rollback"></i>
+              取消审批
+            </a>
+          </ng-container> -->
+        </div>
+      </div>
+    </ng-template>
+  </nz-alert>
+  <st class="mt-sm"
+      #st
+      [data]="data"
+      (change)="stChange($event)"
+      [columns]="columns">
+    <!-- <ng-template st-row="username"
+                 let-item
+                 let-index="index">
+      <span>{{item.username??(item.phoneNumber||item.email)}}</span>
+    </ng-template> -->
+  </st>
+</nz-card>

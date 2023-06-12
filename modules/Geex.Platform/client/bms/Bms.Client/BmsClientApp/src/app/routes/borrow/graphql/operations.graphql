@@ -1,0 +1,40 @@
+
+query borrowRecords(
+  $input: QueryBorrowRecordInput!
+  $skip: Int
+  $take: Int
+  $where: BorrowRecordFilterInput
+  $order: [BorrowRecordSortInput!] = [{ createdOn: DESC }]
+) {
+  borrowRecords(input: $input, skip: $skip, take: $take, where: $where, order: $order) {
+    items {
+      ...BorrowRecordBrief
+    }
+    totalCount
+  }
+}
+
+mutation createBorrowRecords($input: CreateBorrowRecordInput!) {
+  createBorrowRecord(input: $input)
+}
+
+mutation editBorrowRecords($input: EditBorrowRecordInput!) {
+  editBorrowRecord(input: $input)
+}
+
+
+fragment BorrowRecordBrief on BorrowRecord {
+  id
+  readerId
+  bookId
+  readersDate
+  returnDate
+  book {
+    name
+    isbn
+  }
+  reader {
+    name
+    phone
+  }
+}

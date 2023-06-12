@@ -1,0 +1,63 @@
+# 获取reader列表
+query readers($input: QueryReaderInput!, $skip: Int, $take: Int, $where: ReaderFilterInput, $order: [ReaderSortInput!] = [{ createdOn: DESC }]) {
+  readers(input: $input, skip: $skip, take: $take, where: $where, order: $order) {
+    items {
+      ...ReaderBrief
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+
+# 获取全量的reader （用于数据导出等场景）
+# query readers($where: IReaderFilterInput) {
+#   readers(skip: 0, take: 999, where: $where, order: { createdOn: DESC }) {
+#     items {
+#       ...ReaderBrief
+#     }
+#   }
+# }
+# reader详情
+query readerById($id: String!) {
+  readerById(id: $id) {
+    ...ReaderDetail
+  }
+}
+# 新增reader
+mutation createReaders($input: CreateReaderInput!) {
+  createReader(input: $input) {
+    id
+  }
+}
+
+# 编辑reader
+mutation editReaders($id: String!,$input: EditReaderInput!) {
+  editReader(id: $id, input: $input)
+}
+
+
+fragment ReaderBrief on Reader {
+  id
+  name
+  gender
+  birthDate
+  phone
+}
+
+fragment ReaderDetail on Reader {
+  id
+  name
+  gender
+  birthDate
+  phone
+  borrowRecords {
+    readersDate
+    returnDate
+    book {
+      name
+      bookStatus
+    }
+  }
+}

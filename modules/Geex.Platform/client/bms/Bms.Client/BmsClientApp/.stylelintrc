@@ -1,0 +1,50 @@
+{
+  "extends": [
+    "stylelint-config-standard",
+    "stylelint-config-rational-order",
+    "stylelint-config-prettier"
+  ],
+  "plugins": [
+    "stylelint-order",
+    "stylelint-declaration-block-no-ignored-properties"
+  ],
+  "rules": {
+    "at-rule-name-space-after": [
+      "always-single-line",
+      {
+        "severity": "warning"
+      }
+    ],
+    "at-rule-no-unknown": [
+      true,
+      {
+        "severity": "warning"
+      }
+    ],
+    "no-descending-specificity": null,
+    "plugin/declaration-block-no-ignored-properties": true,
+    "selector-type-no-unknown": [
+      true,
+      {
+        "ignoreTypes": [
+          "/^g2-/",
+          "/^nz-/",
+          "/^app-/",
+          "reuse-tab"
+        ]
+      }
+    ],
+    "selector-pseudo-element-no-unknown": [
+      true,
+      {
+        "ignorePseudoElements": [
+          "ng-deep"
+        ]
+      }
+    ],
+    "import-notation": "string"
+  },
+  "ignoreFiles": [
+    "src/assets/**/*"
+  ]
+}

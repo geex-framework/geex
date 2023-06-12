@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <Version>3.0.43</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageOutputPath>\\kuforedev\shared\dev_packages</PackageOutputPath>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoEquality" Version="0.5.4" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.1.0" />
+    <PackageReference Include="Autofac.Extras.DynamicProxy" Version="6.0.0" />
+    <PackageReference Include="CSharpRecordEnabler" Version="1.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Humanizer.Core" Version="2.8.26" />
+    <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
+    <PackageReference Include="MediatR" Version="9.0.0" />
+    <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="3.1.31" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
+    <PackageReference Include="StackExchange.Redis.Extensions.Core" Version="7.0.0" />
+    <PackageReference Include="StackExchange.Redis.Extensions.System.Text.Json" Version="7.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+    <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\MongoDB.Entities\src\MongoDB.Entities.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.Accounting\src\Geex.Common.Accounting.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.Authorization\src\Geex.Common.Authorization.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.BackgroundJob\src\Geex.Common.BackgroundJob.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.BlobStorage\src\Geex.Common.BlobStorage.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.Logging\src\Geex.Common.Logging.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.Messaging\src\Geex.Common.Messaging.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
+  </ItemGroup>
+
+</Project>

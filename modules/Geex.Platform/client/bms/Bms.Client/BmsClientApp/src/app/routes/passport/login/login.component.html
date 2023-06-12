@@ -1,0 +1,186 @@
+<div class="box-right">
+  <div class="login">
+    <div class="head"
+         *ngIf="isMobile;else pc">
+      <img src="/assets/imgs/geex.ico"
+           alt=""
+           width="26">&nbsp;<h1>Geex Pro 脚手架</h1>
+    </div>
+    <ng-template #pc>
+      <h1>Geex Pro 脚手架</h1>
+    </ng-template>
+    <div class="login-box">
+      <nz-tabset (nzSelectChange)="switch($event)"
+                 nzCentered
+                 nzSize="small">
+        <!-- <nz-tab nzTitle="OA登录">
+          <div class="other">
+            <div class="oa-login">
+              <i nz-icon
+                 nzType="login"
+                 (click)="open('Idm')"
+                 nzTheme="outline"></i>
+            </div>
+          </div>
+        </nz-tab> -->
+        <nz-tab nzTitle="单点登录">
+          <div class="other">
+            <div class="oa-login">
+              <i nz-icon
+                 nzType="login"
+                 *ngFor="let provider of activeLoginProviders"
+                 (click)="open(provider)"
+                 nzTheme="outline"></i>
+              <div>Geex登录</div>
+            </div>
+          </div>
+        </nz-tab>
+
+        <nz-tab nzTitle="用户登录"
+                style="font-size: 20px;">
+          <form nz-form
+                [formGroup]="form"
+                (ngSubmit)="submit()"
+                role="form"
+                #loginForm="ngForm">
+            <nz-card nzBorderless>
+              <div style="float:right">
+                <span style="font-weight:600">企业Id：{{(tenant$|async).code}}</span> &nbsp;&nbsp;&nbsp;
+                <button nz-button
+                        (click)="showTenantSwitcher()">切换</button>
+              </div>
+            </nz-card>
+            <!-- 账号 -->
+            <nz-form-item>
+              <nz-form-control>
+                <nz-input-group nzPrefixIcon="user"
+                                nzSize="large">
+                  <input nz-input
+                         formControlName="userName"
+                         placeholder="用户名或邮箱地址"
+                         required
+                         maxlength="255" />
+                </nz-input-group>
+              </nz-form-control>
+            </nz-form-item>
+            <!-- 密码 -->
+            <nz-form-item>
+              <nz-form-control>
+                <nz-input-group nzPrefixIcon="lock"
+                                nzSize="large">
+                  <input nz-input
+                         nzSize="large"
+                         formControlName="password"
+                         name="password"
+                         placeholder="密码"
+                         type="password"
+                         required
+                         maxlength="32" />
+                </nz-input-group>
+              </nz-form-control>
+            </nz-form-item>
+
+            <!-- 验证码 OLD-->
+            <nz-form-item>
+              <nz-form-control>
+                <div nz-row>
+                  <nz-col [nzSpan]="12">
+                    <nz-input-group nzPrefixIcon="picture"
+                                    nzSize="large">
+                      <input nz-input
+                             nzSize="large"
+                             name="verificationCode"
+                             placeholder="验证码"
+                             type="text"
+                             (click)="initImg()"
+                             (keyup)="onKey($event)"
+                             maxlength="32">
+                    </nz-input-group>
+
+                  </nz-col>
+                  <nz-col [nzSpan]="12"
+                          class="text-right">
+                    <img (click)="clearimg()"
+                         [src]="verificationImgUrl">
+                  </nz-col>
+                </div>
+              </nz-form-control>
+            </nz-form-item>
+            <!-- 登陆按钮 -->
+            <button nz-button
+                    [nzType]="'primary'"
+                    [nzLoading]="submitting"
+                    nzSize="large"
+                    class="yoyo__block"
+                    [disabled]="!loginForm.form.valid || submitting">
+              <i nz-icon
+                 nzType="login"></i>
+              <span>登录</span>
+            </button>
+            <!-- 记住我 -->
+            <nz-form-item style="margin-top: 20px;">
+              <nz-col [nzSpan]="12"
+                      class="text-left">
+                <label nz-checkbox
+                       name="rememberMe">
+                  <span>记住我</span>
+                </label>
+              </nz-col>
+
+              <nz-col [nzSpan]="12"
+                      class="text-right">
+                <a (click)="msg.error('暂不支持')"
+                   class="forgot forget-password">忘记密码</a>
+              </nz-col>
+            </nz-form-item>
+          </form>
+        </nz-tab>
+
+      </nz-tabset>
+
+      <!-- 推荐下载谷歌浏览器 -->
+      <!-- <nz-card nzBorderless>
+        <div style="margin-left:30px;padding: 12px;">
+          <button nz-button
+                  nzType="primary"
+                  *ngFor="let provider of activeLoginProviders"
+                  (click)="open(provider)">
+            {{provider}}
+          </button>
+        </div>
+      </nz-card> -->
+
+      <!-- 推荐下载谷歌浏览器 -->
+      <div class="remind">
+        ——— &nbsp;&nbsp;&nbsp;&nbsp;
+        <span>提示：</span>为了更好的使用本框架,请先阅读<a href="https://www.google.cn/intl/zh-CN/chrome/">文档</a>
+        &nbsp;&nbsp;&nbsp;&nbsp; ———
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- <div class="login-action-items">
+  <div class="links">
+    <br /> -->
+<!-- 用户注册 -->
+<!-- <span >
+      <a routerLink="/account/register">注册</a>
+      <nz-divider nzType="vertical"></nz-divider>
+    </span> -->
+<!-- 租户注册 -->
+<!--
+    <span *ngIf="isTenantSelfRegistrationAllowed">
+      <a routerLink="/account/tenant-register">{{
+        l("TenantRegister")
+      }}</a>
+      <nz-divider nzType="vertical"></nz-divider>
+      <nz-form-extra>请通过租户注册来查看完整系统内容</nz-form-extra>
+    </span>-->
+<!-- //todo: 等待有缘人帮我们完善吧 -->
+<!-- <span>
+      <a routerLink="/account/email-activation">{{l("EmailActivation")}}</a>
+    </span> -->
+<!-- </div>
+</div> -->

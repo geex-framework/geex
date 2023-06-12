@@ -1,0 +1,30 @@
+{
+  "production": true,
+  "useHash": false,
+  "appUrl": "https://bms.geex.com",
+  "enableWatermarking": false,
+  "api": {
+    "baseUrl": "https://bms.api.geex.com",
+    "refreshTokenEnabled": false,
+    "refreshTokenType": "auth-refresh"
+  },
+  "auth": {
+    "geex": {
+      "issuer": "https://bms.api.geex.com/",
+      "loginUrl": "https://bms.api.geex.com/idsvr/authorize",
+      "redirectUri": "https://bms.geex.com",
+      "userinfoEndpoint": "https://bms.api.geex.com/idsvr/userinfo",
+      "clientId": "bms",
+      "dummyClientSecret": "bms",
+      "responseType": "code",
+      "scope": "openid profile",
+      "logoutUrl": "https://bms.api.geex.com/idsvr/endsession",
+      "sessionCheckIFrameUrl": "https://bms.api.geex.com/idsvr/checksession",
+      "sessionChecksEnabled": true,
+      "silentRefreshTimeout": 3000
+    }
+  },
+  "connectedClients": {
+    "app": "https://app.geex.com"
+  }
+}

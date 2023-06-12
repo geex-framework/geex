@@ -1,0 +1,26 @@
+{
+  // kiwi文件根目录，用于放置提取的langs文件
+  "kiwiDir": "src/app/core/i18n/",
+  // 语言目录名，注意连线和下划线
+  "srcLang": "src/app/core/i18n/zh-CN/",
+  "distLangs": [
+    "src/app/core/i18n/en-US/"
+  ],
+  // googleApiKey
+  "googleApiKey": "",
+  // baiduApiKey
+  "baiduApiKey": {
+    "appId": "",
+    "appKey": ""
+  },
+  // 百度翻译的语种代码映射 详情见官方文档 https://fanyi-api.baidu.com/doc/21
+  "baiduLangMap": {
+    "en-US": "en"
+    // "zh-TW": "cht"
+  },
+  // import 语句，不同项目请自己配置
+  "importI18N": "",
+  // 可跳过的文件夹名或者文加名，比如docs、mock等
+  "ignoreDir": "",
+  "ignoreFile": ""
+}

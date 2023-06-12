@@ -1,0 +1,63 @@
+
+<nz-card  nzTitle="图书借阅" >
+
+<form nz-form
+      *ngIf="params"
+      nzLayout="inline">
+  <nz-form-item>
+    <nz-form-label>借阅人手机号</nz-form-label>
+    <nz-form-control>
+      <input nz-input
+             placeholder="手机号"
+             [formControl]="params.controls.userPhone" />
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <nz-form-label>请输入要借阅的图书编号</nz-form-label>
+    <nz-form-control>
+      <input nz-input
+             placeholder="图书编号ISBN"
+             [formControl]="params.controls.bookISBN" />
+    </nz-form-control>
+  </nz-form-item>
+
+  <nz-form-item>
+    <button nz-button
+    [disabled]="!params.valid"
+            nzType="primary"
+            (click)="create()">
+      <i nz-icon
+         nzType="search"
+         nzTheme="outline"></i>借阅
+    </button>
+  </nz-form-item>
+
+
+    <nz-form-item>
+      <button nz-button
+              [disabled]="!params.valid"
+              nzType="primary"
+              (click)="edit()">
+        <i nz-icon
+           nzType="search"
+           nzTheme="outline"></i>还书
+      </button>
+    </nz-form-item>
+</form>
+
+</nz-card>
+
+<nz-card nzTitle="图书借阅记录">
+
+  <st class="mt-sm"
+      #st
+      [multiSort]="true"
+      [loading]="!context?.data"
+      [total]="context?.total"
+      [data]="context?.data"
+      (change)="tableChange($event)"
+      [columns]="context?.columns">
+  </st>
+
+</nz-card>
