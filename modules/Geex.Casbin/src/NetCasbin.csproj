@@ -1,34 +1,14 @@
-<!--EXTERNAL_PROPERTIES: TargetFramework-->
+﻿<!--EXTERNAL_PROPERTIES: TargetFramework-->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net7.0</TargetFrameworks>
     <NoWarn>$(NoWarn);CS1591;CS0618</NoWarn>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <PackageId>Casbin.NET</PackageId>
-    <PackageIcon>casbin.png</PackageIcon>
-    <Description>Casbin.NET is a powerful and efficient open-source access control library for .NET (C#) projects. It provides support for enforcing authorization based on various access control models.</Description>
-    <Authors>Casbin, Zhikui H</Authors>
-    <Product>Casbin.NET</Product>
-    <RepositoryType>GIT</RepositoryType>
-    <Copyright>Apache License 2.0</Copyright>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/casbin/Casbin.NET</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/casbin/Casbin.NET</PackageProjectUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <PublishDocumentationFile>true</PublishDocumentationFile>
-    <PublishReferencesDocumentationFiles>true</PublishReferencesDocumentationFiles>
-    <Version>13.0.21</Version>
-    <PackageOutputPath>\\kuforedev\shared\dev_packages</PackageOutputPath>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
-  </PropertyGroup>
 
   <PropertyGroup>
     <EnablePackageValidation>true</EnablePackageValidation>
