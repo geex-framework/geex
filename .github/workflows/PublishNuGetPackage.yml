@@ -24,33 +24,8 @@ jobs:
         run: dotnet build --configuration Release ./modules/Geex.Platform/server/Geex.Bms.sln
           
       - name: Print tag name
-        run: echo "Tag name: ${{ env.GITHUB_REF }}"
+        run: echo "Tag name:" +  ${{ env.GITHUB_REF }}
 
-      # - name: Generate NuGet packages
-      #   env:
-      #     PACKAGE_VERSION: ${{ env.GITHUB_REF/refs\/tags\/v/ }}
-      #   run: |
-      #     dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg  /p:PackageVersion=$PACKAGE_VERSION
-      #     dotnet pack ./modules/MongoDB.Entities/src/MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg
-
-      #     dotnet pack ./modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.Authentication/src/Geex.Common.Authentication.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.Authorization/src/Geex.Common.Authorization.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.BackgroundJob/src/Geex.Common.BackgroundJob.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.BlobStorage/src/Geex.Common.BlobStorage.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.Identity/src/Geex.Common.Identity.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.Logging/src/Geex.Common.Logging.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.Messaging/src/Geex.Common.Messaging.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.MultiTenant/src/Geex.Common.MultiTenant.csproj --configuration Release --no-build --output ./nupkg
-      #     dotnet pack ./modules/Geex.Common.Settings/src/Geex.Common.Settings.csproj --configuration Release --no-build --output ./nupkg
-
-      # - name: Publish packages to NuGet.org
-      #   uses: nuget/publish@1.0.0
-      #   with:
-      #     nuget-api-key: ${{ secrets.NUGET_API_KEY }}
-      #     nuget-package-dirs: './nupkg/*.nupkg'
 
 
 
