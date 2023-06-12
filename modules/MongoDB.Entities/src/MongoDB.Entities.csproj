@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>MongoDB.Entities</RootNamespace>
+    <AssemblyName>MongoDB.Entities</AssemblyName>
+    <Authors>Đĵ ΝιΓΞΗΛψΚ</Authors>
+    <Description>A data access library for MongoDB with an elegant api, LINQ support and built-in entity relationship management.</Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://mongodb-entities.com</PackageProjectUrl>
+    <Version>25.8.16</Version>
+    <Copyright>Đĵ ΝιΓΞΗΛψΚ</Copyright>
+    <PackageReleaseNotes>- support for extensible DBContext instances
+- ability to save entities partially by including a subset of properties
+- ability to save entities partially by excluding a subset of properties
+- change the signature of SavePreserving method due to new additions
+- optimize Transaction class
+- upgrade mongo driver to latest
+- increase test coverage</PackageReleaseNotes>
+    <PackageId>Geex.MongoDB.Entities</PackageId>
+    <Product>MongoDB.Entities</Product>
+    <RepositoryUrl>https://github.com/dj-nitehawk/MongoDB.Entities</RepositoryUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>mongodb mongodb-orm mongodb-repo mongodb-repository entities nosql orm linq netcore repository aspnetcore netcore2 netcore3 dotnetstandard database persistance dal repo</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <LangVersion>latest</LangVersion>
+    <PackageOutputPath>\\kuforedev\shared\dev_packages</PackageOutputPath>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1591</NoWarn>
+    <DocumentationFile />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CompareNETObjects" Version="5.74.0" />
+    <PackageReference Include="Castle.Core" Version="4.4.1" />
+    <PackageReference Include="DeepCloner" Version="0.10.3" />
+    <PackageReference Include="FastExpressionCompiler" Version="3.3.4" />
+    <PackageReference Include="LinqToAnything" Version="2.1.28" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="MongoDB.Driver" Version="2.14.1" />
+    <PackageReference Include="Neleus.LambdaCompare" Version="1.0.3" />
+    <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
+    <PackageReference Include="Fody" Version="6.6.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="MethodTimer.Fody" Version="3.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>
