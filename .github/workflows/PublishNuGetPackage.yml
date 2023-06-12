@@ -2,8 +2,8 @@ name: Build and Publish NuGet Package
 
 on:
   push:
-    branches:
-       - '*'
+    tags:
+      - '*'
 
 jobs:
   build-and-publish-nuget-package:
@@ -25,7 +25,7 @@ jobs:
           
       - name: Generate NuGet packages
         run: |
-          dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg
+          dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg  /p:PackageVersion=${{ env.GITHUB_REF/refs\/tags\/v/ }}
           dotnet pack ./modules/MongoDB.Entities/src/MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg
 
           dotnet pack ./modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg
@@ -41,6 +41,11 @@ jobs:
           dotnet pack ./modules/Geex.Common.MultiTenant/src/Geex.Common.MultiTenant.csproj --configuration Release --no-build --output ./nupkg
           dotnet pack ./modules/Geex.Common.Settings/src/Geex.Common.Settings.csproj --configuration Release --no-build --output ./nupkg
 
+      - name: Publish packages to NuGet.org
+        uses: nuget/publish@1.0.0
+        with:
+          nuget-api-key: ${{ secrets.NUGET_API_KEY }}
+          nuget-package-dirs: './nupkg/*.nupkg'
 
 
 
