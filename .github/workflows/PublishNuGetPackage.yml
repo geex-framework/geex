@@ -18,9 +18,7 @@ jobs:
           dotnet-version: 7.0.203
 
       - name: Restore dependencies
-        run: dotnet restore .\modules\Geex.Platform\server\Geex.Bms.sln
+        run: dotnet restore ./modules/Geex.Platform/server/Geex.Bms.sln
 
-      - name: Build package
-        run: dotnet pack --configuration Release   -o ./nupkg/ --no-build  --include-source  .\modules\Geex.Platform\server\Geex.Bms.sln
-
-     
+      - name: Build projects
+        run: dotnet build --configuration Release --no-restore ./modules/Geex.Platform/server/Geex.Bms.sln
