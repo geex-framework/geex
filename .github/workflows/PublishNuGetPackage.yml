@@ -1,9 +1,9 @@
 name: Build and Publish NuGet Package
 
 on:
-  push:
-    branches:
-       - '*'
+  create:
+    tags:
+      - '*'
 
 jobs:
   build-and-publish-nuget-package:
