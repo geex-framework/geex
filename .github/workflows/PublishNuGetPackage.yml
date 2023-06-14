@@ -28,8 +28,8 @@ jobs:
         
       - name: Generate NuGet packages
         run:  |
-          dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg  /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/MongoDB.Entities/src/MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
+          dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg /p:PackageId=Geex.Casbin /p:PackageVersion=${GITHUB_REF#refs/tags/v}
+          dotnet pack ./modules/Geex.MongoDB.Entities/src/MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg /p:PackageId=Geex.MongoDB.Entities /p:PackageVersion=${GITHUB_REF#refs/tags/v}
           dotnet pack ./modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
           dotnet pack ./modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
           dotnet pack ./modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
