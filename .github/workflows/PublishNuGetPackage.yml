@@ -19,7 +19,7 @@ jobs:
           dotnet-version: 7.0.203
 
       - name: Print tag name
-        run: echo "Tag name:" +  ${GITHUB_REF#refs/tags/}
+        run: echo "Tag name:" +  ${GITHUB_REF#refs/tags/v}
 
 
 
