@@ -18,7 +18,7 @@ jobs:
           dotnet-version: 7.0.203
 
       - name: Print tag name
-        run: echo "Tag name:" +  ${GITHUB_REF//\// }
+        run: echo "Tag name:" +  ${{ env.GITHUB_REF/refs\/tags\/v/ }}.trim() 
 
 
 
