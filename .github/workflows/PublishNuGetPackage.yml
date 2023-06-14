@@ -24,8 +24,10 @@ jobs:
         run: dotnet build --configuration Release ./modules/Geex.Platform/server/Geex.Bms.sln
 
       - name: Generate NuGet packages
-        run: echo Version number is + ${ GITHUB_REF#refs/tags/v }
+        run: echo "Tag name:" + ${GITHUB_REF#refs/tags/v}
         
+      - name: Generate NuGet packages
+        run: dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg  /p:PackageVersion="" + ${GITHUB_REF#refs/tags/v}
       # - name: Publish packages to NuGet.org
       #   uses: nuget/publish@1.0.0
       #   with:
