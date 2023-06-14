@@ -5,8 +5,6 @@ on:
     tags:
       - '*'
 
-env:
-  PACKAGE_VERSION: ${{ env.GITHUB_REF/refs\/tags\/v/ }}.trim()
 
 jobs:
   build-and-publish-nuget-package:
@@ -21,7 +19,7 @@ jobs:
           dotnet-version: 7.0.203
 
       - name: Print tag name
-        run: echo "Tag name:" +  $PACKAGE_VERSION
+        run: echo "Tag name:" +  ${GITHUB_REF#refs/tags/}
 
 
 
