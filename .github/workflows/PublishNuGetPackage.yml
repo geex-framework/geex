@@ -42,3 +42,10 @@ jobs:
           dotnet pack ./modules/Geex.Common.Messaging/src/Geex.Common.Messaging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
           dotnet pack ./modules/Geex.Common.MultiTenant/src/Geex.Common.MultiTenant.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
           dotnet pack ./modules/Geex.Common.Settings/src/Geex.Common.Settings.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
+    
+      - name: Publish packages to NuGet.org
+        uses: nuget/publish@1.0.0
+        with:
+          nuget-api-key: ${{ secrets.NUGET_API_KEY }}
+          nuget-package-dirs: './nupkg/*.nupkg'
+
