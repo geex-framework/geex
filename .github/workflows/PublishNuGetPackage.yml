@@ -6,7 +6,7 @@ on:
       - '*'
 
 jobs:
-  build-and-publish-nuget-package:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -42,11 +42,28 @@ jobs:
           dotnet pack ./modules/Geex.Common.Messaging/src/Geex.Common.Messaging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
           dotnet pack ./modules/Geex.Common.MultiTenant/src/Geex.Common.MultiTenant.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
           dotnet pack ./modules/Geex.Common.Settings/src/Geex.Common.Settings.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-    
-      - name: Publish NuGet package
-        uses: Azure/publish-nuget@v1
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
         with:
-          nuGetApiKey: ${{ secrets.NUGET_API_KEY }}
-          packagePath: './nupkg/*.nupkg'
-          nuGetFeed: 'https://api.nuget.org/v3/index.json'
+          name: NuGetPackage
+          path: './nupkg/*.nupkg'
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: NuGetPackage
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push'./nupkg/*.nupkg \
+            -k ${{ secrets.NUGET_API_KEY }} \
+            -s https://api.nuget.org/v3/index.json
 
