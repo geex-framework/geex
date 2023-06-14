@@ -29,7 +29,6 @@ jobs:
         run: |
           dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg  /p:PackageVersion=$PACKAGE_VERSION
           dotnet pack ./modules/MongoDB.Entities/src/MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=$PACKAGE_VERSION
-
           dotnet pack ./modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=$PACKAGE_VERSION
           dotnet pack ./modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=$PACKAGE_VERSION
           dotnet pack ./modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=$PACKAGE_VERSION
