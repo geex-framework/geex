@@ -17,5 +17,14 @@ jobs:
         with:
           dotnet-version: 7.0.203
           
+      - name: Restore dependencies
+        run: dotnet restore ./modules/Geex.Platform/server/Geex.Bms.sln
+        
+      - name: Build projects
+        run: dotnet build --configuration Release ./modules/Geex.Platform/server/Geex.Bms.sln
+        
       - name: Print tag name
         run: echo "Tag name:" +  ${GITHUB_REF#refs/tags/v}
+        
+      - name: Generate NuGet packages
+        run: dotnet pack ./modules/Geex.Casbin/src/NetCasbin.csproj --configuration Release --no-build --output ./nupkg  /p:PackageVersion=${GITHUB_REF#refs/tags/v}
