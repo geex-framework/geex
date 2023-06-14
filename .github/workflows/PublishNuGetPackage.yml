@@ -6,7 +6,7 @@ on:
       - '*'
 
 jobs:
-  build:
+  build-and-publish-nuget-package:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -43,27 +43,10 @@ jobs:
           dotnet pack ./modules/Geex.Common.MultiTenant/src/Geex.Common.MultiTenant.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
           dotnet pack ./modules/Geex.Common.Settings/src/Geex.Common.Settings.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
       
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: NuGetPackage
-          path: './nupkg/*.nupkg'
-
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: NuGetPackage
-
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1
-
       - name: Publish to NuGet
         run: |
           dotnet nuget push'./nupkg/*.nupkg \
             -k ${{ secrets.NUGET_API_KEY }} \
             -s https://api.nuget.org/v3/index.json
+
 
