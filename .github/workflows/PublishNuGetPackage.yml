@@ -24,9 +24,7 @@ jobs:
         run: dotnet build --configuration Release ./modules/Geex.Platform/server/Geex.Bms.sln
 
       - name: Generate NuGet packages
-        env:
-         PACKAGE_VERSION: ${ GITHUB_REF#refs/tags/v }
-        run: echo Version number is $PACKAGE_VERSION
+        run: echo Version number is + ${ GITHUB_REF#refs/tags/v }
         
       # - name: Publish packages to NuGet.org
       #   uses: nuget/publish@1.0.0
