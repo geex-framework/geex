@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Bms.Demo.Core", "modul
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "submodules", "submodules", "{7105AC88-D8DA-490F-9464-2E39DE2177DB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCasbin", "..\..\Geex.Casbin\src\NetCasbin.csproj", "{53B58824-1D2F-44BF-BFB5-1737139BA8A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.NetCasbin", "..\..\Geex.Casbin\src\Geex.NetCasbin.csproj", "{53B58824-1D2F-44BF-BFB5-1737139BA8A9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common", "..\..\Geex.Common\src\Geex.Common.csproj", "{4381E8DF-88AF-47FA-BF46-9387321FA6E0}"
 EndProject
@@ -47,7 +47,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.MultiTenant", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Settings", "..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj", "{13328A40-561E-4CBC-A1FB-2B3756F58050}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MongoDB.Entities", "..\..\Geex.MongoDB.Entities\src\MongoDB.Entities.csproj", "{9336FFB7-EC5F-4ACA-87D8-C6CB794C5F40}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.MongoDB.Entities", "..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj", "{9336FFB7-EC5F-4ACA-87D8-C6CB794C5F40}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
