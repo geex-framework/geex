@@ -1,0 +1,14 @@
+<nz-input-group nzSuffix="%" style="width: 90px">
+  <input
+    nz-input
+    #inputElement
+    type="text"
+    class="input-number-wrap"
+    [ngModel]="percentageValue"
+    [disabled]="disabled"
+    [placeholder]="placeholder"
+    [required]="required"
+    (ngModelChange)="onPercentageModelChange($event)"
+    ngDefaultControl
+  />
+</nz-input-group>

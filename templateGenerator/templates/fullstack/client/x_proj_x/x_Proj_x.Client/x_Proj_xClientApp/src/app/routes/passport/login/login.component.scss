@@ -1,0 +1,102 @@
+:host {
+  display: block;
+  margin: 0 auto;
+
+  ::ng-deep {
+    .ant-tabs-small .ant-tabs-tab {
+      margin: 0 20px;
+      padding: 6px;
+      font-size: 20px;
+      line-height: 30px;
+    }
+
+    .ant-tabs .ant-tabs-bar {
+      text-align: center;
+      border-bottom: 0;
+    }
+    .ant-card-body {
+      padding: 0;
+    }
+    .other {
+      i[nz-icon] {
+        // padding-left: 10px;
+        font-size: 18px;
+
+        :hover {
+          // color : @primary-color;
+          cursor: pointer;
+        }
+      }
+
+      display: flex;
+      align-items: center;
+      margin: 30px 0;
+      line-height: 22px;
+      text-align: left;
+    }
+  }
+}
+.oa-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  border: 2px dashed #eee;
+  i {
+    color: #d9d9d9;
+    font-size: 70px;
+  }
+  div {
+    font-size: 15px;
+    padding-top: 5px;
+  }
+}
+.box-right {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .login {
+    .head {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      img {
+        width: 26px;
+        height: 26px;
+      }
+    }
+    h1 {
+      text-align: center;
+      font-weight: 600;
+      color: #1e2022;
+      font-size: 28px;
+      margin: 0;
+    }
+    // flex-grow: 1;
+    .login-box {
+      box-sizing: border-box;
+      padding-top: 35px;
+      // background: white;
+
+      form {
+        width: 360px;
+        margin: 0 auto;
+        margin-top: 10px;
+      }
+      nz-card {
+        background: none;
+      }
+      .yoyo__block {
+        width: 100%;
+      }
+    }
+    .remind {
+      margin-top: 20px;
+      text-align: center;
+    }
+  }
+}

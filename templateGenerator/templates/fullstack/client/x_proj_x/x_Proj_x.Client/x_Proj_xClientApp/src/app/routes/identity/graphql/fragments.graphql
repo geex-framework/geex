@@ -1,0 +1,134 @@
+# 角色list
+fragment RoleBrief on Role {
+  createdOn
+  name
+  id
+  isStatic
+  isDefault
+}
+# 角色详情
+fragment RoleDetail on Role {
+  ...RoleBrief
+  permissions
+  name
+  users {
+    id
+  }
+}
+# 角色下拉菜单Dto
+fragment RoleMinimal on Role {
+  id
+  name
+}
+# 组织List
+fragment OrgBrief on Org {
+  code
+  name
+  orgType
+  parentOrgCode
+  id
+}
+# 组织详情
+fragment OrgDetail on Org {
+  ...OrgBrief
+  allSubOrgs {
+    name
+    code
+  }
+  directSubOrgs {
+    name
+    code
+  }
+}
+# 公共的user字段
+fragment UserBrief on User {
+  id
+  username
+  nickname
+  phoneNumber
+  email
+  isEnable
+  openId
+  loginProvider
+  roleNames
+  roleIds
+}
+# 用户列表
+fragment UserList on User {
+  ...UserBrief
+  createdOn
+  orgCodes
+}
+# 用户 缓存数据Dto cacheStore
+fragment UserCacheDto on User {
+  ...UserBrief
+  avatarFile {
+    url
+  }
+}
+# 用户 select option Menus
+fragment UserMinimal on User {
+  id
+  openId
+  username
+  nickname
+}
+#递归查询org的父级(向上查询10级)
+fragment OrgRecursiveParent on Org {
+  parentOrg {
+    ...OrgBrief
+    parentOrg {
+      ...OrgBrief
+      parentOrg {
+        ...OrgBrief
+        parentOrg {
+          ...OrgBrief
+          parentOrg {
+            ...OrgBrief
+            parentOrg {
+              ...OrgBrief
+              parentOrg {
+                ...OrgBrief
+                parentOrg {
+                  ...OrgBrief
+                  parentOrg {
+                    ...OrgBrief
+                    parentOrg {
+                      ...OrgBrief
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+# 用户详情
+fragment UserDetail on User {
+  ...UserBrief
+  isEnable
+  permissions
+  avatarFile {
+    url
+  }
+  orgs {
+    allParentOrgs {
+      code
+      name
+    }
+    name
+    code
+  }
+  claims {
+    claimType
+    claimValue
+  }
+  orgCodes
+  avatarFileId
+  avatarFile {
+    ...BlobObjectBrief
+  }
+}

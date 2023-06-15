@@ -1,0 +1,26 @@
+diff --git a/node_modules/@delon/abc/esm2015/st/st.component.js b/node_modules/@delon/abc/esm2015/st/st.component.js
+index 0fcb906..fdd1a8d 100644
+--- a/node_modules/@delon/abc/esm2015/st/st.component.js
++++ b/node_modules/@delon/abc/esm2015/st/st.component.js
+@@ -327,7 +327,7 @@ export class STComponent {
+         }
+     }
+     _change(type, options) {
+-        if (type === 'pi' || (type === 'ps' && this.pi <= Math.ceil(this.total / this.ps))) {
++        if (this.page.front && (type === 'pi' || (type === 'ps' && this.pi <= Math.ceil(this.total / this.ps)))) {
+             this.loadPageData().then(() => this._toTop(options === null || options === void 0 ? void 0 : options.toTop));
+         }
+         this.changeEmit(type);
+diff --git a/node_modules/@delon/abc/fesm2015/table.js b/node_modules/@delon/abc/fesm2015/table.js
+index cfd1227..eed9fe7 100644
+--- a/node_modules/@delon/abc/fesm2015/table.js
++++ b/node_modules/@delon/abc/fesm2015/table.js
+@@ -1440,7 +1440,7 @@ class STComponent {
+         }
+     }
+     _change(type, options) {
+-        if (type === 'pi' || (type === 'ps' && this.pi <= Math.ceil(this.total / this.ps))) {
++        if (this.page.front && (type === 'pi' || (type === 'ps' && this.pi <= Math.ceil(this.total / this.ps)))) {
+             this.loadPageData().then(() => this._toTop(options === null || options === void 0 ? void 0 : options.toTop));
+         }
+         this.changeEmit(type);

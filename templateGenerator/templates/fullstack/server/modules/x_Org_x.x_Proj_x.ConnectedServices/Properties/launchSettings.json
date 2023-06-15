@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "x_Org_x.x_Proj_x.ConnectedServices": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:1064;http://localhost:1065"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Modules\**" />
+    <EmbeddedResource Remove="Modules\**" />
+    <None Remove="Modules\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="IdentityModel" Version="5.2.0" />
+    <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
+    <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Geex.Common.Abstraction" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common.Authorization" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common.BlobStorage" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common.Identity" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common.Logging" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common.Messaging" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common.MultiTenant" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common.Settings" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common" Version="7.0.2.1427" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\modules\x_Org_x.x_Proj_x.x_Mod_x\x_Org_x.x_Proj_x.x_Mod_x.Core\x_Org_x.x_Proj_x.x_Mod_x.Core.csproj" />
+  </ItemGroup>
+
+</Project>

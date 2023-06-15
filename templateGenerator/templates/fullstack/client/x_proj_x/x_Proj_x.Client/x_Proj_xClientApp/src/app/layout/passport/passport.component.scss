@@ -1,0 +1,36 @@
+.box {
+  width: 100%;
+  min-height: 100%;
+}
+.box-left {
+  background-color: #21325b;
+  --bs-bg-opacity: 1;
+  .header {
+    padding: 15px;
+    .logo {
+      width: 168px;
+    }
+  }
+
+  .content {
+    position: absolute;
+    top: 40%;
+    text-align: center;
+    padding: 32px;
+    p {
+      color: white;
+      font-size: 20px;
+    }
+  }
+  .footer {
+    position: absolute;
+    bottom: 0;
+    padding: 32px;
+    width: 100%;
+    div {
+      text-align: center;
+      font-size: 20px;
+      color: white;
+    }
+  }
+}

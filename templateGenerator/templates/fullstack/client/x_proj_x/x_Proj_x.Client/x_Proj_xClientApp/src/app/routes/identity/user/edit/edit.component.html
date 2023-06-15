@@ -1,0 +1,52 @@
+<page-header [title]="id?'编辑':'新增'"
+             *ngIf="$init | async">
+
+</page-header>
+<nz-card>
+  <nz-spin [nzSpinning]="loading"
+           class="modal-spin">
+    <sf #sf
+        [autocomplete]="'off'"
+        *ngIf="this.defaultData"
+        [schema]="schema"
+        [mode]="'edit'"
+        [formData]="this.defaultData"
+        [ui]="ui"
+        [button]="null">
+      <div style="text-align: center;">
+        <span style="padding-right: 7px;">
+          <button *ngIf="this.mode =='edit'"
+                  nz-button
+                  type="button"
+                  (click)="showModal()"><i nz-icon
+               nzType="undo"
+               nzTheme="outline"></i>重置密码</button>
+          <nz-modal [(nzVisible)]="isVisible"
+                    nzTitle="重置密码"
+                    (nzOnOk)="handleOk()"
+                    (nzOnCancel)="handleCancel()">
+            <ng-container *nzModalContent>
+              请输入重置密码：<input nz-input
+                     *ngIf="data"
+                     [(ngModel)]="data.password"
+                     type="password">
+            </ng-container>
+          </nz-modal>
+        </span>
+
+        <button nz-button
+                type="button"
+                (click)="close()"><i nz-icon
+             nzType="rollback"
+             nzTheme="outline"></i>返回</button>
+        <button nz-button
+                type="submit"
+                nzType="primary"
+                [disabled]="!sf.valid"
+                (click)="submit(sf.value)"><i nz-icon
+             nzType="save"
+             nzTheme="outline"></i>保存</button>
+      </div>
+    </sf>
+  </nz-spin>
+</nz-card>

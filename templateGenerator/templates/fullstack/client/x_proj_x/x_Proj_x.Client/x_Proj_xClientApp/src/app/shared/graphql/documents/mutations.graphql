@@ -1,0 +1,21 @@
+mutation createBlobObject($input: CreateBlobObjectRequestInput) {
+  createBlobObject(input: $input) {
+    id
+    md5
+    fileName
+    url
+    mimeType
+    fileSize
+    storageType
+  }
+}
+
+mutation checkTenant($code: String!) {
+  checkTenant(code: $code) {
+    code
+    name
+    isEnabled
+    id
+    createdOn
+  }
+}

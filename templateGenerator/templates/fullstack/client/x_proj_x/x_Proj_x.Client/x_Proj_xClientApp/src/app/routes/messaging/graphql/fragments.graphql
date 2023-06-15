@@ -1,0 +1,16 @@
+fragment MessageBrief on Message {
+  fromUserId
+  id
+  messageType
+  severity
+  time
+  title
+}
+
+fragment MessageDetail on Message {
+  toUserIds
+  createdOn
+  content {
+    _
+  }
+}

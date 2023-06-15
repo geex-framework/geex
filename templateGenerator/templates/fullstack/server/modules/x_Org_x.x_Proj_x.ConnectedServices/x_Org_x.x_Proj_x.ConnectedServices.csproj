@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include=".config\dotnet-tools.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="IdentityModel" Version="5.2.0" />
+    <PackageReference Include="StrawberryShake.CodeGeneration.CSharp.Analyzers" Version="13.0.0-geex-preview.37">
+      <PrivateAssets>all</PrivateAssets>
+      <!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
+    </PackageReference>
+    <PackageReference Include="StrawberryShake.Tools.Configuration" Version="13.0.0-preview.24" />
+    <PackageReference Include="StrawberryShake.Transport.Http" Version="13.0.0-preview.24" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Geex.Common.Abstraction" Version="7.0.2.1427" />
+  </ItemGroup>
+
+
+  <!--<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec WorkingDirectory="$(ProjectDir)" Command="pwsh ./PreBuild.ps1 -env Development"></Exec>
+  </Target>-->
+
+  <ItemGroup>
+    <Content Remove="x_Org_xApi\.graphqlrc.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="x_Org_xApi\.graphqlrc.json" />
+  </ItemGroup>
+
+</Project>

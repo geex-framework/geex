@@ -1,0 +1,11 @@
+<div class="modal-header">
+  <div class="modal-title">租户切换</div>
+</div>
+<input nz-input
+       [(ngModel)]="this.tenantCode"
+       style="margin-bottom:20px ;">
+<button nz-button
+        nzType="primary"
+        nzSize="small"
+        (click)="submit()"
+        nzSearch>确定</button>

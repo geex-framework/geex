@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\_org_._proj_._mod_.Api\_org_._proj_._mod_.Api.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,42 @@
+<page-header [title]="'messaging'"
+             [content]="phContentTpl"
+             [tab]="phTab"
+             [extra]="phExtra"
+             [action]="phActionTpl">
+  <ng-template #phContentTpl>
+    这是一段描述
+  </ng-template>
+  <ng-template #phExtra>
+    <!-- <button nz-button
+            nzType="primary">
+      <i nz-icon
+         nzType="edit"></i>
+      编辑</button> -->
+  </ng-template>
+  <ng-template #phTab>
+    <!-- <nz-tabset>
+      <nz-tab nzTitle="Tab 1"></nz-tab>
+      <nz-tab nzTitle="Tab 2"></nz-tab>
+      <nz-tab nzTitle="Tab 3"></nz-tab>
+    </nz-tabset> -->
+  </ng-template>
+  <ng-template #phActionTpl>
+    <!-- <button nz-button
+            nzType="primary">
+      <i nz-icon
+         nzType="audit"></i>
+      审批
+    </button> -->
+  </ng-template>
+</page-header>
+<nz-card>
+  <nz-spin [nzSpinning]="loading"
+           class="modal-spin">
+    <sf #sf
+        [schema]="schema"
+        [mode]="'edit'"
+        [formData]="this.data"
+        [ui]="ui"
+        (formSubmit)="submit($event)"></sf>
+  </nz-spin>
+</nz-card>

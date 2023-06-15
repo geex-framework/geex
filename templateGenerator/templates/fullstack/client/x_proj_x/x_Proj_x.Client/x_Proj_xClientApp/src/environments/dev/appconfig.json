@@ -1,0 +1,30 @@
+{
+  "production": true,
+  "useHash": false,
+  "appUrl": "https://x_proj_x.dev.x_org_x.com",
+  "enableWatermarking": false,
+  "api": {
+    "baseUrl": "https://x_proj_x.api.dev.x_org_x.com",
+    "refreshTokenEnabled": false,
+    "refreshTokenType": "auth-refresh"
+  },
+  "auth": {
+    "x_org_x": {
+      "issuer": "https://x_proj_x.api.dev.x_org_x.com/",
+      "loginUrl": "https://x_proj_x.api.dev.x_org_x.com/idsvr/authorize",
+      "redirectUri": "https://x_proj_x.dev.x_org_x.com",
+      "userinfoEndpoint": "https://x_proj_x.api.dev.x_org_x.com/idsvr/userinfo",
+      "clientId": "x_proj_x",
+      "dummyClientSecret": "x_proj_x",
+      "responseType": "code",
+      "scope": "openid profile",
+      "logoutUrl": "https://x_proj_x.api.dev.x_org_x.com/idsvr/endsession",
+      "sessionCheckIFrameUrl": "https://x_proj_x.api.dev.x_org_x.com/idsvr/checksession",
+      "sessionChecksEnabled": true,
+      "silentRefreshTimeout": 3000
+    }
+  },
+  "connectedClients": {
+    "app": "https://app.dev.x_org_x.com"
+  }
+}
