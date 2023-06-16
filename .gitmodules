@@ -1,0 +1,3 @@
+[submodule "private/Geex.Platform"]
+	path = private/Geex.Platform
+	url = https://github.com/geex-framework/Geex.Platform
