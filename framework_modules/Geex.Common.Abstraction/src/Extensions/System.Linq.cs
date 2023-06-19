@@ -133,7 +133,7 @@ namespace System.Linq
 
         public static T? GetById<T>(this IQueryable<T> query, string id) where T : IEntityBase
         {
-            return query?.FirstOrDefault(x => x.Id == id);
+            return query.FirstOrDefault(x => x.Id == id);
         }
 
         public static IQueryable<T> FilterByIds<T>(this IQueryable<T> query, params string[] ids) where T : class, IHasId

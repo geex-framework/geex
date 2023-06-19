@@ -1,5 +1,4 @@
 name: Build and Publish NuGet Package
-
 on:
   create:
     tags:
@@ -8,7 +7,24 @@ on:
 jobs:
   build-and-publish-nuget-package:
     runs-on: ubuntu-latest
+
     steps:
+      - name: Extract variables
+        run: |
+          echo "Ref name is $GITHUB_REF"
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "Version is $VERSION"
+          if [[ "$VERSION" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            SUFFIX="${BASH_REMATCH[2]}"
+            echo "Extracted version and suffix frm prerelease tag."
+            echo "Version: $VERSION"
+            echo "Suffix: $SUFFIX"
+          fi
+        env:
+          VERSION: ${{ env.VERSION }}
+          SUFFIX: ${{ env.SUFFIX }}
+
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -18,32 +34,30 @@ jobs:
           dotnet-version: 7.0.203
           
       - name: Restore dependencies
-        run: dotnet restore ./modules/Geex.Platform/server/Geex.Bms.sln
+        run: dotnet restore ./framework_modules/framework_modules.sln
         
       - name: Build projects
-        run: dotnet build --configuration Release ./modules/Geex.Platform/server/Geex.Bms.sln
-        
-      - name: Print tag name
-        run: echo "Tag name:" +  ${GITHUB_REF#refs/tags/v}
+        run: dotnet build --configuration Release ./framework_modules/framework_modules.sln
         
       - name: Generate NuGet packages
         run:  |
-          dotnet pack ./modules/Geex.Casbin/src/Geex.NetCasbin.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.Authentication/src/Geex.Common.Authentication.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.Authorization/src/Geex.Common.Authorization.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.BackgroundJob/src/Geex.Common.BackgroundJob.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.BlobStorage/src/Geex.Common.BlobStorage.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.Identity/src/Geex.Common.Identity.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.Logging/src/Geex.Common.Logging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.Messaging/src/Geex.Common.Messaging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.MultiTenant/src/Geex.Common.MultiTenant.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-          dotnet pack ./modules/Geex.Common.Settings/src/Geex.Common.Settings.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${GITHUB_REF#refs/tags/v}
-      
+          dotnet pack ./framework_modules/Geex.Casbin/src/Geex.NetCasbin.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.Authentication/src/Geex.Common.Authentication.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.Authorization/src/Geex.Common.Authorization.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.BackgroundJob/src/Geex.Common.BackgroundJob.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.BlobStorage/src/Geex.Common.BlobStorage.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.Identity/src/Geex.Common.Identity.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.Logging/src/Geex.Common.Logging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.Messaging/src/Geex.Common.Messaging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.MultiTenant/src/Geex.Common.MultiTenant.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+          dotnet pack ./framework_modules/Geex.Common.Settings/src/Geex.Common.Settings.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${VERSION} --version-suffix ${SUFFIX}
+
+      - name: Clean up previous build
+        run: rmrf ./nupkg/*.nupkg
+
       - name: Publish to NuGet
         run: dotnet nuget push ./nupkg/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
-
-

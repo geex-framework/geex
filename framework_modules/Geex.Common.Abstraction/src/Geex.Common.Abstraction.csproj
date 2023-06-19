@@ -53,7 +53,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Geex.Casbin\src\Geex.NetCasbin.csproj" />
+    <ProjectReference Include="..\..\Geex.Casbin\src\Geex.Casbin.csproj" />
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
   </ItemGroup>
 
