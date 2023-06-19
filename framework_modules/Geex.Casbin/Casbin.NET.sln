@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCasbin", "src\NetCasbin.csproj", "{D88B6D3E-7E33-4D5F-B176-37F99980190D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Casbin", "src\Geex.Casbin.csproj", "{D88B6D3E-7E33-4D5F-B176-37F99980190D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetCasbin.UnitTest", "test\NetCasbin.UnitTest\NetCasbin.UnitTest.csproj", "{A1792193-9B3F-4134-B3EA-D6915E6F6208}"
 EndProject

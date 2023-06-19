@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\MongoDB.Entities.csproj" />
+    <ProjectReference Include="..\src\Geex.MongoDB.Entities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

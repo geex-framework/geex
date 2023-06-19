@@ -129,14 +129,14 @@ namespace MongoDB.Entities
         /// Specify a search term to find results from the text index of this particular collection.
         /// <para>TIP: Make sure to define a text index with DB.Index&lt;T&gt;() before searching</para>
         /// </summary>
-        /// <param name="searchType">The type of text matching to do</param>
+        /// <param name="findSearchType">The type of text matching to do</param>
         /// <param name="searchTerm">The search term</param>
         /// <param name="caseSensitive">Case sensitivity of the search (optional)</param>
         /// <param name="diacriticSensitive">Diacritic sensitivity of the search (optional)</param>
         /// <param name="language">The language for the search (optional)</param>
-        public Find<T, TProjection> Match(Search searchType, string searchTerm, bool caseSensitive = false, bool diacriticSensitive = false, string language = null)
+        public Find<T, TProjection> Match(FindSearchType findSearchType, string searchTerm, bool caseSensitive = false, bool diacriticSensitive = false, string language = null)
         {
-            if (searchType == Search.Fuzzy)
+            if (findSearchType == FindSearchType.Fuzzy)
             {
                 searchTerm = searchTerm.ToDoubleMetaphoneHash();
                 caseSensitive = false;
@@ -203,15 +203,15 @@ namespace MongoDB.Entities
         /// Specify which property and order to use for sorting (use multiple times if needed)
         /// </summary>
         /// <param name="propertyToSortBy">x => x.Prop</param>
-        /// <param name="sortOrder">The sort order</param>
-        public Find<T, TProjection> Sort(Expression<Func<T, object>> propertyToSortBy, Order sortOrder)
+        /// <param name="findSortType">The sort order</param>
+        public Find<T, TProjection> Sort(Expression<Func<T, object>> propertyToSortBy, FindSortType findSortType)
         {
-            switch (sortOrder)
+            switch (findSortType)
             {
-                case Order.Ascending:
+                case FindSortType.Ascending:
                     return Sort(s => s.Ascending(propertyToSortBy));
 
-                case Order.Descending:
+                case FindSortType.Descending:
                     return Sort(s => s.Descending(propertyToSortBy));
 
                 default:
@@ -490,13 +490,13 @@ namespace MongoDB.Entities
         }
     }
 
-    public enum Order
+    public enum FindSortType
     {
         Ascending,
         Descending
     }
 
-    public enum Search
+    public enum FindSearchType
     {
         Fuzzy,
         Full

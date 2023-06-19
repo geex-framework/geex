@@ -623,17 +623,17 @@ namespace MongoDB.Entities
         /// Start a fluent aggregation pipeline with a $text stage with the supplied parameters in the transaction scope.
         /// <para>TIP: Make sure to define a text index with DB.Index&lt;T&gt;() before searching</para>
         /// </summary>
-        /// <param name="searchType">The type of text matching to do</param>
+        /// <param name="findSearchType">The type of text matching to do</param>
         /// <param name="searchTerm">The search term</param>
         /// <param name="caseSensitive">Case sensitivity of the search (optional)</param>
         /// <param name="diacriticSensitive">Diacritic sensitivity of the search (optional)</param>
         /// <param name="language">The language for the search (optional)</param>
         /// <param name="options">Options for finding documents (not required)</param>
-        public virtual IAggregateFluent<T> FluentTextSearch<T>(Search searchType, string searchTerm,
+        public virtual IAggregateFluent<T> FluentTextSearch<T>(FindSearchType findSearchType, string searchTerm,
             bool caseSensitive = false, bool diacriticSensitive = false, string language = null,
             AggregateOptions options = null) where T : IEntityBase
         {
-            return DB.FluentTextSearch<T>(searchType, searchTerm, caseSensitive, diacriticSensitive, language, options,
+            return DB.FluentTextSearch<T>(findSearchType, searchTerm, caseSensitive, diacriticSensitive, language, options,
                 session);
         }
 
@@ -765,7 +765,7 @@ namespace MongoDB.Entities
                 this.DataFilters.Clear();
                 var lastMigNum = (
                         await this.Find<Migration, long>()
-                            .Sort(m => m.Number, Order.Descending)
+                            .Sort(m => m.Number, FindSortType.Descending)
                             .Limit(1)
                             .Project(m => m.Number)
                             .ExecuteAsync()

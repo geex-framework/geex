@@ -131,7 +131,7 @@ namespace System.Linq
             return data;
         }
 
-        public static T? GetById<T>(this IQueryable<T> query, string id) where T : EntityBase<T>
+        public static T? GetById<T>(this IQueryable<T> query, string id) where T : IEntityBase
         {
             return query?.FirstOrDefault(x => x.Id == id);
         }
