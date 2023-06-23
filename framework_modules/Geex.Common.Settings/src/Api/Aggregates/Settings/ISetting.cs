@@ -14,8 +14,8 @@ namespace Geex.Common.Settings.Api.Aggregates.Settings
     public interface ISetting : IEntityBase
     {
         SettingScopeEnumeration Scope { get; }
-        string ScopedKey { get; }
-        JsonNode Value { get; }
+        string? ScopedKey { get; }
+        JsonNode? Value { get; }
         SettingDefinition Name { get; }
     }
 }

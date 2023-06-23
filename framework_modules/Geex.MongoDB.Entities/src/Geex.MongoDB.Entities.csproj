@@ -13,7 +13,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CompareNETObjects" Version="4.79.0" />
     <PackageReference Include="Castle.Core" Version="4.4.1" />
     <PackageReference Include="DeepCloner" Version="0.10.3" />
     <PackageReference Include="FastExpressionCompiler" Version="3.3.4" />
@@ -33,5 +32,11 @@
   <ItemGroup>
     <None Include="..\LICENSE" Pack="true" PackagePath="\" />
     <None Include="..\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="KellermanSoftware.Compare-NET-Objects">
+      <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>

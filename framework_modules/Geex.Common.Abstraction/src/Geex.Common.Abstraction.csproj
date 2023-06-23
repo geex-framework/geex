@@ -42,12 +42,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="KellermanSoftware.Compare-NET-Objects">
-      <HintPath>..\MongoDB.Entities\src\tempDlls\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Desensitization\" />
     <Folder Include="Gql\Interceptors\" />
   </ItemGroup>
@@ -55,6 +49,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Casbin\src\Geex.Casbin.csproj" />
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="KellermanSoftware.Compare-NET-Objects">
+      <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
