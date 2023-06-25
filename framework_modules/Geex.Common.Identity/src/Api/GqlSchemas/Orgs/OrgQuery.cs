@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Identity.Api.GqlSchemas.Orgs.Types;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 
 using HotChocolate;
@@ -31,7 +30,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
             descriptor.AuthorizeWithDefaultName();
             descriptor
                 .Field(x => x.Orgs())
-                .UseOffsetPaging<OrgGqlType>()
+                .UseOffsetPaging<ObjectType<Org>>()
                 .UseFiltering<Org>(x =>
                 {
                     x.BindFieldsExplicitly();

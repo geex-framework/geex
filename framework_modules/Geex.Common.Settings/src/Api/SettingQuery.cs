@@ -10,7 +10,6 @@ using Geex.Common.Gql.Types;
 using Geex.Common.Settings.Abstraction;
 using Geex.Common.Settings.Api.Aggregates.Settings;
 using Geex.Common.Settings.Api.Aggregates.Settings.Inputs;
-using Geex.Common.Settings.Api.GqlSchemas.Types;
 using Geex.Common.Settings.Core;
 
 using HotChocolate;
@@ -38,7 +37,7 @@ namespace Geex.Common.Settings.Api
             descriptor.AuthorizeWithDefaultName();
             descriptor.Field(x => x.Settings(default))
                 .Authorize()
-            .UseOffsetPaging<SettingGqlType>()
+            .UseOffsetPaging<ObjectType<Setting>>()
             .UseFiltering<ISetting>(x =>
             {
                 x.BindFieldsExplicitly();
@@ -48,8 +47,8 @@ namespace Geex.Common.Settings.Api
                 //x.Field(y => y.Name).Type<StringOperationFilterInputType>();
                 //x.Field(y => y.Scope).Type<StringOperationFilterInputType>();
                 x.Field(y => y.ScopedKey);
-            })
-            ;
+            });
+            //descriptor.Field(x=>x.InitSettings());
             base.Configure(descriptor);
         }
         /// <summary>

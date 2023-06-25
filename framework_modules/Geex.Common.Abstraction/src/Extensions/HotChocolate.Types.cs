@@ -14,7 +14,9 @@ using Fasterflect;
 using Geex.Common;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Auditing;
+using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
+using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
 using Geex.Common.Authorization;
 using Geex.Common.Gql.Types;
@@ -39,13 +41,10 @@ namespace HotChocolate.Types
     public static class HotChocolateTypesExtension
     {
         public static void ConfigEntity<T>(
-            this IObjectTypeDescriptor<T> @this) where T : Geex.Common.Abstraction.Storage.Entity<T>
+            this IObjectTypeDescriptor<T> @this) where T : class, IEntity
         {
-            @this.Field(x => x.Id);
-            @this.Field(x => x.CreatedOn);
-            @this.Field(x => x.DeleteAsync()).Ignore();
-            @this.Field(x => x.GenerateNewId()).Ignore();
-            @this.Field(x => x.ModifiedOn);
+            @this.IgnoreMethods();
+            @this.AuthorizeFieldsImplicitly();
             if (typeof(T).IsAssignableTo<IAuditEntity>())
             {
                 @this.Field(x => ((IAuditEntity)x).AuditStatus);
@@ -284,6 +283,12 @@ namespace HotChocolate.Types
             descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.Name))).Ignore();
             descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.Description))).Ignore();
             descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.ContextData))).Ignore();
+        }
+        public static IObjectTypeDescriptor<T> Ignore<T>(
+      this IObjectTypeDescriptor<T> descriptor)
+        {
+            GeexTypeInterceptor.IgnoredTypes.AddIfNotContains(typeof(T));
+            return descriptor;
         }
     }
 }

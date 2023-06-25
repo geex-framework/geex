@@ -30,4 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Api\GqlSchemas\Types\" />
+  </ItemGroup>
 </Project>

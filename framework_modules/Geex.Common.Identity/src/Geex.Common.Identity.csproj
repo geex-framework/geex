@@ -20,4 +20,10 @@
     <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Api\GqlSchemas\Orgs\Types\" />
+    <Folder Include="Api\GqlSchemas\Roles\Types\" />
+    <Folder Include="Api\GqlSchemas\Users\Types\" />
+  </ItemGroup>
+
 </Project>

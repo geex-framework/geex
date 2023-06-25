@@ -17,4 +17,8 @@
     <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Api\GqlSchemas\BlobObjects\Types\" />
+  </ItemGroup>
+
 </Project>

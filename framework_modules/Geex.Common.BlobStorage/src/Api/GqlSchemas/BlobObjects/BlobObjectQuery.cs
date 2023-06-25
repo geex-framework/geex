@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects;
 using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects.Inputs;
-using Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects.Types;
 
 using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstraction.Gql.Types;
+using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -29,7 +29,7 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         protected override void Configure(IObjectTypeDescriptor<BlobObjectQuery> descriptor)
         {
             descriptor.Field(x => x.BlobObjects())
-            .UseOffsetPaging<BlobObjectGqlType>()
+            .UseOffsetPaging<ObjectType<BlobObject>>()
             .UseFiltering<IBlobObject>(x =>
             {
                 x.BindFieldsExplicitly();

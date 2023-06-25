@@ -81,7 +81,7 @@ namespace Geex.Common.Abstractions
 
         public virtual void ConfigureModuleEntityMaps(IServiceProvider serviceProvider)
         {
-            foreach (var entityMapConfig in serviceProvider.GetServices<IEntityMapConfig>())
+            foreach (var entityMapConfig in serviceProvider.GetServices<IEntityBsonConfig>())
             {
                 entityMapConfig.Map();
             }

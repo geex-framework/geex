@@ -106,11 +106,7 @@ namespace Geex.Common
             IReadOnlySchemaOptions capturedSchemaOptions = default;
             schemaBuilder.AddConvention<ITypeInspector>(typeof(GeexTypeInspector))
                 .ModifyOptions(opt => capturedSchemaOptions = opt)
-    .AddConvention<INamingConventions>(sp => new GeexNamingConventions(
-        new XmlDocumentationProvider(
-            new XmlDocumentationFileResolver(
-                capturedSchemaOptions.ResolveXmlDocumentationFileName),
-            sp.GetApplicationService<ObjectPool<StringBuilder>>())))
+                .AddConvention<INamingConventions>(sp => new GeexNamingConventions(new XmlDocumentationProvider(new XmlDocumentationFileResolver(capturedSchemaOptions.ResolveXmlDocumentationFileName), sp.GetApplicationService<ObjectPool<StringBuilder>>())))
                 .TryAddTypeInterceptor<GeexTypeInterceptor>()
                 .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
                 {
@@ -175,6 +171,10 @@ namespace Geex.Common
             context.Services.AddDataFilters();
             context.Services.AddDataInterceptors();
             base.PostConfigureServices(context);
+            foreach (var name in GeexTypeInterceptor.IgnoredTypes.Select(x => x.Name))
+            {
+                this.SchemaBuilder.IgnoreType(name);
+            }
         }
 
         /// <inheritdoc />

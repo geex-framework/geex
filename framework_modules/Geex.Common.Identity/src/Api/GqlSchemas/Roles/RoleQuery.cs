@@ -30,7 +30,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Roles
         {
             descriptor.AuthorizeWithDefaultName();
             descriptor.Field(x => x.Roles())
-            .UseOffsetPaging<RoleGqlType>()
+            .UseOffsetPaging<ObjectType<Role>>()
             .UseFiltering<Role>(x =>
             {
                 x.BindFieldsExplicitly();

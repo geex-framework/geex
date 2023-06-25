@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
+using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
 
 using HotChocolate.Internal;
 using HotChocolate.Types.Descriptors;
+
+using MongoDB.Entities;
 
 namespace Geex.Common.Gql
 {
@@ -18,8 +21,6 @@ namespace Geex.Common.Gql
         {
             base.Initialize(context);
         }
-
-        
 
         /// <inheritdoc />
         public override IExtendedType GetReturnType(MemberInfo member, bool ignoreAttributes = false)
@@ -74,6 +75,12 @@ namespace Geex.Common.Gql
                 return values;
             }
             return Enumerable.Empty<object>();
+        }
+
+        /// <inheritdoc />
+        public override bool IsMemberIgnored(MemberInfo member)
+        {
+            return base.IsMemberIgnored(member) || (member is MethodInfo && member.DeclaringType.IsAssignableTo<IEntityBase>());
         }
 
         protected override void Complete(IConventionContext context)

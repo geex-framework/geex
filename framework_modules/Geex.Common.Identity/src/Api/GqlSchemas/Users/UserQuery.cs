@@ -6,8 +6,7 @@ using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstractions;
 using Geex.Common.Identity.Api.Aggregates.Users;
-using Geex.Common.Identity.Api.GqlSchemas.Users.Types;
-
+using Geex.Common.Identity.Core.Aggregates.Users;
 using HotChocolate;
 using HotChocolate.AspNetCore.Authorization;
 using HotChocolate.Types;
@@ -31,7 +30,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
         {
             descriptor.AuthorizeWithDefaultName();
             descriptor.Field(x => x.Users())
-            .UseOffsetPaging<UserGqlType>()
+            .UseOffsetPaging<ObjectType<User>>()
             .UseFiltering<IUser>(x =>
             {
                 x.BindFieldsExplicitly();
