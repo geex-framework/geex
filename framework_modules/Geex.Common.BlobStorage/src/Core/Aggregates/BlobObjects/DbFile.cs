@@ -1,4 +1,7 @@
-﻿using MongoDB.Entities;
+﻿using Geex.Common.Abstraction;
+
+using MongoDB.Bson.Serialization;
+using MongoDB.Entities;
 
 namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
 {
@@ -10,5 +13,14 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
         }
 
         public string Md5 { get; set; }
+
+        public class DbFileEntityConfig : BsonConfig<DbFile>
+        {
+            protected override void Map(BsonClassMap<DbFile> map)
+            {
+                map.Inherit<FileEntity>();
+                map.AutoMap();
+            }
+        }
     }
 }

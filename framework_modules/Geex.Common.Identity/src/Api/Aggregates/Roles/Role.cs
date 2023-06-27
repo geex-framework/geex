@@ -13,11 +13,13 @@ using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Users;
 
 using HotChocolate;
+using HotChocolate.Types;
 
 using MediatR;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using MongoDB.Bson.Serialization;
 using MongoDB.Entities;
 
 using NetCasbin.Abstractions;
@@ -74,6 +76,26 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
                 return new ValidationResult($"当前租户[{sp.GetService<ICurrentTenant>()?.Code}]下角色重复:{this.Code}, [{this.Id} != {duplicateRole.Id}]");
             }
             return ValidationResult.Success;
+        }
+
+        public class RoleBsonConfig : BsonConfig<Role>
+        {
+            protected override void Map(BsonClassMap<Role> map)
+            {
+                map.Inherit<IRole>();
+                map.AutoMap();
+            }
+        }
+        public class RoleGqlConfig : GqlConfig.Object<Role>
+        {
+            /// <inheritdoc />
+            protected override void Configure(IObjectTypeDescriptor<Role> descriptor)
+            {
+                descriptor.BindFieldsImplicitly();
+                //descriptor.Field(x => x.Users).Type<ListType<UserType>>().Resolve(x=>x.ToString());
+                descriptor.ConfigEntity();
+                descriptor.AuthorizeFieldsImplicitly();
+            }
         }
     }
 }

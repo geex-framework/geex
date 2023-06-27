@@ -9,6 +9,9 @@ using Geex.Common.Abstractions;
 using Geex.Common.BlobStorage.Api;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;
+using HotChocolate.Types;
+using MongoDB.Bson.Serialization;
+
 namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
 {
     /// <summary>
@@ -40,6 +43,26 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
         public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
         {
             return ValidationResult.Success;
+        }
+
+        public class BlobObjectBsonConfig : BsonConfig<BlobObject>
+        {
+            protected override void Map(BsonClassMap<BlobObject> map)
+            {
+                map.Inherit<IBlobObject>();
+                map.AutoMap();
+            }
+        }
+        public class BlobObjectGqlConfig : GqlConfig.Object<BlobObject>
+        {
+
+            /// <inheritdoc />
+            protected override void Configure(IObjectTypeDescriptor<BlobObject> descriptor)
+            {
+                descriptor.BindFieldsImplicitly();
+                descriptor.Implements<InterfaceType<IBlobObject>>();
+                descriptor.ConfigEntity();
+            }
         }
     }
 }

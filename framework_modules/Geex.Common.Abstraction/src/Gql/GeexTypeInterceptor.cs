@@ -44,19 +44,19 @@ namespace Geex.Common.Abstraction.Gql
                 }
             }
 
-            var gqlConfigs = context.Services.GetServices<IEntityGqlConfig>();
+            //var gqlConfigs = context.Services.GetServices<IEntityGqlConfig>();
 
-            foreach (var gqlConfig in gqlConfigs)
-            {
-                var gqlConfigType = gqlConfig.GetType();
-                var entityType = gqlConfigType.BaseType.GetGenericArguments().First();
-                var configureMethodInfo = gqlConfigType.GetMethod(nameof(IEntityGqlConfig.Configure), BindingFlags.NonPublic | BindingFlags.Instance);
-                var descriptorType = configureMethodInfo.GetParameters().First().ParameterType;
-                var parameter = Expression.Parameter(descriptorType, "descriptor");
-                var callExpression = Expression.Call(Expression.Constant(gqlConfig), configureMethodInfo, parameter);
-                var lambda = Expression.Lambda(callExpression, parameter).Compile();
-                AddObjectTypeMethod.MakeGenericMethod(entityType).Invoke(null, new object?[] { schemaBuilder, lambda });
-            }
+            //foreach (var gqlConfig in gqlConfigs)
+            //{
+            //    var gqlConfigType = gqlConfig.GetType();
+            //    var entityType = gqlConfigType.BaseType.GetGenericArguments().First();
+            //    var configureMethodInfo = gqlConfigType.GetMethod(nameof(IEntityGqlConfig.Configure), BindingFlags.NonPublic | BindingFlags.Instance);
+            //    var descriptorType = configureMethodInfo.GetParameters().First().ParameterType;
+            //    var parameter = Expression.Parameter(descriptorType, "descriptor");
+            //    var callExpression = Expression.Call(Expression.Constant(gqlConfig), configureMethodInfo, parameter);
+            //    var lambda = Expression.Lambda(callExpression, parameter).Compile();
+            //    AddObjectTypeMethod.MakeGenericMethod(entityType).Invoke(null, new object?[] { schemaBuilder, lambda });
+            //}
         }
 
         /// <inheritdoc />

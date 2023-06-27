@@ -5,7 +5,13 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
+
+using Geex.Common.Abstraction;
+
+using HotChocolate.Types;
+
 using Newtonsoft.Json;
+
 using Volo.Abp;
 
 namespace Geex.Common.Captcha.Domain
@@ -20,7 +26,7 @@ namespace Geex.Common.Captcha.Domain
 
     public class SmsCaptcha : Captcha
     {
-        
+
     }
 
     public class ImageCaptcha : Captcha
@@ -102,10 +108,10 @@ namespace Geex.Common.Captcha.Domain
                     Code = this.GetRandomNumsAndLetters(captchaLength);
                     break;
                 case CaptchaType.Chinese:
-                    Code = Captcha.GetRandomHanzis(captchaLength);
+                    Code = GetRandomHanzis(captchaLength);
                     break;
                 default:
-                    Code = Captcha.GetRandomNums(captchaLength);
+                    Code = GetRandomNums(captchaLength);
                     break;
             }
         }
@@ -195,6 +201,26 @@ namespace Geex.Common.Captcha.Domain
                 str1 += encoding.GetString(bytes);
             }
             return str1;
+        }
+
+        public class CaptchaGqlType : GqlConfig.Object<Captcha>
+        {
+            protected override void Configure(IObjectTypeDescriptor<Captcha> descriptor)
+            {
+
+                descriptor.BindFieldsExplicitly();
+                descriptor.Field(x => x.CaptchaType);
+                descriptor.Field(x => x.Key);
+                descriptor.Field((ImageCaptcha x) => x.Bitmap).Use(next => async context =>
+                {
+                    await next(context);
+                    if (context.Result is MemoryStream stream)
+                    {
+                        context.Result = Convert.ToBase64String(stream.ToArray());
+                    }
+                }).Type<StringType>();
+                base.Configure(descriptor);
+            }
         }
     }
 

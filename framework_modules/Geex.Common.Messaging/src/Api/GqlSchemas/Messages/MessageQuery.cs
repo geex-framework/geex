@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
-using Geex.Common.Messaging.Api.Aggregates.Messages.Inputs;
-using Geex.Common.Messaging.Api.GqlSchemas.Messages.Types;
 using Geex.Common.Messaging.Core.Aggregates.Messages;
 using HotChocolate;
 using HotChocolate.Language;

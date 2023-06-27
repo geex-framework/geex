@@ -5,14 +5,19 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
+
+using HotChocolate.Types;
 
 using KuanFang.Rms.MessageManagement.Messages;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
+using MongoDB.Bson.Serialization;
 
 namespace Geex.Common.Messaging.Core.Aggregates.Messages;
 
@@ -84,5 +89,34 @@ public class Message : Entity<Message>, IMessage
     public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
     {
         return ValidationResult.Success;
+    }
+
+        public class MessageBsonConfig : BsonConfig<Message>
+    {
+        protected override void Map(BsonClassMap<Message> map)
+        {
+            map.Inherit<IMessage>();
+            map.AutoMap();
+            BsonClassMap.RegisterClassMap<InteractContent>();
+            BsonClassMap.RegisterClassMap<ToDoContent>();
+        }
+    }
+    public class MessageGqlConfig : GqlConfig.Object<Message>
+    {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<Message> descriptor)
+        {
+            descriptor.BindFieldsImplicitly();
+            descriptor.ConfigEntity();
+            //descriptor.Field(x => x.FromUserId);
+            //descriptor.Field(x => x.MessageType);
+            //descriptor.Field(x => x.Content);
+            //descriptor.Field(x => x.ToUserIds);
+            //descriptor.Field(x => x.Id);
+            //descriptor.Field(x => x.Title);
+            //descriptor.Field(x => x.Time);
+            //descriptor.Field(x => x.Severity);
+            descriptor.Implements<InterfaceType<IMessage>>();
+        }
     }
 }

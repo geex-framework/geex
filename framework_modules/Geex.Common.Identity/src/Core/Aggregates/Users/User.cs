@@ -19,11 +19,14 @@ using Geex.Common.Identity.Api.Aggregates.Roles;
 using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 
+using HotChocolate.Types;
+
 using MediatR;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
+using MongoDB.Bson.Serialization;
 using MongoDB.Entities;
 
 using NetCasbin.Abstractions;
@@ -174,6 +177,39 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
         {
             return ValidationResult.Success;
+        }
+
+        public class UserBsonConfig : BsonConfig<User>
+        {
+            protected override void Map(BsonClassMap<User> map)
+            {
+                map.Inherit<IUser>();
+                map.SetIsRootClass(true);
+                map.AutoMap();
+            }
+        }
+        public class UserGqlConfig : GqlConfig.Object<User>
+        {
+            /// <inheritdoc />
+            protected override void Configure(IObjectTypeDescriptor<User> descriptor)
+            {
+                descriptor.Implements<InterfaceType<IUser>>();
+                descriptor.AuthorizeFieldsImplicitly();
+                descriptor.BindFieldsImplicitly();
+                descriptor.ConfigEntity();
+                //descriptor.Field(x => x.UserName);
+                //descriptor.Field(x => x.IsEnable);
+                //descriptor.Field(x => x.Email);
+                //descriptor.Field(x => x.PhoneNumber);
+                //descriptor.Field(x => x.Roles);
+                //descriptor.Field(x => x.Orgs);
+                descriptor.Field(x => x.Claims).UseFiltering<UserClaim>(x =>
+                {
+                    x.Field(y => y.ClaimType);
+                });
+                //descriptor.Ignore(x => x.Claims);
+                //descriptor.Ignore(x => x.AuthorizedPermissions);
+            }
         }
     }
 }

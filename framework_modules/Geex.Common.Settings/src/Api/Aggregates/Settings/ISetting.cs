@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;
 using Volo.Abp.DependencyInjection;
 using System.IO;
+using MongoDB.Bson.Serialization;
 
 namespace Geex.Common.Settings.Api.Aggregates.Settings
 {

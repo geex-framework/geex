@@ -6,10 +6,15 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
+
+using HotChocolate.Types;
+
+using MongoDB.Bson.Serialization;
 
 namespace Geex.Common.Identity.Core.Aggregates.Orgs;
 
@@ -104,5 +109,36 @@ public class Org : Entity<Org>, ITenantFilteredEntity, IOrg
     public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
     {
         return ValidationResult.Success;
+    }
+
+    public class OrgBsonConfig : BsonConfig<Org>
+    {
+        protected override void Map(BsonClassMap<Org> map)
+        {
+            map.Inherit<IOrg>();
+            map.AutoMap();
+        }
+    }
+    public class OrgGqlConfig : GqlConfig.Object<Org>
+    {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<Org> descriptor)
+        {
+            descriptor.AuthorizeFieldsImplicitly();
+            descriptor.BindFieldsImplicitly();
+            descriptor.ConfigEntity();
+            //descriptor.Field(x => x.Users).Type<ListType<UserType>>().Resolve(x=>x.ToString());
+            //descriptor.Field(x => x.Code);
+            //descriptor.Field(x => x.Name);
+            //descriptor.Field(x => x.OrgType);
+            //descriptor.Field(x => x.AllSubOrgCodes);
+            //descriptor.Field(x => x.DirectSubOrgCodes);
+            //descriptor.Field(x => x.AllSubOrgs);
+            //descriptor.Field(x => x.DirectSubOrgs);
+            //descriptor.Field(x => x.ParentOrgCode);
+            //descriptor.Field(x => x.ParentOrg);
+            //descriptor.Field(x => x.AllParentOrgCodes);
+            //descriptor.Field(x => x.AllParentOrgs);
+        }
     }
 }

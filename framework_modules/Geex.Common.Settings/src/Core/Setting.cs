@@ -6,10 +6,15 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Settings.Abstraction;
 using Geex.Common.Settings.Api.Aggregates.Settings;
+
+using HotChocolate.Types;
+
+using MongoDB.Bson.Serialization;
 
 namespace Geex.Common.Settings.Core;
 
@@ -44,5 +49,30 @@ public class Setting : Entity<Setting>, ISetting
     public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
     {
         return ValidationResult.Success;
+    }
+
+    public class SettingBsonConfig : BsonConfig<Setting>
+    {
+        protected override void Map(BsonClassMap<Setting> map)
+        {
+            map.Inherit<ISetting>();
+            map.AutoMap();
+        }
+    }
+    public class SettingGqlConfig : GqlConfig.Object<Setting>
+    {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<Setting> descriptor)
+        {
+            descriptor.BindFieldsImplicitly();
+            descriptor.Implements<InterfaceType<ISetting>>();
+            descriptor.ConfigEntity();
+
+            descriptor.Field(x => x.Id).Resolve(x => x.Parent<Setting>().Id ?? "").Type<NonNullType<StringType>>();
+            //descriptor.Field(x => x.ValidScopes);
+            //descriptor.Field(x => x.ScopedKey);
+            //descriptor.Field(x => x.Name);
+            //descriptor.Field(x => x.Value);
+        }
     }
 }

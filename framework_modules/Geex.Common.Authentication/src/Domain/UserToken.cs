@@ -1,6 +1,10 @@
 ﻿using System;
+
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
+
+using HotChocolate.Types;
+
 using Microsoft.AspNetCore.Identity;
 
 namespace Geex.Common.Authentication.Domain
@@ -24,6 +28,17 @@ namespace Geex.Common.Authentication.Domain
                 LoginProvider = provider,
                 Value = token
             };
+        }
+
+        public class UserTokenGqlType : GqlConfig.Object<UserToken>
+        {
+            protected override void Configure(IObjectTypeDescriptor<UserToken> descriptor)
+            {
+                descriptor.BindFieldsImplicitly();
+                descriptor.Ignore(x => x.Value);
+                descriptor.Field("token").Resolve(x => x.Parent<UserToken>().Value);
+                base.Configure(descriptor);
+            }
         }
     }
 

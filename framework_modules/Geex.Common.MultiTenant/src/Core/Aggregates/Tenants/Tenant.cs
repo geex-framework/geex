@@ -7,10 +7,14 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.MultiTenant.Api.Aggregates.Tenants;
 
+using HotChocolate.Types;
+
+using MongoDB.Bson.Serialization;
 
 namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
 {
@@ -40,5 +44,25 @@ namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
 
         /// <inheritdoc />
         public JsonNode? ExternalInfo { get; set; }
+
+        public class TenantBsonConfig : BsonConfig<Tenant>
+        {
+            protected override void Map(BsonClassMap<Tenant> map)
+            {
+                map.Inherit<ITenant>();
+                map.AutoMap();
+            }
+        }
+        public class TenantGqlConfig : GqlConfig.Object<Tenant>
+        {
+            /// <inheritdoc />
+            protected override void Configure(IObjectTypeDescriptor<Tenant> descriptor)
+            {
+                descriptor.BindFieldsImplicitly();
+                descriptor.Implements<InterfaceType<ITenant>>();
+                descriptor.AuthorizeFieldsImplicitly();
+                descriptor.ConfigEntity();
+            }
+        }
     }
 }
