@@ -10,9 +10,9 @@ namespace Geex.Common.Settings.Api.Aggregates.Settings.Inputs
 {
     public class GetSettingsInput : QueryInput<ISetting>
     {
-        public SettingScopeEnumeration Scope { get; set; }
-        public List<SettingDefinition> SettingDefinitions { get; set; }
-        public string FilterByName { get; set; }
+        public SettingScopeEnumeration? Scope { get; set; }
+        public List<SettingDefinition>? SettingDefinitions { get; set; }
+        public string? FilterByName { get; set; }
 
 
         public GetSettingsInput(SettingScopeEnumeration scope)

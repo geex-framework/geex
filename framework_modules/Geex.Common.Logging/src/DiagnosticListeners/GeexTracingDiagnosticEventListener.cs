@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+
 using Elastic.Apm;
 using Elastic.Apm.Api;
 
@@ -76,7 +77,7 @@ namespace Geex.Common.Gql
             ILogger<GeexTracingDiagnosticEventListener> logger)
         {
             GeexTracingResultBuilder tracingResultBuilder = new GeexTracingResultBuilder(logger);
-            context.ContextData["ApolloTracingResultBuilder"] = tracingResultBuilder;
+            context.ContextData[nameof(GeexTracingResultBuilder)] = tracingResultBuilder;
             return tracingResultBuilder;
         }
 
@@ -85,7 +86,7 @@ namespace Geex.Common.Gql
           [NotNullWhen(true)] out GeexTracingResultBuilder? builder)
         {
             object obj;
-            if (contextData.TryGetValue("ApolloTracingResultBuilder", out obj) && obj is GeexTracingResultBuilder tracingResultBuilder)
+            if (contextData.TryGetValue(nameof(GeexTracingResultBuilder), out obj) && obj is GeexTracingResultBuilder tracingResultBuilder)
             {
                 builder = tracingResultBuilder;
                 return true;
@@ -113,12 +114,12 @@ namespace Geex.Common.Gql
               IRequestContext context,
               ITimestampProvider timestampProvider)
             {
-                this._builder = context.GetTypedContextData<GeexTracingResultBuilder>("ApolloTracingResultBuilder");
+                this._builder = context.GetTypedContextData<GeexTracingResultBuilder>(nameof(GeexTracingResultBuilder));
                 this._timestampProvider = timestampProvider;
                 this._startTimestamp = timestampProvider.NowInNanoseconds();
                 if (Agent.IsConfigured)
                 {
-                    this._span = context.GetTypedContextData<ISpan>("ApmOperationSpan")?.StartSpan("parse_document", "request", "parse_document");
+                    this._span = context.GetTypedContextData<ISpan>("apm_span:operation")?.StartSpan("parse_document", "request", "parse_document");
                 }
             }
 
@@ -144,12 +145,12 @@ namespace Geex.Common.Gql
               IRequestContext context,
               ITimestampProvider timestampProvider)
             {
-                this._builder = context.GetTypedContextData<GeexTracingResultBuilder>("ApolloTracingResultBuilder");
+                this._builder = context.GetTypedContextData<GeexTracingResultBuilder>(nameof(GeexTracingResultBuilder));
                 this._timestampProvider = timestampProvider;
                 this._startTimestamp = timestampProvider.NowInNanoseconds();
                 if (Agent.IsConfigured)
                 {
-                    this._span = context.GetTypedContextData<ISpan>("ApmOperationSpan")?.StartSpan("validate_document", "request", "validate_document");
+                    this._span = context.GetTypedContextData<ISpan>("apm_span:operation")?.StartSpan("validate_document", "request", "validate_document");
                 }
             }
 
@@ -178,7 +179,7 @@ namespace Geex.Common.Gql
               ITimestampProvider timestampProvider)
             {
                 this._context = context;
-                this._builder = context.GetTypedContextData<GeexTracingResultBuilder>("ApolloTracingResultBuilder");
+                this._builder = context.GetTypedContextData<GeexTracingResultBuilder>(nameof(GeexTracingResultBuilder));
 
                 this._timestampProvider = timestampProvider;
                 this._startTimestamp = timestampProvider.NowInNanoseconds();
@@ -186,13 +187,13 @@ namespace Geex.Common.Gql
                 {
                     var pathStr = context.Path.Print();
                     var parentPath = context.Path.Parent;
-                    while (parentPath != null && !context.ContextData.ContainsKey(parentPath?.Print() ?? ""))
+                    while (parentPath != null && !context.ContextData.ContainsKey("apm_span:field_resolve:" + parentPath?.Print() ?? ""))
                     {
                         parentPath = parentPath?.Parent;
                     }
                     var parentPathStr = parentPath?.Print();
-                    this._parentSpan = context.GetTypedContextData<ISpan>(parentPathStr ?? "ApmOperationSpan");
-                    this._span = this._parentSpan?.StartSpan(pathStr, "request", "field_resolve");
+                    this._parentSpan = context.GetTypedContextData<ISpan>("apm_span:field_resolve:" + parentPathStr) ?? context.GetTypedContextData<ISpan>("apm_span:operation");
+                    this._span = this._parentSpan?.StartSpan("apm_span:field_resolve:" + pathStr, "request", "field_resolve");
                     context.ContextData.Add(pathStr, this._span);
                 }
             }
