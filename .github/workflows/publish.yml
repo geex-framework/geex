@@ -12,14 +12,14 @@ jobs:
         id: version
         run: |
           echo "Ref name is $GITHUB_REF"
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> "$GITHUB_ENV"
-          if [[ "$VERSION" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
+          if [[ "${GITHUB_REF#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
             VERSION="${BASH_REMATCH[1]}"
             SUFFIX="${BASH_REMATCH[2]}"
-            echo "Extracted version and suffix frm prerelease tag."
-            echo "version=$VERSION" >> "$GITHUB_ENV"
-            echo "suffix=$SUFFIX" >> "$GITHUB_ENV"
+            echo "Extracted version and suffix from prerelease tag."
+            echo "version=$VERSION"
+            echo "suffix=$SUFFIX"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout code
@@ -41,7 +41,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           SUFFIX: ${{ steps.version.outputs.suffix }}
         run:  |
-          dotnet pack ./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{steps.version.outputs.VERSION}}
+          dotnet pack ./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
