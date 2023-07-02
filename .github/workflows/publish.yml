@@ -15,20 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: extract-version-from-input
-        if: ${{ '${GITHUB_REF}' == '' }}
+        if: ${{ '$GITHUB_REF' == '' }}
         run: |
             echo "ref=$VERSION" >> $GITHUB_ENV
 
       - name: extract-version-from-ref
-        if: ${{ '${GITHUB_REF}' != '' }}
+        if: ${{ '$GITHUB_REF' != '' }}
         run: |
-            echo "ref=${GITHUB_REF}" >> $GITHUB_ENV
+            echo "ref=$GITHUB_REF" >> $GITHUB_ENV
 
       - name: Extract version number
         id: version
         run: |
-          echo "Ref name is $env.ref"
-          if [[ "${env.ref#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
+          REF=${{env.ref}}
+          echo "Ref name is $REF"
+          if [[ "${REF#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
             VERSION="${BASH_REMATCH[1]}"
             SUFFIX="${BASH_REMATCH[2]}"
             echo "Extracted version and suffix from prerelease tag."
@@ -53,6 +54,27 @@ jobs:
         run: dotnet build --configuration Release ./framework_modules/framework_modules.sln
         
       - name: Generate NuGet release packages
+        if: ${{ steps.version.outputs.suffix == '' }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SUFFIX: ${{ steps.version.outputs.suffix }}
+        run:  |
+          dotnet pack ./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.Authentication/src/Geex.Common.Authentication.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.Authorization/src/Geex.Common.Authorization.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.BackgroundJob/src/Geex.Common.BackgroundJob.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.BlobStorage/src/Geex.Common.BlobStorage.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.Identity/src/Geex.Common.Identity.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.Logging/src/Geex.Common.Logging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.Messaging/src/Geex.Common.Messaging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.MultiTenant/src/Geex.Common.MultiTenant.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Common.Settings/src/Geex.Common.Settings.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+
+      - name: Generate NuGet prerelease packages
         if: ${{ steps.version.outputs.suffix != '' }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
