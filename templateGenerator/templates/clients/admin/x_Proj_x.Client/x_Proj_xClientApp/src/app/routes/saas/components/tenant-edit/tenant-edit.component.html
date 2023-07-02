@@ -1,0 +1,16 @@
+<label for="code">编码</label>
+<input nz-input
+       *ngIf="isCreate"
+       [(ngModel)]="code"
+       name="code"
+       placeholder="">
+<label for="name">名称</label>
+<input nz-input
+       [(ngModel)]="name"
+       name="name"
+       placeholder="">
+<button nz-button
+        nzType="primary"
+        nzSize="small"
+        (click)="submit()"
+        nzSearch>确定</button>

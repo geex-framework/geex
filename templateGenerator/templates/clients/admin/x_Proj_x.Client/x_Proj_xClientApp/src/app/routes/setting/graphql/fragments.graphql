@@ -1,0 +1,11 @@
+fragment SettingBrief on Setting {
+  id
+  name
+  value
+}
+
+fragment SettingDetail on Setting {
+  scope
+  scopedKey
+}
+# 系统备份

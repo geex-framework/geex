@@ -13,16 +13,11 @@
 
   <ItemGroup>
     <PackageReference Include="IdentityModel" Version="5.2.0" />
-    <PackageReference Include="StrawberryShake.CodeGeneration.CSharp.Analyzers" Version="13.0.0-geex-preview.37">
-      <PrivateAssets>all</PrivateAssets>
-      <!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
-    </PackageReference>
-    <PackageReference Include="StrawberryShake.Tools.Configuration" Version="13.0.0-preview.24" />
-    <PackageReference Include="StrawberryShake.Transport.Http" Version="13.0.0-preview.24" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Geex.Common.Abstraction" Version="7.0.2.1427" />
+    <PackageReference Include="Geex.Common.Abstraction" Version="*" />
+    <PackageReference Include="StrawberryShake.Server" Version="13.2.1" />
   </ItemGroup>
 
 

@@ -1,5 +1,11 @@
 name: publish
 on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Test tags in format of refs/tags/v*'
+        required: true
+        type: string
   push:
     tags:
       - 'v*.*.*'
@@ -8,11 +14,21 @@ jobs:
   build-and-publish-nuget-package:
     runs-on: ubuntu-latest
     steps:
-      - name: Extract variables
+      - name: extract-version-from-input
+        if: ${{ '${GITHUB_REF}' == '' }}
+        run: |
+            echo "ref=$VERSION" >> $GITHUB_ENV
+
+      - name: extract-version-from-ref
+        if: ${{ '${GITHUB_REF}' != '' }}
+        run: |
+            echo "ref=${GITHUB_REF}" >> $GITHUB_ENV
+
+      - name: Extract version number
         id: version
         run: |
-          echo "Ref name is $GITHUB_REF"
-          if [[ "${GITHUB_REF#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
+          echo "Ref name is $env.ref"
+          if [[ "${env.ref#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
             VERSION="${BASH_REMATCH[1]}"
             SUFFIX="${BASH_REMATCH[2]}"
             echo "Extracted version and suffix from prerelease tag."
@@ -37,6 +53,7 @@ jobs:
         run: dotnet build --configuration Release ./framework_modules/framework_modules.sln
         
       - name: Generate NuGet release packages
+        if: ${{ steps.version.outputs.suffix != '' }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
           SUFFIX: ${{ steps.version.outputs.suffix }}

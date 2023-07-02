@@ -1,0 +1,28 @@
+<div class="modal-header">
+  <div class="modal-title">Title</div>
+</div>
+<nz-alert style="margin: 10px 0;"
+          nzType="info"
+          [nzMessage]="message"
+          nzShowIcon>
+  <ng-template #message>
+    <span>已选择 {{selectedData.length}} 项</span>
+    <a (click)="st.clearStatus();st.reset($event)"> 清空</a>
+  </ng-template>
+</nz-alert>
+<st #st
+    [data]="users"
+    [columns]="columns"
+    (change)="change($event)"></st>
+<div class="modal-footer">
+  <button nz-button
+          [nzType]="'default'"
+          (click)="close()">
+    取消
+  </button>
+  <button nz-button
+          [nzType]="'primary'"
+          (click)="save()">
+    确定
+  </button>
+</div>

@@ -1,0 +1,56 @@
+{
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+    "source.fixAll.stylelint": true
+  },
+  "[markdown]": {
+    "editor.formatOnSave": false
+  },
+  "[javascript]": {
+    "editor.formatOnSave": false
+  },
+  "[json]": {
+    "editor.formatOnSave": false
+  },
+  "[jsonc]": {
+    "editor.formatOnSave": false
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "files.watcherExclude": {
+    "**/.git/*/**": true,
+    "**/node_modules/*/**": true,
+    "**/dist/*/**": true,
+    "**/coverage/*/**": true
+  },
+  "files.associations": {
+    "*.json": "jsonc",
+    ".prettierrc": "jsonc",
+    ".stylelintrc": "jsonc"
+  },
+  // Angular schematics 插件: https://marketplace.visualstudio.com/items?itemName=cyrilletuzi.angular-schematics
+  "ngschematics.schematics": [
+    "ng-alain"
+  ],
+  "vsicons.presets.angular": true,
+"vscode-i18n-linter.langPrefix": "src/app/core/i18n/zh-CN/",
+"javascript.inlayHints.enumMemberValues.enabled": true,
+"javascript.inlayHints.functionLikeReturnTypes.enabled": true,
+"javascript.inlayHints.parameterNames.enabled": "all",
+"javascript.inlayHints.parameterTypes.enabled": true,
+"javascript.inlayHints.propertyDeclarationTypes.enabled": true,
+"javascript.inlayHints.variableTypes.enabled": true,
+"typescript.inlayHints.enumMemberValues.enabled": true,
+"typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+"typescript.inlayHints.parameterNames.enabled": "all",
+"typescript.inlayHints.parameterTypes.enabled": true,
+"typescript.inlayHints.propertyDeclarationTypes.enabled": true,
+"typescript.inlayHints.variableTypes.enabled": true,
+"cSpell.words": [
+  "KFJWTGUARD",
+  "Lian"
+]
+}

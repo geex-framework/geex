@@ -1,0 +1,13 @@
+subscription onFrontendCall {
+  onFrontendCall {
+    frontendCallType
+    data
+  }
+}
+
+subscription onBroadcast {
+  onBroadcast {
+    frontendCallType
+    data
+  }
+}

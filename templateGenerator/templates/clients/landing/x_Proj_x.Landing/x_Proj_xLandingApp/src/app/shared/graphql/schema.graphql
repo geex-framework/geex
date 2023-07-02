@@ -1,0 +1,4 @@
+"""
+此Directive标记的对象及其子级所有对象将不进行实际查询, 需要自行配置TypePolicies实现读取逻辑
+"""
+directive @client on FIELD | OBJECT

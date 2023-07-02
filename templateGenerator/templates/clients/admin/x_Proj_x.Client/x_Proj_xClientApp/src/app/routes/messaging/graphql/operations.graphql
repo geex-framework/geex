@@ -1,0 +1,28 @@
+mutation createMessage($input: CreateMessageRequestInput!) {
+  createMessage(input: $input) {
+    ... on Message {
+      id
+    }
+  }
+}
+
+mutation editMessage($input: EditMessageRequestInput!) {
+  editMessage(input: $input)
+}
+
+mutation sendMessage($input: SendNotificationMessageRequestInput!) {
+  sendMessage(input: $input)
+}
+
+query messages($skip: Int, $take: Int, $where: IMessageFilterInput, $includeDetail: Boolean!) {
+  messages(skip: $skip, take: $take, where: $where) {
+    items {
+      ...MessageBrief
+      ...MessageDetail @include(if: $includeDetail)
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}

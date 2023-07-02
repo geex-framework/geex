@@ -1,0 +1,47 @@
+<page-header [title]="params.value.id?'角色：'+params.value.roleName:'新增'"
+             *ngIf="context">
+</page-header>
+
+<nz-card *ngIf="context">
+
+  <form nz-form
+        *ngIf="!params.value.id"
+        autocomplete="off">
+    <nz-form-item>
+      <nz-form-label nzFor="roleName">角色</nz-form-label>
+      <nz-form-control>
+        <input nz-input
+               name="roleName"
+               [formControl]="params.controls.roleName">
+      </nz-form-control>
+    </nz-form-item>
+  </form>
+  <nz-card nzTitle="权限">
+    <app-permissions [(permissions)]="allowedPermissions"></app-permissions>
+  </nz-card>
+
+  <div style="display: flex;
+          text-align: center;
+          gap: 10px;
+          justify-content: center;">
+    <button nz-button
+            type="button"
+            (click)="close()"><i nz-icon
+         nzType="rollback"
+         nzTheme="outline"></i>返回</button>
+    <span nz-tooltip
+          [nzTooltipTitle]="context.isStatic?'系统内置角色不可编辑.':''">
+      <button nz-button
+              type="submit"
+              nzType="primary"
+              [disabled]="context.isStatic"
+              (click)="submit()">
+        <i nz-icon
+           nzType="save"
+           nzTheme="outline"></i>保存</button>
+    </span>
+
+  </div>
+
+
+</nz-card>

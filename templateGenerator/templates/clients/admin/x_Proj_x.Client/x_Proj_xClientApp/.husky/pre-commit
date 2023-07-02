@@ -1,0 +1,12 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+echo "pre-commit:"
+export NODE_OPTIONS="--max-old-space-size=8000"
+cd client/x_proj_x/x_Proj_x.Client/x_Proj_xClientApp
+echo "checking client changes."
+if git diff --name-only HEAD | grep 'client/x_proj_x/x_Proj_x\.Client/x_Proj_xClientApp'; then
+  npx --no-install tsc -p tsconfig.json --noEmit
+  npx --no-install lint-staged
+else
+  echo "no client changes detected."
+fi

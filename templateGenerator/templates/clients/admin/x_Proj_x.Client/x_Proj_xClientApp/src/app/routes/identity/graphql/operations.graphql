@@ -1,0 +1,125 @@
+# 查询用户列表
+query userLists($skip: Int, $take: Int, $where: IUserFilterInput) {
+  users(skip: $skip, take: $take, where: $where) {
+    items {
+      ...UserList
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+
+# 获取用户详情
+query userById($id: String) {
+  users(skip: 0, take: 1, where: { id: { eq: $id } }) {
+    items {
+      ...UserDetail
+    }
+  }
+}
+# 获取用户下拉menus
+query userMenus($where: IUserFilterInput) {
+  users(skip: 0, take: 999, where: $where) {
+    items {
+      ...UserMinimal
+    }
+  }
+}
+# 编辑用户
+mutation editUser($input: EditUserRequestInput!) {
+  editUser(input: $input)
+}
+# 添加用户
+mutation createUser($input: CreateUserRequestInput!) {
+  createUser(input: $input)
+}
+# 重置用户密码
+mutation resetUserPassword($input: ResetUserPasswordRequestInput!) {
+  resetUserPassword(input: $input)
+}
+# 修改用户密码
+mutation changePassword($input: ChangePasswordRequestInput!) {
+  changePassword(input: $input)
+}
+# 角色列表
+query roleLists($skip: Int, $take: Int, $where: RoleFilterInput) {
+  roles(skip: $skip, take: $take, where: $where) {
+    items {
+      ...RoleBrief
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+# 角色 selectMenu options
+query roleMenus($where: RoleFilterInput) {
+  roles(skip: 0, take: 999, where: $where) {
+    items {
+      ...RoleMinimal
+    }
+  }
+}
+# 根据角色名称获取角色详情
+query roleByName($name: String) {
+  roles(skip: 0, take: 1, where: { name: { eq: $name } }) {
+    items {
+      ...RoleDetail
+    }
+  }
+}
+# 根据角色id获取角色详情
+query roleById($id: String) {
+  roles(skip: 0, take: 1, where: { id: { eq: $id } }) {
+    items {
+      ...RoleDetail
+    }
+  }
+}
+# 新增角色
+mutation createRole($input: CreateRoleInput!) {
+  createRole(input: $input) {
+    id
+    createdOn
+    name
+    users {
+      id
+      username
+      email
+      phoneNumber
+      ... on User {
+        permissions
+      }
+    }
+    permissions
+  }
+}
+# 给角色添加组织权限
+mutation authorize($input: AuthorizeInput!) {
+  authorize(input: $input)
+}
+
+# 获取全量的组织
+query orgs($where: OrgFilterInput) {
+  orgs(skip: 0, take: 999, where: $where) {
+    items {
+      ...OrgBrief
+    }
+  }
+}
+mutation createOrg($input: CreateOrgInput!) {
+  createOrg(input: $input) {
+    ...OrgBrief
+  }
+}
+# 组织上 添加或删除用户
+mutation assignOrgs($input: AssignOrgRequestInput!) {
+  assignOrgs(input: $input)
+}
+
+mutation setRoleDefault($roleId: String!) {
+  setRoleDefault(input: { roleId: $roleId })
+}

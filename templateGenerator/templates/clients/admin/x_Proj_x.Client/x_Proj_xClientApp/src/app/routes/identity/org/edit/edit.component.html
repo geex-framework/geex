@@ -1,0 +1,39 @@
+<div class="modal-header">
+  <div class="modal-title">{{title}}</div>
+</div>
+<form nz-form
+      #validFrom="ngForm"
+      (ngSubmit)="submit()">
+  <nz-form-item>
+    <nz-form-label [nzSpan]="5"
+                   nzRequired
+                   nzFor="code">编码</nz-form-label>
+    <nz-form-control [nzSpan]="12">
+      <!--todo [readonly]="org?.id" -->
+      <input name="code"
+             type="text"
+             [(ngModel)]="org.code"
+             nz-input />
+    </nz-form-control>
+  </nz-form-item>
+  <nz-form-item>
+    <nz-form-label [nzSpan]="5"
+                   nzFor="name"
+                   nzRequired>名称</nz-form-label>
+    <nz-form-control [nzSpan]="12">
+      <input name="name"
+             type="text"
+             nz-input
+             [(ngModel)]="org.name" />
+    </nz-form-control>
+  </nz-form-item>
+  <nz-form-item>
+    <nz-form-control [nzSpan]="12"
+                     [nzOffset]="5">
+      <button nz-button
+              type="submit"
+              nzType="primary"
+              [disabled]="validFrom.invalid">提交</button>
+    </nz-form-control>
+  </nz-form-item>
+</form>
