@@ -15,20 +15,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: extract-version-from-input
-        if: ${{ '${GITHUB_REF}' == '' }}
+        if: ${{ '$GITHUB_REF' == '' }}
         run: |
             echo "ref=$VERSION" >> $GITHUB_ENV
 
       - name: extract-version-from-ref
-        if: ${{ '${GITHUB_REF}' != '' }}
+        if: ${{ '$GITHUB_REF' != '' }}
         run: |
-            echo "ref=${GITHUB_REF}" >> $GITHUB_ENV
+            echo "ref=$GITHUB_REF" >> $GITHUB_ENV
 
       - name: Extract version number
         id: version
         run: |
-          echo "Ref name is $env.ref"
-          if [[ "${env.ref#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
+          REF=${{env.ref}}
+          echo "Ref name is $REF"
+          if [[ "${REF#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
             VERSION="${BASH_REMATCH[1]}"
             SUFFIX="${BASH_REMATCH[2]}"
             echo "Extracted version and suffix from prerelease tag."
