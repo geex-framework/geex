@@ -10,7 +10,6 @@ using MongoDB.Entities;
 
 using x_Org_x.x_Proj_x.x_Mod_x.Core.Aggregates.x_Aggregate_xs;
 using x_Org_x.x_Proj_x.x_Mod_x.Core.GqlSchemas.x_Aggregate_xs.Inputs;
-using x_Org_x.x_Proj_x.x_Mod_x.Core.GqlSchemas.x_Aggregate_xs.Types;
 
 namespace x_Org_x.x_Proj_x.x_Mod_x.Core.GqlSchemas.x_Aggregate_xs
 {
@@ -26,7 +25,7 @@ namespace x_Org_x.x_Proj_x.x_Mod_x.Core.GqlSchemas.x_Aggregate_xs
         {
 
             descriptor.Field(x => x.x_Aggregate_xs(default))
-            .UseOffsetPaging<x_Aggregate_xGqlType>()
+            .UseOffsetPaging<ObjectType<x_Aggregate_x>>()
             .UseFiltering<x_Aggregate_x>()
             .UseSorting<x_Aggregate_x>()
             ;
