@@ -54,8 +54,17 @@
   <ItemGroup>
     <Reference Include="KellermanSoftware.Compare-NET-Objects">
       <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
-      <Private>True</Private>
+      <Private>true</Private>
     </Reference>
   </ItemGroup>
 
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+
+  <Target Name="CompareDll">
+    <ItemGroup>
+      <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />
+    </ItemGroup>
+  </Target>
 </Project>
