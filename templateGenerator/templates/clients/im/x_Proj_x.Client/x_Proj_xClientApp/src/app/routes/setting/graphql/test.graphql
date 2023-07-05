@@ -1,0 +1,3 @@
+mutation test_syncExchangeRate {
+  syncExchangeRate
+}

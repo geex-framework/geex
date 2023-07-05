@@ -1,0 +1,27 @@
+mutation editSetting($input: EditSettingRequestInput) {
+  editSetting(input: $input) {
+    name
+    value
+  }
+}
+
+
+query settings($input: GetSettingsInput!, $skip: Int, $take: Int, $where: ISettingFilterInput, $includeDetail: Boolean!) {
+  settings(input: $input, skip: $skip, take: $take, where: $where) {
+    items {
+      ...SettingBrief
+      ...SettingDetail @include(if: $includeDetail)
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+
+query initSettings {
+  initSettings {
+    name
+    value
+  }
+}

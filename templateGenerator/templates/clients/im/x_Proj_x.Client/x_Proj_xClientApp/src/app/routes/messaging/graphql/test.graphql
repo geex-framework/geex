@@ -1,0 +1,8 @@
+mutation test_createMessage {
+  createMessage(input: { severity: INFO, text: "789" }) {
+    id
+  }
+}
+mutation test_editMessage {
+  editMessage(input: { id: "611e1af5317b4ea2f2f5c220", text: "我被修改过" })
+}

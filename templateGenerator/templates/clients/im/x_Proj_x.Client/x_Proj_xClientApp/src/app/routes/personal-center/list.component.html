@@ -1,0 +1,160 @@
+<page-header title="个人中心">
+</page-header>
+
+<div nz-row
+     nzGutter="16">
+  <div nz-col
+       nzXs="24"
+       nzSm="24"
+       nzLg="24"
+       nzXl="12"
+       nzXXl="12">
+    <nz-card nzTitle="用户信息"
+             *ngIf="(userData$ | async) as userData"
+             style="height: 100%;">
+      <div nz-row
+           nzAlign="middle"
+           style="height: 100%;">
+        <div nz-col
+             style="text-align: center;"
+             nzXs="24"
+             nzSm="24"
+             nzLg="8"
+             nzXl="8"
+             nzXXl="8">
+          <nz-avatar [nzSrc]="userData.avatarFile?.url"
+                     [nzSize]="80"
+                     style="color:#f56a00; background-color:#fde3cf;"
+                     nzIcon="user"></nz-avatar>
+        </div>
+        <div nz-col
+             nzXs="24"
+             nzSm="24"
+             nzLg="16"
+             nzXl="16"
+             nzXXl="14"
+             style="line-height: 50px;">
+          <div>名称：<span style="font-size: 18px;">{{userData.username}}</span></div>
+          <div>角色：{{userData.roleNames}}</div>
+          <div>手机号：{{userData.phoneNumber == null?"暂未绑定":userData.phoneNumber}}</div>
+          <div>电子邮箱：{{userData.email}}</div>
+          <div>
+            <button nz-button
+                    type="button"
+                    (click)="showModal()">修改用户密码</button>
+            <nz-modal [(nzVisible)]="isVisible"
+                      nzTitle="修改用户密码"
+                      (nzOnOk)="handleOk()"
+                      (nzOnCancel)="handleCancel()"
+                      nzMaskClosable="false"
+                      nzCentered>
+              <form nz-form
+                    *nzModalContent
+                    #ChangePassword="ngForm">
+                <nz-form-item>
+                  <nz-form-label nzRequired
+                                 [nzSm]="6"
+                                 [nzXs]="24"
+                                 nzFor="originPassword">当前密码</nz-form-label>
+                  <nz-form-control [nzSm]="14"
+                                   [nzXs]="24"
+                                   nzErrorTip="请输入当前密码">
+                    <input nz-input
+                           [(ngModel)]="data.originPassword"
+                           type="password"
+                           id="originPassword"
+                           name="originPassword">
+                  </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                  <nz-form-label nzRequired
+                                 [nzSm]="6"
+                                 [nzXs]="24"
+                                 nzFor="newPassword">新密码</nz-form-label>
+                  <nz-form-control [nzSm]="14"
+                                   [nzXs]="24"
+                                   [nzErrorTip]="combineTpl">
+                    <input nz-input
+                           [(ngModel)]="data.newPassword"
+                           type="password"
+                           name="newPassword"
+                           [appForbiddenName]="confirmPassword">
+                  </nz-form-control>
+                </nz-form-item>
+                <nz-form-item>
+                  <nz-form-label nzRequired
+                                 [nzSm]="6"
+                                 [nzXs]="24"
+                                 nzFor="checkPassword">确认密码</nz-form-label>
+                  <nz-form-control [nzSm]="14"
+                                   [nzXs]="24"
+                                   [nzErrorTip]="combineTpl">
+                    <input nz-input
+                           [(ngModel)]="confirmPassword"
+                           type="password"
+                           name="checkNewPassword"
+                           [appForbiddenName]="data.newPassword">
+                  </nz-form-control>
+                </nz-form-item>
+                <ng-template #combineTpl
+                             let-control>
+                  <ng-container *ngIf="control.hasError('newPassword')">密码不一致</ng-container>
+                  <ng-container *ngIf="control.hasError('required')">必填</ng-container>
+                </ng-template>
+              </form>
+            </nz-modal>
+          </div>
+        </div>
+      </div>
+
+    </nz-card>
+  </div>
+  <div nz-col
+       nzXs="24"
+       nzSm="24"
+       nzLg="24"
+       nzXl="12"
+       nzXXl="12">
+    <nz-card [nzTitle]="orgTitle"
+             [nzExtra]="extra"
+             style="height: 100%;">
+      <ng-template #orgTitle>
+        <i nz-icon
+           nzType="share-alt"
+           nzTheme="outline"></i> 我的组织关系
+      </ng-template>
+      <ng-template #extra>
+        <button nz-tooltip
+                nzTooltipTitle="刷新"
+                (click)="refresh()"
+                nz-button
+                nzSize="small"
+                nzType="link">
+          <i nz-icon
+             nzType="reload"></i>
+        </button>
+      </ng-template>
+
+      <nz-tree [nzData]="nodes"
+               [nzTreeTemplate]="nzTreeTemplate"></nz-tree>
+      <ng-template #nzTreeTemplate
+                   let-node
+                   let-origin="origin">
+        <span class="custom-node">
+          <span *ngIf="!node.isLeaf">
+            <i nz-icon
+               [nzType]="node.isExpanded ? 'folder-open' : 'folder'"></i>
+            <span class="folder-name">{{ node.title }}</span>
+          </span>
+          <span *ngIf="node.isLeaf">
+            <i nz-icon
+               nzType="file"></i>
+            <span class="file-name">{{ node.title }}</span>
+          </span>
+        </span>
+      </ng-template>
+
+    </nz-card>
+  </div>
+
+</div>

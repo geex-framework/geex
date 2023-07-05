@@ -1,0 +1,30 @@
+query tenants($skip: Int, $take: Int, $where: ITenantFilterInput) {
+  tenants(skip: $skip, take: $take, where: $where) {
+    items {
+      code
+      name
+      isEnabled
+      id
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+
+mutation toggleTenantAvailability($code: String!) {
+  toggleTenantAvailability(input: { code: $code })
+}
+
+mutation editTenant($code: String!, $name: String!) {
+  editTenant(input: { code: $code, name: $name })
+}
+mutation createTenant($code: String!, $name: String!) {
+  createTenant(input: { code: $code, name: $name }) {
+    code
+    isEnabled
+    name
+    id
+  }
+}

@@ -1,0 +1,19 @@
+fragment PageInfo on CollectionSegmentInfo {
+  hasPreviousPage
+  hasNextPage
+}
+
+fragment BlobObjectBrief on BlobObject {
+  id
+  createdOn
+  fileSize
+  mimeType
+  storageType
+  fileName
+  md5
+  url
+}
+
+fragment BlobObjectDetail on BlobObject {
+  url
+}

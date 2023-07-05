@@ -1,0 +1,17 @@
+mutation createOrg {
+  createOrg(input: { code: "1.1.1", name: "1.1.1" }) {
+    id
+  }
+}
+
+query orgs {
+  orgs {
+    items {
+      code
+      directSubOrgs {
+        code
+      }
+      orgType
+    }
+  }
+}

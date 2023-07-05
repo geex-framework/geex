@@ -1,0 +1,49 @@
+// You can directly set the default theme
+// - `default` Default theme
+// - `dark` Import the official dark less style file
+// - `compact` Import the official compact less style file
+@import '@delon/theme/layout-default/style/index';
+@import '@delon/theme/layout-blank/style/index';
+@import '@delon/theme/theme-compact.less';
+
+// ==========The following is the custom theme variable area==========
+
+@primary-color: #536de6;
+@secondary-color: #6C757D;
+@success-color: #10C469;
+@danger-color: #FF5B5B;
+@warning-color: #F9C851;
+@info-color: #536DE6;
+@dark-color: #323A46;
+@page-header-padding: 12px;
+@masonry-enabled: false;
+@alain-default-aside-bg:#313A46;
+@alain-default-aside-nav-text-color: #ece7e7;
+@alain-default-aside-nav-group-text-color: #ece7e7;
+@alain-default-aside-nav-selected-text-color: #fff;
+@alain-default-aside-nav-selected-bg:@primary-color;
+@alain-default-aside-nav-text-hover-color: #fff;
+@alain-default-header-bg: #fff;
+@text-color: #66696b;
+@font-size-base: 12px;
+@alain-default-content-padding: 12px;
+@alain-default-aside-nav-fs:12px;
+@card-head-font-size: 14px;
+@alain-default-header-hg: 50px;
+@alain-default-header-box-shadow: none;
+
+.ant-card-head{
+  color: #66696b;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+[data-theme='compact'] {
+  :host ::ng-deep {
+    // 针对紧凑重新定义
+    .page-header {
+      margin-top: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #efe3e5;
+    }
+  }
+}

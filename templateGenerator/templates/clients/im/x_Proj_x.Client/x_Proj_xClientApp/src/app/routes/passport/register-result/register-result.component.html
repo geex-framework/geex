@@ -1,0 +1,7 @@
+<result type="success" [title]="title" description="注册成功">
+  <ng-template #title>
+    <div class="title" style="font-size: 20px">注册成功</div>
+  </ng-template>
+  <button (click)="msg.success('email')" nz-button nzSize="large" [nzType]="'primary'">查看邮箱</button>
+  <button routerLink="/" nz-button nzSize="large">返回首页</button>
+</result>

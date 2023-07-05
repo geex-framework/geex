@@ -1,0 +1,121 @@
+<page-header [title]="'组织架构管理'">
+</page-header>
+<div nz-row
+     nzGutter="16">
+  <div nz-col
+       nzSpan="8">
+    <nz-card [nzTitle]="orgTitle"
+             [nzExtra]="extra">
+      <ng-template #orgTitle>
+        <i nz-icon
+           nzType="share-alt"
+           nzTheme="outline"></i> 组织结构树
+      </ng-template>
+      <ng-template #extra>
+        <button (click)="createOrg()"
+                nz-button
+                nzSize="small"
+                nzType="link">
+          <i nz-icon
+             nzType="plus"></i>
+          新增</button>
+        <button nz-tooltip
+                nzTooltipTitle="刷新"
+                (click)="refresh()"
+                nz-button
+                nzSize="small"
+                nzType="link"
+                [acl]="AppPermission.IdentityQueryOrgs">
+          <i nz-icon
+             nzType="reload"></i>
+        </button>
+      </ng-template>
+
+      <nz-tree [nzData]="nodes"
+               (nzDblClick)="openFolder($event)"
+               (nzClick)="activeNode($event)"
+               [nzTreeTemplate]="nzTreeTemplate"></nz-tree>
+      <ng-template #nzTreeTemplate
+                   let-node
+                   let-origin="origin">
+        <div class="custom-node"
+             (contextmenu)="createContextMenu($event, menu, node)">
+          <span *ngIf="!node.isLeaf">
+            <i nz-icon
+               [nzType]="node.isExpanded ? 'folder-open' : 'folder'"
+               (click)="openFolder(node)"></i>
+            <span class="folder-name">{{ node.title }}[{{node.origin.code}}]</span>
+            <!-- <span style="font-weight: 700;">（43）</span> -->
+          </span>
+          <span *ngIf="node.isLeaf">
+            <i nz-icon
+               nzType="file"></i>
+            <span class="file-name">{{ node.title }}[{{node.origin.code}}]</span>
+            <!-- <span style="font-weight: 700;">（333）</span> -->
+          </span>
+        </div>
+      </ng-template>
+      <nz-dropdown-menu #menu="nzDropdownMenu">
+        <ul nz-menu
+            nzInDropDown
+            *ngIf="isGranted('OrganizationPart.OrganizationUnit')">
+          <li nz-menu-item
+              (click)="editUnit()">
+            <i nz-icon
+               nzType="edit"></i>
+            <span>重命名</span>
+          </li>
+          <li nz-menu-item
+              (click)="addSubUnit()">
+            <i nz-icon
+               nzType="plus"></i>
+            <span>新增</span>
+          </li>
+          <li nz-menu-item
+              nz-popconfirm
+              nzPopconfirmTitle="确认删除？"
+              (nzOnConfirm)="deleteUnit()"
+              nzPlacement="right">
+            <i nz-icon
+               nzType="delete"></i>
+            <span>删除</span>
+          </li>
+        </ul>
+      </nz-dropdown-menu>
+    </nz-card>
+  </div>
+  <div nz-col
+       nzSpan="16">
+    <nz-card *ngIf="activatedNode">
+      <div style="text-align: right;">
+        <button nz-button
+                nzType="primary"
+                (click)="addUser()"
+                [acl]="AppPermission.IdentityQueryUsers">
+          <i nz-icon
+             nzType="plus"
+             nzTheme="outline"></i>
+          添加用户</button>
+        <button nz-button
+                nzType="primary"
+                nzDanger
+                (click)="batchDelete()"><i nz-icon
+             nzType="delete"
+             nzTheme="outline"></i>批量移除</button>
+      </div>
+      <nz-alert style="margin: 10px 0;"
+                nzType="info"
+                [nzMessage]="message"
+                nzShowIcon>
+        <ng-template #message>
+          <span>已选择{{selectedData.length}}项</span>
+          <a (click)="st.clearStatus();st.reset($event)"> 清空</a>
+        </ng-template>
+      </nz-alert>
+      <st #st
+          [data]="users"
+          [columns]="columns"
+          (change)="change($event)"></st>
+    </nz-card>
+  </div>
+</div>

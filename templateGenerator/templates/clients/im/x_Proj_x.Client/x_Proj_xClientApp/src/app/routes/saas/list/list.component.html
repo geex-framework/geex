@@ -1,0 +1,83 @@
+<page-header>
+  <div style="display: flex;flex-wrap: wrap;">
+    <div>
+      <input type="text"
+             nz-input
+             [(ngModel)]="filter"
+             placeholder="名称或编码" />
+    </div>
+    <div>
+      <button (click)="refresh()"
+              nz-button
+              nzType="primary">
+        <i nz-icon
+           nzType="reload"
+           nzTheme="outline"></i>
+        刷新</button>
+      <!-- [acl]="AppPermission.TenantsMutationCreateTenant" -->
+      <button (click)="add()"
+              nz-button
+              nzType="primary">
+        <i nz-icon
+           nzType="plus"
+           nzTheme="outline"></i>
+        新建</button>
+    </div>
+  </div>
+
+
+</page-header>
+<nz-card>
+  <nz-alert [nzType]="'info'"
+            [nzShowIcon]="true"
+            [nzMessage]="message">
+    <ng-template #message>
+      <div>
+        <!-- <span [innerHTML]="'已选择 '+selectedData?.length+' 项'"></span> -->
+        <nz-divider nzType="vertical"></nz-divider>
+        <a (click)="refresh()"><i nz-icon
+             nzType="reload"></i>
+          刷新
+        </a>
+        <!-- *ngIf="isGranted('Messages.BatchAudit')" -->
+        <ng-container>
+          <nz-divider nzType="vertical"></nz-divider>
+          <a (click)="filter='';refresh()"><i nz-icon
+               nzType="clear"></i>
+            清空
+          </a>
+        </ng-container>
+        <!-- <ng-container>
+          <nz-divider nzType="vertical"></nz-divider>
+          <a (click)="bathTodo('delete')"
+             [acl]="AppPermission.TenantsMutationDeleteTenant"><i nz-icon
+               nzType="audit"></i>
+            批量删除
+          </a>
+        </ng-container> -->
+      </div>
+    </ng-template>
+  </nz-alert>
+  <nz-table #basicTable
+            [nzData]="data">
+    <thead>
+      <tr>
+        <th>租户编码</th>
+        <th>显示名称</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let data of basicTable.data">
+        <td>{{data.code}}</td>
+        <td>{{data.name}}</td>
+        <td>
+          <a (click)="edit(data)">编辑</a>
+          <nz-divider nzType="vertical"></nz-divider>
+          <a (click)="toggleAvailability(data.code)">{{data.isEnabled?"
+            禁用":"启用"}}</a>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
+</nz-card>

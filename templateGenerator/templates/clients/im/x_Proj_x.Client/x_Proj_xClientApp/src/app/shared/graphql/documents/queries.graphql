@@ -1,0 +1,24 @@
+query blobObjects($skip: Int, $take: Int, $where: IBlobObjectFilterInput, $includeDetail: Boolean!) {
+  blobObjects(skip: $skip, take: $take, where: $where) {
+    items {
+      ...BlobObjectBrief
+      ...BlobObjectDetail @include(if: $includeDetail)
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+fragment OrgCacheItem on OrgCacheItem {
+  orgType
+  code
+  name
+  parentOrgCode
+}
+
+query orgsCache {
+  orgsCache {
+    ...OrgCacheItem
+  }
+}
