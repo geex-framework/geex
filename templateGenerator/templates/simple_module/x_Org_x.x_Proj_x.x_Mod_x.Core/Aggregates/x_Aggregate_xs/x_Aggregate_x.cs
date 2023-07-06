@@ -1,5 +1,8 @@
-﻿using Geex.Common.Abstraction.Auditing;
+﻿using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.Auditing;
 using Geex.Common.Abstraction.Storage;
+
+using MongoDB.Bson.Serialization;
 
 namespace x_Org_x.x_Proj_x.x_Mod_x.Core.Aggregates.x_Aggregate_xs
 {
@@ -23,5 +26,15 @@ namespace x_Org_x.x_Proj_x.x_Mod_x.Core.Aggregates.x_Aggregate_xs
 
         /// <inheritdoc />
         public bool Submittable { get; }
+
+        class x_Aggregate_xBsonConfig : BsonConfig<x_Aggregate_x>
+        {
+            protected override void Map(BsonClassMap<x_Aggregate_x> map)
+            {
+                map.SetIsRootClass(true);
+                map.Inherit<x_Aggregate_x>();
+                map.AutoMap();
+            }
+        }
     }
 }

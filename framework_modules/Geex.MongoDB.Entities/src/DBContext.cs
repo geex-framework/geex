@@ -639,22 +639,6 @@ namespace MongoDB.Entities
 
         private static MethodInfo saveMethod = typeof(Extensions).GetMethods().First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
-        /// <summary>
-        /// Commits a transaction to MongoDB
-        /// </summary>
-        /// <param name="cancellation">An optional cancellation token</param>
-        public virtual async Task CommitAsync(CancellationToken cancellation = default)
-        {
-            await SaveChanges(cancellation);
-            if (Session.IsInTransaction)
-            {
-                await Session.CommitTransactionAsync(cancellation);
-            }
-            if (this.OnCommitted != default)
-            {
-                await this.OnCommitted.Invoke(this);
-            }
-        }
 
         public virtual async Task<int> SaveChanges(CancellationToken cancellation = default)
         {
@@ -706,7 +690,6 @@ namespace MongoDB.Entities
             return !_compareLogic.Compare(newValue, originValue).AreEqual;
         }
 
-        public event Func<DbContext, Task> OnCommitted;
         /// <summary>
         /// Aborts and rolls back a transaction
         /// </summary>

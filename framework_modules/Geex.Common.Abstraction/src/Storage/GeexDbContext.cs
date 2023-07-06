@@ -22,7 +22,7 @@ using BusinessException = Geex.Common.Abstractions.BusinessException;
 
 namespace Geex.Common.Abstraction.Storage
 {
-    public class GeexDbContext : DbContext
+    public class GeexDbContext : DbContext, IUnitOfWork
     {
         static GeexDbContext()
         {
@@ -103,5 +103,26 @@ namespace Geex.Common.Abstraction.Storage
         {
             return DB.DefaultDb.RunCommand(this.Session, command, readPreference, cancellationToken);
         }
+
+
+        /// <summary>
+        /// Commits a transaction to MongoDB
+        /// </summary>
+        /// <param name="cancellation">An optional cancellation token</param>
+        public virtual async Task CommitAsync(CancellationToken? cancellation = default)
+        {
+            await SaveChanges(cancellation.GetValueOrDefault(CancellationToken.None));
+            if (Session.IsInTransaction)
+            {
+                await Session.CommitTransactionAsync(cancellation.GetValueOrDefault(CancellationToken.None));
+            }
+            if (this.OnCommitted != default)
+            {
+                await this.OnCommitted();
+            }
+        }
+
+        /// <inheritdoc />
+        public event Func<Task>? OnCommitted;
     }
 }

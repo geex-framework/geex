@@ -20,7 +20,9 @@ namespace Geex.TemplateGenerator
             var moduleName = Console.ReadLine().Trim();
             Console.WriteLine("enter default aggregate name.");
             var aggregateName = Console.ReadLine().Trim();
-            Console.WriteLine("enter template path, press enter if it's `simple_module`");
+
+            Console.WriteLine("select template path: clients, fullstack, isolated_module, simple_module");
+            Console.WriteLine("press enter if it's `simple_module`");
             var templateName = Console.ReadLine();
             if (string.IsNullOrEmpty(templateName))
             {
