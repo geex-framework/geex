@@ -74,37 +74,6 @@ namespace Geex.Common
     {
 
         Task CommitAsync(CancellationToken? cancellationToken = default);
-    }
-
-    public class WrapperUnitOfWork : IUnitOfWork
-    {
-        public DbContext DbContext { get; }
-        private ILogger<IUnitOfWork> _logger;
-
-        public WrapperUnitOfWork(DbContext dbContext, ILogger<IUnitOfWork> logger)
-        {
-            DbContext = dbContext;
-            _logger = logger;
-        }
-
-        public async Task CommitAsync(CancellationToken? cancellationToken = default)
-        {
-            //this.taskSource = new TaskCompletionSource(_task.Invoke());
-            try
-            {
-                await this.DbContext.CommitAsync(cancellationToken ?? CancellationToken.None);
-            }
-            catch (Exception e)
-            {
-                _logger.LogException(e);
-                throw;
-            }
-        }
-
-        /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-        public void Dispose()
-        {
-            this.DbContext.Dispose();
-        }
+        public event Func<Task>? OnCommitted;
     }
 }

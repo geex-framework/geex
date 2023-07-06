@@ -82,7 +82,7 @@ namespace Microsoft.Extensions.DependencyInjection
             mongoSettings.ApplicationName = commonModuleOptions.AppName;
             DB.InitAsync(mongoUrl.DatabaseName ?? commonModuleOptions.AppName, mongoSettings).Wait();
             //builder.AddScoped(x => new DbContext(transactional: true));
-            builder.AddScoped<IUnitOfWork>(x => new WrapperUnitOfWork(new GeexDbContext(x, transactional: true, entityTrackingEnabled: true), x.GetService<ILogger<IUnitOfWork>>()));
+            builder.AddScoped<IUnitOfWork>(x => new GeexDbContext(x, transactional: true, entityTrackingEnabled: true));
             // 直接从当前uow提取
             builder.AddScoped<DbContext>(x =>
             {
@@ -91,7 +91,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 {
                     return new GeexDbContext(x, transactional: false, entityTrackingEnabled: false);
                 }
-                return (x.GetService<IUnitOfWork>() as WrapperUnitOfWork)!.DbContext;
+                return x.GetService<IUnitOfWork>() as GeexDbContext;
             });
             return builder;
         }
