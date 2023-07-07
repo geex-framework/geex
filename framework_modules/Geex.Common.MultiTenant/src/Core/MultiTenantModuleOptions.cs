@@ -8,7 +8,7 @@ using Geex.Common.Abstractions;
 
 namespace Geex.Common.MultiTenant.Core
 {
-    public class MultiTenantModuleOptions : IGeexModuleOption<MultiTenantModule>
+    public class MultiTenantModuleOptions : GeexModuleOption<MultiTenantModule>
     {
         /// <summary>
         /// !未实现!<br></br>

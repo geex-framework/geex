@@ -8,7 +8,7 @@ using Geex.Common.Abstractions;
 
 namespace Geex.Common.Settings
 {
-    public class SettingsModuleOptions : IGeexModuleOption<SettingsModule>
+    public class SettingsModuleOptions : GeexModuleOption<SettingsModule>
     {
 
     }
