@@ -1,3 +1,3 @@
 # geex
 
-[![status](https://github.com/geex-framework/geex/actions/workflows/PublishNuGetPackage.yml/badge.svg)](https://github.com/geex-framework/geex/actions/workflows/PublishNuGetPackage.yml)
+[![publish](https://github.com/geex-framework/geex/actions/workflows/publish.yml/badge.svg)](https://github.com/geex-framework/geex/actions/workflows/publish.yml)
