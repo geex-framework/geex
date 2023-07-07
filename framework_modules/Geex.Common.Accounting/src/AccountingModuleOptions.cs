@@ -8,7 +8,7 @@ using Geex.Common.Abstractions;
 
 namespace Geex.Common.Accounting
 {
-    public class AccountingModuleOptions : IGeexModuleOption<AccountingModule>
+    public class AccountingModuleOptions : GeexModuleOption<AccountingModule>
     {
 
     }

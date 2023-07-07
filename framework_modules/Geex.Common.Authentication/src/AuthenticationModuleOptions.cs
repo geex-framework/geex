@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 
 namespace Geex.Common.Authentication
 {
-    public class AuthenticationModuleOptions : IGeexModuleOption<AuthenticationModule>
+    public class AuthenticationModuleOptions : GeexModuleOption<AuthenticationModule>
     {
         /// <summary>
         /// set this when you need include auth

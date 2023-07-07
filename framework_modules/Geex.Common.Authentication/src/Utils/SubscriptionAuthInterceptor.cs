@@ -14,6 +14,7 @@ using HotChocolate.Types.Pagination;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 
 namespace Geex.Common.Authentication.Utils
 {
@@ -22,7 +23,7 @@ namespace Geex.Common.Authentication.Utils
         // This is the key to the auth token in the HTTP Context
         public static readonly string HTTP_CONTEXT_WEBSOCKET_AUTH_KEY = "websocket-auth-token";
         // This is the key that apollo uses in the connection init request
-        public static readonly string WEBOCKET_PAYLOAD_AUTH_KEY = "authToken";
+        public static readonly string WEBOCKET_PAYLOAD_AUTH_KEY = HeaderNames.Authorization.ToLowerInvariant();
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
         private readonly IAuthenticationSchemeProvider _schemes;
         public TokenValidationParameters TokenValidationParameters { get; }
@@ -40,7 +41,7 @@ namespace Geex.Common.Authentication.Utils
         {
             try
             {
-                var jwtHeader = (connectionInitMessage as InitializeConnectionMessage)?.Payload.GetValueOrDefault().GetString("Authorization");
+                var jwtHeader = (connectionInitMessage as InitializeConnectionMessage)?.Payload.GetValueOrDefault().GetString(WEBOCKET_PAYLOAD_AUTH_KEY);
 
                 //if (string.IsNullOrEmpty(jwtHeader) || !jwtHeader.StartsWith("Bearer "))
                 //    return ConnectionStatus.Reject("Unauthorized");
@@ -50,7 +51,7 @@ namespace Geex.Common.Authentication.Utils
                     var token = jwtHeader.Replace("Bearer ", "");
                     var context = session.Connection.HttpContext;
                     context.Items[HTTP_CONTEXT_WEBSOCKET_AUTH_KEY] = token;
-                    context.Request.Headers["Authorization"] = jwtHeader;
+                    context.Request.Headers[HeaderNames.Authorization] = jwtHeader;
                     //var claimsPrincipal = _tokenHandler.ValidateToken(token, this.TokenValidationParameters, out var parsedToken);
                     //session.Connection.HttpContext.User = claimsPrincipal;
 

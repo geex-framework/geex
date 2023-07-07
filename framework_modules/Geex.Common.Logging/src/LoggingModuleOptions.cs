@@ -13,7 +13,7 @@ using ImpromptuInterface;
 
 namespace Geex.Common.Logging
 {
-    public class LoggingModuleOptions : IGeexModuleOption<LoggingModule>
+    public class LoggingModuleOptions : GeexModuleOption<LoggingModule>
     {
         public TracingPreference TracingPreference { get; set; } = TracingPreference.OnDemand;
         public GeexApmConfig ElasticApm { get; set; }

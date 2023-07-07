@@ -34,7 +34,7 @@ using Volo.Abp.Modularity;
 
 namespace Geex.Common.Abstractions
 {
-    public abstract class GeexModule<TModule, TModuleOptions> : GeexModule<TModule> where TModule : GeexModule where TModuleOptions : IGeexModuleOption<TModule>
+    public abstract class GeexModule<TModule, TModuleOptions> : GeexModule<TModule> where TModule : GeexModule where TModuleOptions : GeexModuleOption<TModule>
     {
         private TModuleOptions _moduleOptions;
         protected new TModuleOptions ModuleOptions => this._moduleOptions ??= this.ServiceConfigurationContext.Services.GetSingletonInstance<TModuleOptions>();
@@ -44,14 +44,14 @@ namespace Geex.Common.Abstractions
         public IConfiguration Configuration { get; private set; }
         public IWebHostEnvironment Env { get; private set; }
 
-        public virtual void ConfigureModuleOptions(Action<IGeexModuleOption<TModule>> optionsAction)
+        public virtual void ConfigureModuleOptions(Action<GeexModuleOption<TModule>> optionsAction)
         {
-            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<IGeexModuleOption<TModule>>());
+            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<GeexModuleOption<TModule>>());
             if (type == default)
             {
-                throw new InvalidOperationException($"{nameof(IGeexModuleOption<TModule>)} of {nameof(TModule)} is not declared, cannot be configured.");
+                throw new InvalidOperationException($"{nameof(GeexModuleOption<TModule>)} of {nameof(TModule)} is not declared, cannot be configured.");
             }
-            var options = (IGeexModuleOption<TModule>?)this.ServiceConfigurationContext.Services.GetSingletonInstanceOrNull(type);
+            var options = (GeexModuleOption<TModule>?)this.ServiceConfigurationContext.Services.GetSingletonInstanceOrNull(type);
             optionsAction.Invoke(options!);
             this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(type, options));
         }
@@ -67,15 +67,15 @@ namespace Geex.Common.Abstractions
 
         private void InitModuleOptions()
         {
-            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<IGeexModuleOption<TModule>>());
+            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<GeexModuleOption<TModule>>());
             if (type == default)
             {
                 return;
             }
-            var options = Activator.CreateInstance(type) as IGeexModuleOption<TModule>;
+            var options = Activator.CreateInstance(type) as GeexModuleOption<TModule>;
             Configuration.GetSection(type.Name).Bind(options);
             this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(type, options));
-            this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(typeof(IGeexModuleOption<TModule>), options));
+            this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(typeof(GeexModuleOption<TModule>), options));
             //this.ServiceConfigurationContext.Services.GetRequiredServiceLazy<ILogger<GeexModule>>().Value.LogInformation($"Module loaded with options:{Environment.NewLine}{options.ToJson()}");
         }
 
