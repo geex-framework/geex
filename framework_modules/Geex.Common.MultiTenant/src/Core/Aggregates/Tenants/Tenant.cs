@@ -15,6 +15,7 @@ using Geex.Common.MultiTenant.Api.Aggregates.Tenants;
 using HotChocolate.Types;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 
 namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
 {
@@ -47,10 +48,18 @@ namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
 
         public class TenantBsonConfig : BsonConfig<Tenant>
         {
-            protected override void Map(BsonClassMap<Tenant> map)
+            protected override void Map(BsonClassMap<Tenant> map, BsonIndexConfig<Tenant> indexConfig)
             {
                 map.Inherit<ITenant>();
                 map.AutoMap();
+                indexConfig.MapEntityDefaultIndex();
+                indexConfig.MapIndex(builder => builder.Ascending(x=>x.Code), options =>
+                {
+                    options.Background = true;
+                    options.Sparse = true;
+                    options.Unique = true;
+
+                });
             }
         }
         public class TenantGqlConfig : GqlConfig.Object<Tenant>

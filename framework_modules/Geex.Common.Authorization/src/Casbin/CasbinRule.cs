@@ -1,5 +1,11 @@
-﻿using Geex.Common.Abstraction.MultiTenant;
+﻿using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.MultiTenant;
+
+using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 using MongoDB.Entities;
+
+using StackExchange.Redis;
 
 namespace Geex.Common.Authorization.Casbin
 {

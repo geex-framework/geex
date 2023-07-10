@@ -1,28 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+
+using Geex.Common.Abstraction.MultiTenant;
+using Geex.Common.Abstraction.Storage;
 
 using HotChocolate.Types;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 using MongoDB.Entities;
 
 using Volo.Abp.DependencyInjection;
 
+using static System.Net.Mime.MediaTypeNames;
+
 namespace Geex.Common.Abstraction
 {
-    public interface IBsonConfig
+    internal interface IBsonConfig
     {
         public void Map();
     }
 
-    public interface IBsonConfig<TEntity> : IBsonConfig
+    internal interface IBsonConfig<TEntity> : IBsonConfig where TEntity : IEntityBase
     {
+        public BsonIndexConfig<TEntity> IndexConfig { get; }
         void IBsonConfig.Map()
         {
             var entityType = typeof(TEntity);
@@ -34,10 +43,44 @@ namespace Geex.Common.Abstraction
                 map.MapConstructor(noParamCtor);
             }
             BsonClassMap.RegisterClassMap(map);
+            //this.IndexConfig.Indexes.Where()
+            //if (Cache<TEntity>.Indexes.All(x => x.ToString() != indexModel.Keys.Render(BsonSerializer.LookupSerializer<TEntity>(), BsonSerializer.SerializerRegistry)))
+            //{
+
+            //}
+
+            if (this.IndexConfig.Indexes.Any() == true)
+            {
+                DB.Collection<TEntity>().Indexes.CreateMany(this.IndexConfig.Indexes, new CreateManyIndexesOptions()
+                {
+                    CommitQuorum = CreateIndexCommitQuorum.Majority,
+                });
+            }
         }
         public void Map(BsonClassMap<TEntity> map);
     }
 
+    public class BsonIndexConfig<TEntity> where TEntity : IEntityBase
+    {
+        internal List<CreateIndexModel<TEntity>> Indexes { get; } = new List<CreateIndexModel<TEntity>>();
+
+        public void MapIndex(Func<IndexKeysDefinitionBuilder<TEntity>, IndexKeysDefinition<TEntity>> keyFunc, Action<CreateIndexOptions<TEntity>>? action = default)
+        {
+            var createIndexOptions = new CreateIndexOptions<TEntity>();
+            action?.Invoke(createIndexOptions);
+            var indexModel = new CreateIndexModel<TEntity>(keyFunc(Builders<TEntity>.IndexKeys), createIndexOptions);
+            this.Indexes.Add(indexModel);
+        }
+    }
+
+    public static class BsonIndexConfigExtensions
+    {
+        public static void MapEntityDefaultIndex<TEntity>(this BsonIndexConfig<TEntity> @this) where TEntity : Entity<TEntity>
+        {
+            @this.MapIndex(builder => builder.Descending(x => x.CreatedOn));
+            @this.MapIndex(builder => builder.Descending(x => x.ModifiedOn));
+        }
+    }
 
     [Dependency(ServiceLifetime.Transient)]
     [ExposeServices(typeof(IBsonConfig))]
@@ -45,8 +88,11 @@ namespace Geex.Common.Abstraction
     {
         void IBsonConfig<TEntity>.Map(BsonClassMap<TEntity> map)
         {
-            this.Map(map);
+            this.Map(map, IndexConfig);
         }
-        protected abstract void Map(BsonClassMap<TEntity> map);
+
+        public BsonIndexConfig<TEntity> IndexConfig { get; } = new BsonIndexConfig<TEntity>();
+
+        protected abstract void Map(BsonClassMap<TEntity> map, BsonIndexConfig<TEntity> indexConfig);
     }
 }

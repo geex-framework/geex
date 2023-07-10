@@ -32,5 +32,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Api\GqlSchemas\Types\" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 </Project>

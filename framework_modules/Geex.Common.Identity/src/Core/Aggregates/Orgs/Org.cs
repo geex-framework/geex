@@ -15,6 +15,7 @@ using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using HotChocolate.Types;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 
 namespace Geex.Common.Identity.Core.Aggregates.Orgs;
 
@@ -113,10 +114,14 @@ public class Org : Entity<Org>, ITenantFilteredEntity, IOrg
 
     public class OrgBsonConfig : BsonConfig<Org>
     {
-        protected override void Map(BsonClassMap<Org> map)
+        protected override void Map(BsonClassMap<Org> map, BsonIndexConfig<Org> indexConfig)
         {
             map.Inherit<IOrg>();
             map.AutoMap();
+            indexConfig.MapEntityDefaultIndex();
+            indexConfig.MapIndex(x=>x.Ascending(y=>y.Code), options => options.Background = true);
+            indexConfig.MapIndex(x=>x.Ascending(y=>y.Name), options => options.Background = true);
+            indexConfig.MapIndex(x=>x.Ascending(y=>y.OrgType), options => options.Background = true);
         }
     }
     public class OrgGqlConfig : GqlConfig.Object<Org>

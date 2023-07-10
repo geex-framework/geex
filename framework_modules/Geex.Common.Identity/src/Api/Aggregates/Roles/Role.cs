@@ -20,6 +20,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 using MongoDB.Entities;
 
 using NetCasbin.Abstractions;
@@ -80,10 +81,13 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
 
         public class RoleBsonConfig : BsonConfig<Role>
         {
-            protected override void Map(BsonClassMap<Role> map)
+            protected override void Map(BsonClassMap<Role> map, BsonIndexConfig<Role> indexConfig)
             {
                 map.Inherit<IRole>();
                 map.AutoMap();
+                indexConfig.MapEntityDefaultIndex();
+                indexConfig.MapIndex(x=>x.Ascending(y=>y.Name), options => options.Background = true);
+                indexConfig.MapIndex(x=>x.Ascending(y=>y.Code), options => options.Background = true);
             }
         }
         public class RoleGqlConfig : GqlConfig.Object<Role>

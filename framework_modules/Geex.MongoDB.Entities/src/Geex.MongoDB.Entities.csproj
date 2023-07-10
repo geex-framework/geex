@@ -19,7 +19,7 @@
     <PackageReference Include="LinqToAnything" Version="2.1.28" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="MongoDB.Driver" Version="2.14.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.20.0" />
     <PackageReference Include="Neleus.LambdaCompare" Version="1.0.3" />
     <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
     <PackageReference Include="Fody" Version="6.6.4">
@@ -38,5 +38,10 @@
     <Reference Include="KellermanSoftware.Compare-NET-Objects">
       <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Geex.Common.Abstraction</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 </Project>

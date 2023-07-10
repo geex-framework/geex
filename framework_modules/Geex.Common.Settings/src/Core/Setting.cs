@@ -15,6 +15,7 @@ using Geex.Common.Settings.Api.Aggregates.Settings;
 using HotChocolate.Types;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 
 namespace Geex.Common.Settings.Core;
 
@@ -53,10 +54,18 @@ public class Setting : Entity<Setting>, ISetting
 
     public class SettingBsonConfig : BsonConfig<Setting>
     {
-        protected override void Map(BsonClassMap<Setting> map)
+        protected override void Map(BsonClassMap<Setting> map, BsonIndexConfig<Setting> indexConfig)
         {
             map.Inherit<ISetting>();
             map.AutoMap();
+            indexConfig.MapEntityDefaultIndex();
+            indexConfig.MapIndex(x => x.Hashed(y => y.Scope), options => options.Background = true);
+            indexConfig.MapIndex(x => x.Hashed(y => y.Name), options => options.Background = true);
+            indexConfig.MapIndex(x => x.Hashed(y => y.ScopedKey), options =>
+            {
+                options.Background = true;
+                options.Sparse = true;
+            });
         }
     }
     public class SettingGqlConfig : GqlConfig.Object<Setting>

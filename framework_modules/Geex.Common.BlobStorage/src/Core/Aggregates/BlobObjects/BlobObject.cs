@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
+using HonkSharp.Fluency;
 
 namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
 {
@@ -47,10 +49,23 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
 
         public class BlobObjectBsonConfig : BsonConfig<BlobObject>
         {
-            protected override void Map(BsonClassMap<BlobObject> map)
+            protected override void Map(BsonClassMap<BlobObject> map, BsonIndexConfig<BlobObject> indexConfig)
             {
                 map.Inherit<IBlobObject>();
                 map.AutoMap();
+                indexConfig.MapEntityDefaultIndex();
+                indexConfig.MapIndex(x => x.Hashed(y => y.Md5), options =>
+                {
+                    options.Background = true;
+                });
+                indexConfig.MapIndex(x => x.Hashed(y => y.StorageType), options =>
+                {
+                    options.Background = true;
+                });
+                indexConfig.MapIndex(x => x.Hashed(y => y.MimeType), options =>
+                {
+                    options.Background = true;
+                });
             }
         }
         public class BlobObjectGqlConfig : GqlConfig.Object<BlobObject>

@@ -72,7 +72,7 @@ namespace MongoDB.Entities
                 new MongoClientSettings
                 {
                     Server = new MongoServerAddress(host, port),
-                    //LinqProvider = LinqProvider.V3
+                    LinqProvider = LinqProvider.V2
                 }, database);
         }
 

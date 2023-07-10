@@ -28,7 +28,7 @@ namespace Geex.Common.Abstraction.Entities
         {
             if (request.Filter != default)
             {
-                return (IQueryable<TInterface>)DbContext.Queryable<TEntity>().Where(request.Filter.CastParamType<TEntity>().As<Expression<Func<TEntity, bool>>>());
+                return (IQueryable<TInterface>)DbContext.Queryable<TEntity>().Where(request.Filter.CastParamType<TEntity>() as Expression<Func<TEntity, bool>>);
             }
             return (IQueryable<TInterface>)DbContext.Queryable<TEntity>();
         }

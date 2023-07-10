@@ -18,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 
 namespace Geex.Common.Messaging.Core.Aggregates.Messages;
 
@@ -93,7 +94,7 @@ public class Message : Entity<Message>, IMessage
 
         public class MessageBsonConfig : BsonConfig<Message>
     {
-        protected override void Map(BsonClassMap<Message> map)
+        protected override void Map(BsonClassMap<Message> map, BsonIndexConfig<Message> indexConfig)
         {
             map.Inherit<IMessage>();
             map.AutoMap();

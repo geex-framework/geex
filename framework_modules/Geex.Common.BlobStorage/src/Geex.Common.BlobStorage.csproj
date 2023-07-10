@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <Folder Include="Api\GqlSchemas\BlobObjects\Types\" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>

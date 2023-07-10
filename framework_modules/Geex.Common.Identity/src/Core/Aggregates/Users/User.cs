@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 using MongoDB.Entities;
 
 using NetCasbin.Abstractions;
@@ -181,11 +182,34 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
 
         public class UserBsonConfig : BsonConfig<User>
         {
-            protected override void Map(BsonClassMap<User> map)
+            protected override void Map(BsonClassMap<User> map, BsonIndexConfig<User> indexConfig)
             {
                 map.Inherit<IUser>();
                 map.SetIsRootClass(true);
                 map.AutoMap();
+                indexConfig.MapEntityDefaultIndex();
+                indexConfig.MapIndex(x => x.Ascending(y => y.OpenId), options =>
+                {
+                    options.Background = true;
+                    options.Sparse = true;
+                });
+                indexConfig.MapIndex(x => x.Ascending(y => y.Email), options =>
+                {
+                    options.Background = true;
+                });
+                indexConfig.MapIndex(x => x.Ascending(y => y.Username), options =>
+                {
+                    options.Background = true;
+                });
+                indexConfig.MapIndex(x => x.Hashed(y => y.LoginProvider), options =>
+                {
+                    options.Background = true;
+                    options.Sparse = true;
+                });
+                indexConfig.MapIndex(x => x.Ascending(y => y.PhoneNumber), options =>
+                {
+                    options.Background = true;
+                });
             }
         }
         public class UserGqlConfig : GqlConfig.Object<User>
