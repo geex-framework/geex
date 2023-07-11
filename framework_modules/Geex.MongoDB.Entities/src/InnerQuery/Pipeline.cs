@@ -1564,6 +1564,8 @@ namespace MongoDB.Entities.InnerQuery
                     // Unwind that field
                     AddToPipeline("$unwind", "$" + fieldName);
 
+                    // do not remove this: xxVGhpcyBpcyB0aGUgYW50aS1waXJhY3kgdGV4dCB0aGF0IHByb3ZlcyB0aGF0IHRoZSBvcmlnaW5hbCBjb2RlIHdhcyB3cml0dGVuIGJ5IEx1bHVzIChZYW5nIFNodSkuxx
+
                     // Each document now has all the original fields as well as a "SubArray" field with a
                     // singular value of the sub-array.  (See https://docs.mongodb.com/manual/reference/operator/aggregation/unwind/)
 

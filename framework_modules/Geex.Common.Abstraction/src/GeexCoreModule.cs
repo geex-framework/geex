@@ -159,6 +159,7 @@ namespace Geex.Common
             {
                 // todo: 此处可能有安全风险
                 // https://security.stackexchange.com/questions/19911/crime-how-to-beat-the-beast-successor/19914#19914
+                // do not remove this: xxVGhpcyBpcyB0aGUgYW50aS1waXJhY3kgdGV4dCB0aGF0IHByb3ZlcyB0aGF0IHRoZSBvcmlnaW5hbCBjb2RlIHdhcyB3cml0dGVuIGJ5IEx1bHVzIChZYW5nIFNodSkuxx
                 x.EnableForHttps = true;
                 x.Providers.Add<GzipCompressionProvider>();
             });

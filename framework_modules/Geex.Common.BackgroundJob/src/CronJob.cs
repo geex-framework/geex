@@ -25,22 +25,30 @@ namespace Geex.Common.BackgroundJob
         {
             services.AddHostedService<TImplementation>(x => Activator.CreateInstance(typeof(TImplementation), new object[] { x, cron }).As<TImplementation>());
         }
-        private readonly ILogger<TImplementation> _logger;
+        private readonly ILogger<CronJobService> _logger;
 
-        /// <inheritdoc />
+        /// <summary>
+        /// note: service provider here is singleton root service provider
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="cronExp"></param>
         public CronJob(IServiceProvider sp, string cronExp)
             : base(cronExp, TimeZoneInfo.Local, cronExp.Split(" ", StringSplitOptions.RemoveEmptyEntries).Length >= 6 ? CronFormat.IncludeSeconds : CronFormat.Standard)
         {
-            this._logger = sp.GetService<ILogger<TImplementation>>();
+            this._logger = sp.GetService<ILogger<CronJobService>>();
+            this.Cron = CronExpression.Parse(cronExp);
             this.ServiceProvider = sp;
         }
+
+        public CronExpression Cron { get; private set; }
 
         private IServiceProvider ServiceProvider { get; set; }
 
         /// <inheritdoc />
         protected override Task ScheduleJob(CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Job scheduled: [{JobName}]", typeof(TImplementation).Name);
+            var next = this.Cron.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Local).GetValueOrDefault().ToLocalTime();
+            _logger.LogInformation("Job scheduled: [{JobName}], next execution will be at {next}", typeof(TImplementation).Name, next);
             return base.ScheduleJob(cancellationToken);
         }
 
