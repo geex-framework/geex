@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Geex.Common.Settings" Version="*" />
+    <PackageReference Include="Geex.Common" Version="*" />
   </ItemGroup>
 
 </Project>

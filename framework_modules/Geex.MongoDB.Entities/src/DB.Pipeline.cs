@@ -16,7 +16,7 @@ namespace MongoDB.Entities
         /// <param name="options">The options for the aggregation. This is not required.</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<IAsyncCursor<TResult>> PipelineCursorAsync<T, TResult>(Template<T, TResult> template, AggregateOptions options = null, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<IAsyncCursor<TResult>> PipelineCursorAsync<T, TResult>(TemplateQuery<T, TResult> template, AggregateOptions options = null, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return session == null
                    ? Collection<T>().AggregateAsync(template.ToPipeline(), options, cancellation)
@@ -32,7 +32,7 @@ namespace MongoDB.Entities
         /// <param name="options">The options for the aggregation. This is not required.</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static async Task<List<TResult>> PipelineAsync<T, TResult>(Template<T, TResult> template, AggregateOptions options = null, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<List<TResult>> PipelineAsync<T, TResult>(TemplateQuery<T, TResult> template, AggregateOptions options = null, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return await
                     (await PipelineCursorAsync(template, options, session, cancellation).ConfigureAwait(false))
@@ -48,7 +48,7 @@ namespace MongoDB.Entities
         /// <param name="options">The options for the aggregation. This is not required.</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static async Task<TResult> PipelineSingleAsync<T, TResult>(Template<T, TResult> template, AggregateOptions options = null, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<TResult> PipelineSingleAsync<T, TResult>(TemplateQuery<T, TResult> template, AggregateOptions options = null, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return await
                     (await PipelineCursorAsync(template, options, session, cancellation).ConfigureAwait(false))
@@ -64,7 +64,7 @@ namespace MongoDB.Entities
         /// <param name="options">The options for the aggregation. This is not required.</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static async Task<TResult> PipelineFirstAsync<T, TResult>(Template<T, TResult> template, AggregateOptions options = null, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<TResult> PipelineFirstAsync<T, TResult>(TemplateQuery<T, TResult> template, AggregateOptions options = null, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return await
                     (await PipelineCursorAsync(template, options, session, cancellation).ConfigureAwait(false))

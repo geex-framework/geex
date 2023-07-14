@@ -119,7 +119,7 @@ namespace MongoDB.Entities
         /// Specify the matching criteria with a template
         /// </summary>
         /// <param name="template">A Template with a find query</param>
-        public Find<T, TProjection> Match(Template template)
+        public Find<T, TProjection> Match(TemplateQuery template)
         {
             filter &= template.ToString();
             return this;
@@ -193,7 +193,7 @@ namespace MongoDB.Entities
         /// Specify the matching criteria with a Template
         /// </summary>
         /// <param name="template">A Template object</param>
-        public Find<T, TProjection> MatchExpression(Template template)
+        public Find<T, TProjection> MatchExpression(TemplateQuery template)
         {
             filter &= "{$expr:" + template.ToString() + "}";
             return this;

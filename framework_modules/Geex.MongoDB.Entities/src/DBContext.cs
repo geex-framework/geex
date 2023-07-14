@@ -413,7 +413,7 @@ namespace MongoDB.Entities
         /// <param name="template">A 'Template' object with tags replaced</param>
         /// <param name="options">The options for the aggregation. This is not required.</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<IAsyncCursor<TResult>> PipelineCursorAsync<T, TResult>(Template<T, TResult> template,
+        public virtual Task<IAsyncCursor<TResult>> PipelineCursorAsync<T, TResult>(TemplateQuery<T, TResult> template,
             AggregateOptions options = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.PipelineCursorAsync(template, options, session, cancellation);
@@ -428,7 +428,7 @@ namespace MongoDB.Entities
         /// <param name="template">A 'Template' object with tags replaced</param>
         /// <param name="options">The options for the aggregation. This is not required.</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<List<TResult>> PipelineAsync<T, TResult>(Template<T, TResult> template,
+        public virtual Task<List<TResult>> PipelineAsync<T, TResult>(TemplateQuery<T, TResult> template,
             AggregateOptions options = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.PipelineAsync(template, options, session, cancellation);
@@ -443,7 +443,7 @@ namespace MongoDB.Entities
         /// <param name="template">A 'Template' object with tags replaced</param>
         /// <param name="options">The options for the aggregation. This is not required.</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<TResult> PipelineSingleAsync<T, TResult>(Template<T, TResult> template,
+        public virtual Task<TResult> PipelineSingleAsync<T, TResult>(TemplateQuery<T, TResult> template,
             AggregateOptions options = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.PipelineSingleAsync(template, options, session, cancellation);
@@ -458,7 +458,7 @@ namespace MongoDB.Entities
         /// <param name="template">A 'Template' object with tags replaced</param>
         /// <param name="options">The options for the aggregation. This is not required.</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<TResult> PipelineFirstAsync<T, TResult>(Template<T, TResult> template,
+        public virtual Task<TResult> PipelineFirstAsync<T, TResult>(TemplateQuery<T, TResult> template,
             AggregateOptions options = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.PipelineFirstAsync(template, options, session, cancellation);

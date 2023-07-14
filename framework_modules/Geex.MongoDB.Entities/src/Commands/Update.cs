@@ -62,7 +62,7 @@ namespace MongoDB.Entities
         /// Specify the Entity matching criteria with a Template
         /// </summary>
         /// <param name="template">The filter Template</param>
-        public Update<T> Match(Template template)
+        public Update<T> Match(TemplateQuery template)
         {
             filter &= template.ToString();
             return this;
@@ -115,7 +115,7 @@ namespace MongoDB.Entities
         /// Specify an update with a Template to modify the Entities (use multiple times if needed)
         /// </summary>
         /// <param name="template">A Template with a single update</param>
-        public Update<T> Modify(Template template)
+        public Update<T> Modify(TemplateQuery template)
         {
             Modify(template.ToString());
             return this;
@@ -126,7 +126,7 @@ namespace MongoDB.Entities
         /// <para>NOTE: pipeline updates and regular updates cannot be used together.</para>
         /// </summary>
         /// <param name="template">A Template object containing multiple pipeline stages</param>
-        public Update<T> WithPipeline(Template template)
+        public Update<T> WithPipeline(TemplateQuery template)
         {
             foreach (var stage in template.ToStages())
             {
@@ -152,7 +152,7 @@ namespace MongoDB.Entities
         /// <para>NOTE: pipeline updates and regular updates cannot be used together.</para>
         /// </summary>
         /// <param name="template">A Template object containing a pipeline stage</param>
-        public Update<T> WithPipelineStage(Template template)
+        public Update<T> WithPipelineStage(TemplateQuery template)
         {
             return WithPipelineStage(template.ToString());
         }
@@ -177,7 +177,7 @@ namespace MongoDB.Entities
         /// Specify a single array filter using a Template to target nested entities for updates
         /// </summary>
         /// <param name="template"></param>
-        public Update<T> WithArrayFilter(Template template)
+        public Update<T> WithArrayFilter(TemplateQuery template)
         {
             WithArrayFilter(template.ToString());
             return this;
@@ -187,7 +187,7 @@ namespace MongoDB.Entities
         /// Specify multiple array filters with a Template to target nested entities for updates.
         /// </summary>
         /// <param name="template">The template with an array [...] of filters</param>
-        public Update<T> WithArrayFilters(Template template)
+        public Update<T> WithArrayFilters(TemplateQuery template)
         {
             var defs = template.ToArrayFilters<T>();
 
