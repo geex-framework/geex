@@ -2,7 +2,7 @@
     [string]$env
 )
 $cwd = Split-Path -Parent $MyInvocation.MyCommand.Definition;
-
+# dotnet tool restore
 echo $env
 
 if ($env -eq "dev" -or $env -eq "Dev") {

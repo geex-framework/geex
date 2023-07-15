@@ -31,11 +31,11 @@ namespace x_Org_x.x_Proj_x.x_Mod_x.Core.Aggregates.x_Aggregate_xs
 
         public class x_Aggregate_xBsonConfig : BsonConfig<x_Aggregate_x>
         {
-            protected override void Map(BsonClassMap<x_Aggregate_x> map)
+            protected override void Map(BsonClassMap<x_Aggregate_x> map, BsonIndexConfig<x_Aggregate_x> indexConfig)
             {
                 map.SetIsRootClass(true);
-                map.Inherit<x_Aggregate_x>();
                 map.AutoMap();
+                indexConfig.MapEntityDefaultIndex();
             }
         }
 
@@ -43,8 +43,6 @@ namespace x_Org_x.x_Proj_x.x_Mod_x.Core.Aggregates.x_Aggregate_xs
         {
             protected override void Configure(IObjectTypeDescriptor<x_Aggregate_x> descriptor)
             {
-                // Implicitly binding all fields, if you want to bind fields explicitly, read more about hot chocolate
-                descriptor.BindFieldsImplicitly();
                 descriptor.ConfigEntity();
             }
         }

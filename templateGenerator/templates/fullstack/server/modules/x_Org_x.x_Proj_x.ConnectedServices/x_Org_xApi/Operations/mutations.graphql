@@ -1,0 +1,9 @@
+mutation checkTenant($code: String!) {
+  checkTenant(code: $code) {
+    code
+    name
+    isEnabled
+    id
+    createdOn
+  }
+}

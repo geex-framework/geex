@@ -36,4 +36,8 @@ namespace x_Org_x.x_Proj_x.ConnectedServices
             base.ConfigureServices(context);
         }
     }
+    public class x_Proj_xConnectedServiceModuleOptions : GeexModuleOption<x_Proj_xConnectedServiceModule>
+    {
+        
+    }
 }

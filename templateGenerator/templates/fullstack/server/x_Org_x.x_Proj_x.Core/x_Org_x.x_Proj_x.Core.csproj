@@ -21,15 +21,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Geex.Common.Abstraction" Version="*" />
-    <PackageReference Include="Geex.Common.Authorization" Version="*" />
-    <PackageReference Include="Geex.Common.BlobStorage" Version="*" />
-    <PackageReference Include="Geex.Common.Identity" Version="*" />
-    <PackageReference Include="Geex.Common.Logging" Version="*" />
-    <PackageReference Include="Geex.Common.Messaging" Version="*" />
-    <PackageReference Include="Geex.Common.MultiTenant" Version="*" />
-    <PackageReference Include="Geex.Common.Settings" Version="*" />
-    <PackageReference Include="Geex.Common" Version="*" />
+    <PackageReference Include="Geex.Common.Abstraction" Version="7.0.5.3" />
+    <PackageReference Include="Geex.Common.Authorization" Version="7.0.5.3" />
+    <PackageReference Include="Geex.Common.BlobStorage" Version="7.0.5.3" />
+    <PackageReference Include="Geex.Common.Identity" Version="7.0.5.3" />
+    <PackageReference Include="Geex.Common.Logging" Version="7.0.5.3" />
+    <PackageReference Include="Geex.Common.Messaging" Version="7.0.5.3" />
+    <PackageReference Include="Geex.Common.MultiTenant" Version="7.0.5.3" />
+    <PackageReference Include="Geex.Common.Settings" Version="7.0.5.3" />
+    <PackageReference Include="Geex.Common" Version="7.0.5.3" />
   </ItemGroup>
 
   <ItemGroup>

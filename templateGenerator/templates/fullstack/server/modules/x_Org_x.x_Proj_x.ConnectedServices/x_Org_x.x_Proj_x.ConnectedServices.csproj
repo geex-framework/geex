@@ -13,24 +13,49 @@
 
   <ItemGroup>
     <PackageReference Include="IdentityModel" Version="5.2.0" />
+    <PackageReference Include="StrawberryShake.Server" Version="13.3.3" />
+    <!--<PackageReference Include="StrawberryShake.CodeGeneration.CSharp.Analyzers" Version="13.0.0-geex-preview.37">
+      <PrivateAssets>all</PrivateAssets>
+      -->
+    <!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
+    <!--
+    </PackageReference>-->
+
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Geex.Common.Abstraction" Version="*" />
-    <PackageReference Include="StrawberryShake.Server" Version="13.2.1" />
+  <ItemGroup Label="GeexFrameworkReference">
+    <PackageReference Include="Geex.Common.Abstraction" Version="7.0.5.3" />
   </ItemGroup>
 
 
-  <!--<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec WorkingDirectory="$(ProjectDir)" Command="pwsh ./PreBuild.ps1 -env Development"></Exec>
-  </Target>-->
+ 
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec WorkingDirectory="$(ProjectDir)" Command="pwsh ./PreBuild.ps1 -env Development">
+    </Exec>
+  </Target>
   <ItemGroup>
     <Content Remove="x_Org_xApi\.graphqlrc.json" />
   </ItemGroup>
-
+  <ItemGroup>
+    <GraphQL Remove="x_Org_xApi\Operations\mutations.graphql" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="x_Org_xApi\.graphqlrc.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="StrawberryShake.Tools.Configuration" Version="13.3.3" />
+    <!--<Analyzer Include="..\..\..\..\..\framework_modules\patched_packages\StrawberryShake.CodeGeneration.CSharp.Analyzers.dll" />
+
+    <Reference Include="StrawberryShake.Tools.Configuration">
+      <HintPath>..\..\..\..\..\framework_modules\patched_packages\StrawberryShake.Tools.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="StrawberryShake.Transport.Http">
+      <HintPath>..\..\..\..\..\framework_modules\patched_packages\StrawberryShake.Transport.Http.dll</HintPath>
+    </Reference>-->
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="x_Org_xApi\Generated\" />
   </ItemGroup>
 
 </Project>

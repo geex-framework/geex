@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Geex.Common.Settings" Version="*" />
+    <PackageReference Include="Geex.Common.Settings" Version="7.0.5.3" />
   </ItemGroup>
 
   <ItemGroup>
