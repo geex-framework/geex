@@ -105,7 +105,11 @@ namespace Geex.Common
             context.Services.AddHttpResultSerializer(x => new GeexResultSerializerWithCustomStatusCodes(new LazyService<ClaimsPrincipal>(x)));
             IReadOnlySchemaOptions capturedSchemaOptions = default;
             schemaBuilder.AddConvention<ITypeInspector>(typeof(GeexTypeInspector))
-                .ModifyOptions(opt => capturedSchemaOptions = opt)
+                .ModifyOptions(opt =>
+                {
+                    opt.EnableOneOf = true;
+                    capturedSchemaOptions = opt;
+                })
                 .AddConvention<INamingConventions>(sp => new GeexNamingConventions(new XmlDocumentationProvider(new XmlDocumentationFileResolver(capturedSchemaOptions.ResolveXmlDocumentationFileName), sp.GetApplicationService<ObjectPool<StringBuilder>>())))
                 .TryAddTypeInterceptor<GeexTypeInterceptor>()
                 .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
@@ -125,7 +129,7 @@ namespace Geex.Common
                     MaxPageSize = moduleOptions.MaxPageSize
                 })
                 .AddErrorFilter<LoggingErrorFilter>(_ =>
-                    new LoggingErrorFilter(_.GetService<ILoggerProvider>()))
+                    new LoggingErrorFilter(_.GetService<ILoggerFactory>()))
                 .AddInMemorySubscriptions()
                 .AddValidationVisitor<ExtraArgsTolerantValidationVisitor>()
                 .AddTransactionScopeHandler<GeexTransactionScopeHandler>()

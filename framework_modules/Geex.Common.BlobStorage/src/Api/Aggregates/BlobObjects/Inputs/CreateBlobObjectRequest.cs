@@ -8,6 +8,9 @@ namespace Geex.Common.BlobStorage.Api.Aggregates.BlobObjects.Inputs
     {
         public IFile File { get; set; }
         public BlobStorageType StorageType { get; set; }
-        public string Md5 { get; set; }
+        /// <summary>
+        /// can pass null, will be calculated
+        /// </summary>
+        public string? Md5 { get; set; }
     }
 }

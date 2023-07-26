@@ -7,12 +7,12 @@ namespace Geex.Common.Abstractions
 {
     public class LoggingErrorFilter : IErrorFilter
     {
-        public LoggingErrorFilter(ILoggerProvider? loggerProvider)
+        public LoggingErrorFilter(ILoggerFactory? loggerFactory)
         {
-            LoggerProvider = loggerProvider;
+            LoggerFactory = loggerFactory;
         }
 
-        public ILoggerProvider LoggerProvider { get; }
+        public ILoggerFactory LoggerFactory { get; }
 
         public IError OnError(IError error)
         {
@@ -20,11 +20,13 @@ namespace Geex.Common.Abstractions
             {
                 if (error.Exception?.TargetSite?.DeclaringType != default)
                 {
-                    LoggerProvider.CreateLogger(error.Exception.TargetSite.DeclaringType.FullName).LogException(error.Exception);
+                    var logger = LoggerFactory.CreateLogger(error.Exception.TargetSite.DeclaringType.FullName);
+                    logger.LogException(error.Exception);
                 }
                 else
                 {
-                    LoggerProvider.CreateLogger("Null").LogException(error.Exception);
+                    var logger = LoggerFactory.CreateLogger("Null");
+                    logger.LogException(error.Exception);
                 }
             }
             return error;

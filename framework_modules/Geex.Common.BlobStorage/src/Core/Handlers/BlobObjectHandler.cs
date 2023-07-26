@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
@@ -10,26 +12,43 @@ using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
 using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.BlobStorage.Api.Abstractions;
 using MediatR;
+using Microsoft.Extensions.Caching.Memory;
 using MimeKit;
 using MongoDB.Entities;
+using RestSharp.Extensions;
+using StackExchange.Redis.Extensions.Core;
+using StackExchange.Redis.Extensions.Core.Abstractions;
+using HonkSharp.Fluency;
 
 namespace Geex.Common.BlobStorage.Core.Handlers
 {
     public class BlobObjectHandler :
-        ICommonHandler<IBlobObject,BlobObject>,
+        ICommonHandler<IBlobObject, BlobObject>,
         IRequestHandler<CreateBlobObjectRequest, IBlobObject>,
         IRequestHandler<DeleteBlobObjectRequest, Unit>,
-        IRequestHandler<DownloadFileRequest, (IBlobObject blob, DbFile dbFile)>
+        IRequestHandler<DownloadFileRequest, (IBlobObject blob, Stream dataStream)>
     {
+        private readonly IMemoryCache _memCache;
+        private readonly IRedisDatabase _redis;
         public DbContext DbContext { get; }
 
-        public BlobObjectHandler(DbContext dbContext)
+        public BlobObjectHandler(DbContext dbContext, IMemoryCache memCache, IRedisDatabase redis)
         {
+            _memCache = memCache;
+            _redis = redis;
             DbContext = dbContext;
         }
 
         public async Task<IBlobObject> Handle(CreateBlobObjectRequest request, CancellationToken cancellationToken)
         {
+            var stream = new MemoryStream();
+            using (var readStream = request.File.OpenReadStream())
+            {
+
+                await readStream.CopyToAsync(stream, cancellationToken);
+                stream.Position = 0;
+            }
+            request.Md5 ??= stream.Md5();
             var entity = new BlobObject(request.File.Name, request.Md5, request.StorageType, MimeTypes.GetMimeType(request.File.Name), request.File.Length.GetValueOrDefault());
             DbContext.Attach(entity);
             if (request.StorageType == BlobStorageType.Db)
@@ -40,12 +59,13 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                     dbFile = new DbFile(entity.Md5);
                     DbContext.Attach(dbFile);
                     await DbContext.SaveChanges(cancellationToken);
-                    await dbFile.Data.UploadAsync(request.File.OpenReadStream(), cancellation: cancellationToken);
+                    await dbFile.Data.UploadAsync(stream, cancellation: cancellationToken);
                 }
             }
-            else
+            else if (request.StorageType == BlobStorageType.Cache)
             {
-                throw new NotImplementedException();
+                _memCache.Set(entity.Md5, stream, TimeSpan.FromMinutes(5));
+                await _redis.SetNamedAsync(entity, expireIn: TimeSpan.FromMinutes(5), token: cancellationToken);
             }
             return entity;
         }
@@ -79,11 +99,24 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<(IBlobObject blob, DbFile dbFile)> Handle(DownloadFileRequest request, CancellationToken cancellationToken)
+        public async Task<(IBlobObject blob, Stream dataStream)> Handle(DownloadFileRequest request, CancellationToken cancellationToken)
         {
-            var blob = await Task.FromResult(DbContext.Queryable<BlobObject>().First(x => x.Id == request.FileId));
-            var dbFile = await Task.FromResult(DbContext.Queryable<DbFile>().First(x => x.Md5 == blob.Md5));
-            return (blob, dbFile);
+
+            var dataStream = new MemoryStream();
+            if (request.StorageType == BlobStorageType.Db)
+            {
+                var blob = await Task.FromResult(DbContext.Queryable<BlobObject>().First(x => x.Id == request.FileId));
+                var dbFile = await Task.FromResult(DbContext.Queryable<DbFile>().First(x => x.Md5 == blob.Md5));
+                await dbFile.Data.DownloadAsync(dataStream, cancellation: cancellationToken);
+                return (blob, dataStream);
+            }
+            if (request.StorageType == BlobStorageType.Cache)
+            {
+                var blob = await _redis.GetNamedAsync<BlobObject>(request.FileId);
+                var stream = _memCache.Get<Stream>(blob.Md5);
+                return (blob, stream);
+            }
+            throw new NotImplementedException();
         }
     }
 }

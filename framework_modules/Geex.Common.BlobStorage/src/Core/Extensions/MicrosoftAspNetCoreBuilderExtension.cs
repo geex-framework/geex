@@ -35,10 +35,10 @@ namespace Microsoft.AspNetCore.Builder
                 var response = context.Response;
                 if (context.Request.Query.TryGetValue("storageType", out var storageType) && context.Request.Query.TryGetValue("fileId", out var fileId))
                 {
-                    var (blobObject, dbFile) = await context.RequestServices.GetService<IMediator>().Send(new DownloadFileRequest(fileId, BlobStorageType.FromValue(storageType)));
+                    var (blobObject, stream) = await context.RequestServices.GetService<IMediator>().Send(new DownloadFileRequest(fileId, BlobStorageType.FromValue(storageType)));
                     response.ContentType = blobObject.MimeType;
                     response.Headers.ContentDisposition = $"Attachment;FileName*=utf-8''{blobObject.FileName.UrlEncode()}";
-                    await dbFile.Data.DownloadAsync(response.Body);
+                    await stream.CopyToAsync(response.Body);
                     await response.CompleteAsync();
                 }
                 else

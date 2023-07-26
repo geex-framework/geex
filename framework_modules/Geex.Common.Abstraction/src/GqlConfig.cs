@@ -16,5 +16,8 @@ namespace Geex.Common.Abstraction
         public abstract class Object<T> : ObjectType<T>
         {
         }
+        public abstract class Input<T> : InputObjectType<T>
+        {
+        }
     }
 }
