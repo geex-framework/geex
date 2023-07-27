@@ -117,6 +117,13 @@ namespace Geex.Common.Abstractions
             this.SchemaBuilder.ConfigExtensionTypes();
         }
 
+        /// <inheritdoc />
+        public override void PostConfigureServices(ServiceConfigurationContext context)
+        {
+            base.PostConfigureServices(context);
+            ServiceLocator.Global = context.Services.BuildServiceProvider();
+        }
+
         public override async Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();

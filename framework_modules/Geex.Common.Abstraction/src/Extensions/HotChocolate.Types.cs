@@ -290,5 +290,12 @@ namespace HotChocolate.Types
             GeexTypeInterceptor.IgnoredTypes.AddIfNotContains(typeof(T));
             return descriptor;
         }
+
+        public static IInputObjectTypeDescriptor<T> IsOneOf<T, TParent>(
+     this IInputObjectTypeDescriptor<T> descriptor) where T : TParent
+        {
+            GeexTypeInterceptor.OneOfConfigs.AddIfNotContains(new KeyValuePair<Type, Type>(typeof(TParent), typeof(T)));
+            return descriptor;
+        }
     }
 }
