@@ -23,7 +23,6 @@ namespace Geex.Common.Authentication.Utils
         // This is the key to the auth token in the HTTP Context
         public static readonly string HTTP_CONTEXT_WEBSOCKET_AUTH_KEY = "websocket-auth-token";
         // This is the key that apollo uses in the connection init request
-        public static readonly string WEBOCKET_PAYLOAD_AUTH_KEY = HeaderNames.Authorization.ToLowerInvariant();
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
         private readonly IAuthenticationSchemeProvider _schemes;
         public TokenValidationParameters TokenValidationParameters { get; }
@@ -41,7 +40,8 @@ namespace Geex.Common.Authentication.Utils
         {
             try
             {
-                var jwtHeader = (connectionInitMessage as InitializeConnectionMessage)?.Payload.GetValueOrDefault().GetString(WEBOCKET_PAYLOAD_AUTH_KEY);
+                var payload = (connectionInitMessage as InitializeConnectionMessage)?.Payload.GetValueOrDefault();
+                var jwtHeader = payload?.GetString( HeaderNames.Authorization)??payload?.GetString(HeaderNames.Authorization.ToLowerInvariant());
 
                 //if (string.IsNullOrEmpty(jwtHeader) || !jwtHeader.StartsWith("Bearer "))
                 //    return ConnectionStatus.Reject("Unauthorized");
