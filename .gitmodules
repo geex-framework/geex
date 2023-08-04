@@ -1,3 +1,7 @@
 [submodule "private/Geex.Platform"]
 	path = private/Geex.Platform
 	url = https://github.com/geex-framework/Geex.Platform
+
+[submodule "private/Geex.TemplateGenerator"]
+	path = private/Geex.TemplateGenerator
+	url = https://github.com/geex-framework/Geex.TemplateGenerator

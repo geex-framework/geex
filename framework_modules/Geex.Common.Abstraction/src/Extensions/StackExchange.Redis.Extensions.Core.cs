@@ -40,7 +40,7 @@ namespace StackExchange.Redis.Extensions.Core
         {
             var redisConfiguration = services.GetSingletonInstance<GeexCoreModuleOptions>();
             services.AddSingleton<IRedisCacheClient, RedisCacheClient>();
-            services.AddSingleton<IRedisDatabase>(x => x.GetService<IRedisCacheClient>()?.Db0!);
+            services.AddSingleton<IRedisDatabase>(x => x.GetService<IRedisCacheClient>().Db0);
             services.AddSingleton<IRedisCacheConnectionPoolManager, RedisCacheConnectionPoolManager>();
             services.AddSingleton<ISerializer, SystemTextJsonSerializer>(x => new SystemTextJsonSerializer(Json.DefaultSerializeSettings));
 
