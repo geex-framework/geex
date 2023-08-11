@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
+
+using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Entities;
 using MongoDB.Entities.Interceptors;
@@ -14,12 +16,17 @@ namespace Geex.Common.Abstraction.MultiTenant
     /// <summary>
     /// 租户过滤标记接口, 被标记的实体将默认参与租户过滤
     /// </summary>
-    public interface ITenantFilteredEntity : IIntercepted, IEntityBase
+    public interface ITenantFilteredEntity : IAttachIntercepted, IEntity
     {
         /// <summary>
         /// 租户编码, 为null时为宿主数据
         /// </summary>
         public string? TenantCode { get; [Obsolete(message: "框架会自动维护租户编码, 请勿直接set.", error: true)] set; }
+
+        void IAttachIntercepted.InterceptOnAttach()
+        {
+            (this as ITenantFilteredEntity).SetTenant(this.DbContext.ServiceProvider.GetService<LazyService<ICurrentTenant>>().Value.Code);
+        }
 
         /// <summary>
         /// 设置租户信息<br/>

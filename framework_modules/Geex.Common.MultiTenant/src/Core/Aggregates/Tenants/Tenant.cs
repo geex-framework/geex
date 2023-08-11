@@ -10,12 +10,16 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
+using Geex.Common.Abstractions;
 using Geex.Common.MultiTenant.Api.Aggregates.Tenants;
 
 using HotChocolate.Types;
 
+using Microsoft.Extensions.DependencyInjection;
+
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using MongoDB.Entities.Interceptors;
 
 namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
 {
@@ -53,7 +57,7 @@ namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
                 map.Inherit<ITenant>();
                 map.AutoMap();
                 indexConfig.MapEntityDefaultIndex();
-                indexConfig.MapIndex(builder => builder.Ascending(x=>x.Code), options =>
+                indexConfig.MapIndex(builder => builder.Ascending(x => x.Code), options =>
                 {
                     options.Background = true;
                     options.Sparse = true;

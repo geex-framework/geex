@@ -1,45 +1,14 @@
-﻿namespace MongoDB.Entities.Interceptors
+﻿using System.Threading.Tasks;
+
+namespace MongoDB.Entities.Interceptors
 {
-    public interface IIntercepted : IEntityBase
+    public interface IAttachIntercepted : IEntityBase
     {
-    }
-    public abstract class DataInterceptor<T> : IDataInterceptor<T> where T : IIntercepted
-    {
-        public abstract void Apply(T entity);
-
-        /// <inheritdoc />
-        public abstract InterceptorExecuteTiming InterceptAt { get; }
+        public void InterceptOnAttach();
     }
 
-    /// <summary>
-    /// invoke when entity is saved(not commit)
-    /// </summary>
-    public interface IDataInterceptor<T> : IDataInterceptor where T : IIntercepted
+    public interface ISaveIntercepted : IEntityBase
     {
-        void Apply(T entity);
-        void IDataInterceptor.Apply(IEntityBase entity)
-        {
-            this.Apply((T)entity);
-        }
-    }
-    /// <summary>
-    /// invoke when entity is saved(not commit)
-    /// </summary>
-    public interface IDataInterceptor
-    {
-        void Apply(IEntityBase entity);
-        InterceptorExecuteTiming InterceptAt { get; }
-    }
-
-    public enum InterceptorExecuteTiming
-    {
-        /// <summary>
-        /// trigger when attach(attach multiple times will not take effect)
-        /// </summary>
-        Attach,
-        /// <summary>
-        /// trigger when save(will take effect every time)
-        /// </summary>
-        Save
+        public Task InterceptOnSave();
     }
 }

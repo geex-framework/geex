@@ -45,14 +45,6 @@ namespace MongoDB.Entities
         public IMongoDatabase DefaultDb => DB.DefaultDb;
 
         /// <summary>
-        /// 拦截器集合<br/>
-        /// key = 被拦截的标记接口类型<br/>
-        /// value = 拦截器工厂方法
-        /// </summary>
-        public static ConcurrentDictionary<Type, Func<IServiceProvider, IDataInterceptor>> StaticDataInterceptors { get; } = new()
-        {
-        };
-        /// <summary>
         /// 过滤器集合<br/>
         /// key = 被过滤的标记接口类型<br/>
         /// value = 过滤器工厂方法
@@ -70,16 +62,6 @@ namespace MongoDB.Entities
             get
             {
                 return _dataFilters ??= new(StaticDataFilters.ToDictionary(x => x.Key, x => x.Value(this.ServiceProvider)));
-            }
-        }
-
-        private ConcurrentDictionary<Type, IDataInterceptor> _dataInterceptors;
-
-        public ConcurrentDictionary<Type, IDataInterceptor> DataInterceptors
-        {
-            get
-            {
-                return _dataInterceptors ??= new(StaticDataInterceptors.ToDictionary(x => x.Key, x => x.Value(this.ServiceProvider)));
             }
         }
 
@@ -117,24 +99,6 @@ namespace MongoDB.Entities
             return DB.CountAsync(expression, this, cancellation);
         }
 
-        /// <summary>
-        /// Register interceptors
-        /// </summary>
-        /// <param name="interceptorTypes"></param>
-        /// <returns></returns>
-        public virtual void RemoveDataInterceptors(params Type[] interceptorTypes)
-        {
-            foreach (var interceptorType in interceptorTypes)
-            {
-                if (!interceptorType.BaseType.Name.EndsWith("Interceptor`1"))
-                {
-                    throw new NotSupportedException("interceptors must directly inherit abstract Interceptor<>");
-                }
-
-                DataInterceptors.Remove(interceptorType.BaseType.GenericTypeArguments[0], out _);
-            }
-        }
-
         public virtual void RemoveDataFilters(params Type[] filteredInterfaces)
         {
             foreach (var filterInterface in filteredInterfaces)
@@ -161,24 +125,6 @@ namespace MongoDB.Entities
             return context;
         }
 
-        /// <summary>
-        /// Register interceptors
-        /// </summary>
-        /// <param name="interceptors"></param>
-        /// <returns></returns>
-        public virtual void RegisterDataInterceptors(params IDataInterceptor[] interceptors)
-        {
-            foreach (var interceptor in interceptors)
-            {
-                if (!interceptor.GetType().BaseType.Name.EndsWith("Interceptor`1"))
-                {
-                    throw new NotSupportedException("interceptors must directly inherit abstract Interceptor<>");
-                }
-
-                DataInterceptors.AddOrUpdate(interceptor.GetType().BaseType.GenericTypeArguments[0], interceptor, (_, _) => interceptor);
-            }
-        }
-
         public virtual void RegisterDataFilters(params IDataFilter[] dataFilters)
         {
             foreach (var dataFilter in dataFilters)
@@ -186,24 +132,6 @@ namespace MongoDB.Entities
                 var filterType = dataFilter.GetType();
                 // bug:这里只找了两层, 需要优化
                 DataFilters.AddOrUpdate(filterType.GenericTypeArguments.ElementAtOrDefault(0) ?? filterType.BaseType.GenericTypeArguments.ElementAtOrDefault(0), dataFilter, (_, _) => dataFilter);
-            }
-        }
-
-        /// <summary>
-        /// Register interceptors
-        /// </summary>
-        /// <param name="interceptorTypes"></param>
-        /// <returns></returns>
-        public static void RemoveDataInterceptorsForAll(params Type[] interceptorTypes)
-        {
-            foreach (var interceptorType in interceptorTypes)
-            {
-                if (!interceptorType.BaseType.Name.EndsWith("Interceptor`1"))
-                {
-                    throw new NotSupportedException("interceptors must directly inherit abstract Interceptor<>");
-                }
-
-                StaticDataInterceptors.Remove(interceptorType.BaseType.GenericTypeArguments[0], out _);
             }
         }
 
@@ -254,15 +182,9 @@ namespace MongoDB.Entities
             }
             else
             {
-                if (entity is IIntercepted)
+                if (entity is IAttachIntercepted intercepted)
                 {
-                    foreach (var (entityType, interceptor) in this.DataInterceptors.Where(x => x.Value.InterceptAt == InterceptorExecuteTiming.Attach))
-                    {
-                        if (entityType.IsInstanceOfType(entity))
-                        {
-                            interceptor.Apply(entity);
-                        }
-                    }
+                    intercepted.InterceptOnAttach();
                 }
 
                 if (this.Local[rootType].Count > 10000)
@@ -295,7 +217,7 @@ namespace MongoDB.Entities
         }
         public virtual List<T> Attach<T>(List<T> entities) where T : IEntityBase
         {
-            entities.ReplaceWhile(x => true, this.Attach);
+            entities.ReplaceWhile(x => true, x => this.Attach(x));
             return entities;
         }
         /// <summary>
@@ -685,7 +607,7 @@ namespace MongoDB.Entities
         /// <param name="newValue"></param>
         /// <param name="originValue"></param>
         /// <returns></returns>
-        private bool IsValueChanged(IEntityBase newValue, IEntityBase originValue)
+        protected virtual bool IsValueChanged(IEntityBase newValue, IEntityBase originValue)
         {
             return !_compareLogic.Compare(newValue, originValue).AreEqual;
         }

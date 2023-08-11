@@ -25,13 +25,13 @@ namespace MongoDB.Entities
         /// <param name="entity">The instance to persist</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">And optional cancellation token</param>
-        public static Task<ReplaceOneResult> SaveAsync<T>(T entity, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<ReplaceOneResult> SaveAsync<T>(T entity, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            PrepareForSave(entity, dbContext);
+            await PrepareForSave(entity, dbContext);
 
             return dbContext?.Session == null
-                   ? Collection<T>().ReplaceOneAsync(x => x.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true }, cancellation)
-                   : Collection<T>().ReplaceOneAsync(dbContext.Session, x => x.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true }, cancellation);
+                   ? await Collection<T>().ReplaceOneAsync(x => x.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true }, cancellation)
+                   : await Collection<T>().ReplaceOneAsync(dbContext.Session, x => x.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true }, cancellation);
         }
 
         /// <summary>
@@ -42,12 +42,12 @@ namespace MongoDB.Entities
         /// <param name="entities">The entities to persist</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">And optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveAsync<T>(IEnumerable<T> entities, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<BulkWriteResult<T>> SaveAsync<T>(IEnumerable<T> entities, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             var models = new List<WriteModel<T>>();
             foreach (var ent in entities)
             {
-                PrepareForSave(ent, dbContext);
+                await PrepareForSave(ent, dbContext);
 
                 var upsert = new ReplaceOneModel<T>(
                         filter: Builders<T>.Filter.Eq(e => e.Id, ent.Id),
@@ -57,8 +57,8 @@ namespace MongoDB.Entities
             }
 
             return dbContext?.Session == null
-                   ? Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)
-                   : Collection<T>().BulkWriteAsync(dbContext.Session, models, unOrdBlkOpts, cancellation);
+                   ? await Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)
+                   : await Collection<T>().BulkWriteAsync(dbContext.Session, models, unOrdBlkOpts, cancellation);
         }
 
         /// <summary>
@@ -175,7 +175,7 @@ namespace MongoDB.Entities
                 : Collection<T>().UpdateOneAsync(session, e => e.Id == entity.Id, Builders<T>.Update.Combine(defs), updateOptions, cancellation);
         }
 
-        private static void PrepareForSave<T>(T entity, DbContext dbContext) where T : IEntityBase
+        private static async Task PrepareForSave<T>(T entity, DbContext dbContext) where T : IEntityBase
         {
             if (dbContext != default && entity.DbContext == default)
             {
@@ -190,15 +190,9 @@ namespace MongoDB.Entities
                 }
             }
 
-            if (entity is IIntercepted)
+            if (entity is ISaveIntercepted intercepted)
             {
-                foreach (var (entityType, interceptor) in dbContext.DataInterceptors.Where(x => x.Value.InterceptAt == InterceptorExecuteTiming.Save))
-                {
-                    if (entityType.IsInstanceOfType(entity))
-                    {
-                        interceptor.Apply(entity);
-                    }
-                }
+                await intercepted.InterceptOnSave();
             }
 
             if (entity is IModifiedOn modifiedOn)
@@ -211,7 +205,7 @@ namespace MongoDB.Entities
                 .Select(a => a.ToString().Split('.')[1]);
         }
 
-        private static IEnumerable<UpdateDefinition<T>> BuildUpdateDefs<T>(T entity,
+        private static async Task<IEnumerable<UpdateDefinition<T>>> BuildUpdateDefs<T>(T entity,
             Expression<Func<T, object>> members, DbContext dbContext, bool excludeMode = false) where T : IEntityBase
         {
             var propNames = RootPropNames(members);
@@ -219,7 +213,7 @@ namespace MongoDB.Entities
             if (!propNames.Any())
                 throw new ArgumentException("Unable to get any properties from the members expression!");
 
-            PrepareForSave(entity, dbContext);
+            await PrepareForSave(entity, dbContext);
 
             var props = Cache<T>.UpdatableProps(entity);
 
@@ -231,21 +225,21 @@ namespace MongoDB.Entities
             return props.Select(p => Builders<T>.Update.Set(p.Name, p.GetValue(entity)));
         }
 
-        private static Task<UpdateResult> SavePartial<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
+        private static async Task<UpdateResult> SavePartial<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
         {
             return
                 dbContext?.Session == null
-                ? Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, Builders<T>.Update.Combine(BuildUpdateDefs(entity, members, dbContext, excludeMode)), updateOptions, cancellation)
-                : Collection<T>().UpdateOneAsync(dbContext.Session, e => e.Id == entity.Id, Builders<T>.Update.Combine(BuildUpdateDefs(entity, members, dbContext, excludeMode)), updateOptions, cancellation);
+                ? await Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, Builders<T>.Update.Combine(await BuildUpdateDefs(entity, members, dbContext, excludeMode)), updateOptions, cancellation)
+                : await Collection<T>().UpdateOneAsync(dbContext.Session, e => e.Id == entity.Id, Builders<T>.Update.Combine(await BuildUpdateDefs(entity, members, dbContext, excludeMode)), updateOptions, cancellation);
         }
 
-        private static Task<BulkWriteResult<T>> SavePartial<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
+        private static async Task<BulkWriteResult<T>> SavePartial<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
         {
             var models = new List<WriteModel<T>>();
 
             foreach (var ent in entities)
             {
-                var update = Builders<T>.Update.Combine(BuildUpdateDefs(ent, members, dbContext, excludeMode));
+                var update = Builders<T>.Update.Combine(await BuildUpdateDefs(ent, members, dbContext, excludeMode));
 
                 var upsert = new UpdateOneModel<T>(
                         filter: Builders<T>.Filter.Eq(e => e.Id, ent.Id),
@@ -255,8 +249,8 @@ namespace MongoDB.Entities
             }
 
             return dbContext?.Session == null
-                ? Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)
-                : Collection<T>().BulkWriteAsync(dbContext.Session, models, unOrdBlkOpts, cancellation);
+                ? await Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)
+                : await Collection<T>().BulkWriteAsync(dbContext.Session, models, unOrdBlkOpts, cancellation);
         }
     }
 }

@@ -120,5 +120,18 @@ namespace System.Linq
             visitor.Visit(expression);
             return visitor;
         }
+
+        public static async Task ReplaceWhile<T>(
+      this IList<T> source,
+      Predicate<T> selector,
+      Func<T, Task<T>> itemFactory)
+        {
+            for (int index = 0; index < source.Count; ++index)
+            {
+                T obj = source[index];
+                if (selector(obj))
+                    source[index] = await itemFactory(obj);
+            }
+        }
     }
 }

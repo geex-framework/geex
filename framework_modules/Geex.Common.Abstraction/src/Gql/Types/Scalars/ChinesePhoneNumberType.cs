@@ -10,7 +10,7 @@ namespace Geex.Common.Gql.Types.Scalars
         private const string _validationPattern = "^[1]([3-9])[0-9]{9}$";
 
         public ChinesePhoneNumberType()
-          : this((string)"ChinesePhoneNumberType", @"^\[1\]\(\[3-9\]\)[0-9]{9}$")
+          : this((string)"ChinesePhoneNumber", _validationPattern)
         {
         }
 

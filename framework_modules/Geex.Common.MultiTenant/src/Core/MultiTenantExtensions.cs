@@ -22,7 +22,6 @@ namespace Geex.Common.MultiTenant.Core
             services.AddScoped<ICurrentTenant, CurrentTenant>();
             services.AddScoped<ICurrentTenantResolver, CurrentTenantResolver>();
             services.AddScoped<IDataFilter<ITenantFilteredEntity>, TenantDataFilter>(x => new TenantDataFilter(x.GetService<LazyService<ICurrentTenant>>()));
-            services.AddScoped<IDataInterceptor<ITenantFilteredEntity>, TenantInterceptor>(x => new TenantInterceptor(x.GetService<LazyService<ICurrentTenant>>()));
             return services;
         }
     }

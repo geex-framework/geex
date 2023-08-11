@@ -174,7 +174,6 @@ namespace Geex.Common
         public override void PostConfigureServices(ServiceConfigurationContext context)
         {
             context.Services.AddDataFilters();
-            context.Services.AddDataInterceptors();
             base.PostConfigureServices(context);
             foreach (var name in GeexTypeInterceptor.IgnoredTypes.Select(x => x.Name))
             {
