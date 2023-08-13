@@ -24,6 +24,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 
 namespace MongoDB.Entities.InnerQuery
 {
@@ -61,7 +62,7 @@ namespace MongoDB.Entities.InnerQuery
         public IQueryable<TResult> CreateQuery<TResult>(Expression expression)
         {
             if (!typeof(IQueryable<TResult>).IsAssignableFrom(expression.Type))
-                throw new ArgumentOutOfRangeException(nameof(expression));
+                throw new ExpressionNotSupportedException(expression);
 
             var queryable = new MongoAggregationQueryable<TResult>(_collection.CollectionNamespace.CollectionName)
             {

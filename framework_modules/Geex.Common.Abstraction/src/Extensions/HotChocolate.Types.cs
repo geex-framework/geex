@@ -16,6 +16,7 @@ using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Auditing;
 using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
+using Geex.Common.Abstraction.Gql.Types.Scalars;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
 using Geex.Common.Authorization;
@@ -29,6 +30,7 @@ using HotChocolate.Types.Descriptors.Definitions;
 
 using Humanizer;
 
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -127,6 +129,7 @@ namespace HotChocolate.Types
                 })
                 .AddInterfaceType<IPagedList>()
                 .BindRuntimeType<ObjectId, ObjectIdType>()
+                .BindRuntimeType<MediaType, MimeTypeType>()
                 .BindRuntimeType<JsonNode, JsonNodeType>();
         }
 

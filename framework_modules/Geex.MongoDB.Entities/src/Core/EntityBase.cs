@@ -52,6 +52,17 @@ namespace MongoDB.Entities
         }
         internal Dictionary<string, ILazyQuery> LazyQueryCache { get; } = new Dictionary<string, ILazyQuery>();
 
+        /// <inheritdoc />
+        IEntityBase IEntityBase.OriginValue
+        {
+            get => this.OriginValue;
+        }
+
+        /// <inheritdoc />
+        public bool ValueChanged => this.DbContext.Compare(this, this.OriginValue);
+
+        public T OriginValue { get; }
+
         ///// <inheritdoc />
         //ILazyQuery IEntity.ConfigLazyQueryable(Expression lazyQuery, Expression batchQuery, Func<IQueryable> sourceProvider)
         //{

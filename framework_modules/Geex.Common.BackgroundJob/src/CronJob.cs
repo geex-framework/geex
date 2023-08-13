@@ -33,10 +33,10 @@ namespace Geex.Common.BackgroundJob
         /// <param name="sp"></param>
         /// <param name="cronExp"></param>
         public CronJob(IServiceProvider sp, string cronExp)
-            : base(cronExp, TimeZoneInfo.Local, cronExp.Split(" ", StringSplitOptions.RemoveEmptyEntries).Length >= 6 ? CronFormat.IncludeSeconds : CronFormat.Standard)
+            : base(cronExp, TimeZoneInfo.Local, cronExp.Trim().Count(x => x == ' ') == 5 ? CronFormat.IncludeSeconds : CronFormat.Standard)
         {
             this._logger = sp.GetService<ILogger<CronJobService>>();
-            this.Cron = CronExpression.Parse(cronExp);
+            this.Cron = CronExpression.Parse(cronExp, cronExp.Trim().Count(x => x == ' ') == 5 ? CronFormat.IncludeSeconds : CronFormat.Standard);
             this.ServiceProvider = sp;
         }
 
@@ -62,7 +62,7 @@ namespace Geex.Common.BackgroundJob
             }
             catch (Exception e)
             {
-                _logger.LogErrorWithData(e, "Job failed to start: [{JobName}]", typeof(TImplementation).Name);
+                _logger.LogError(e, "Job failed to start: [{JobName}]", typeof(TImplementation).Name);
             }
             _logger.LogInformation("Job started: [{JobName}]", typeof(TImplementation).Name);
         }
@@ -97,7 +97,7 @@ namespace Geex.Common.BackgroundJob
             }
             catch (Exception e)
             {
-                _logger.LogErrorWithData(e, "Job failed: [{JobName}]", typeof(TImplementation).Name);
+                _logger.LogError(e, "Job failed: [{JobName}]", typeof(TImplementation).Name);
                 await this.OnException(e);
             }
             finally
@@ -121,7 +121,7 @@ namespace Geex.Common.BackgroundJob
             }
             catch (Exception e)
             {
-                _logger.LogErrorWithData(e, "Job failed to stop: [{JobName}]", typeof(TImplementation).Name);
+                _logger.LogError(e, "Job failed to stop: [{JobName}]", typeof(TImplementation).Name);
             }
             _logger.LogInformation("Job stopped: [{JobName}]", typeof(TImplementation).Name);
 

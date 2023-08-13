@@ -153,7 +153,7 @@ namespace MongoDB.Entities
             if (isNew)
             {
                 entity.Id = entity.GenerateNewId().ToString();
-                entity.CreatedOn = DateTime.UtcNow;
+                entity.CreatedOn = DateTimeOffset.Now;
             }
             entity.DbContext = this;
             return entity;
@@ -173,7 +173,7 @@ namespace MongoDB.Entities
             if (isNew)
             {
                 entity.Id = entity.GenerateNewId().ToString();
-                entity.CreatedOn = DateTime.UtcNow;
+                entity.CreatedOn = DateTimeOffset.Now;
             }
             var rootType = entity.GetType().GetRootBsonClassMap().ClassType;
             if (this.Local[rootType].TryGetValue(entity.Id, out var existed))
@@ -182,11 +182,6 @@ namespace MongoDB.Entities
             }
             else
             {
-                if (entity is IAttachIntercepted intercepted)
-                {
-                    intercepted.InterceptOnAttach();
-                }
-
                 if (this.Local[rootType].Count > 10000)
                 {
                     //throw new NotSupportedException("Queryable Api不支持数量过多的Entity查询/写入, 请考虑使用原生Api");
@@ -194,9 +189,14 @@ namespace MongoDB.Entities
                 this.Local[rootType].TryAdd(entity.Id, entity);
                 if (!isNew)
                 {
-                    this.OriginLocal[rootType].TryAdd(entity.Id, entity.DeepClone());
+                    var dbValue = entity.DeepClone();
+                    this.OriginLocal[rootType].TryAdd(entity.Id, dbValue);
                 }
                 entity.DbContext = this;
+                if (entity is IAttachIntercepted intercepted)
+                {
+                    intercepted.InterceptOnAttach();
+                }
                 return entity;
             }
         }
@@ -743,6 +743,11 @@ namespace MongoDB.Entities
             InsertManyOptions? options = default, CancellationToken cancellationToken = default) where T : IEntityBase
         {
             return this.Collection<T>().InsertManyAsync(this.Session, entities, options, cancellationToken);
+        }
+
+        public virtual bool Compare(IEntityBase nowValue, IEntityBase originValue)
+        {
+            return _compareLogic.Compare(originValue, nowValue).AreEqual;
         }
     }
 }

@@ -14,35 +14,26 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace Geex.Common.Abstraction.Gql.Types.Scalars
 {
-    public class MimeTypeType : ScalarType<MediaType>
+    public class MimeTypeType : ScalarType<MediaType, StringValueNode>
     {
         private static Regex _ValidationRegex = new Regex(@"^\w+/[\w|\.|\-|\+]+$", RegexOptions.Compiled);
         private Regex _validationRegex => _ValidationRegex;
 
         /// <inheritdoc />
-        public MimeTypeType(string name, BindingBehavior bind = BindingBehavior.Explicit) : base(name, bind)
+        public MimeTypeType() : base("MimeType")
         {
+            Description = "mime type, e.g. application/json";
         }
 
         /// <inheritdoc />
-        public override bool IsInstanceOfType(IValueNode valueSyntax)
+        protected override MediaType ParseLiteral(StringValueNode valueSyntax)
         {
-            return valueSyntax is StringValueNode stringValueNode && this._validationRegex.IsMatch(stringValueNode.Value);
+            return new MediaType((valueSyntax).Value);
         }
 
         /// <inheritdoc />
-        public override object? ParseLiteral(IValueNode valueSyntax)
+        protected override StringValueNode ParseValue(MediaType runtimeValue)
         {
-            return new MediaType((valueSyntax as StringValueNode).Value);
-        }
-
-        /// <inheritdoc />
-        public override IValueNode ParseValue(object? runtimeValue)
-        {
-            if (runtimeValue is MediaType mediaType)
-            {
-                return new StringValueNode(mediaType.ToString());
-            }
             return new StringValueNode(runtimeValue.ToString());
         }
 

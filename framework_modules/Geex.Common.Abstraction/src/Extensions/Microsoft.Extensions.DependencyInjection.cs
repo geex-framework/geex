@@ -155,7 +155,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 var classEnumTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsClassEnum() && x.Name != nameof(Enumeration)).ToList();
                 GeexModule.ClassEnumTypes.AddIfNotContains(classEnumTypes);
 
-                var directiveTypes = exportedTypes.Where(x => x.IsAssignableTo<DirectiveType>()).ToList();
+                var directiveTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<DirectiveType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
                 foreach (var directiveType in directiveTypes)
                 {
                     schemaBuilder.AddDirectiveType(directiveType);

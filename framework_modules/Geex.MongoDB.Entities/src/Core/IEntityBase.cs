@@ -4,8 +4,11 @@ using System.Linq.Expressions;
 using System.Linq;
 using System.Threading.Tasks;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Entities.Utilities;
+using SharpCompress.Common;
+using static MongoDB.Driver.WriteConcern;
 
 namespace MongoDB.Entities
 {
@@ -36,6 +39,9 @@ namespace MongoDB.Entities
             return await DB.DeleteAsync(this.GetType(), this.Id, this.DbContext);
         }
         internal Dictionary<string, ILazyQuery> LazyQueryCache { get; }
+        IEntityBase OriginValue => this.DbContext.OriginLocal[this.GetType().GetRootBsonClassMap().ClassType].GetOrDefault(this.Id);
+
+        bool ValueChanged { get; }
 
         //protected internal ILazyQuery ConfigLazyQueryable(
         //   Expression lazyQuery,

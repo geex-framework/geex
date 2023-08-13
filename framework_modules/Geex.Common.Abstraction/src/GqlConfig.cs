@@ -20,5 +20,9 @@ namespace Geex.Common.Abstraction
         {
 
         }
+        public abstract class Directive<T> : DirectiveType<T> where T : class
+        {
+
+        }
     }
 }
