@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Force.DeepCloner;
 using KellermanSoftware.CompareNetObjects;
+using KellermanSoftware.CompareNetObjects.TypeComparers;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;

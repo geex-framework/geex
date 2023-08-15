@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstractions;
+using Geex.MongoDB.Entities.Utilities;
 using KellermanSoftware.CompareNetObjects;
 using MediatR;
 
@@ -27,6 +28,7 @@ namespace Geex.Common.Abstraction.Storage
         static GeexDbContext()
         {
             DbContext._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
+            DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
         }
         public GeexDbContext(IServiceProvider serviceProvider = default, string database = default,
             bool transactional = false,

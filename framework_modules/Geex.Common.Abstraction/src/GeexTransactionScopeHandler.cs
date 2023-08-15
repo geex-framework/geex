@@ -46,25 +46,32 @@ namespace Geex.Common
 
         public void Complete()
         {
-            bool flag;
-            if (this.Context.Result is QueryResult result && result.Data != null)
+            try
             {
-                IReadOnlyList<IError> errors = result.Errors;
-                if (errors == null || errors.Count == 0)
+                bool flag;
+                if (this.Context.Result is QueryResult result && result.Data != null)
                 {
-                    flag = true;
-                    goto label_4;
+                    IReadOnlyList<IError> errors = result.Errors;
+                    if (errors == null || errors.Count == 0)
+                    {
+                        flag = true;
+                        goto label_4;
+                    }
                 }
+                flag = false;
+                label_4:
+                if (!flag)
+                    return;
+                foreach (var unitOfWork in UowServices)
+                {
+                    unitOfWork.CommitAsync().Wait();
+                }
+                this.Transaction.Complete();
             }
-            flag = false;
-            label_4:
-            if (!flag)
-                return;
-            foreach (var unitOfWork in UowServices)
+            catch (Exception e)
             {
-                unitOfWork.CommitAsync().Wait();
+                Console.WriteLine(e);
             }
-            this.Transaction.Complete();
         }
 
         public void Dispose() => this.Transaction.Dispose();
