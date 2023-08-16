@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using MethodTimer;
 
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using MongoDB.Entities.Utilities;
@@ -51,17 +52,6 @@ namespace MongoDB.Entities
 
         }
         internal Dictionary<string, ILazyQuery> LazyQueryCache { get; } = new Dictionary<string, ILazyQuery>();
-
-        /// <inheritdoc />
-        IEntityBase IEntityBase.OriginValue
-        {
-            get => this.OriginValue;
-        }
-
-        /// <inheritdoc />
-        public bool ValueChanged => this.DbContext.Compare(this, this.OriginValue);
-
-        public T OriginValue { get; }
 
         ///// <inheritdoc />
         //ILazyQuery IEntity.ConfigLazyQueryable(Expression lazyQuery, Expression batchQuery, Func<IQueryable> sourceProvider)

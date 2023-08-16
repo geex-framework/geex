@@ -23,7 +23,7 @@ namespace Geex.Common.Abstraction.MultiTenant
         /// </summary>
         public string? TenantCode { get; [Obsolete(message: "框架会自动维护租户编码, 请勿直接set.", error: true)] set; }
 
-        void IAttachIntercepted.InterceptOnAttach()
+        void IAttachIntercepted.InterceptOnAttached()
         {
             (this as ITenantFilteredEntity).SetTenant(this.DbContext.ServiceProvider.GetService<LazyService<ICurrentTenant>>().Value.Code);
         }

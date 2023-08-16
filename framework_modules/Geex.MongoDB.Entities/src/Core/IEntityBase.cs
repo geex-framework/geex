@@ -39,10 +39,6 @@ namespace MongoDB.Entities
             return await DB.DeleteAsync(this.GetType(), this.Id, this.DbContext);
         }
         internal Dictionary<string, ILazyQuery> LazyQueryCache { get; }
-        IEntityBase OriginValue => this.DbContext.OriginLocal[this.GetType().GetRootBsonClassMap().ClassType].GetOrDefault(this.Id);
-
-        bool ValueChanged { get; }
-
         //protected internal ILazyQuery ConfigLazyQueryable(
         //   Expression lazyQuery,
         //   Expression batchQuery,

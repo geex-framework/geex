@@ -179,7 +179,7 @@ namespace MongoDB.Entities
         {
             if (dbContext != default && entity.DbContext == default)
             {
-                dbContext.Attach(entity);
+                entity = dbContext.Attach(entity);
             }
             else
             {

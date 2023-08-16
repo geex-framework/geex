@@ -196,7 +196,7 @@ namespace MongoDB.Entities
                 entity.DbContext = this;
                 if (entity is IAttachIntercepted intercepted)
                 {
-                    intercepted.InterceptOnAttach();
+                    intercepted.InterceptOnAttached();
                 }
                 return entity;
             }
@@ -744,11 +744,6 @@ namespace MongoDB.Entities
             InsertManyOptions? options = default, CancellationToken cancellationToken = default) where T : IEntityBase
         {
             return this.Collection<T>().InsertManyAsync(this.Session, entities, options, cancellationToken);
-        }
-
-        public virtual bool Compare(IEntityBase nowValue, IEntityBase originValue)
-        {
-            return _compareLogic.Compare(originValue, nowValue).AreEqual;
         }
     }
 }

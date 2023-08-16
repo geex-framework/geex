@@ -39,10 +39,15 @@ namespace System.Security.Cryptography
             {
                 throw new Exception("stream must position at 0!");
             }
-            byte[] bytes = _md5.ComputeHash(stream);
+            var bytes = _md5.ComputeHash(stream);
             stream.Position = 0;
-            var md5 = BitConverter.ToString(bytes);
-            return md5;
+            var sb = new StringBuilder();
+            foreach (var b in bytes)
+            {
+                sb.Append(b.ToString("x2"));
+            }
+            string hashString = sb.ToString();
+            return hashString;
         }
     }
 }

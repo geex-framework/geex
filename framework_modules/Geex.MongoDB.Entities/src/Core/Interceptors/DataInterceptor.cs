@@ -4,7 +4,7 @@ namespace MongoDB.Entities.Interceptors
 {
     public interface IAttachIntercepted : IEntityBase
     {
-        public void InterceptOnAttach();
+        public void InterceptOnAttached();
     }
 
     public interface ISaveIntercepted : IEntityBase

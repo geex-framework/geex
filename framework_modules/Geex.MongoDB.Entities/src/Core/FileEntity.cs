@@ -198,7 +198,7 @@ namespace MongoDB.Entities
             if (!stream.CanRead) throw new NotSupportedException("The supplied stream is not readable!");
             await CleanUpAsync(((IEntityBase)parent).DbContext).ConfigureAwait(false);
 
-            doc = new FileChunk { FileId = parent.Id };
+            doc = new FileChunk { FileId = parent.Id, CreatedOn = DateTimeOffset.Now };
             chunkSize = chunkSizeKB * 1024;
             dataChunk = new List<byte>(chunkSize);
             buffer = new byte[64 * 1024]; // 64kb read buffer

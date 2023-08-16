@@ -50,15 +50,14 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             }
             request.Md5 ??= stream.Md5();
             var entity = new BlobObject(request.File.Name, request.Md5, request.StorageType, MimeTypes.GetMimeType(request.File.Name), request.File.Length.GetValueOrDefault());
-            DbContext.Attach(entity);
+            entity = DbContext.Attach(entity);
             if (request.StorageType == BlobStorageType.Db)
             {
                 var dbFile = DbContext.Queryable<DbFile>().FirstOrDefault(x => x.Md5 == request.Md5);
                 if (dbFile == null)
                 {
                     dbFile = new DbFile(entity.Md5);
-                    DbContext.Attach(dbFile);
-                    await DbContext.SaveChanges(cancellationToken);
+                    dbFile = DbContext.Attach(dbFile);
                     await dbFile.Data.UploadAsync(stream, cancellation: cancellationToken);
                 }
             }
@@ -108,6 +107,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                 var blob = await Task.FromResult(DbContext.Queryable<BlobObject>().First(x => x.Id == request.FileId));
                 var dbFile = await Task.FromResult(DbContext.Queryable<DbFile>().First(x => x.Md5 == blob.Md5));
                 await dbFile.Data.DownloadAsync(dataStream, cancellation: cancellationToken);
+                dataStream.Position = 0;
                 return (blob, dataStream);
             }
             if (request.StorageType == BlobStorageType.Cache)
