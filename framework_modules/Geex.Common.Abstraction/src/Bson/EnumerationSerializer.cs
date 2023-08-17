@@ -62,7 +62,7 @@ namespace Geex.Common.Abstraction.Bson
         /// <param name="context">The deserialization context.</param>
         /// <param name="args">The deserialization args.</param>
         /// <returns>A deserialized value.</returns>
-        public override TEnum Deserialize(
+        public override TEnum? Deserialize(
           BsonDeserializationContext context,
           BsonDeserializationArgs args)
         {
@@ -83,6 +83,9 @@ namespace Geex.Common.Abstraction.Bson
                 case BsonType.Int64:
                     data = reader.ReadInt64();
                     break;
+                case BsonType.Null:
+                    reader.ReadNull();
+                    return default;
                 default:
                     throw this.CreateCannotDeserializeFromBsonTypeException(currentBsonType);
             }
@@ -97,9 +100,14 @@ namespace Geex.Common.Abstraction.Bson
         public override void Serialize(
           BsonSerializationContext context,
           BsonSerializationArgs args,
-          TEnum value)
+          TEnum? value)
         {
             IBsonWriter writer = context.Writer;
+            if (value == default)
+            {
+                writer.WriteNull();
+                return;
+            }
             switch (this._representation)
             {
                 case BsonType.EndOfDocument:

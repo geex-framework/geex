@@ -21,6 +21,8 @@ using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
 using ReadConcern = MongoDB.Driver.ReadConcern;
 using WriteConcern = MongoDB.Driver.WriteConcern;
+using MongoDB.Bson.IO;
+using System.Text.Json;
 
 namespace MongoDB.Entities
 {
@@ -190,7 +192,9 @@ namespace MongoDB.Entities
                 this.Local[rootType].TryAdd(entity.Id, entity);
                 if (!isNew)
                 {
-                    var dbValue = entity.DeepClone();
+                    // bug: 这里只需要拷贝所有数据库的数据即可
+                    var serializer = BsonSerializer.LookupSerializer<T>();
+                    var dbValue = serializer.Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(entity.ToBsonDocument(serializer))));
                     this.OriginLocal[rootType].TryAdd(entity.Id, dbValue);
                 }
                 entity.DbContext = this;

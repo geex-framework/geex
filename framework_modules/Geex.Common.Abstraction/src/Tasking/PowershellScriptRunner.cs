@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Common.Logging;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -14,7 +16,10 @@ namespace Geex.Common.Abstraction.Tasking
 {
     public class PowerShellScriptRunner
     {
-        public static async Task<string?> ExecutePowerShell(string workDirectory, string command, string? outputIndicator)
+        static TimeSpan defaultTimeout = TimeSpan.FromSeconds(10);
+
+        [Logging]
+        public static async Task<string?> ExecutePowerShell(string workDirectory, string command, string? outputIndicator, TimeSpan? timeout = default)
         {
             // 创建一个PowerShell进程
             var processInfo = new ProcessStartInfo
@@ -36,7 +41,7 @@ namespace Geex.Common.Abstraction.Tasking
             // 等待PowerShell进程完成
             try
             {
-                await process.WaitForExitAsync(new CancellationTokenSource(10000).Token);
+                await process.WaitForExitAsync(new CancellationTokenSource(timeout ?? defaultTimeout).Token);
             }
             catch (TaskCanceledException e)
             {
@@ -76,7 +81,6 @@ namespace Geex.Common.Abstraction.Tasking
                     }
                 }
                 return await processOutput.ReadToEndAsync();
-
             }
         }
 
