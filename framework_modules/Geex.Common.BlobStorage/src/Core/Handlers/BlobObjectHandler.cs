@@ -104,7 +104,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             var dataStream = new MemoryStream();
             if (request.StorageType == BlobStorageType.Db)
             {
-                var blob = await Task.FromResult(DbContext.Queryable<BlobObject>().First(x => x.Id == request.FileId));
+                var blob = await Task.FromResult(DbContext.Queryable<BlobObject>().First(x => x.Id == request.BlobId));
                 var dbFile = await Task.FromResult(DbContext.Queryable<DbFile>().First(x => x.Md5 == blob.Md5));
                 await dbFile.Data.DownloadAsync(dataStream, cancellation: cancellationToken);
                 dataStream.Position = 0;
@@ -112,7 +112,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             }
             if (request.StorageType == BlobStorageType.Cache)
             {
-                var blob = await _redis.GetNamedAsync<BlobObject>(request.FileId);
+                var blob = await _redis.GetNamedAsync<BlobObject>(request.BlobId);
                 var stream = _memCache.Get<Stream>(blob.Md5);
                 return (blob, stream);
             }

@@ -17,13 +17,13 @@ namespace Geex.Common.BlobStorage.Api.Abstractions
 {
     public class DownloadFileRequest : IRequest<(IBlobObject blob, Stream dataStream)>
     {
-        public DownloadFileRequest(string fileId, BlobStorageType storageType)
+        public DownloadFileRequest(string blobId, BlobStorageType storageType)
         {
-            FileId = fileId;
+            BlobId = blobId;
             StorageType = storageType;
         }
 
-        public string FileId { get; set; }
+        public string BlobId { get; set; }
         public BlobStorageType StorageType { get; set; }
     }
 }

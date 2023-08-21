@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction;
@@ -7,12 +8,14 @@ using Geex.Common.Abstraction.Entities;
 using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects;
 using Geex.Common.Abstractions;
 using Geex.Common.BlobStorage.Api;
+using Geex.Common.BlobStorage.Api.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using HonkSharp.Fluency;
+using MediatR;
 
 namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
 {
@@ -42,6 +45,8 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
         public long FileSize { get; set; }
         public string MimeType { get; set; }
         public BlobStorageType StorageType { get; set; }
+        public async Task<Stream> GetFileContent() => (await DbContext.ServiceProvider.GetService<IMediator>()
+            .Send(new DownloadFileRequest(this.Id, StorageType))).dataStream;
         public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
         {
             return ValidationResult.Success;

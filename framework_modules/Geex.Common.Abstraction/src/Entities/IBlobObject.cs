@@ -1,3 +1,6 @@
+using System.IO;
+using System.Threading.Tasks;
+
 using MongoDB.Entities;
 
 namespace Geex.Common.Abstraction.Entities
@@ -13,5 +16,6 @@ namespace Geex.Common.Abstraction.Entities
         public string? MimeType { get; }
         public string? Url { get; }
         public BlobStorageType? StorageType { get; }
+        public Task<Stream> GetFileContent();
     }
 }
