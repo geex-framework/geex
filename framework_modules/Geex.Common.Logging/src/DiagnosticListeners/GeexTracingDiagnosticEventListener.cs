@@ -8,6 +8,7 @@ using System.Reflection;
 using Elastic.Apm;
 using Elastic.Apm.Api;
 
+using Geex.Common.Abstraction.Gql.Directives;
 using Geex.Common.Abstractions;
 using Geex.Common.Logging;
 
@@ -50,10 +51,11 @@ namespace Geex.Common.Gql
         public override IDisposable ExecuteOperation(IRequestContext context)
         {
             this._apmEnabled = Agent.IsConfigured;
-            if (!this.IsEnabled(context.ContextData))
+            if (!this.IsEnabled(context.ContextData) || context.Operation.Definition.Directives.Any(x => x.Name.Value == "noLog"))
                 return EmptyScope;
             DateTime startTime = this._timestampProvider.UtcNow();
-            this.logger.LogInformationWithData(new EventId((nameof(GeexTracingOperationScope) + "Start").GetHashCode(), nameof(GeexTracingOperationScope) + "Start"), "Request started.", new { QueryId = context.Request.QueryId, Query = context.GetOperationDetails(), OperationName = context.Request.OperationName, Variables = context.Request.VariableValues?.ToDictionary<KeyValuePair<string, object>, string, object>(x => x.Key, x => (x.Value as IValueNode)?.Value) });
+            var logEntry = new { QueryId = context.Request.QueryId, Query = context.GetOperationDetails(), OperationName = context.Request.OperationName, Variables = context.Request.VariableValues?.ToDictionary<KeyValuePair<string, object>, string, object>(x => x.Key, x => (x.Value as IValueNode)?.Value) };
+            this.logger.LogInformationWithData(new EventId((nameof(GeexTracingOperationScope) + "Start").GetHashCode(), nameof(GeexTracingOperationScope) + "Start"), "Request started.", logEntry);
             GeexTracingResultBuilder builder = CreateBuilder(context, logger);
             return new GeexTracingOperationScope(context, logger, startTime, builder, this._timestampProvider);
         }

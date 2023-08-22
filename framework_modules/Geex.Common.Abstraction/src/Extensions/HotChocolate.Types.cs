@@ -130,6 +130,7 @@ namespace HotChocolate.Types
                 .AddInterfaceType<IPagedList>()
                 .BindRuntimeType<ObjectId, ObjectIdType>()
                 .BindRuntimeType<MediaType, MimeTypeType>()
+                //.BindRuntimeType<byte[], Base64StringType>()
                 .BindRuntimeType<JsonNode, JsonNodeType>();
         }
 
