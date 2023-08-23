@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 
 using Castle.Core;
@@ -13,26 +14,25 @@ namespace MongoDB.Entities.Utilities
 {
     public interface ILazyQuery
     {
-        Func<IQueryable> DefaultSourceProvider { get; }
-        IQueryable Source { get; set; }
-        Expression LazyQuery { get; }
         Expression BatchQuery { get; }
+        bool CascadeDelete { get; }
+        Func<IQueryable> DefaultSourceProvider { get; }
+        Expression LazyQuery { get; }
         object Value { get; }
+        IQueryable Source { get; set; }
     }
     internal interface ILazyMultipleQuery : ILazyQuery
     {
-        object ILazyQuery.Value => Value;
         IQueryable Value { get; }
+        object ILazyQuery.Value => Value;
     }
     internal interface ILazySingleQuery : ILazyQuery
     {
         object ILazyQuery.Value => Value;
-        IEntityBase Value { get; }
     }
     public class LazyMultiQuery<T, TRelated> : ILazyMultipleQuery, IQueryable<TRelated> where TRelated : IEntityBase where T : IEntityBase
     {
         private IQueryable<TRelated> _source;
-
 
         public LazyMultiQuery(Expression<Func<TRelated, bool>> lazy, Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batch, Func<IQueryable<TRelated>> sourceProvider)
         {
@@ -43,17 +43,12 @@ namespace MongoDB.Entities.Utilities
 
         /// <inheritdoc />
         public string HashCode => this.GetHashCode().ToString();
-        Func<IQueryable> ILazyQuery.DefaultSourceProvider => DefaultSourceProvider;
+
+        public IQueryable<TRelated> Value => this.Source.Where(this.Lazy).ToList().AsQueryable();
+        public Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> Batch { get; set; }
 
         public Func<IQueryable<TRelated>> DefaultSourceProvider { get; set; }
-
-
-        /// <inheritdoc />
-        IQueryable ILazyQuery.Source
-        {
-            get => Source;
-            set => Source = (IQueryable<TRelated>)value;
-        }
+        public Expression<Func<TRelated, bool>> Lazy { get; set; }
 
         public IQueryable<TRelated> Source
         {
@@ -62,16 +57,10 @@ namespace MongoDB.Entities.Utilities
         }
 
         /// <inheritdoc />
-        IQueryable ILazyMultipleQuery.Value => Value;
-
-        public IQueryable<TRelated> Value => this.Source.Where(this.Lazy).ToList().AsQueryable();
-
-        /// <inheritdoc />
-        Expression ILazyQuery.LazyQuery => Lazy;
-        public Expression<Func<TRelated, bool>> Lazy { get; set; }
-
-        Expression ILazyQuery.BatchQuery => Batch;
-        public Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> Batch { get; set; }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)this.Value).GetEnumerator();
+        }
 
         /// <inheritdoc />
         public IEnumerator<TRelated> GetEnumerator()
@@ -80,9 +69,24 @@ namespace MongoDB.Entities.Utilities
         }
 
         /// <inheritdoc />
-        IEnumerator IEnumerable.GetEnumerator()
+        IQueryable ILazyMultipleQuery.Value => Value;
+
+        Expression ILazyQuery.BatchQuery => Batch;
+
+        /// <inheritdoc />
+        public bool CascadeDelete { get; set; }
+
+        Func<IQueryable> ILazyQuery.DefaultSourceProvider => DefaultSourceProvider;
+
+        /// <inheritdoc />
+        Expression ILazyQuery.LazyQuery => Lazy;
+
+
+        /// <inheritdoc />
+        IQueryable ILazyQuery.Source
         {
-            return ((IEnumerable)this.Value).GetEnumerator();
+            get => Source;
+            set => Source = (IQueryable<TRelated>)value;
         }
 
         /// <inheritdoc />
@@ -93,6 +97,12 @@ namespace MongoDB.Entities.Utilities
 
         /// <inheritdoc />
         public IQueryProvider Provider => this.Value.Provider;
+
+        public LazyMultiQuery<T, TRelated> ConfigCascadeDelete(bool cascadeDelete = true)
+        {
+            this.CascadeDelete = cascadeDelete;
+            return this;
+        }
     }
 
     public class LazySingleQuery<T, TRelated> : ILazySingleQuery where TRelated : IEntityBase where T : IEntityBase
@@ -105,9 +115,28 @@ namespace MongoDB.Entities.Utilities
             this.Lazy = lazy;
             this.Batch = batch;
         }
-        Func<IQueryable> ILazyQuery.DefaultSourceProvider => DefaultSourceProvider;
+
+        public Lazy<TRelated> Value => new(() => this.Source.Where(this.Lazy).FirstOrDefault());
+        public Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> Batch { get; set; }
 
         public Func<IQueryable<TRelated>> DefaultSourceProvider { get; set; }
+        public Expression<Func<TRelated, bool>> Lazy { get; set; }
+
+        public IQueryable<TRelated> Source
+        {
+            get => _source ?? DefaultSourceProvider();
+            set => _source = value;
+        }
+
+        Expression ILazyQuery.BatchQuery => Batch;
+
+        /// <inheritdoc />
+        public bool CascadeDelete { get; set; }
+
+        Func<IQueryable> ILazyQuery.DefaultSourceProvider => DefaultSourceProvider;
+
+        /// <inheritdoc />
+        Expression ILazyQuery.LazyQuery => Lazy;
 
         /// <inheritdoc />
         IQueryable ILazyQuery.Source
@@ -116,22 +145,13 @@ namespace MongoDB.Entities.Utilities
             set => Source = (IQueryable<TRelated>)value;
         }
 
-        public IQueryable<TRelated> Source
+        /// <inheritdoc />
+        object ILazyQuery.Value => Value;
+
+        public LazySingleQuery<T, TRelated> ConfigCascadeDelete(bool cascadeDelete = true)
         {
-            get => _source ?? DefaultSourceProvider();
-            set => _source = value;
+            this.CascadeDelete = cascadeDelete;
+            return this;
         }
-
-        /// <inheritdoc />
-        IEntityBase ILazySingleQuery.Value => (IEntityBase)Value;
-
-        public TRelated Value => this.Source.FirstOrDefault(this.Lazy);
-
-        /// <inheritdoc />
-        Expression ILazyQuery.LazyQuery => Lazy;
-        public Expression<Func<TRelated, bool>> Lazy { get; set; }
-
-        Expression ILazyQuery.BatchQuery => Batch;
-        public Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> Batch { get; set; }
     }
 }

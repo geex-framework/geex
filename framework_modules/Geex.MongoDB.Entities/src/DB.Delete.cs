@@ -36,21 +36,27 @@ namespace MongoDB.Entities
 
             var tasks = new HashSet<Task>();
 
-            // note: db.listCollections() mongo command does not support transactions.
-            //       so don't add session support here.
-            var collNamesCursor = await db.ListCollectionNamesAsync(options, cancellation).ConfigureAwait(false);
-
-            foreach (var cName in await collNamesCursor.ToListAsync(cancellation).ConfigureAwait(false))
-            {
-                tasks.Add(
-                    dbContext?.Session == null
-                    ? db.GetCollection<JoinRecord>(cName).DeleteManyAsync(r => Ids.Contains(r.ChildId) || Ids.Contains(r.ParentId))
-                    : db.GetCollection<JoinRecord>(cName).DeleteManyAsync(dbContext?.Session, r => Ids.Contains(r.ChildId) || Ids.Contains(r.ParentId), null, cancellation));
-            }
             foreach (var id in Ids)
             {
-                dbContext?.Local[typeof(T)].Remove(id, out _);
+                if (dbContext?.Local[typeof(T)].Remove(id, out var item) == true)
+                {
+                    foreach (var lazyQuery in item.LazyQueryCache.Values.Where(x => x.CascadeDelete))
+                    {
+                        var value = lazyQuery.Value;
+                        switch (value)
+                        {
+                            case IQueryable<T> query:
+                                await query.DeleteAsync();
+                                break;
+                            case Lazy<T> lazy:
+                                await lazy.Value.DeleteAsync();
+                                break;
+                        }
+                    }
+                }
                 dbContext?.OriginLocal[typeof(T)].Remove(id, out _);
+
+
             }
             var delResTask =
                     dbContext?.Session == null

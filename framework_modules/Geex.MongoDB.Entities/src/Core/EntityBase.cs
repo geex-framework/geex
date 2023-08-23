@@ -21,7 +21,7 @@ namespace MongoDB.Entities
 {
     public abstract class EntityBase<T> : IEntityBase where T : IEntityBase
     {
-        protected void ConfigLazyQueryable<TRelated>(
+        protected LazyMultiQuery<T, TRelated> ConfigLazyQuery<TRelated>(
             Expression<Func<T, IQueryable<TRelated>>> propExpression, Expression<Func<TRelated, bool>> lazyQuery,
             Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batchQuery,
             Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase
@@ -30,10 +30,12 @@ namespace MongoDB.Entities
                                                                            (() => DbContext.Queryable<TRelated>()));
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
+            return lazyObj;
         }
-        protected void ConfigLazyQueryable<TRelated>(
+
+        protected LazySingleQuery<T, TRelated> ConfigLazyQuery<TRelated>(
             // 关联导航属性
-            Expression<Func<T, TRelated>> propExpression,
+            Expression<Func<T, Lazy<TRelated>>> propExpression,
             // 导航属性的懒加载实现
             Expression<Func<TRelated, bool>> lazyQuery,
             // 导航属性的批量加载实现
@@ -45,6 +47,7 @@ namespace MongoDB.Entities
                                                                           (() => DbContext.Queryable<TRelated>()));
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
+            return lazyObj;
         }
 
         public EntityBase()
@@ -70,12 +73,14 @@ namespace MongoDB.Entities
         //    return default;
         //}
 
-        protected T LazyQuery<T>(Expression<Func<T>> func) where T : class
+        protected T LazyQuery<T>(Expression<Func<T>> func, [CallerMemberName] string name = default) where T : class
         {
-            var name = func.Body.As<MemberExpression>().Member.Name;
             var lazyQuery = LazyQueryCache[name];
-            var value = lazyQuery.Value as T;
-            return value;
+            if (lazyQuery.Value is T typedValue)
+            {
+                return typedValue;
+            }
+            return (dynamic)lazyQuery.Value;
         }
         /// <summary>
         /// This property is auto managed. A new Id will be assigned for new entities upon saving.

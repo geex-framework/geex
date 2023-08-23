@@ -10,8 +10,8 @@ public class BatchLoadEntity : EntityBase<BatchLoadEntity>
 {
     public BatchLoadEntity()
     {
-        this.ConfigLazyQueryable(x => x.Children, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
-        this.ConfigLazyQueryable(x => x.FirstChild, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
+        this.ConfigLazyQuery(x => x.Children, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
+        this.ConfigLazyQuery(x => x.FirstChild, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
     }
 
     public BatchLoadEntity(string thisId) : this()
@@ -26,7 +26,7 @@ public class BatchLoadEntity : EntityBase<BatchLoadEntity>
     }
 
     public IQueryable<BatchLoadEntity> Children => LazyQuery(() => Children);
-    public BatchLoadEntity FirstChild => LazyQuery(() => FirstChild);
+    public Lazy<BatchLoadEntity> FirstChild => LazyQuery(() => FirstChild);
 
     public string ThisId { get; set; }
     public string ParentId { get; set; }
@@ -36,8 +36,8 @@ public class RootEntity : EntityBase<RootEntity>
 {
     public RootEntity()
     {
-        this.ConfigLazyQueryable(x => x.C1, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
-        this.ConfigLazyQueryable(x => x.FirstChild, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
+        this.ConfigLazyQuery(x => x.C1, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
+        this.ConfigLazyQuery(x => x.FirstChild, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
     }
 
     public RootEntity(string thisId) : this()
@@ -52,7 +52,7 @@ public class RootEntity : EntityBase<RootEntity>
     }
 
     public IQueryable<IC1> C1 => LazyQuery(() => C1);
-    public C1Entity FirstChild => LazyQuery(() => FirstChild);
+    public Lazy<C1Entity> FirstChild => LazyQuery(() => FirstChild);
 
     public string ThisId { get; set; }
     public string ParentId { get; set; }
@@ -67,7 +67,7 @@ public class RootEntity : EntityBase<RootEntity>
     {
         public C1Entity()
         {
-            this.ConfigLazyQueryable<C2Entity>(x => x.C2, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
+            this.ConfigLazyQuery<C2Entity>(x => x.C2, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
         }
         public C1Entity(string thisId) : this()
         {
@@ -89,7 +89,7 @@ public class RootEntity : EntityBase<RootEntity>
     {
         public C2Entity()
         {
-            this.ConfigLazyQueryable(x => x.C3, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
+            this.ConfigLazyQuery(x => x.C3, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
         }
         public C2Entity(string thisId) : this()
         {

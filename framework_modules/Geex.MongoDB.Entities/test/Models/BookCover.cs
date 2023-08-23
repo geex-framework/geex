@@ -1,4 +1,6 @@
-﻿using MongoDB.Bson;
+﻿using System.Collections.Generic;
+using System.Linq;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests.Models
 {
@@ -6,11 +8,13 @@ namespace MongoDB.Entities.Tests.Models
     {
         public string BookName { get; set; }
         public ObjectId BookId { get; set; }
-        public Many<BookMark> BookMarks { get; set; }
+        public IQueryable<BookMark> BookMarks { get; set; }
 
         public BookCover()
         {
-            this.InitOneToMany(x => BookMarks);
+            this.ConfigLazyQuery(x => x.BookMarks, author => this.BookMarkIds.Contains(author.Id), books => author => books.SelectMany(x => x.BookMarkIds).Contains(author.Id)).ConfigCascadeDelete();
         }
+
+        public List<string> BookMarkIds { get; set; }
     }
 }

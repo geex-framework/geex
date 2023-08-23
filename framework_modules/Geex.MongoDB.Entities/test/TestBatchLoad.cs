@@ -36,7 +36,7 @@ namespace MongoDB.Entities.Tests
                 .BatchLoad(x => x.FirstChild)
                 .ToList();
             result.TrueForAll(x => x.Children.All(child => child.ParentId == x.ThisId)).ShouldBe(true);
-            result.Select(x => x.FirstChild).Where(x => x != default).ShouldNotBeEmpty();
+            result.Select(x => x.FirstChild).Where(x => x?.Value != default).ShouldNotBeEmpty();
             var logs = DB.GetProfilerLogs().AsQueryable().Where(x => x.ns == "mongodb-entities-test.BatchLoadEntity");
             logs.Count().ShouldBe(3);
             result.Count.ShouldBe(3);
@@ -59,7 +59,7 @@ namespace MongoDB.Entities.Tests
             dbContext = new DbContext();
             await DB.RestartProfiler();
             var result = dbContext.Queryable<BatchLoadEntity>().BatchLoad(x => x.FirstChild).ToList();
-            result.Select(x => x.FirstChild).Count(x => x != default).ShouldBe(2);
+            result.Select(x => x.FirstChild).Count(x => x?.Value != default).ShouldBe(2);
             result.Count(x => x.Children.Any()).ShouldBe(2);
             var logs = DB.GetProfilerLogs().AsQueryable().Where(x => x.ns == "mongodb-entities-test.BatchLoadEntity");
             logs.Count().ShouldBe(2 + 5);
@@ -82,7 +82,7 @@ namespace MongoDB.Entities.Tests
             dbContext = new DbContext();
             await DB.RestartProfiler();
             var result = dbContext.Queryable<BatchLoadEntity>().ToList();
-            result.Select(x => x.FirstChild).Count(x => x != default).ShouldBe(2);
+            result.Select(x => x.FirstChild).Count(x => x.Value != default).ShouldBe(2);
             result.Count(x => x.Children.Any()).ShouldBe(2);
             var logs = DB.GetProfilerLogs().AsQueryable().Where(x => x.ns == "mongodb-entities-test.BatchLoadEntity");
             logs.Count().ShouldBe(1 + 5 + 5);
@@ -154,7 +154,7 @@ namespace MongoDB.Entities.Tests
             result.First(x => x.ThisId == "1").Children.Count().ShouldBe(1);
             result.First(x => x.ThisId == "1").Children.First().Children.Count().ShouldBe(1);
             result.First(x => x.ThisId == "1").Children.First().ThisId.ShouldBe("1.1");
-            result.First(x => x.ThisId == "1").Children.First().FirstChild.ThisId.ShouldBe("1.1.1");
+            result.First(x => x.ThisId == "1").Children.First().FirstChild.Value.ThisId.ShouldBe("1.1.1");
             result.First(x => x.ThisId == "1").Children.First().Children.First().ThisId.ShouldBe("1.1.1");
             logs = DB.GetProfilerLogs().AsQueryable().Where(x => x.ns == "mongodb-entities-test.BatchLoadEntity");
             logs.Count().ShouldBe(3);
@@ -187,7 +187,7 @@ namespace MongoDB.Entities.Tests
             result.First(x => x.ThisId == "1").Children.Count().ShouldBe(1);
             result.First(x => x.ThisId == "1").Children.First().Children.Count().ShouldBe(1);
             result.First(x => x.ThisId == "1").Children.First().ThisId.ShouldBe("1.1");
-            result.First(x => x.ThisId == "1").Children.First().FirstChild.ThisId.ShouldBe("1.1.1");
+            result.First(x => x.ThisId == "1").Children.First().FirstChild.Value.ThisId.ShouldBe("1.1.1");
             result.First(x => x.ThisId == "1").Children.First().Children.First().ThisId.ShouldBe("1.1.1");
             logs = DB.GetProfilerLogs().AsQueryable().Where(x => x.ns == "mongodb-entities-test.BatchLoadEntity");
             logs.Count().ShouldBe(4);

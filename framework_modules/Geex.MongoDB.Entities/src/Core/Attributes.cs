@@ -13,18 +13,6 @@ namespace MongoDB.Entities
     public class IgnoreAttribute : BsonIgnoreAttribute { }
 
     /// <summary>
-    /// Indicates that this property is the owner side of a many-to-many relationship
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    public class OwnerSideAttribute : Attribute { }
-
-    /// <summary>
-    /// Indicates that this property is the inverse side of a many-to-many relationship
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
-    public class InverseSideAttribute : Attribute { }
-
-    /// <summary>
     /// Use this attribute to specify a custom MongoDB collection name for an IEntity.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
@@ -44,8 +32,8 @@ namespace MongoDB.Entities
     }
 
     /// <summary>
-    /// Use this attribute on properties that you want to omit when using SavePreserving() instead of supplying an expression. 
-    /// TIP: These attribute decorations are only effective if you do not specify a preservation expression when calling SavePreserving() 
+    /// Use this attribute on properties that you want to omit when using SavePreserving() instead of supplying an expression.
+    /// TIP: These attribute decorations are only effective if you do not specify a preservation expression when calling SavePreserving()
     /// </summary>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class PreserveAttribute : Attribute { }

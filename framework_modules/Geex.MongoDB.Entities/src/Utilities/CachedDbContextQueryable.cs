@@ -140,16 +140,14 @@ namespace MongoDB.Entities.Utilities
             foreach (var (propertyInfo, subBatchLoadConfig) in batchLoadConfig.SubBatchLoadConfigs)
             {
                 var subQueryType = propertyInfo.PropertyType;
-                Type subQueryEntityType;
-                if (subQueryType.IsAssignableTo<IQueryable>())
-                {
-                    subQueryEntityType = subQueryType.GenericTypeArguments.First().GetRootBsonClassMap().ClassType;
-                }
-                else
-                {
-                    subQueryEntityType = subQueryType.GetRootBsonClassMap().ClassType;
-                }
-
+                var subQueryEntityType = subQueryType.GenericTypeArguments.First().GetRootBsonClassMap().ClassType;
+                //if (subQueryType.IsAssignableTo<IQueryable>())
+                //{
+                //    subQueryEntityType = subQueryType.GenericTypeArguments.First().GetRootBsonClassMap().ClassType;
+                //}
+                //else
+                //{
+                //}
                 var listType = ListType.MakeGenericType(subQueryEntityType);
                 IQueryable batchLoadResult = default;
                 foreach (var entity in entities)

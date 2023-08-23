@@ -90,7 +90,7 @@ namespace System.Linq
         }
 
         public static IBatchLoadQueryable<TSource, TRelated> BatchLoad<TSource, TRelated>(this IQueryable<TSource> queryable,
-            [NotNull] Expression<Func<TSource, TRelated>> relatedQuery) where TRelated : IEntityBase where TSource : IEntityBase
+            [NotNull] Expression<Func<TSource, Lazy<TRelated>>> relatedQuery) where TRelated : IEntityBase where TSource : IEntityBase
         {
             if (relatedQuery == null) throw new ArgumentNullException(nameof(relatedQuery));
             var relatedProperty = relatedQuery.Body.As<MemberExpression>().Member.As<PropertyInfo>();

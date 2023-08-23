@@ -6,11 +6,6 @@ namespace MongoDB.Entities
 {
     public static partial class DB
     {
-        internal static IMongoCollection<JoinRecord> GetRefCollection<T>(string name) where T : IEntityBase
-        {
-            return Database<T>().GetCollection<JoinRecord>(name);
-        }
-
         /// <summary>
         /// Gets the IMongoCollection for a given IEntity type.
         /// <para>TIP: Try never to use this unless really necessary.</para>

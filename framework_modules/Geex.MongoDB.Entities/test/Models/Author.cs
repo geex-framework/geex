@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MongoDB.Entities.Tests
 {
@@ -21,16 +23,12 @@ namespace MongoDB.Entities.Tests
         [Preserve]
         public int Age2 { get; set; }
 
-        [Bson.Serialization.Attributes.BsonIgnoreIfDefault]
-        public One<Book> BestSeller { get; set; }
+        public IQueryable<Book> Books => LazyQuery(() => Books);
 
-        public Many<Book> Books { get; set; }
-
-        [ObjectId]
-        public string BookIds { get; set; }
+        public List<string> BookIds { get; set; } = new List<string>();
 
         public DateTimeOffset ModifiedOn { get; set; }
 
-        public Author() => this.InitOneToMany(x => Books);
+        public Author() => this.ConfigLazyQuery(x => Books, book => book.MainAuthorId == this.Id, authors => book => authors.SelectMany(x => x.BookIds).Distinct().Contains(book.Id)).ConfigCascadeDelete();
     }
 }

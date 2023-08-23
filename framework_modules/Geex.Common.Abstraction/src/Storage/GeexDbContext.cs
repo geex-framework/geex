@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 
 using Geex.Common.Abstractions;
 using Geex.MongoDB.Entities.Utilities;
+
 using KellermanSoftware.CompareNetObjects;
+
 using MediatR;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,7 @@ using MongoDB.Driver;
 using MongoDB.Entities;
 
 using Nito.AsyncEx.Synchronous;
+
 using Volo.Abp;
 
 using BusinessException = Geex.Common.Abstractions.BusinessException;
@@ -78,6 +81,7 @@ namespace Geex.Common.Abstraction.Storage
 
             return entities;
         }
+        [Obsolete("do not use event, use direct method or event publish instead")]
         public Queue<INotification> DomainEvents { get; } = new Queue<INotification>();
 
         /// <inheritdoc />
@@ -114,6 +118,16 @@ namespace Geex.Common.Abstraction.Storage
         public override async Task CommitAsync(CancellationToken? cancellation = default)
         {
             await base.CommitAsync(cancellation);
+        }
+
+        /// <inheritdoc />
+        public async Task AbortAsync(CancellationToken? cancellationToken = default)
+        {
+            if (Session.IsInTransaction)
+            {
+                await Session.AbortTransactionAsync(cancellationToken.GetValueOrDefault(CancellationToken.None));
+            }
+            throw new InvalidOperationException("session not in transaction, cannot abort");
         }
 
         /// <inheritdoc />

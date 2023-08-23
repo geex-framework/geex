@@ -36,59 +36,80 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task deleting_entity_removes_all_refs_to_itselfAsync()
         {
+            var dbContext = new DbContext();
+
             var author = new Author { Name = "author" };
             var book1 = new Book { Title = "derarti1" };
             var book2 = new Book { Title = "derarti2" };
-
+            dbContext.Attach(author);
+            dbContext.Attach(book1);
+            dbContext.Attach(book2);
             await book1.SaveAsync();
             await book2.SaveAsync();
             await author.SaveAsync();
 
-            await author.Books.AddAsync(book1);
-            await author.Books.AddAsync(book2);
+            author.BookIds.Add(book1.Id);
+            author.BookIds.Add(book2.Id);
 
-            await book1.GoodAuthors.AddAsync(author);
-            await book2.GoodAuthors.AddAsync(author);
+            book1.GoodAuthorIds.Add(author.Id);
+            book2.GoodAuthorIds.Add(author.Id);
 
             await author.DeleteAsync();
-            Assert.AreEqual(0, await book2.GoodAuthors.ChildrenQueryable().CountAsync());
+            Assert.AreEqual(0, book2.GoodAuthors.Count());
 
             await book1.DeleteAsync();
-            Assert.AreEqual(0, await author.Books.ChildrenQueryable().CountAsync());
+            Assert.AreEqual(0, author.Books.Count());
         }
 
         [TestMethod]
         public async Task deleteall_removes_entity_and_refs_to_itselfAsync()
         {
-            var book = new Book { Title = "Test" }; await book.SaveAsync();
-            var author1 = new Author { Name = "ewtrcd1" }; await author1.SaveAsync();
-            var author2 = new Author { Name = "ewtrcd2" }; await author2.SaveAsync();
-            await book.GoodAuthors.AddAsync(author1);
+            var dbContext = new DbContext();
+            var book = new Book { Title = "Test" };
+            dbContext.Attach(book);
+            await book.SaveAsync();
+            var author1 = new Author { Name = "ewtrcd1" };
+            dbContext.Attach(author1);
+            await author1.SaveAsync();
+            var author2 = new Author { Name = "ewtrcd2" };
+            dbContext.Attach(author2);
+            await author2.SaveAsync();
+            book.GoodAuthorIds.Add(author1.Id);
             book.OtherAuthors = (new Author[] { author1, author2 });
             await book.SaveAsync();
             await book.OtherAuthors.DeleteAsync();
-            Assert.AreEqual(0, await book.GoodAuthors.ChildrenQueryable().CountAsync());
+            Assert.AreEqual(0, book.GoodAuthors.Count());
             Assert.AreEqual(null, DB.Queryable<Author>().SingleOrDefault(a => a.Id == author1.Id));
         }
 
         [TestMethod]
         public async Task deleting_a_one2many_ref_entity_makes_parent_nullAsync()
         {
-            var book = new Book { Title = "Test" }; await book.SaveAsync();
-            var author = new Author { Name = "ewtrcd1" }; await author.SaveAsync();
-            book.MainAuthor = author.ToReference();
+            var dbContext = new DbContext();
+            var book = new Book { Title = "Test" };
+            dbContext.Attach(book);
+            await book.SaveAsync();
+            var author = new Author { Name = "ewtrcd1" };
+            dbContext.Attach(author);
+            await author.SaveAsync();
+            book.MainAuthorId = author.Id;
             await book.SaveAsync();
             await author.DeleteAsync();
-            Assert.AreEqual(null, await book.MainAuthor.ToEntityAsync());
+            Assert.AreEqual(null, book.MainAuthor.Value);
         }
 
         [TestMethod]
         public async Task delete_by_expression_deletes_all_matchesAsync()
         {
-            var author1 = new Author { Name = "xxx" }; await author1.SaveAsync();
-            var author2 = new Author { Name = "xxx" }; await author2.SaveAsync();
+            var dbContext = new DbContext();
+            var author1 = new Author { Name = "xxx" };
+            dbContext.Attach(author1);
+            await author1.SaveAsync();
+            var author2 = new Author { Name = "xxx" };
+            dbContext.Attach(author2);
+            await author2.SaveAsync();
 
-            await DB.DeleteAsync<Author>(x => x.Name == "xxx");
+            await dbContext.DeleteAsync<Author>(x => x.Name == "xxx");
 
             var count = DB.Queryable<Author>()
                           .Count(a => a.Name == "xxx");

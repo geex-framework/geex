@@ -46,7 +46,6 @@ namespace MongoDB.Entities
                 new ConventionPack
                 {
                         new IgnoreExtraElementsConvention(true),
-                        new IgnoreManyPropertiesConvention(),
                         new EntityInheritanceConvention(),
                 },
                 _ => true);
@@ -342,7 +341,6 @@ namespace MongoDB.Entities
 
             updatableProps = type.GetProperties()
                 .Where(p =>
-                       p.PropertyType.Name != ManyBase.PropType &&
                       !p.IsDefined(typeof(BsonIdAttribute), false) &&
                       !p.IsDefined(typeof(BsonIgnoreAttribute), false))
                 .ToArray();
@@ -351,19 +349,9 @@ namespace MongoDB.Entities
         public static IEnumerable<PropertyInfo> UpdatableProps(T entity)
         {
             return updatableProps.Where(p =>
+                p.CanWrite &&
                 !(p.IsDefined(typeof(BsonIgnoreIfDefaultAttribute), false) && p.GetValue(entity) == default) &&
                 !(p.IsDefined(typeof(BsonIgnoreIfNullAttribute), false) && p.GetValue(entity) == null));
-        }
-    }
-
-    internal class IgnoreManyPropertiesConvention : ConventionBase, IMemberMapConvention
-    {
-        public void Apply(BsonMemberMap mMap)
-        {
-            if (mMap.MemberType.Name == ManyBase.PropType)
-            {
-                _ = mMap.SetShouldSerializeMethod(_ => false);
-            }
         }
     }
 

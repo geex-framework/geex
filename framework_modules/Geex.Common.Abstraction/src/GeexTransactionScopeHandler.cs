@@ -79,8 +79,18 @@ namespace Geex.Common
 
     public interface IUnitOfWork : IDisposable
     {
-
-        Task CommitAsync(CancellationToken? cancellationToken = default);
         public event Func<Task>? OnCommitted;
+        T Attach<T>(T entity) where T : IEntityBase;
+        IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase;
+
+        /// <inheritdoc />
+        Task<int> SaveChanges(CancellationToken cancellation = default);
+
+        /// <summary>
+        /// Commits a transaction
+        /// </summary>
+        /// <param name="cancellationToken">An optional cancellation token</param>
+        public Task CommitAsync(CancellationToken? cancellationToken = default);
+        public Task AbortAsync(CancellationToken? cancellationToken = default);
     }
 }

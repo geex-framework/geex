@@ -170,14 +170,6 @@ namespace MongoDB.Entities
         }
 
         /// <summary>
-        /// Returns a reference to this entity.
-        /// </summary>
-        public static One<T> ToReference<T>(this T entity) where T : IEntityBase
-        {
-            return new One<T>(entity);
-        }
-
-        /// <summary>
         /// Creates an unlinked duplicate of the original IEntity ready for embedding with a blank Id.
         /// </summary>
         public static T ToDocument<T>(this T entity) where T : IEntityBase
@@ -367,42 +359,6 @@ namespace MongoDB.Entities
         public static string ToDoubleMetaphoneHash(this string term)
         {
             return string.Join(" ", DoubleMetaphone.GetKeys(term));
-        }
-
-        /// <summary>
-        /// Initializes supplied property with a new One-To-Many relationship.
-        /// </summary>
-        /// <param name="parent"></param>
-        /// <param name="propertyToInit">() => PropertyName</param>
-        public static void InitOneToMany<TEntity, TChild>(this TEntity parent, Expression<Func<TEntity, Many<TChild>>> propertyToInit) where TChild : IEntityBase where TEntity : IEntityBase
-        {
-            var property = (PropertyInfo)((MemberExpression)propertyToInit.Body).Member;
-            property.SetValue(parent, new Many<TChild>(parent, property.Name));
-        }
-
-        /// <summary>
-        /// Initializes supplied property with a new Many-To-Many relationship.
-        /// </summary>
-        /// <param name="parent"></param>
-        /// <param name="propertyToInit">() = > PropertyName</param>
-        /// <param name="propertyOtherSide">x => x.PropertyName</param>
-        public static void InitManyToMany<TEntity, TChild>(this TEntity parent, Expression<Func<TEntity, Many<TChild>>> propertyToInit, Expression<Func<TChild, object>> propertyOtherSide) where TChild : IEntityBase where TEntity : IEntityBase
-        {
-            var property = (PropertyInfo)((MemberExpression)propertyToInit.Body).Member;
-            var hasOwnerAttrib = property.IsDefined(typeof(OwnerSideAttribute), false);
-            var hasInverseAttrib = property.IsDefined(typeof(InverseSideAttribute), false);
-            if (hasOwnerAttrib && hasInverseAttrib) throw new InvalidOperationException("Only one type of relationship side attribute is allowed on a property");
-            if (!hasOwnerAttrib && !hasInverseAttrib) throw new InvalidOperationException("Missing attribute for determining relationship side of a many-to-many relationship");
-
-            var osProperty = (PropertyInfo)((MemberExpression)propertyOtherSide.Body).Member;
-            var osHasOwnerAttrib = osProperty.IsDefined(typeof(OwnerSideAttribute), false);
-            var osHasInverseAttrib = osProperty.IsDefined(typeof(InverseSideAttribute), false);
-            if (osHasOwnerAttrib && osHasInverseAttrib) throw new InvalidOperationException("Only one type of relationship side attribute is allowed on a property");
-            if (!osHasOwnerAttrib && !osHasInverseAttrib) throw new InvalidOperationException("Missing attribute for determining relationship side of a many-to-many relationship");
-
-            if ((hasOwnerAttrib == osHasOwnerAttrib) || (hasInverseAttrib == osHasInverseAttrib)) throw new InvalidOperationException("Both sides of the relationship cannot have the same attribute");
-
-            property.SetValue(parent, new Many<TChild>(parent, property.Name, osProperty.Name, hasInverseAttrib));
         }
     }
 }

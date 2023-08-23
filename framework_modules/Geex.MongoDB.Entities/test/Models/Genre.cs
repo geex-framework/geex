@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace MongoDB.Entities.Tests
 {
@@ -10,9 +11,8 @@ namespace MongoDB.Entities.Tests
         public double SortScore { get; set; }
         public Review Review { get; set; }
 
-        [InverseSide]
-        public Many<Book> Books { get; set; }
+        public IQueryable<Book> Books => LazyQuery(() => Books);
 
-        public Genre() => this.InitManyToMany(x => Books, b => b.Genres);
+        public Genre() => this.ConfigLazyQuery(x => Books, book => book.GenreIds.Contains(this.Id), genres => book => genres.SelectMany(x => x.Books).SelectMany(x => x.GenreIds).Contains(Id));
     }
 }
