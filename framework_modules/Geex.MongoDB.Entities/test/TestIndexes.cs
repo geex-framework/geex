@@ -1,5 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+
 using MongoDB.Driver;
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,11 +26,11 @@ namespace MongoDB.Entities.Tests
             var author2 = new Author { Name = "Name", Surname = Guid.NewGuid().ToString() };
             await author2.SaveAsync();
 
-            var res = DB.FluentTextSearch<Author>(Search.Full, author1.Surname).ToList();
+            var res = DB.FluentTextSearch<Author>(FindSearchType.Full, author1.Surname).ToList();
             Assert.AreEqual(author1.Surname, res[0].Surname);
 
             var res2 = await DB.Find<Author>()
-                         .Match(Search.Full, author1.Surname)
+                         .Match(FindSearchType.Full, author1.Surname)
                          .ExecuteAsync();
             Assert.AreEqual(author1.Surname, res2[0].Surname);
         }
@@ -47,7 +49,7 @@ namespace MongoDB.Entities.Tests
             var author2 = new Author { Name = "Name", Surname = Guid.NewGuid().ToString() };
             await author2.SaveAsync();
 
-            var res = await DB.FluentTextSearch<Author>(Search.Full, author1.Surname).ToListAsync();
+            var res = await DB.FluentTextSearch<Author>(FindSearchType.Full, author1.Surname).ToListAsync();
 
             Assert.AreEqual(author1.Surname, res[0].Surname);
         }
@@ -71,7 +73,7 @@ namespace MongoDB.Entities.Tests
             await DB.SaveAsync(new[] { b1, b2, b3, b4, b5, b6 });
 
             var res = await DB.Find<Book>()
-                        .Match(Search.Fuzzy, "catherine jones")
+                        .Match(FindSearchType.Fuzzy, "catherine jones")
                         .Project(b => new Book { Id = b.Id, Title = b.Title })
                         .SortByTextScore()
                         .Skip(0)
@@ -105,7 +107,7 @@ namespace MongoDB.Entities.Tests
             await list.SaveAsync();
 
             var res = await DB.Find<Genre>()
-                        .Match(Search.Full, "one eight nine")
+                        .Match(FindSearchType.Full, "one eight nine")
                         .Project(p => new Genre { Name = p.Name, Position = p.Position })
                         .SortByTextScore()
                         .ExecuteAsync();
@@ -138,9 +140,9 @@ namespace MongoDB.Entities.Tests
             await list.SaveAsync();
 
             var res = await DB.Find<Genre>()
-                        .Match(Search.Full, "one eight nine")
+                        .Match(FindSearchType.Full, "one eight nine")
                         .SortByTextScore(g => g.SortScore)
-                        .Sort(g => g.Position, Order.Ascending)
+                        .Sort(g => g.Position, FindSortType.Ascending)
                         .ExecuteAsync();
 
             await list.DeleteAsync();

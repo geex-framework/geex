@@ -59,6 +59,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.MongoDB.Entities", "Ge
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.MongoDB.Entities", "Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj", "{C68DA23A-8E0A-40FE-A2F6-A5DA45212DED}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Geex.MongoDB.Entities\test\Tests.csproj", "{44420B74-9BAB-44C0-B7A4-8079F78FB285}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,6 +123,10 @@ Global
 		{C68DA23A-8E0A-40FE-A2F6-A5DA45212DED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C68DA23A-8E0A-40FE-A2F6-A5DA45212DED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C68DA23A-8E0A-40FE-A2F6-A5DA45212DED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44420B74-9BAB-44C0-B7A4-8079F78FB285}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44420B74-9BAB-44C0-B7A4-8079F78FB285}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44420B74-9BAB-44C0-B7A4-8079F78FB285}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44420B74-9BAB-44C0-B7A4-8079F78FB285}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -140,5 +146,6 @@ Global
 		{7039D4BB-E773-44B8-B4DA-D1B19F29BAFB} = {B1D4F95C-A5CE-4681-8089-FB0D8FF743A1}
 		{938D1D32-1B77-486B-AE79-31BA321A94AF} = {838310F5-58DD-4546-850D-8BE9233333AC}
 		{C68DA23A-8E0A-40FE-A2F6-A5DA45212DED} = {9A9FFDE9-82B4-4AE0-B4F8-F6ACF7B59E6D}
+		{44420B74-9BAB-44C0-B7A4-8079F78FB285} = {9A9FFDE9-82B4-4AE0-B4F8-F6ACF7B59E6D}
 	EndGlobalSection
 EndGlobal

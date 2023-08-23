@@ -28,7 +28,7 @@ namespace MongoDB.Entities.Tests
 
             var res = (await DB.Find<Place>()
                         .Match(p => p.Location, new Coordinates2D(48.857908, 2.295243), 20000) //20km from eiffel tower
-                        .Sort(p => p.ModifiedOn, Order.Descending)
+                        .Sort(p => p.ModifiedOn, FindSortType.Descending)
                         .Limit(20)
                         .ExecuteAsync())
                         .Where(c => c.Name == "Paris " + guid)

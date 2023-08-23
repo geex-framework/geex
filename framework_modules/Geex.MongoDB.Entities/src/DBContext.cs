@@ -749,5 +749,24 @@ namespace MongoDB.Entities
         {
             return this.Collection<T>().InsertManyAsync(this.Session, entities, options, cancellationToken);
         }
+
+        /// <summary>
+        /// Commits a transaction to MongoDB
+        /// </summary>
+        /// <param name="cancellation">An optional cancellation token</param>
+        public virtual async Task CommitAsync(CancellationToken? cancellation = default)
+        {
+            await SaveChanges(cancellation.GetValueOrDefault(CancellationToken.None));
+            if (Session.IsInTransaction)
+            {
+                await Session.CommitTransactionAsync(cancellation.GetValueOrDefault(CancellationToken.None));
+            }
+            if (this.OnCommitted != default)
+            {
+                await this.OnCommitted();
+            }
+        }
+        public virtual event Func<Task>? OnCommitted;
+
     }
 }

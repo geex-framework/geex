@@ -8,6 +8,7 @@ using MongoDB.Driver;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Nodes;
@@ -32,6 +33,7 @@ namespace MongoDB.Entities
 
             BsonSerializer.RegisterSerializer(typeof(string), new ObjectIdCompatibleStringSerializer());
             BsonSerializer.RegisterSerializer(typeof(ObjectId), new StringCompatibleObjectIdSerializer());
+            //BsonSerializer.RegisterSerializer(typeof(object), new AnonymousObjectBsonSerializer());
             BsonSerializer.RegisterSerializer(new JsonNodeSerializer());
             BsonSerializer.RegisterSerializer(new DateSerializer());
             BsonSerializer.RegisterSerializer(new FuzzyStringSerializer());

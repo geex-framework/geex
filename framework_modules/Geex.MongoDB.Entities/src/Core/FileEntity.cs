@@ -271,7 +271,7 @@ namespace MongoDB.Entities
 
         private Task UpdateMetaDataAsync(DbContext dbContext)
         {
-            var collection = db.GetCollection<FileEntity>(TypeMap.GetCollectionName(parentType.GetRootBsonClassMap().ClassType));
+            var collection = DB.Collection<FileEntity>();
             var filter = Builders<FileEntity>.Filter.Eq(e => e.Id, parent.Id);
             var update = Builders<FileEntity>.Update
                             .Set(e => e.FileSize, parent.FileSize)

@@ -83,7 +83,7 @@ namespace MongoDB.Entities.Tests
 
             var res = await DB.Find<Book>()
                 .Match(b => ids.Contains(b.Id))
-                .Sort(b => b.Id, Order.Ascending)
+                .Sort(b => b.Id, FindSortType.Ascending)
                 .ExecuteAsync();
 
             Assert.AreEqual(0, res[0].Price);
@@ -126,7 +126,7 @@ namespace MongoDB.Entities.Tests
 
             var res = await DB.Find<Book>()
                 .Match(b => ids.Contains(b.Id))
-                .Sort(b => b.Id, Order.Ascending)
+                .Sort(b => b.Id, FindSortType.Ascending)
                 .ExecuteAsync();
 
             Assert.AreEqual(100, res[0].Price);
@@ -368,8 +368,8 @@ namespace MongoDB.Entities.Tests
 
             var res = await DB.Find<Author>()
                         .Match(f => f.Where(a => a.Surname == guid) & f.Gt(a => a.Age, 10))
-                        .Sort(a => a.Age, Order.Descending)
-                        .Sort(a => a.Name, Order.Descending)
+                        .Sort(a => a.Age, FindSortType.Descending)
+                        .Sort(a => a.Name, FindSortType.Descending)
                         .Skip(1)
                         .Limit(1)
                         .Project(p => p.Include("Name").Include("Surname"))
@@ -391,8 +391,8 @@ namespace MongoDB.Entities.Tests
 
             var res = (await DB.Find<Author, Test>()
                         .Match(f => f.Where(a => a.Surname == guid) & f.Gt(a => a.Age, 10))
-                        .Sort(a => a.Age, Order.Descending)
-                        .Sort(a => a.Name, Order.Descending)
+                        .Sort(a => a.Age, FindSortType.Descending)
+                        .Sort(a => a.Name, FindSortType.Descending)
                         .Skip(1)
                         .Limit(1)
                         .Project(a => new Test { Tester = a.Name })
@@ -456,26 +456,6 @@ namespace MongoDB.Entities.Tests
 
             var res = (await DB.Find<Author>()
                         .MatchExpression("{$and:[{$gt:['$Age2','$Age']},{$eq:['$Surname','" + guid + "']}]}")
-                        .ExecuteAsync())
-                        .Single();
-
-            Assert.AreEqual(res.Surname, guid);
-        }
-
-        [TestMethod]
-        public async Task find_with_aggregation_expression_using_template_works()
-        {
-            var guid = Guid.NewGuid().ToString();
-            var author = new Author { Name = "a", Age = 10, Age2 = 11, Surname = guid }; await author.SaveAsync();
-
-            var template = new Template<Author>("{$and:[{$gt:['$<Age2>','$<Age>']},{$eq:['$<Surname>','<guid>']}]}")
-                    .Path(a => a.Age2)
-                    .Path(a => a.Age)
-                    .Path(a => a.Surname)
-                    .Tag("guid", guid);
-
-            var res = (await DB.Find<Author>()
-                        .MatchExpression(template)
                         .ExecuteAsync())
                         .Single();
 

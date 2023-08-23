@@ -125,10 +125,10 @@ namespace MongoDB.Entities.Tests
             await DB.SaveAsync(author2);
 
             using var TN = new DbContext();
-            var tres = TN.FluentTextSearch<Author>(Search.Full, author1.Surname).ToList();
+            var tres = TN.FluentTextSearch<Author>(FindSearchType.Full, author1.Surname).ToList();
             Assert.AreEqual(author1.Surname, tres[0].Surname);
 
-            var tflu = TN.FluentTextSearch<Author>(Search.Full, author2.Surname).SortByDescending(x => x.ModifiedOn).ToList();
+            var tflu = TN.FluentTextSearch<Author>(FindSearchType.Full, author2.Surname).SortByDescending(x => x.ModifiedOn).ToList();
             Assert.AreEqual(author2.Surname, tflu[0].Surname);
         }
 
@@ -238,7 +238,7 @@ namespace MongoDB.Entities.Tests
             {
                 TN.Attach(entities);
                 await entities.SaveAsync();
-                TN.OnCommitted += async (sender) =>
+                TN.OnCommitted += async () =>
                  {
                      await Task.Delay(1000);
                      triggered = true;

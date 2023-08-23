@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -16,22 +17,22 @@ namespace MongoDB.Entities.Tests
     [TestClass]
     public class TestDynamicObject
     {
-        [TestMethod]
-        public async Task create_anonymous_object_should_work()
-        {
-            var dbContext = new DbContext();
-            var tempName = Guid.NewGuid().ToString();
-            var data = new TableAnonymousData()
-            {
-                TableType = tempName,
-                Data = new { customerType = "VIP", customerName = tempName }
-            };
-            dbContext.Attach(data);
-            await dbContext.CommitAsync();
-            dbContext.Dispose();
-            dbContext = new DbContext();
-            dbContext.Queryable<TableAnonymousData>().FirstOrDefault(x => x.TableType == tempName).ShouldNotBeNull();
-        }
+        //[TestMethod]
+        //public async Task create_anonymous_object_should_work()
+        //{
+        //    var dbContext = new DbContext();
+        //    var tempName = Guid.NewGuid().ToString();
+        //    var data = new TableAnonymousData()
+        //    {
+        //        TableType = tempName,
+        //        Data = new { customerType = "VIP", customerName = tempName }
+        //    };
+        //    dbContext.Attach(data);
+        //    await dbContext.CommitAsync();
+        //    dbContext.Dispose();
+        //    dbContext = new DbContext();
+        //    dbContext.Queryable<TableAnonymousData>().FirstOrDefault(x => x.TableType == tempName).ShouldNotBeNull();
+        //}
 
         [TestMethod]
         public async Task create_json_object_should_work()

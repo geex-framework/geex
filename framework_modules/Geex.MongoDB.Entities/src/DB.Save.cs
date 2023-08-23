@@ -183,7 +183,11 @@ namespace MongoDB.Entities
             }
             else
             {
-                entity.Id ??= entity.GenerateNewId().ToString();
+                if (entity.Id == default)
+                {
+                    entity.Id = entity.GenerateNewId().ToString();
+                    entity.CreatedOn = DateTimeOffset.Now;
+                }
             }
 
             if (entity is ISaveIntercepted intercepted)
