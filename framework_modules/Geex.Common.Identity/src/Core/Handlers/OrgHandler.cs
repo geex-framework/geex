@@ -44,7 +44,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task<IQueryable<Org>> Handle(QueryInput<Org> request, CancellationToken cancellationToken)
         {
-            return DbContext.Queryable<Org>().WhereIf(request.Filter != default, request.Filter);
+            return DbContext.Query<Org>().WhereIf(request.Filter != default, request.Filter);
         }
 
         /// <summary>Handles a request</summary>
@@ -59,12 +59,12 @@ namespace Geex.Common.Identity.Core.Handlers
             // 区域创建者自动拥有Org权限
             if (!userId.IsNullOrEmpty())
             {
-                var user = await DbContext.Queryable<User>().OneAsync(userId, cancellationToken: cancellationToken);
+                var user = await DbContext.Query<User>().OneAsync(userId, cancellationToken: cancellationToken);
                 await user.AddOrg(entity);
             }
 
             // 拥有上级Org权限的用户自动获得新增子Org的权限
-            var upperUsers = DbContext.Queryable<User>().Where(x => x.OrgCodes.Contains(entity.ParentOrgCode)).ToList();
+            var upperUsers = DbContext.Query<User>().Where(x => x.OrgCodes.Contains(entity.ParentOrgCode)).ToList();
             foreach (var upperUser in upperUsers)
             {
                 await upperUser.AddOrg(entity);
@@ -82,7 +82,7 @@ namespace Geex.Common.Identity.Core.Handlers
             try
             {
                 using var _ = DbContext.DisableAllDataFilters();
-                var userList = DbContext.Queryable<User>().ToList();
+                var userList = DbContext.Query<User>().ToList();
                 foreach (var user in userList.Where(x => !x.OrgCodes.Any()))
                 {
                     if (user.TenantCode.IsNullOrWhiteSpace())
@@ -90,7 +90,7 @@ namespace Geex.Common.Identity.Core.Handlers
                         continue;
                     }
 
-                    var entity = DbContext.Queryable<Org>()
+                    var entity = DbContext.Query<Org>()
                         .FirstOrDefault(x => x.TenantCode == user.TenantCode && x.Name == "集团总部");
                     if (entity is null)
                     {
@@ -102,7 +102,7 @@ namespace Geex.Common.Identity.Core.Handlers
                     }
                     await user.AddOrg(entity);
                     // 拥有上级Org权限的用户自动获得新增子Org的权限
-                    var upperUsers = DbContext.Queryable<User>().Where(x => x.OrgCodes.Contains(entity.ParentOrgCode)).ToList();
+                    var upperUsers = DbContext.Query<User>().Where(x => x.OrgCodes.Contains(entity.ParentOrgCode)).ToList();
                     foreach (var upperUser in upperUsers)
                     {
                         await upperUser.AddOrg(entity);

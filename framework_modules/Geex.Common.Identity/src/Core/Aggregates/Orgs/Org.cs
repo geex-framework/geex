@@ -32,10 +32,10 @@ public class Org : Entity<Org>, ITenantFilteredEntity, IOrg
         OrgType = orgTypeEnum ?? OrgTypeEnum.Default;
     }
 
-    private IQueryable<Org> _allSubOrgsQuery => DbContext.Queryable<Org>().Where(x => x.Code.StartsWith(Code + "."));
+    private IQueryable<Org> _allSubOrgsQuery => DbContext.Query<Org>().Where(x => x.Code.StartsWith(Code + "."));
 
     private IQueryable<Org> _directSubOrgsQuery =>
-        DbContext.Queryable<Org>().Where(x => new Regex($@"^{Code}\.\w+(?!\.)$").IsMatch(x.Code));
+        DbContext.Query<Org>().Where(x => new Regex($@"^{Code}\.\w+(?!\.)$").IsMatch(x.Code));
 
     /// <summary>
     ///     所有父组织编码
@@ -47,7 +47,7 @@ public class Org : Entity<Org>, ITenantFilteredEntity, IOrg
     /// <summary>
     ///     所有父组织
     /// </summary>
-    public IQueryable<IOrg> AllParentOrgs => DbContext.Queryable<Org>().Where(x => AllParentOrgCodes.Contains(x.Code));
+    public IQueryable<IOrg> AllParentOrgs => DbContext.Query<Org>().Where(x => AllParentOrgCodes.Contains(x.Code));
 
     /// <summary>
     ///     所有子组织编码
@@ -72,7 +72,7 @@ public class Org : Entity<Org>, ITenantFilteredEntity, IOrg
     /// <summary>
     ///     父组织
     /// </summary>
-    public IOrg ParentOrg => DbContext.Queryable<Org>().FirstOrDefault(x => ParentOrgCode == x.Code);
+    public IOrg ParentOrg => DbContext.Query<Org>().FirstOrDefault(x => ParentOrgCode == x.Code);
 
     /// <summary>
     ///     父组织编码

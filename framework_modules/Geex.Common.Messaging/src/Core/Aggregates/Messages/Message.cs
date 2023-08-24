@@ -52,7 +52,7 @@ public class Message : Entity<Message>, IMessage
     }
 
     public virtual IQueryable<MessageDistribution> Distributions =>
-        DbContext.Queryable<MessageDistribution>().Where(x => x.MessageId == Id);
+        DbContext.Query<MessageDistribution>().Where(x => x.MessageId == Id);
 
     private ILogger<Message> Logger => ServiceProvider.GetService<ILogger<Message>>();
     public IMessageContent Content { get; private set; }

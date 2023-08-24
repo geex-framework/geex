@@ -35,7 +35,7 @@ namespace Geex.Common.Identity.Api.Aggregates.Users
                 throw new Exception("invalid input for username");
             if (!user.Username.IsNullOrEmpty())
             {
-                var emailConflict = DbContext.Queryable<User>().Any(o => o.Username == user.Username);
+                var emailConflict = DbContext.Query<User>().Any(o => o.Username == user.Username);
                 if (emailConflict)
                 {
                     throw new BusinessException(GeexExceptionType.Conflict, message: "用户名已存在, 如有疑问, 请联系管理员.");
@@ -43,7 +43,7 @@ namespace Geex.Common.Identity.Api.Aggregates.Users
             }
             if (!user.Email.IsNullOrEmpty())
             {
-                var emailConflict = DbContext.Queryable<User>().Any(o => o.Email == user.Email);
+                var emailConflict = DbContext.Query<User>().Any(o => o.Email == user.Email);
                 if (emailConflict)
                 {
                     throw new BusinessException(GeexExceptionType.Conflict, message: "注册的邮箱已存在, 如有疑问, 请联系管理员.");
@@ -51,7 +51,7 @@ namespace Geex.Common.Identity.Api.Aggregates.Users
             }
             if (!user.PhoneNumber.IsNullOrEmpty())
             {
-                var phoneConflict = DbContext.Queryable<User>().Any(o => o.PhoneNumber == user.PhoneNumber);
+                var phoneConflict = DbContext.Query<User>().Any(o => o.PhoneNumber == user.PhoneNumber);
                 if (phoneConflict)
                 {
                     throw new BusinessException(GeexExceptionType.Conflict, message: "注册的手机号已存在, 如有疑问, 请联系管理员.");

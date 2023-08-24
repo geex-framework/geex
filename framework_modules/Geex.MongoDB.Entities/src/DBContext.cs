@@ -79,16 +79,16 @@ namespace MongoDB.Entities
             ClientSessionOptions options = null, bool entityTrackingEnabled = true)
         {
             this.ServiceProvider = serviceProvider;
+            EntityTrackingEnabled = entityTrackingEnabled;
             this.session = DB.Database(database).Client.StartSession(options);
             if (transactional)
             {
                 session.StartTransaction(new TransactionOptions(new Optional<ReadConcern>(ReadConcern.Majority), new Optional<ReadPreference>(ReadPreference.Primary), writeConcern: new Optional<WriteConcern>(WriteConcern.WMajority), maxCommitTime: new Optional<TimeSpan?>(TimeSpan.FromSeconds(300))));
             }
-
-            this.EntityTrackingEnabled = entityTrackingEnabled;
         }
 
         public IServiceProvider ServiceProvider { get; }
+        public bool EntityTrackingEnabled { get; }
 
         /// <summary>
         /// Gets an accurate count of how many entities are matched for a given expression/filter in the transaction scope.
@@ -214,8 +214,6 @@ namespace MongoDB.Entities
         /// </summary>
         public DbContextCache OriginLocal { get; set; } = new();
 
-        public bool EntityTrackingEnabled { get; }
-
         public virtual IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase
         {
             return entities.Select(this.Attach).ToList();
@@ -303,25 +301,25 @@ namespace MongoDB.Entities
         /// </summary>
         /// <param name="options">The aggregate options</param>
         /// <typeparam name="T">The type of entity</typeparam>
-        public virtual IQueryable<T> Queryable<T>(AggregateOptions options = null) where T : IEntityBase
+        public virtual IQueryable<T> Query<T>(AggregateOptions options = null) where T : IEntityBase
         {
             if (typeof(T).IsInterface)
             {
-                return (IQueryable<T>)this.Queryable(typeof(T).GetRootBsonClassMap().ClassType);
+                return (IQueryable<T>)this.Query(typeof(T).GetRootBsonClassMap().ClassType);
             }
 
-            return this.Queryable(typeof(T).GetRootBsonClassMap().ClassType).OfType<T>();
+            return this.Query(typeof(T).GetRootBsonClassMap().ClassType).OfType<T>();
         }
 
         /// <summary>
         /// Exposes the MongoDB collection for the given entity type as IQueryable in order to facilitate LINQ queries in the transaction scope.
         /// </summary>
         /// <param name="options">The aggregate options</param>
-        public virtual IQueryable Queryable(Type entityType, AggregateOptions options = null)
+        public virtual IQueryable Query(Type entityType, AggregateOptions options = null)
         {
             if (entityType.IsInterface)
             {
-                return this.Queryable(entityType.GetRootBsonClassMap().ClassType);
+                return this.Query(entityType.GetRootBsonClassMap().ClassType);
             }
             return typeof(DB).GetMethod(nameof(DB.Queryable)).MakeGenericMethod(entityType).Invoke(null, new object[] { options, this }).As<IQueryable>();
         }
@@ -754,12 +752,12 @@ namespace MongoDB.Entities
         /// Commits a transaction to MongoDB
         /// </summary>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual async Task CommitAsync(CancellationToken? cancellation = default)
+        public virtual async Task CommitAsync(CancellationToken cancellation = default)
         {
-            await SaveChanges(cancellation.GetValueOrDefault(CancellationToken.None));
+            await SaveChanges(cancellation);
             if (Session.IsInTransaction)
             {
-                await Session.CommitTransactionAsync(cancellation.GetValueOrDefault(CancellationToken.None));
+                await Session.CommitTransactionAsync(cancellation);
             }
             if (this.OnCommitted != default)
             {

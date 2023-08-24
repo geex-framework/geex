@@ -30,7 +30,7 @@ namespace Geex.Common.BackgroundJob
         public override async Task Run(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
             var dbContext = serviceProvider.GetService<DbContext>();
-            var existedJobState = dbContext.Queryable<TState>().FirstOrDefault(x => x.JobName == this.GetType().Name);
+            var existedJobState = dbContext.Query<TState>().FirstOrDefault(x => x.JobName == this.GetType().Name);
             var jobState = existedJobState ?? dbContext.Attach(new TState
             {
                 JobName = typeof(TImplementation).Name

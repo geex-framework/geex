@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
-
+using Geex.Common.Abstraction.Storage;
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Voyager;
 using HotChocolate.Execution.Configuration;
@@ -148,7 +148,7 @@ namespace Geex.Common.Abstractions
 
             if (coreModuleOptions.AutoMigration)
             {
-                context.ServiceProvider.GetService<DbContext>().MigrateAsync().Wait();
+                new GeexDbContext(context.ServiceProvider, transactional:true).MigrateAsync().Wait();
             }
         }
     }

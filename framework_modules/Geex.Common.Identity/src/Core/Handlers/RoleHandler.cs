@@ -32,7 +32,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task<IQueryable<Role>> Handle(QueryInput<Role> request, CancellationToken cancellationToken)
         {
-            return DbContext.Queryable<Role>().WhereIf(request.Filter != default, request.Filter);
+            return DbContext.Query<Role>().WhereIf(request.Filter != default, request.Filter);
         }
 
         /// <summary>Handles a request</summary>
@@ -50,12 +50,12 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <inheritdoc />
         public async Task<Unit> Handle(SetRoleDefaultInput request, CancellationToken cancellationToken)
         {
-            var originDefaultRoles = DbContext.Queryable<Role>().Where(x=>x.IsDefault);
+            var originDefaultRoles = DbContext.Query<Role>().Where(x=>x.IsDefault);
             foreach (var originDefaultRole in originDefaultRoles)
             {
                 originDefaultRole.IsDefault = false;
             }
-            var role = DbContext.Queryable<Role>().FirstOrDefault(x=>x.Id == request.RoleId);
+            var role = DbContext.Query<Role>().FirstOrDefault(x=>x.Id == request.RoleId);
             role.IsDefault = true;
             return Unit.Value;
         }

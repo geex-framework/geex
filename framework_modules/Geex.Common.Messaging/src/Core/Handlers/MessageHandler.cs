@@ -64,15 +64,15 @@ namespace Geex.Common.Messaging.Core.Handlers
         public async Task<IEnumerable<IMessage>> Handle(GetUnreadMessagesInput request, CancellationToken cancellationToken)
         {
             var claimsPrincipal = ClaimsPrincipal.Value;
-            var messageDistributions = DbContext.Queryable<MessageDistribution>().Where(x => x.IsRead == false && x.ToUserId == claimsPrincipal.FindUserId()).ToList();
+            var messageDistributions = DbContext.Query<MessageDistribution>().Where(x => x.IsRead == false && x.ToUserId == claimsPrincipal.FindUserId()).ToList();
             var messageIds = messageDistributions.Select(x => x.MessageId);
-            var messages = DbContext.Queryable<Message>().Where(x => messageIds.Contains(x.Id)).ToList();
+            var messages = DbContext.Query<Message>().Where(x => messageIds.Contains(x.Id)).ToList();
             return messages;
         }
 
         public async Task<Unit> Handle(SendNotificationMessageRequest request, CancellationToken cancellationToken)
         {
-            var message = DbContext.Queryable<Message>().First(x => x.Id == request.MessageId);
+            var message = DbContext.Query<Message>().First(x => x.Id == request.MessageId);
             await message.DistributeAsync(request.ToUserIds.ToArray());
 
             foreach (var toUserId in request.ToUserIds)
@@ -93,7 +93,7 @@ namespace Geex.Common.Messaging.Core.Handlers
 
         public async Task<Unit> Handle(EditMessageRequest request, CancellationToken cancellationToken)
         {
-            var message = await DbContext.Queryable<Message>().OneAsync(request.Id);
+            var message = await DbContext.Query<Message>().OneAsync(request.Id);
             if (!request.Text.IsNullOrEmpty())
             {
                 message.Title = request.Text;

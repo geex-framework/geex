@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Transactions;
 
 using HotChocolate;
@@ -13,8 +11,6 @@ using MediatR;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
-using MongoDB.Entities;
 
 namespace Geex.Common
 {
@@ -75,22 +71,5 @@ namespace Geex.Common
         }
 
         public void Dispose() => this.Transaction.Dispose();
-    }
-
-    public interface IUnitOfWork : IDisposable
-    {
-        public event Func<Task>? OnCommitted;
-        T Attach<T>(T entity) where T : IEntityBase;
-        IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase;
-
-        /// <inheritdoc />
-        Task<int> SaveChanges(CancellationToken cancellation = default);
-
-        /// <summary>
-        /// Commits a transaction
-        /// </summary>
-        /// <param name="cancellationToken">An optional cancellation token</param>
-        public Task CommitAsync(CancellationToken? cancellationToken = default);
-        public Task AbortAsync(CancellationToken? cancellationToken = default);
     }
 }

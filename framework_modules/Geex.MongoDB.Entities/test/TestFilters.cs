@@ -49,11 +49,11 @@ namespace MongoDB.Entities.Tests
             dbContext = new DbContext();
             //var result = await dbContext.Find<InterceptedAndFiltered>().Match(x => x.Id == testEntity.Id).ExecuteFirstAsync();
             //Assert.IsNull(result);
-            var result = dbContext.Queryable<InterceptedAndFiltered>().FirstOrDefault(x => x.Id == testEntity.Id);
+            var result = dbContext.Query<InterceptedAndFiltered>().FirstOrDefault(x => x.Id == testEntity.Id);
             Assert.IsNull(result);
             //var resultList = await dbContext.Find<InterceptedAndFiltered>().ExecuteAsync();
             //Assert.AreEqual(0, resultList.Count);
-            var resultList = dbContext.Queryable<InterceptedAndFiltered>().ToList();
+            var resultList = dbContext.Query<InterceptedAndFiltered>().ToList();
             Assert.AreEqual(0, resultList.Count);
         }
     }

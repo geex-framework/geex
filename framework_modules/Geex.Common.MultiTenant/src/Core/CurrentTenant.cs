@@ -27,7 +27,7 @@ namespace Geex.Common.MultiTenant.Core
         public string? Code => _tenantCode ?? _currentTenantResolver.Resolve();
 
         /// <inheritdoc />
-        public ITenant Detail => _detail ??= _dbContext.Queryable<Tenant>().FirstOrDefault(x => x.Code == Code);
+        public ITenant Detail => _detail ??= _dbContext.Query<Tenant>().FirstOrDefault(x => x.Code == Code);
 
 
         public CurrentTenant(ICurrentTenantResolver currentTenantResolver, DbContext dbContext)
@@ -45,7 +45,7 @@ namespace Geex.Common.MultiTenant.Core
         {
             this._parentScopes.Enqueue(Code);
             this._tenantCode = tenantCode;
-            this._detail = _dbContext.Queryable<Tenant>().FirstOrDefault(x => x.Code == tenantCode);
+            this._detail = _dbContext.Query<Tenant>().FirstOrDefault(x => x.Code == tenantCode);
             return new DisposeAction(() =>
             {
                 _tenantCode = _parentScopes.Dequeue();

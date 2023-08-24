@@ -27,7 +27,7 @@ namespace MongoDB.Entities
             Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase
         {
             var lazyObj = new LazyMultiQuery<T, TRelated>(lazyQuery, batchQuery, sourceProvider ??
-                                                                           (() => DbContext.Queryable<TRelated>()));
+                                                                           (() => DbContext.Query<TRelated>()));
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;
@@ -44,7 +44,7 @@ namespace MongoDB.Entities
             Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase
         {
             var lazyObj = new LazySingleQuery<T, TRelated>(lazyQuery, batchQuery, sourceProvider ??
-                                                                          (() => DbContext.Queryable<TRelated>()));
+                                                                          (() => DbContext.Query<TRelated>()));
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;

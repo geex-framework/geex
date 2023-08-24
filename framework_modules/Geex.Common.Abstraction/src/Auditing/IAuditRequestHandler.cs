@@ -22,7 +22,7 @@ namespace Geex.Common.Abstraction.Auditing
 
         async Task<Unit> IRequestHandler<SubmitRequest<TInterface>, Unit>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
         {
-            var entities = DbContext.Queryable<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
+            var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
             {
                 throw new BusinessException(GeexExceptionType.NotFound);
@@ -40,7 +40,7 @@ namespace Geex.Common.Abstraction.Auditing
 
         async Task<Unit> IRequestHandler<AuditRequest<TInterface>, Unit>.Handle(AuditRequest<TInterface> request, CancellationToken cancellationToken)
         {
-            var entities = DbContext.Queryable<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
+            var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
             {
                 throw new BusinessException(GeexExceptionType.NotFound);
@@ -60,7 +60,7 @@ namespace Geex.Common.Abstraction.Auditing
 
         async Task<Unit> IRequestHandler<UnsubmitRequest<TInterface>, Unit>.Handle(UnsubmitRequest<TInterface> request, CancellationToken cancellationToken)
         {
-            var entities = DbContext.Queryable<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
+            var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
             {
                 throw new BusinessException(GeexExceptionType.NotFound);
@@ -78,7 +78,7 @@ namespace Geex.Common.Abstraction.Auditing
 
         async Task<Unit> IRequestHandler<UnauditRequest<TInterface>, Unit>.Handle(UnauditRequest<TInterface> request, CancellationToken cancellationToken)
         {
-            var entities = DbContext.Queryable<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
+            var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
             {
                 throw new BusinessException(GeexExceptionType.NotFound);

@@ -69,7 +69,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var item = dbContext.Queryable<TableData>().ToList();
+            var item = dbContext.Query<TableData>().ToList();
             item.Count.ShouldBe(4);
             var objectData = item.First(x => x.DataType == "object");
             objectData.Data["customerType"].GetValue<string>().ShouldBe("VIP");
@@ -103,7 +103,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var item = dbContext.Queryable<TableData>().ToList();
+            var item = dbContext.Query<TableData>().ToList();
             var objectData = item.First(x => x.DataType == "object");
             objectData.Data["int"].GetValue<int>().ShouldBe(1);
             objectData.Data["decimal"].GetValue<decimal>().ShouldBe(1m);

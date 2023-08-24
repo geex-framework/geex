@@ -52,10 +52,30 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
-            var result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
             dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
             dbContext.Dispose();
         }
+
+        [TestMethod]
+        public async Task cache_should_not_exist_after_queryable_no_tracking()
+        {
+            var dbContext = new DbContext();
+            var testEntity = new TestEntity()
+            {
+                Name = "test"
+            };
+            dbContext.Attach(testEntity);
+            await testEntity.SaveAsync();
+            await dbContext.CommitAsync();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            var result = dbContext.Query<TestEntity>().AsNoTracking().FirstOrDefault();
+            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.Dispose();
+        }
+
 
         [TestMethod]
         public async Task cache_not_modified_should_not_be_saved()
@@ -72,7 +92,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
-            var result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
             dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
             var saveResult = await dbContext.SaveChanges();
             saveResult.ShouldBe(0);
@@ -83,7 +103,7 @@ namespace MongoDB.Entities.Tests
         public async Task multiple_query_should_share_instance_after_edit_except_find()
         {
            var dbContext = new DbContext();
-            await dbContext.Queryable<TestEntity>().ToList().DeleteAsync();
+            await dbContext.Query<TestEntity>().ToList().DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -96,9 +116,9 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
             var result1 = await dbContext.Find<TestEntity>().ExecuteFirstAsync();
-            var result2 = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            var result2 = dbContext.Query<TestEntity>().FirstOrDefault();
             result.GetHashCode().ShouldNotBe(result1.GetHashCode());
             result.GetHashCode().ShouldBe(result2.GetHashCode());
             result.GetHashCode().ShouldBe(dbContext.Local[typeof(TestEntity)].Values.FirstOrDefault().GetHashCode());
@@ -109,7 +129,7 @@ namespace MongoDB.Entities.Tests
         public async Task multiple_queryable_should_share_instance_after_edit()
         {
             var dbContext = new DbContext();
-            await dbContext.Queryable<TestEntity>().ToList().DeleteAsync();
+            await dbContext.Query<TestEntity>().ToList().DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -122,10 +142,10 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
              result.Name.ShouldBe("test");
             result.Name = "test1";
-            result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.Name.ShouldBe("test1");
 
             dbContext.Dispose();
@@ -159,7 +179,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
             dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
             await result.DeleteAsync();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
@@ -170,7 +190,7 @@ namespace MongoDB.Entities.Tests
         public async Task batch_delete_should_remove_cache()
         {
             var dbContext = new DbContext();
-            await dbContext.Queryable<TestEntity>().ToList().DeleteAsync();
+            await dbContext.Query<TestEntity>().ToList().DeleteAsync();
             var testEntities = new List<TestEntity>()
             {
                 new TestEntity()
@@ -187,7 +207,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<TestEntity>().ToList();
+            var result = dbContext.Query<TestEntity>().ToList();
             dbContext.Local[typeof(TestEntity)].Count.ShouldBeGreaterThan(0);
             await result.DeleteAsync();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
@@ -198,7 +218,7 @@ namespace MongoDB.Entities.Tests
         public async Task deleted_entity_should_be_filtered()
         {
             var dbContext = new DbContext();
-            await dbContext.Queryable<TestEntity>().ToList().DeleteAsync();
+            await dbContext.Query<TestEntity>().ToList().DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -211,13 +231,13 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
             dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
             dbContext.OriginLocal[typeof(TestEntity)].ShouldNotBeEmpty();
             await result.DeleteAsync();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
             dbContext.OriginLocal[typeof(TestEntity)].ShouldBeEmpty();
-            result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.ShouldBeNull();
             dbContext.Dispose();
         }
@@ -235,21 +255,21 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.Name = "test1";
-            result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.Name.ShouldBe("test1");
             result.Name = "test2";
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.Name.ShouldBe("test2");
             await result.DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            result = dbContext.Queryable<TestEntity>().FirstOrDefault();
+            result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.ShouldBeNull();
             dbContext.Dispose();
         }
@@ -271,20 +291,20 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a"));
+            var result = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
             result.ToList().Count.ShouldBe(1);
             result.Count().ShouldBe(1);
             dbContext.Attach(new TestEntity()
             {
                 Name = "a2"
             });
-            var result1 = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a"));
+            var result1 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
             result1.ToList().Count.ShouldBe(2);
             result1.Count().ShouldBe(2);
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Queryable<TestEntity>().Count(x => x.Name.StartsWith("a")).ShouldBe(2);
+            dbContext.Query<TestEntity>().Count(x => x.Name.StartsWith("a")).ShouldBe(2);
             dbContext.Dispose();
         }
         [TestMethod]
@@ -319,18 +339,18 @@ namespace MongoDB.Entities.Tests
             }
             {
                 dbContext = new DbContext();
-                var result = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a"));
+                var result = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
                 result.ToList().Count().ShouldBe(2);
                 result.Count().ShouldBe(2);
-                var a1 = dbContext.Queryable<TestEntity>().First(x => x.Name == "a1");
+                var a1 = dbContext.Query<TestEntity>().First(x => x.Name == "a1");
                 a1.Name = "1";
-                var result1 = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a"));
+                var result1 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
                 result1.ToList().Count().ShouldBe(1);
                 result1.Count().ShouldBe(1);
                 await dbContext.CommitAsync();
                 dbContext.Dispose();
                 dbContext = new DbContext();
-                var result2 = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a"));
+                var result2 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
                 result2.ToList().Count().ShouldBe(1);
                 result2.Count().ShouldBe(1);
                 dbContext.Dispose();
@@ -370,16 +390,16 @@ namespace MongoDB.Entities.Tests
             }
             {
                 dbContext = new DbContext();
-                var result = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("c"));
+                var result = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("c"));
                 result.ToList().Count().ShouldBe(1);
                 result.Count().ShouldBe(1);
-                var a1 = dbContext.Queryable<TestEntity>().First(x => x.Name == "abc");
+                var a1 = dbContext.Query<TestEntity>().First(x => x.Name == "abc");
                 a1.Name = "1";
-                var result1 = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("c"));
+                var result1 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("c"));
                 result1.ToList().Count().ShouldBe(0);
                 result1.Count().ShouldBe(0);
                 a1.Name = "a3";
-                var result2 = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("3"));
+                var result2 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("3"));
                 result2.Count().ShouldBe(2);
                 result2.ToList().Count().ShouldBe(2);
             }
@@ -410,17 +430,17 @@ namespace MongoDB.Entities.Tests
             };
             var list = new List<TestEntity>() { a1, a2, b1, b2 };
             dbContext.Attach(list);
-            var result = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a"));
+            var result = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
             result.ToList().Count().ShouldBe(2);
             result.Count().ShouldBe(2);
             await a2.DeleteAsync();
-            var result1 = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a"));
+            var result1 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
             result1.ToList().Count().ShouldBe(1);
             result1.Count().ShouldBe(1);
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result2 = dbContext.Queryable<TestEntity>().Where(x => x.Name.StartsWith("a"));
+            var result2 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
             result2.ToList().Count().ShouldBe(1);
             result2.Count().ShouldBe(1);
             dbContext.Dispose();
@@ -443,7 +463,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var list = dbContext.Queryable<TestEntity>().ToList();
+            var list = dbContext.Query<TestEntity>().ToList();
             dbContext.Dispose();
         }
     }

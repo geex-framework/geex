@@ -45,7 +45,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         public string? Email { get; set; }
         public string Password { get; set; }
         public List<UserClaim> Claims { get; set; }
-        public IQueryable<IOrg> Orgs => DbContext.Queryable<Org>().Where(x => this.OrgCodes.Contains(x.Code));
+        public IQueryable<IOrg> Orgs => DbContext.Query<Org>().Where(x => this.OrgCodes.Contains(x.Code));
         public List<string> OrgCodes { get; set; }
         public List<string> Permissions => DbContext.ServiceProvider.GetService<IMediator>().Send(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
         public void ChangePassword(string originPassword, string newPassword)
@@ -61,7 +61,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         public ResettableLazy<IBlobObject?> AvatarFile { get; }
         public string? AvatarFileId { get; set; }
 
-        public IQueryable<IRole> Roles => DbContext.Queryable<Role>().Where(x => this.RoleIds.Contains(x.Id));
+        public IQueryable<IRole> Roles => DbContext.Query<Role>().Where(x => this.RoleIds.Contains(x.Id));
         public List<string> RoleNames
         {
             get
@@ -76,7 +76,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             IsEnable = true;
             Claims = Enumerable.Empty<UserClaim>().ToList();
             OrgCodes = Enumerable.Empty<string>().ToList();
-            AvatarFile = new ResettableLazy<IBlobObject?>(() => DbContext.Queryable<BlobObject>().OneAsync(this.AvatarFileId).Result);
+            AvatarFile = new ResettableLazy<IBlobObject?>(() => DbContext.Query<BlobObject>().OneAsync(this.AvatarFileId).Result);
         }
 
         public static User New(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher, string username, string nickname, string phoneNumber, string email, string password)

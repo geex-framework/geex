@@ -22,12 +22,12 @@ namespace MongoDB.Entities.Utilities
     public interface ICachedDbContextQueryProvider : IQueryProvider
     {
         public DbContext DbContext { get; set; }
-        public bool NoTracking { get; set; }
+        public bool EntityTrackingEnabled { get; set; }
         public BatchLoadConfig BatchLoadConfig { get; }
     }
     public class CachedDbContextQueryProvider<T> : ICachedDbContextQueryProvider where T : IEntityBase
     {
-        public bool NoTracking { get; set; }
+        public bool EntityTrackingEnabled { get; set; }
         public BatchLoadConfig BatchLoadConfig { get; } = new BatchLoadConfig();
         public DbContext DbContext { get; set; }
         public IQueryProvider InnerProvider { get; }
@@ -56,6 +56,7 @@ namespace MongoDB.Entities.Utilities
         public CachedDbContextQueryProvider(IQueryProvider innerProvider, DbContext dbContext)
         {
             this.InnerProvider = innerProvider;
+            this.EntityTrackingEnabled = dbContext?.EntityTrackingEnabled ?? false;
             this.DbContext = dbContext;
         }
 
@@ -96,7 +97,7 @@ namespace MongoDB.Entities.Utilities
         {
             if (this.DbContext != null)
             {
-                if (!DbContext.EntityTrackingEnabled || this.NoTracking)
+                if (!this.EntityTrackingEnabled)
                 {
                     var result = this.InnerProvider.Execute<TResult>(expression);
                     if (typeof(TResult).IsAssignableFrom(typeof(T)) || typeof(T).IsAssignableFrom(typeof(TResult)))

@@ -53,7 +53,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             entity = DbContext.Attach(entity);
             if (request.StorageType == BlobStorageType.Db)
             {
-                var dbFile = DbContext.Queryable<DbFile>().FirstOrDefault(x => x.Md5 == request.Md5);
+                var dbFile = DbContext.Query<DbFile>().FirstOrDefault(x => x.Md5 == request.Md5);
                 if (dbFile == null)
                 {
                     dbFile = new DbFile(entity.Md5);
@@ -73,13 +73,13 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         {
             if (request.StorageType == BlobStorageType.Db)
             {
-                var blobObjects = await Task.FromResult(DbContext.Queryable<DbFile>().Where(x => request.Ids.Contains(x.Id)));
+                var blobObjects = await Task.FromResult(DbContext.Query<DbFile>().Where(x => request.Ids.Contains(x.Id)));
                 foreach (var blobObject in blobObjects)
                 {
                     var duplicateCount = await DbContext.CountAsync<BlobObject>(x => x.Md5 == blobObject.Md5, cancellationToken);
                     if (duplicateCount <= 1)
                     {
-                        var dbFile = await Task.FromResult(DbContext.Queryable<DbFile>().Single(x => x.Md5 == blobObject.Md5));
+                        var dbFile = await Task.FromResult(DbContext.Query<DbFile>().Single(x => x.Md5 == blobObject.Md5));
                         await dbFile.Data.ClearAsync(cancellationToken);
                     }
                 }
@@ -91,7 +91,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
 
         public Task<BlobObject> GetOrNullAsync(string id)
         {
-            return Task.FromResult(DbContext.Queryable<BlobObject>().First(x => x.Id == id));
+            return Task.FromResult(DbContext.Query<BlobObject>().First(x => x.Id == id));
         }
 
         /// <summary>Handles a request</summary>
@@ -104,8 +104,8 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             var dataStream = new MemoryStream();
             if (request.StorageType == BlobStorageType.Db)
             {
-                var blob = await Task.FromResult(DbContext.Queryable<BlobObject>().First(x => x.Id == request.BlobId));
-                var dbFile = await Task.FromResult(DbContext.Queryable<DbFile>().First(x => x.Md5 == blob.Md5));
+                var blob = await Task.FromResult(DbContext.Query<BlobObject>().First(x => x.Id == request.BlobId));
+                var dbFile = await Task.FromResult(DbContext.Query<DbFile>().First(x => x.Md5 == blob.Md5));
                 await dbFile.Data.DownloadAsync(dataStream, cancellation: cancellationToken);
                 dataStream.Position = 0;
                 return (blob, dataStream);

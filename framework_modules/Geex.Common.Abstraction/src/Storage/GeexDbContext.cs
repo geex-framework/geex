@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -115,22 +116,64 @@ namespace Geex.Common.Abstraction.Storage
         /// Commits a transaction to MongoDB
         /// </summary>
         /// <param name="cancellation">An optional cancellation token</param>
-        public override async Task CommitAsync(CancellationToken? cancellation = default)
+        public override async Task CommitAsync(CancellationToken cancellation = default)
         {
             await base.CommitAsync(cancellation);
         }
 
         /// <inheritdoc />
-        public async Task AbortAsync(CancellationToken? cancellationToken = default)
+        public async Task AbortAsync(CancellationToken cancellationToken = default)
         {
             if (Session.IsInTransaction)
             {
-                await Session.AbortTransactionAsync(cancellationToken.GetValueOrDefault(CancellationToken.None));
+                await Session.AbortTransactionAsync(cancellationToken);
+                return;
             }
             throw new InvalidOperationException("session not in transaction, cannot abort");
         }
 
         /// <inheritdoc />
+        public async Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default) where T : IEntityBase
+        {
+            var result = await base.DeleteAsync<T>(id, cancellation);
+            return result.IsAcknowledged;
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> DeleteAsync<T>(T entity, CancellationToken cancellation = default) where T : IEntityBase
+        {
+            var result = await base.DeleteAsync<T>(entity, cancellation);
+            return result.IsAcknowledged;
+        }
+
+        /// <inheritdoc />
+        public async Task<long> DeleteAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellation = default) where T : IEntityBase
+        {
+            var result = await base.DeleteAsync<T>(expression, cancellation);
+            return result.DeletedCount;
+        }
+
+        /// <inheritdoc />
+        public async Task<long> DeleteAsync<T>(CancellationToken cancellation = default) where T : IEntityBase
+        {
+            var result = await base.DeleteAsync<T>(cancellation);
+            return result.DeletedCount;
+        }
+
+        /// <inheritdoc />
+        public async Task<long> DeleteAsync<T>(IEnumerable<string> ids, CancellationToken cancellation = default) where T : IEntityBase
+        {
+            var result = await base.DeleteAsync<T>(ids, cancellation);
+            return result.DeletedCount;
+        }
+
+        /// <inheritdoc />
         public override event Func<Task>? OnCommitted;
+
+        /// <inheritdoc />
+        public IQueryable<T> Query<T>() where T : IEntityBase
+        {
+            return base.Query<T>();
+        }
     }
 }

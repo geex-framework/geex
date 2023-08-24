@@ -35,6 +35,24 @@ namespace System.Linq
             return new PostProcessQueryable<T>(query, postAction);
         }
 
+        /// <summary>
+        /// 在集合查询被执行的时候进行后处理
+        /// <br></br>注意, 后处理只应该在查询实际之前的末尾进行挂载, 任何的非继承树上的类型转换都会导致之前挂载的后处理失效
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="query"></param>
+        /// <param name="postAction"></param>
+        /// <returns></returns>
+        public static IQueryable<T> AsNoTracking<T>(this IQueryable<T> query) where T : IEntityBase
+        {
+            if (query is CachedDbContextQueryable<T, T> typedQueryable)
+            {
+                typedQueryable.TypedProvider.EntityTrackingEnabled = false;
+            }
+            return query;
+        }
+
+
         public static Task<T> OneAsync<T>(this IQueryable<T> query, string id, CancellationToken cancellationToken = default) where T : IEntityBase
         {
             return Task.FromResult(query.FirstOrDefault(x => x.Id == id));

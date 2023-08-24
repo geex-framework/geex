@@ -66,8 +66,8 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task<Unit> Handle(AssignRoleRequest request, CancellationToken cancellationToken)
         {
-            var users = await Task.FromResult(DbContext.Queryable<User>().Where(x => request.UserIds.Contains(x.Id)).ToList());
-            var roles = await Task.FromResult(DbContext.Queryable<Role>().Where(x => request.Roles.Contains(x.Id)).ToList());
+            var users = await Task.FromResult(DbContext.Query<User>().Where(x => request.UserIds.Contains(x.Id)).ToList());
+            var roles = await Task.FromResult(DbContext.Query<Role>().Where(x => request.Roles.Contains(x.Id)).ToList());
             foreach (var user in users)
             {
                 await user.AssignRoles(roles);
@@ -81,7 +81,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task<Unit> Handle(EditUserRequest request, CancellationToken cancellationToken)
         {
-            var user = await DbContext.Queryable<User>().OneAsync(request.Id.ToString(), cancellationToken);
+            var user = await DbContext.Query<User>().OneAsync(request.Id.ToString(), cancellationToken);
             if (request.Claims.HasValue)
             {
                 user.Claims = request.Claims;
@@ -156,8 +156,8 @@ namespace Geex.Common.Identity.Core.Handlers
         {
             foreach (var item in request.UserOrgsMap)
             {
-                var user = await DbContext.Queryable<User>().OneAsync(item.UserId, cancellationToken);
-                var orgs = DbContext.Queryable<Org>().Where(x => item.OrgCodes.Contains(x.Code)).ToList();
+                var user = await DbContext.Query<User>().OneAsync(item.UserId, cancellationToken);
+                var orgs = DbContext.Query<Org>().Where(x => item.OrgCodes.Contains(x.Code)).ToList();
                 await user.AssignOrgs(orgs);
             }
 
@@ -171,7 +171,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task<Unit> Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
-            var user = DbContext.Queryable<User>().FirstOrDefault(x => request.UserId == x.Id);
+            var user = DbContext.Query<User>().FirstOrDefault(x => request.UserId == x.Id);
             Check.NotNull(user, nameof(user), "用户不存在.");
             user.SetPassword(request.Password);
             return Unit.Value;
@@ -197,7 +197,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns></returns>
         public async Task Handle(OrgCodeChangedEvent notification, CancellationToken cancellationToken)
         {
-            var users = DbContext.Queryable<User>().Where(x => x.OrgCodes.Contains(notification.OldOrgCode)).ToList();
+            var users = DbContext.Query<User>().Where(x => x.OrgCodes.Contains(notification.OldOrgCode)).ToList();
             foreach (var user in users)
             {
                 // 替换被修改的orgCode

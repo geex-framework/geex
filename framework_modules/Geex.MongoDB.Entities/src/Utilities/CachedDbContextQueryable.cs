@@ -47,7 +47,7 @@ namespace MongoDB.Entities.Utilities
             {
                 return this.InnerProvider.CreateQuery<TSelect>(this.Expression).GetEnumerator();
             }
-            if (!_dbContext.EntityTrackingEnabled)
+            if (!this.TypedProvider.EntityTrackingEnabled)
             {
                 IEnumerable<TSelect> result = this.InnerProvider.CreateQuery<TSelect>(this.Expression).AsEnumerable();
                 if (typeof(TSelect).IsAssignableFrom(typeof(T)) || typeof(T).IsAssignableFrom(typeof(TSelect)))

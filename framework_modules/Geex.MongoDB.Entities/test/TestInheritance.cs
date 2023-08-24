@@ -59,16 +59,16 @@ namespace MongoDB.Entities.Tests
 
 
             dbContext = new DbContext();
-             var result3 = dbContext.Queryable<IInheritanceEntity>().Where(x => x.Name.Contains("1"));
+             var result3 = dbContext.Query<IInheritanceEntity>().Where(x => x.Name.Contains("1"));
             result3.ToList().Count().ShouldBe(2);
             result3.Count().ShouldBe(2);
-            var result = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.Contains("1"));
+            var result = dbContext.Query<InheritanceEntity>().Where(x => x.Name.Contains("1"));
             result.ToList().Count().ShouldBe(2);
             result.Count().ShouldBe(2);
-            var result1 = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.Contains("1"));
+            var result1 = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.Contains("1"));
             result1.ToList().Count().ShouldBe(1);
             result1.Count().ShouldBe(1);
-            var result2 = dbContext.Queryable<InheritanceEntityChild>().Where(x => x.Name.Contains("1"));
+            var result2 = dbContext.Query<InheritanceEntityChild>().Where(x => x.Name.Contains("1"));
             result2.ToList().Count().ShouldBe(1);
             result2.Count().ShouldBe(1);
         }
@@ -95,9 +95,9 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
-            var result = dbContext.Queryable<InheritanceEntity>().First(x => x.Id == testEntity.Id);
+            var result = dbContext.Query<InheritanceEntity>().First(x => x.Id == testEntity.Id);
             dbContext.Local[typeof(InheritanceEntity)].Count.ShouldBe(1);
-            var result1 = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().First(x => x.Id == testEntityChild.Id);
+            var result1 = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().First(x => x.Id == testEntityChild.Id);
             dbContext.Local[typeof(InheritanceEntity)].Count.ShouldBe(2);
             dbContext.Dispose();
         }
@@ -106,7 +106,7 @@ namespace MongoDB.Entities.Tests
         public async Task multiple_query_should_share_instance_after_edit_except_find()
         {
             var dbContext = new DbContext();
-            await dbContext.Queryable<InheritanceEntity>().ToList().DeleteAsync();
+            await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -119,9 +119,9 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             var result1 = await dbContext.Find<InheritanceEntity>().ExecuteFirstAsync();
-            var result2 = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            var result2 = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.GetHashCode().ShouldNotBe(result1.GetHashCode());
             result.GetHashCode().ShouldBe(result2.GetHashCode());
             result.GetHashCode().ShouldBe(dbContext.Local[typeof(InheritanceEntity)].Values.FirstOrDefault().GetHashCode());
@@ -132,7 +132,7 @@ namespace MongoDB.Entities.Tests
         public async Task multiple_queryable_should_share_instance_after_edit()
         {
             var dbContext = new DbContext();
-            await dbContext.Queryable<InheritanceEntity>().ToList().DeleteAsync();
+            await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -145,10 +145,10 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.Name.ShouldBe("test");
             result.Name = "test1";
-            result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.Name.ShouldBe("test1");
 
             dbContext.Dispose();
@@ -172,7 +172,7 @@ namespace MongoDB.Entities.Tests
         public async Task delete_should_remove_cache()
         {
             var dbContext = new DbContext();
-            await dbContext.Queryable<InheritanceEntity>().ToList().DeleteAsync();
+            await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
             var testEntity = new InheritanceEntityChild()
             {
                 Name = "test"
@@ -182,7 +182,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             dbContext.Local[typeof(InheritanceEntity)].ShouldNotBeEmpty();
             await result.DeleteAsync();
             dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
@@ -193,7 +193,7 @@ namespace MongoDB.Entities.Tests
         public async Task batch_delete_should_remove_cache()
         {
             var dbContext = new DbContext();
-            await dbContext.Queryable<InheritanceEntity>().ToList().DeleteAsync();
+            await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
             var testEntities = new List<InheritanceEntity>()
             {
                 new InheritanceEntity()
@@ -209,12 +209,12 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList().Cast<InheritanceEntity>().ToList();
+            var result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList().Cast<InheritanceEntity>().ToList();
             result.Count.ShouldBe(1);
             dbContext.Local[typeof(InheritanceEntity)].Count.ShouldBe(1);
             await result.DeleteAsync();
             dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
-            result = dbContext.Queryable<InheritanceEntity>().ToList();
+            result = dbContext.Query<InheritanceEntity>().ToList();
             result.Count.ShouldBe(1);
             dbContext.Local[typeof(InheritanceEntity)].Count.ShouldBe(1);
             await result.DeleteAsync();
@@ -226,7 +226,7 @@ namespace MongoDB.Entities.Tests
         public async Task deleted_entity_should_be_filtered()
         {
             var dbContext = new DbContext();
-            await dbContext.Queryable<InheritanceEntity>().ToList().DeleteAsync();
+            await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -239,13 +239,13 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             dbContext.Local[typeof(InheritanceEntity)].ShouldNotBeEmpty();
             dbContext.OriginLocal[typeof(InheritanceEntity)].ShouldNotBeEmpty();
             await result.DeleteAsync();
             dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
             dbContext.OriginLocal[typeof(InheritanceEntity)].ShouldBeEmpty();
-            result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.ShouldBeNull();
             dbContext.Dispose();
         }
@@ -263,21 +263,21 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
+            var result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
             result.Name = "test1";
-            result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
+            result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
             result.Name.ShouldBe("test1");
             result.Name = "test2";
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
+            result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
             result.Name.ShouldBe("test2");
             await result.DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
+            result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
             result.ShouldBeNull();
             dbContext.Dispose();
         }
@@ -295,21 +295,21 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.Name = "test1";
-            result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.Name.ShouldBe("test1");
             result.Name = "test2";
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
+            result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
             result.Name.ShouldBe("test2");
             await result.DeleteAsync();
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            result = dbContext.Queryable<InheritanceEntity>().FirstOrDefault();
+            result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.ShouldBeNull();
             dbContext.Dispose();
         }
@@ -331,26 +331,26 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
+            var result = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
             result.ToList().Count.ShouldBe(1);
             result.Count().ShouldBe(1);
-            result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a"));
+            result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a"));
             result.ToList().Count.ShouldBe(1);
             result.Count().ShouldBe(1);
             dbContext.Attach(new InheritanceEntity()
             {
                 Name = "a2"
             });
-            var result1 = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
+            var result1 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
             result1.ToList().Count.ShouldBe(2);
             result1.Count().ShouldBe(2);
-            var result2 = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a"));
+            var result2 = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a"));
             result2.ToList().Count.ShouldBe(1);
             result2.Count().ShouldBe(1);
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Queryable<InheritanceEntity>().Count(x => x.Name.StartsWith("a")).ShouldBe(2);
+            dbContext.Query<InheritanceEntity>().Count(x => x.Name.StartsWith("a")).ShouldBe(2);
             dbContext.Dispose();
         }
         internal interface INestedClass
@@ -360,7 +360,7 @@ namespace MongoDB.Entities.Tests
         internal class NestedClass : EntityBase<NestedClass>, INestedClass
         {
             public NestedClass Inner { get; set; }
-            public IQueryable<NestedClass> Inners => DbContext.Queryable<NestedClass>().Where(x => x.Name.StartsWith(this.Name));
+            public IQueryable<NestedClass> Inners => DbContext.Query<NestedClass>().Where(x => x.Name.StartsWith(this.Name));
             public IQueryable<string> AllNames => this.Inners.ToList().Select(x => x.Name).AsQueryable();
             public IQueryable<string> AllDisplayNames => this.Inners.ToList().Select(x => x.DisplayName).AsQueryable();
 
@@ -391,7 +391,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var query = dbContext.Queryable<NestedClass>().Where(x => x.Name.StartsWith("1"));
+            var query = dbContext.Query<NestedClass>().Where(x => x.Name.StartsWith("1"));
             query.Count().ShouldBe(2);
             query.Count(x => x.Inner != default && x.Inner.Name.StartsWith("1.")).ShouldBe(1);
             var list = query.Where(x => x.Inner == null).ToList();
@@ -432,21 +432,21 @@ namespace MongoDB.Entities.Tests
             }
             {
                 dbContext = new DbContext();
-                var result = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
+                var result = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
                 result.ToList().Count().ShouldBe(2);
                 result.Count().ShouldBe(2);
-                result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a"));
+                result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a"));
                 result.ToList().Count().ShouldBe(1);
                 result.Count().ShouldBe(1);
-                var a2 = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().First(x => x.Name == "a2");
+                var a2 = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().First(x => x.Name == "a2");
                 a2.Name = "2";
-                var result1 = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
+                var result1 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
                 result1.ToList().Count().ShouldBe(1);
                 result1.Count().ShouldBe(1);
                 await dbContext.CommitAsync();
                 dbContext.Dispose();
                 dbContext = new DbContext();
-                var result2 = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
+                var result2 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
                 result2.ToList().Count().ShouldBe(1);
                 result2.Count().ShouldBe(1);
                 dbContext.Dispose();
@@ -486,16 +486,16 @@ namespace MongoDB.Entities.Tests
             }
             {
                 dbContext = new DbContext();
-                var result = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("c"));
+                var result = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("c"));
                 result.ToList().Count().ShouldBe(1);
                 result.Count().ShouldBe(1);
-                var a1 = dbContext.Queryable<InheritanceEntity>().First(x => x.Name == "abc");
+                var a1 = dbContext.Query<InheritanceEntity>().First(x => x.Name == "abc");
                 a1.Name = "1";
-                var result1 = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("c"));
+                var result1 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("c"));
                 result1.ToList().Count().ShouldBe(0);
                 result1.Count().ShouldBe(0);
                 a1.Name = "a3";
-                var result2 = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("3"));
+                var result2 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a")).Where(x => x.Name.EndsWith("3"));
                 result2.Count().ShouldBe(2);
                 result2.ToList().Count().ShouldBe(2);
             }
@@ -526,17 +526,17 @@ namespace MongoDB.Entities.Tests
             };
             var list = new List<InheritanceEntity>() { a1, a2, b1, b2 };
             dbContext.Attach(list);
-            var result = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
+            var result = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
             result.ToList().Count().ShouldBe(2);
             result.Count().ShouldBe(2);
             await a2.DeleteAsync();
-            var result1 = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
+            var result1 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
             result1.ToList().Count().ShouldBe(1);
             result1.Count().ShouldBe(1);
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result2 = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
+            var result2 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
             result2.ToList().Count().ShouldBe(1);
             result2.Count().ShouldBe(1);
             dbContext.Dispose();
@@ -571,7 +571,7 @@ namespace MongoDB.Entities.Tests
             //var result = dbContext.Queryable<InheritanceEntity>().Where(x => x.Name.StartsWith("a")).Select(x => x.Name);
             //result.ToList().Count().ShouldBe(2);
             //result.Count().ShouldBe(2);
-            var result = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a")).Select(x => x.Name);
+            var result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a")).Select(x => x.Name);
             result.ToList().Count().ShouldBe(1);
             //result.Count().ShouldBe(1);
             //result = dbContext.Queryable<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a")).Select(x => x.Name);
@@ -612,13 +612,13 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             sw.Restart();
-            var list = dbContext.Queryable<InheritanceEntity>().ToList();
+            var list = dbContext.Query<InheritanceEntity>().ToList();
             list.Count().ShouldBe(9999);
             sw.Stop();
             var t2 = sw.ElapsedMilliseconds;
             t2.ShouldBeLessThanOrEqualTo(2000);
             sw.Restart();
-            var list1 = dbContext.Queryable<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList();
+            var list1 = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList();
             list1.Count().ShouldBe(4999);
             sw.Stop();
             var t3 = sw.ElapsedMilliseconds;

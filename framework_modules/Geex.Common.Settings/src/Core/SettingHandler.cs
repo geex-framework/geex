@@ -90,7 +90,7 @@ namespace Geex.Common.Settings.Core
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "cannot update tenant setting in host.");
             }
 
-            var setting = _dbContext.Queryable<Setting>().SingleOrDefault(x => x.Name == settingDefinition && x.Scope == scope && x.ScopedKey == scopedKey);
+            var setting = _dbContext.Query<Setting>().SingleOrDefault(x => x.Name == settingDefinition && x.Scope == scope && x.ScopedKey == scopedKey);
             if (setting == default)
             {
                 setting = _dbContext.Attach(new Setting(settingDefinition, value, scope, scopedKey));
@@ -125,7 +125,7 @@ namespace Geex.Common.Settings.Core
             IEnumerable<Setting> result;
             if (SettingDefinitions.Except(globalSettings.Select(x => x.Value.Name)).Any())
             {
-                var dbSettings = _dbContext.Queryable<Setting>().Where(x => x.Scope == SettingScopeEnumeration.Global).ToList();
+                var dbSettings = _dbContext.Query<Setting>().Where(x => x.Scope == SettingScopeEnumeration.Global).ToList();
                 await TrySyncSettings(globalSettings, dbSettings);
                 result = dbSettings;
             }
@@ -157,7 +157,7 @@ namespace Geex.Common.Settings.Core
             var tenantSettings = await _redisClient.GetAllNamedByKeyAsync<Setting>($"{SettingScopeEnumeration.Tenant}:{tenantCode}:*");
             if (SettingDefinitions.Except(tenantSettings.Select(x => x.Value.Name)).Any())
             {
-                var dbSettings = _dbContext.Queryable<Setting>().Where(x => x.Scope == SettingScopeEnumeration.Tenant && x.ScopedKey == tenantCode).ToList();
+                var dbSettings = _dbContext.Query<Setting>().Where(x => x.Scope == SettingScopeEnumeration.Tenant && x.ScopedKey == tenantCode).ToList();
                 await TrySyncSettings(tenantSettings, dbSettings);
                 result = dbSettings;
             }
@@ -179,7 +179,7 @@ namespace Geex.Common.Settings.Core
             var userSettings = await _redisClient.GetAllNamedByKeyAsync<Setting>($"{SettingScopeEnumeration.User}:{identity.FindUserId()}:*");
             if (SettingDefinitions.Except(userSettings.Select(x => x.Value.Name)).Any())
             {
-                var dbSettings = _dbContext.Queryable<Setting>().Where(x => x.Scope == SettingScopeEnumeration.User && x.ScopedKey == identity.FindUserId()).ToList();
+                var dbSettings = _dbContext.Query<Setting>().Where(x => x.Scope == SettingScopeEnumeration.User && x.ScopedKey == identity.FindUserId()).ToList();
                 await TrySyncSettings(userSettings, dbSettings);
                 result = dbSettings;
             }

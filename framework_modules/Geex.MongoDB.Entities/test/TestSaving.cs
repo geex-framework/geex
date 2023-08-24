@@ -527,7 +527,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var item = dbContext.Queryable<TableData>().ToList();
+            var item = dbContext.Query<TableData>().ToList();
             item.Count.ShouldBe(1);
             var objectData = item.First();
             objectData.Data["customerType"] = "VVIP";
@@ -535,7 +535,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.CommitAsync();
             dbContext.Dispose();
             dbContext = new DbContext();
-            item = dbContext.Queryable<TableData>().ToList();
+            item = dbContext.Query<TableData>().ToList();
             item.Count.ShouldBe(1);
             item.First().Data["customerType"].GetValue<string>().ShouldBe("VVIP");
         }

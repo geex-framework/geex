@@ -31,7 +31,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
-            var result = dbContext.Queryable<BatchLoadEntity>()
+            var result = dbContext.Query<BatchLoadEntity>()
                 .BatchLoad(x => x.Children)
                 .BatchLoad(x => x.FirstChild)
                 .ToList();
@@ -58,7 +58,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
-            var result = dbContext.Queryable<BatchLoadEntity>().BatchLoad(x => x.FirstChild).ToList();
+            var result = dbContext.Query<BatchLoadEntity>().BatchLoad(x => x.FirstChild).ToList();
             result.Select(x => x.FirstChild).Count(x => x?.Value != default).ShouldBe(2);
             result.Count(x => x.Children.Any()).ShouldBe(2);
             var logs = DB.GetProfilerLogs().AsQueryable().Where(x => x.ns == "mongodb-entities-test.BatchLoadEntity");
@@ -81,7 +81,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
-            var result = dbContext.Queryable<BatchLoadEntity>().ToList();
+            var result = dbContext.Query<BatchLoadEntity>().ToList();
             result.Select(x => x.FirstChild).Count(x => x.Value != default).ShouldBe(2);
             result.Count(x => x.Children.Any()).ShouldBe(2);
             var logs = DB.GetProfilerLogs().AsQueryable().Where(x => x.ns == "mongodb-entities-test.BatchLoadEntity");
@@ -106,7 +106,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
-            var result = dbContext.Queryable<RootEntity>()
+            var result = dbContext.Query<RootEntity>()
                 .BatchLoad(x => x.C1)
                     .ThenBatchLoad(x => x.C2)
                         .ThenBatchLoad(x => x.C3)
@@ -140,7 +140,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
-            var result = dbContext.Queryable<BatchLoadEntity>()
+            var result = dbContext.Query<BatchLoadEntity>()
                 .BatchLoad(x => x.Children)
                     .ThenBatchLoad(x => x.FirstChild)
                 //.ThenBatchLoad(x => x.FirstChild)
@@ -173,7 +173,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
-            var result = dbContext.Queryable<BatchLoadEntity>()
+            var result = dbContext.Query<BatchLoadEntity>()
                 .BatchLoad(x => x.Children)
                     .ThenBatchLoad(x => x.Children)
                     .BatchLoad(x => x.FirstChild)

@@ -48,7 +48,7 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
             get
             {
                 var userIds = DbContext.ServiceProvider.GetService<IRbacEnforcer>().GetUsersForRole(this.Id);
-                return DbContext.Queryable<User>().Where(x => userIds.Contains(x.Id));
+                return DbContext.Query<User>().Where(x => userIds.Contains(x.Id));
             }
         }
         public List<string> Permissions => DbContext.ServiceProvider.GetService<IMediator>().Send(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
@@ -70,7 +70,7 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
         }
         public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
         {
-            var duplicateRole = this.DbContext.Queryable<Role>()
+            var duplicateRole = this.DbContext.Query<Role>()
                 .FirstOrDefault(x => x.Code == this.Code && x.TenantCode == this.TenantCode && x.Id != this.Id);
             if (duplicateRole != default)
             {

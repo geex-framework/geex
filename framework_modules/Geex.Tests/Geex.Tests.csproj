@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="appsettings.json" />
+    <None Remove="appsettings.Production.json" />
+    <None Remove="appsettings.Test.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.Test.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.Production.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.10" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="Shouldly" Version="4.2.1" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="3.1.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+    <ProjectReference Include="..\Geex.Common.Accounting\src\Geex.Common.Accounting.csproj" />
+    <ProjectReference Include="..\Geex.Common.Authentication\src\Geex.Common.Authentication.csproj" />
+    <ProjectReference Include="..\Geex.Common.Authorization\src\Geex.Common.Authorization.csproj" />
+    <ProjectReference Include="..\Geex.Common.BackgroundJob\src\Geex.Common.BackgroundJob.csproj" />
+    <ProjectReference Include="..\Geex.Common.BlobStorage\src\Geex.Common.BlobStorage.csproj" />
+    <ProjectReference Include="..\Geex.Common.Identity\src\Geex.Common.Identity.csproj" />
+    <ProjectReference Include="..\Geex.Common.Logging\src\Geex.Common.Logging.csproj" />
+    <ProjectReference Include="..\Geex.Common.Messaging\src\Geex.Common.Messaging.csproj" />
+    <ProjectReference Include="..\Geex.Common.MultiTenant\src\Geex.Common.MultiTenant.csproj" />
+    <ProjectReference Include="..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
+    <ProjectReference Include="..\Geex.Common\src\Geex.Common.csproj" />
+  </ItemGroup>
+
+</Project>
