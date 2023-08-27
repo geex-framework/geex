@@ -1,0 +1,42 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+using Microsoft.Extensions.DependencyInjection;
+
+using Volo.Abp.DependencyInjection;
+
+namespace Geex.Common.BackgroundJob
+{
+    public class FireAndForgetTaskScheduler : ISingletonDependency
+    {
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+
+        public FireAndForgetTaskScheduler(IServiceScopeFactory serviceScopeFactory)
+        {
+            _serviceScopeFactory = serviceScopeFactory;
+        }
+
+        public void Execute<T>(IFireAndForgetTask<T> task)
+        {
+            // Fire off the task, but don't await the result
+            Task.Run(async () =>
+            {
+                // Exceptions must be caught
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    task.ServiceProvider = scope.ServiceProvider;
+                    await task.Run();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            });
+        }
+    }
+
+}

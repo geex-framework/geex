@@ -81,10 +81,18 @@ namespace Microsoft.Extensions.DependencyInjection
             }
             mongoSettings.ApplicationName = commonModuleOptions.AppName;
             DB.InitAsync(mongoUrl.DatabaseName ?? commonModuleOptions.AppName, mongoSettings).Wait();
-            //builder.AddScoped(x => new DbContext(transactional: true));
+            // todo: 这里需要在以后取消直接的db注入
+            builder.AddScoped<DbContext>(x => x.GetService<IRepository>() as DbContext);
             builder.AddScoped<IUnitOfWork>(x => new GeexDbContext(x, transactional: true));
             // 直接从当前uow提取
-            builder.AddScoped<IRepository>(x => new GeexDbContext(x, transactional: false, entityTrackingEnabled: false));
+            builder.AddScoped<IRepository>(x => {
+                var httpContext = x.GetService<IHttpContextAccessor>();
+                if (httpContext?.HttpContext?.Request.Headers.TryGetValue("x-readonly", out var value) == true && value == "1")
+                {
+                    return new GeexDbContext(x, transactional: false);
+                }
+                return x.GetService<IUnitOfWork>() as GeexDbContext;
+            });
             return builder;
         }
 

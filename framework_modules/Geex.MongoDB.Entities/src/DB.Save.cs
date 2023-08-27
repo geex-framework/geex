@@ -196,7 +196,7 @@ namespace MongoDB.Entities
             }
 
             if (entity is IModifiedOn modifiedOn)
-                modifiedOn.ModifiedOn = DateTime.UtcNow;
+                modifiedOn.ModifiedOn = DateTimeOffset.Now;
         }
 
         private static IEnumerable<string> RootPropNames<T>(Expression<Func<T, object>> members) where T : IEntityBase

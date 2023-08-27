@@ -1,14 +1,18 @@
 ﻿using Geex.Common;
 using Geex.Common.Abstractions;
+using Geex.Common.BlobStorage.Core;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using MongoDB.Driver;
 using MongoDB.Entities;
+
 using Volo.Abp;
 using Volo.Abp.Modularity;
 
 namespace Geex.Tests;
 
-[DependsOn(typeof(GeexCoreModule))]
+[DependsOn(typeof(GeexCoreModule), typeof(BlobStorageCoreModule))]
 public class TestModule : GeexEntryModule<TestModule>
 {
     /// <inheritdoc />

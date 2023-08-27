@@ -58,7 +58,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         }
 
         public List<string> RoleIds => DbContext.ServiceProvider.GetService<IRbacEnforcer>().GetRolesForUser(this.Id);
-        public ResettableLazy<IBlobObject?> AvatarFile { get; }
+        public Lazy<IBlobObject?> AvatarFile => LazyQuery(() => AvatarFile);
         public string? AvatarFileId { get; set; }
 
         public IQueryable<IRole> Roles => DbContext.Query<Role>().Where(x => this.RoleIds.Contains(x.Id));
@@ -76,7 +76,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             IsEnable = true;
             Claims = Enumerable.Empty<UserClaim>().ToList();
             OrgCodes = Enumerable.Empty<string>().ToList();
-            AvatarFile = new ResettableLazy<IBlobObject?>(() => DbContext.Query<BlobObject>().OneAsync(this.AvatarFileId).Result);
+            ConfigLazyQuery(x => x.AvatarFile, blob => blob.Id == AvatarFileId, users => blob => users.SelectList(x => x.AvatarFileId).Contains(blob.Id));
         }
 
         public static User New(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher, string username, string nickname, string phoneNumber, string email, string password)

@@ -20,6 +20,7 @@ namespace Geex.Common.BlobStorage.Core
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             SchemaBuilder.AddType<UploadType>();
+            context.Services.AddMemoryCache();
             base.ConfigureServices(context);
         }
 

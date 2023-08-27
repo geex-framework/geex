@@ -168,9 +168,6 @@ namespace Geex.Common.Abstraction.Storage
         }
 
         /// <inheritdoc />
-        public override event Func<Task>? OnCommitted;
-
-        /// <inheritdoc />
         public IQueryable<T> Query<T>() where T : IEntityBase
         {
             return base.Query<T>();

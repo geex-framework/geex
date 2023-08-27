@@ -66,7 +66,7 @@ namespace Geex.Common.Logging
             string className = logEntry.Category.Substring(logEntry.Category.LastIndexOf('.') + 1);
 
             // Add log level, UTC DateTime in ISO 8601 format and class name
-            writer.Write($"{DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fff", CultureInfo.InvariantCulture)} [{logLevelString}] [{className}] ");
+            writer.Write($"{DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fff", CultureInfo.InvariantCulture)} [{logLevelString}] [{className}] ");
 
             // Add the message
             if (!string.IsNullOrEmpty(message))

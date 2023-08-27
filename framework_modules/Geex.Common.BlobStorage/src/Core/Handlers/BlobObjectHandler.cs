@@ -44,12 +44,11 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             var stream = new MemoryStream();
             using (var readStream = request.File.OpenReadStream())
             {
-
                 await readStream.CopyToAsync(stream, cancellationToken);
                 stream.Position = 0;
             }
             request.Md5 ??= stream.Md5();
-            var entity = new BlobObject(request.File.Name, request.Md5, request.StorageType, MimeTypes.GetMimeType(request.File.Name), request.File.Length.GetValueOrDefault());
+            var entity = new BlobObject(request.File.Name, request.Md5, request.StorageType, MimeTypes.GetMimeType(request.File.Name), stream.Length);
             entity = DbContext.Attach(entity);
             if (request.StorageType == BlobStorageType.Db)
             {
