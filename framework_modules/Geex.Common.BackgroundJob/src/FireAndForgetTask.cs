@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Threading.Tasks;
 
+using Geex.Common.Abstractions;
+
 namespace Geex.Common.BackgroundJob;
 
-public abstract class FireAndForgetTask<T> : IFireAndForgetTask<T>
+public abstract class FireAndForgetTask<TImplementation, TParam> : Enumeration<FireAndForgetTask<TImplementation, TParam>>, IFireAndForgetTask<TParam>
 {
-    protected FireAndForgetTask(T param)
+    protected FireAndForgetTask(TParam param) : base(nameof(TImplementation))
     {
         Param = param;
     }
     /// <inheritdoc />
     public abstract Task Run();
 
-    public IServiceProvider ServiceProvider { get; internal set;}
+    public IServiceProvider ServiceProvider { get; internal set; }
 
     IServiceProvider IFireAndForgetTask.ServiceProvider
     {
@@ -21,12 +23,12 @@ public abstract class FireAndForgetTask<T> : IFireAndForgetTask<T>
     }
 
     /// <inheritdoc />
-    public T Param { get; }
+    public TParam Param { get; }
 }
 
-public interface IFireAndForgetTask<out T> : IFireAndForgetTask
+public interface IFireAndForgetTask<out TParam> : IFireAndForgetTask
 {
-    public T Param { get; }
+    public TParam Param { get; }
 }
 public interface IFireAndForgetTask
 {

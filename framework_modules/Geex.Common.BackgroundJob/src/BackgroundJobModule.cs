@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using Autofac.Core;
+
 using EasyCronJob.Abstractions;
 using EasyCronJob.Core;
+
 using Geex.Common.Abstraction;
 using Geex.Common.Abstractions;
 
@@ -29,6 +33,7 @@ namespace Geex.Common.BackgroundJob
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
+            context.Services.TryAddSingleton<FireAndForgetTaskScheduler>(sp => new FireAndForgetTaskScheduler(sp));
             base.ConfigureServices(context);
         }
 
@@ -43,7 +48,6 @@ namespace Geex.Common.BackgroundJob
         public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
-
             return base.OnPreApplicationInitializationAsync(context);
         }
 

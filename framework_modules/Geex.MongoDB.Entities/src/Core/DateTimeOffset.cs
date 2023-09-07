@@ -70,8 +70,7 @@ namespace MongoDB.Entities.Core
             switch (_representation)
             {
                 case BsonType.String:
-                    bsonWriter.WriteString(value.ToString
-                          (StringSerializationFormat, DateTimeFormatInfo.InvariantInfo));
+                    bsonWriter.WriteString(value.ToString("O"));
                     break;
 
                 case BsonType.DateTime:

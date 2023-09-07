@@ -48,7 +48,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                 stream.Position = 0;
             }
             request.Md5 ??= stream.Md5();
-            var entity = new BlobObject(request.File.Name, request.Md5, request.StorageType, MimeTypes.GetMimeType(request.File.Name), stream.Length);
+            var entity = new BlobObject(request.File.Name, request.Md5, request.StorageType, request.File.ContentType ?? MimeTypes.GetMimeType(request.File.Name), stream.Length);
             entity = DbContext.Attach(entity);
             if (request.StorageType == BlobStorageType.Db)
             {
