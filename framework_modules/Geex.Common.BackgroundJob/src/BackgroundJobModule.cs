@@ -33,7 +33,6 @@ namespace Geex.Common.BackgroundJob
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
-            context.Services.TryAddSingleton<FireAndForgetTaskScheduler>(sp => new FireAndForgetTaskScheduler(sp));
             base.ConfigureServices(context);
         }
 

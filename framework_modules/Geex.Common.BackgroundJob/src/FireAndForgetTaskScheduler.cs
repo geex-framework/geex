@@ -10,11 +10,11 @@ using Volo.Abp.DependencyInjection;
 
 namespace Geex.Common.BackgroundJob
 {
-    public class FireAndForgetTaskScheduler
+    public class FireAndForgetTaskScheduler : ISingletonDependency
     {
-        private readonly IServiceProvider _serviceScopeFactory;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public FireAndForgetTaskScheduler(IServiceProvider serviceScopeFactory)
+        public FireAndForgetTaskScheduler(IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
         }

@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
+using Autofac.Extensions.DependencyInjection;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Storage;
 using HotChocolate.AspNetCore;
@@ -121,7 +121,6 @@ namespace Geex.Common.Abstractions
         public override void PostConfigureServices(ServiceConfigurationContext context)
         {
             base.PostConfigureServices(context);
-            ServiceLocator.Global = context.Services.BuildServiceProvider();
         }
 
         public override async Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
