@@ -193,10 +193,10 @@ namespace Geex.Common
                 app.UseCors();
                 app.UseRouting();
                 app.UseWebSockets();
-                if (_env.IsDevelopment())
-                {
-                    app.UseDeveloperExceptionPage();
-                }
+                //if (_env.IsDevelopment())
+                //{
+                //    app.UseDeveloperExceptionPage();
+                //}
                 app.UseCookiePolicy(new CookiePolicyOptions
                 {
                     MinimumSameSitePolicy = SameSiteMode.Strict,

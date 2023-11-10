@@ -10,13 +10,13 @@ using Volo.Abp.DependencyInjection;
 
 namespace Geex.Common.BackgroundJob
 {
-    public class FireAndForgetTaskScheduler : ISingletonDependency
+    public class FireAndForgetTaskScheduler
     {
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IServiceProvider _rootServiceProvider;
 
-        public FireAndForgetTaskScheduler(IServiceScopeFactory serviceScopeFactory)
+        public FireAndForgetTaskScheduler(IServiceProvider rootServiceProvider)
         {
-            _serviceScopeFactory = serviceScopeFactory;
+            _rootServiceProvider = rootServiceProvider;
         }
 
         public void Schedule<TTask, TParam>(FireAndForgetTask<TTask, TParam> task, int? delay = default)
@@ -31,7 +31,7 @@ namespace Geex.Common.BackgroundJob
                     {
                         await Task.Delay(delay.Value);
                     }
-                    using var scope = _serviceScopeFactory.CreateScope();
+                    using var scope = _rootServiceProvider.CreateScope();
                     task.ServiceProvider = scope.ServiceProvider;
                     await task.Run();
                 }

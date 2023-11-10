@@ -58,7 +58,7 @@ namespace MongoDB.Entities
         internal static event Action DefaultDbChanged;
 
         private static readonly ConcurrentDictionary<string, IMongoDatabase> dbs = new ConcurrentDictionary<string, IMongoDatabase>();
-        public static IMongoDatabase DefaultDb;
+        public static IMongoDatabase DefaultDb { get; set; }
 
         /// <summary>
         /// Initializes a MongoDB connection with the given connection parameters.

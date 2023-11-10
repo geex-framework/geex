@@ -85,9 +85,13 @@ namespace Geex.Common.Authentication
                     {
                         if (receivedContext.HttpContext.WebSockets.IsWebSocketRequest)
                         {
-                            if (receivedContext.HttpContext.Items.TryGetValue("jwtToken", out var token))
+                            if (receivedContext.HttpContext.Items.TryGetValue("jwtToken", out var token1))
                             {
-                                receivedContext.Token = token.ToString();
+                                receivedContext.Token = token1.ToString();
+                            }
+                            else if (receivedContext.Request.Query.TryGetValue("access_token", out var token2))
+                            {
+                                receivedContext.Token = token2.ToString();
                             }
                         }
                         return Task.CompletedTask;

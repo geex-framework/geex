@@ -13,6 +13,7 @@ namespace Geex.Common;
 public interface IRepository
 {
     IQueryable<T> Query<T>() where T : IEntityBase;
+    IServiceProvider ServiceProvider { get; }
 }
 
 public interface IUnitOfWork : IRepository, IDisposable

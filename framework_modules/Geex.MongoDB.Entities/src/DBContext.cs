@@ -643,6 +643,10 @@ namespace MongoDB.Entities
                 {
                     Local.TypedCacheDictionary.Clear();
                     OriginLocal.TypedCacheDictionary.Clear();
+                    if (session.IsInTransaction)
+                    {
+                        session.AbortTransaction();
+                    }
                     session.Dispose();
                 }
 
