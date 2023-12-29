@@ -1,0 +1,69 @@
+{
+  "version" : 2,
+  "activeEnv" : "local",
+  "webServerPort" : 0,
+  "dnsServerPort" : 0,
+  "defaultDns" : null,
+  "logLevel" : "",
+  "logFile" : "",
+  "registerContainerNames" : null,
+  "hostMachineHostname" : "",
+  "domain" : "",
+  "dpsNetwork" : false,
+  "dpsNetworkAutoConnect" : false,
+  "serverProtocol" : null,
+  "dockerHost" : null,
+  "resolvConfOverrideNameServers" : null,
+  "noRemoteServers" : null,
+  "noEntriesResponseCode" : null,
+  "remoteDnsServers" : [ ],
+  "envs" : [ {
+    "name" : "local",
+    "hostnames" : [ {
+      "id" : 0,
+      "hostname" : "host.docker.internal",
+      "ip" : "127.0.0.1",
+      "target" : "acme.com",
+      "ttl" : 10,
+      "type" : "A"
+    }, {
+      "id" : 1,
+      "hostname" : "dev.geex.tech",
+      "ip" : "127.0.0.1",
+      "target" : "127.0.0.1",
+      "ttl" : 10,
+      "type" : "A"
+    }, {
+      "id" : 2,
+      "hostname" : ".dev.geex.tech",
+      "ip" : "127.0.0.1",
+      "target" : "dev.geex.tech",
+      "ttl" : 10,
+      "type" : "A"
+    } ]
+  }, {
+    "name" : "dev",
+    "hostnames" : [ {
+      "id" : 10000,
+      "hostname" : "host.docker.internal",
+      "ip" : "127.0.0.1",
+      "target" : "acme.com",
+      "ttl" : 10,
+      "type" : "A"
+    }, {
+      "id" : 10001,
+      "hostname" : "dev.geex.tech",
+      "ip" : "192.168.0.1",
+      "target" : "acme.com",
+      "ttl" : 10,
+      "type" : "A"
+    }, {
+      "id" : 10002,
+      "hostname" : ".dev.geex.tech",
+      "ip" : "192.168.0.1",
+      "target" : "dev.geex.tech",
+      "ttl" : 10,
+      "type" : "A"
+    } ]
+  } ]
+}

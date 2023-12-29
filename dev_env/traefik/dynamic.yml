@@ -1,0 +1,46 @@
+http:
+  middlewares:
+    compress:
+      compress: {}
+  routers:
+    api:
+      rule: "Host(`api.dev.geex.tech`)"
+      service: api
+      entryPoints: ["https"]
+      tls: {}
+    app:
+      rule: "Host(`app.dev.geex.tech`)"
+      service: app
+      entryPoints: ["https"]
+      tls: {}
+  services:
+    api:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:3000"
+    app:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:4000"
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS11  
+      maxVersion: VersionTLS13  
+      cipherSuites:  
+        - "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"  
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"  
+        - "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"  
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"  
+        - "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305"  
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"  
+      sniStrict: false
+  stores:
+    default:
+      defaultCertificate:
+        certFile: "/certs/dev.geex.tech.crt"
+        keyFile: "/certs/dev.geex.tech.key"
+  certificates:
+    - certFile: "/certs/dev.geex.tech.crt"
+      keyFile: "/certs/dev.geex.tech.key"

@@ -1,0 +1,322 @@
+version: '3.7'
+name: ${STACK_NAME}
+
+services:
+  dns-server:
+    hostname: dns-server.${DOMAIN_NAME}
+    image: defreitas/dns-proxy-server
+    environment:
+      MG_LOG_LEVEL: DEBUG
+      DOCKER_API_VERSION: 1.40
+      DPS_CONTAINER: 1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dns-server.entrypoints=https"
+      - "traefik.http.routers.dns-server.tls=true"
+      - "traefik.http.routers.dns-server.rule=Host(`dns-server.${DOMAIN_NAME}`)"
+      - "traefik.http.services.dns-server.loadbalancer.server.port=5380"
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "5380:5380"
+    cap_add:  
+      - NET_ADMIN
+    volumes:
+      # - /var/run/docker.sock:/var/run/docker.sock
+      - ./dns/config/:/app/conf/
+    restart: unless-stopped
+    networks:
+      dev:
+        ipv4_address: ${NET_PREFIX}.255
+    dns:  
+      - 127.0.0.1
+
+  setup:
+    profiles:
+      - setup
+    build:
+      context: setup/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    init: true
+    volumes:
+      - ./setup/entrypoint.sh:/entrypoint.sh:ro,Z
+      - ./setup/lib.sh:/lib.sh:ro,Z
+      - ./setup/roles:/roles:ro,Z
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+      METRICBEAT_INTERNAL_PASSWORD: ${METRICBEAT_INTERNAL_PASSWORD:-}
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+      HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
+      MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - dev
+    depends_on:
+      - elasticsearch
+
+  elasticsearch:
+    hostname: elasticsearch.${DOMAIN_NAME}
+    dns_search:   
+      - ${DOMAIN_NAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.elasticsearch.entrypoints=https"
+      - "traefik.http.routers.elasticsearch.tls=true"
+      - "traefik.http.routers.elasticsearch.rule=Host(`elasticsearch.${DOMAIN_NAME}`)"
+      - "traefik.http.services.elasticsearch.loadbalancer.server.port=9200"
+    build:
+      context: elasticsearch/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+      - elasticsearch:/usr/share/elasticsearch/data:Z
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      # Bootstrap password.
+      # Used to initialize the keystore during the initial startup of
+      # Elasticsearch. Ignored on subsequent runs.
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      discovery.type: single-node
+    networks:
+      dev:
+    restart: unless-stopped
+
+  logstash:
+    hostname: logstash.${DOMAIN_NAME}
+    dns_search:   
+      - ${DOMAIN_NAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.logstash.entrypoints=https"
+      - "traefik.http.routers.logstash.tls=true"
+      - "traefik.http.routers.logstash.rule=Host(`logstash.${DOMAIN_NAME}`)"
+      - "traefik.http.services.logstash.loadbalancer.server.port=9600"
+    build:
+      context: logstash/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+    ports:
+      - 5044:5044
+      - 50000:50000/tcp
+      - 50000:50000/udp
+      - 9600:9600
+    environment:
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+    networks:
+      dev:
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  kibana:
+    hostname: kibana.${DOMAIN_NAME}
+    dns_search:   
+      - ${DOMAIN_NAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kibana.entrypoints=https"
+      - "traefik.http.routers.kibana.tls=true"
+      - "traefik.http.routers.kibana.rule=Host(`kibana.${DOMAIN_NAME}`)"
+    build:
+      context: kibana/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+    ports:
+      - 5601:5601
+    environment:
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+    networks:
+      dev:
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  apm-server:
+    hostname: apm-server.${DOMAIN_NAME}
+    dns_search:   
+      - ${DOMAIN_NAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.apm-server.entrypoints=https"
+      - "traefik.http.routers.apm-server.tls=true"
+      - "traefik.http.routers.apm-server.rule=Host(`apm-server.${DOMAIN_NAME}`)"
+      - "traefik.http.services.apm-server.loadbalancer.server.port=8200"
+    build:
+      context: apm-server/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+    volumes:
+      - ./apm-server/config/apm-server.yml:/usr/share/apm-server/apm-server.yml
+    ports:
+      - "8200:8200"
+    networks:
+      dev:
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  redis:
+    hostname: redis.${DOMAIN_NAME}
+    dns_search:   
+      - ${DOMAIN_NAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.redis.entrypoints=https"
+      - "traefik.http.routers.redis.tls=true"
+      - "traefik.http.routers.redis.rule=Host(`redis.${DOMAIN_NAME}`)"
+      - "traefik.http.services.redis.loadbalancer.server.port=6379"
+    image: redis
+    ports:
+      - "6379:6379"
+    networks:
+      dev:
+    restart: unless-stopped
+
+  mongo:
+    hostname: mongo.${DOMAIN_NAME}
+    dns_search:   
+      - ${DOMAIN_NAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mongo.entrypoints=https"
+      - "traefik.http.routers.mongo.tls=true"
+      - "traefik.http.routers.mongo.rule=Host(`mongo.${DOMAIN_NAME}`)"
+      - "traefik.http.services.mongo.loadbalancer.server.port=27017"
+    image: mongo:5.0.17
+    ports:
+      - 27017:27017
+    healthcheck:
+      test: test $$(echo "rs.initiate().ok || rs.status().ok" | mongo --quiet) -eq 1
+      interval: 10s
+      start_period: 30s
+    networks:
+      dev:
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    restart: unless-stopped
+    volumes:
+      - ./mongo/config/mongod.conf:/etc/mongod.conf
+
+  traefik:
+    hostname: traefik.${DOMAIN_NAME}
+    dns_search:   
+      - ${DOMAIN_NAME}
+    image: traefik:v3.0.0-beta5
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    command:
+      - "--global.sendanonymoususage=false"
+      - "--global.checknewversion=false"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--api.debug=true"
+      - "--ping=true"
+      - "--log.level=DEBUG"
+      - "--log.format=common"
+      - "--accesslog=true"
+      - "--entrypoints.http.address=:80" 
+      - "--entrypoints.https.address=:443" 
+      - "--entrypoints.http.http.redirections.entryPoint.to=https"
+      - "--entrypoints.http.http.redirections.entrypoint.permanent=true"
+      # - "--entrypoints.http.http.middlewares=httpsRedirect"
+      - "--entrypoints.https.http.middlewares=compress@file"
+      - "--providers.docker.watch=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.allowEmptyServices=false"
+      - "--providers.docker.useBindPortIP=false"
+      - "--providers.docker.endpoint=tcp://dockersocketproxy:2375" 
+      - "--providers.docker.network=dev"
+      - "--providers.file.watch=true"
+      - "--providers.file.directory=/etc/traefik"
+      - "--providers.file.debugloggeneratedtemplate=true"
+    networks:
+      - dev
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dev"
+
+      # - "traefik.http.middlewares.gzip.compress=true"
+
+      - "traefik.http.routers.traefik-dashboard-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-dashboard-secure.tls=true"
+      - "traefik.http.routers.traefik-dashboard-secure.rule=Host(`traefik.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.traefik-dashboard-secure.service=dashboard@internal"
+      # - "traefik.http.routers.traefik-dashboard-secure.middlewares=auth"
+      # - "traefik.http.middlewares.auth.basicauth.users=admin:${TRAEFIK_PASSWORD}"
+
+      - "traefik.http.routers.traefik-dashboard-api-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-dashboard-api-secure.tls=true"
+      - "traefik.http.routers.traefik-dashboard-api-secure.rule=Host(`traefik.${DOMAIN_NAME}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.traefik-dashboard-api-secure.service=api@internal"
+    volumes:
+      - ./certs/:/certs/:ro
+      - ./traefik/:/etc/traefik/:ro
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider --proxy off localhost:8080/ping || exit 1"]
+      interval: 5s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+    depends_on: 
+      - dockersocketproxy
+
+  dockersocketproxy:  
+    image: tecnativa/docker-socket-proxy  
+    networks:  
+      - dev  
+    volumes:  
+      - /var/run/docker.sock:/var/run/docker.sock  
+    environment:  
+      CONTAINERS: 1  
+
+  tester:
+    hostname: tester.${DOMAIN_NAME}
+    dns_search:   
+      - ${DOMAIN_NAME}
+    profiles:
+      - tester
+    image: tester:latest
+    networks:
+      dev:
+  
+networks:
+  dev:
+    name: dev
+    attachable: true
+    internal: true
+    external: true
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      config:  
+        - subnet: ${NET_PREFIX}.0/8
+          gateway: ${NET_PREFIX}.1  
+
+volumes:
+  elasticsearch:
+  mongo:
