@@ -28,39 +28,6 @@ namespace Geex.Common.Abstraction.Gql
         public static Dictionary<Type, List<Type>> OneOfConfigsDictionary => OneOfConfigs.GroupBy(x => x.Key).ToDictionary(x => x.Key, x => x.Select(y => y.Value).ToList());
 
         /// <inheritdoc />
-        public override void OnBeforeCreateSchema(IDescriptorContext context, ISchemaBuilder schemaBuilder)
-        {
-            var classEnumTypes = GeexModule.ClassEnumTypes;
-
-            foreach (var classEnumType in classEnumTypes)
-            {
-                if (classEnumType.GetClassEnumRealType().BaseType.GetProperty(nameof(Enumeration.DynamicValues)).GetValue(null).As<IEnumerable<IEnumeration>>().Any())
-                {
-                    schemaBuilder.AddConvention(typeof(IFilterConvention), sp => new FilterConventionExtension(x =>
-                    {
-                        x.BindRuntimeType(classEnumType, typeof(ClassEnumOperationFilterInput<>).MakeGenericType(classEnumType));
-                    }));
-                    schemaBuilder.BindRuntimeType(classEnumType, typeof(EnumerationType<>).MakeGenericType(classEnumType));
-                }
-            }
-
-            //var gqlConfigs = context.Services.GetServices<IEntityGqlConfig>();
-
-            //foreach (var gqlConfig in gqlConfigs)
-            //{
-            //    var gqlConfigType = gqlConfig.GetType();
-            //    var entityType = gqlConfigType.BaseType.GetGenericArguments().First();
-            //    var configureMethodInfo = gqlConfigType.GetMethod(nameof(IEntityGqlConfig.Configure), BindingFlags.NonPublic | BindingFlags.Instance);
-            //    var descriptorType = configureMethodInfo.GetParameters().First().ParameterType;
-            //    var parameter = Expression.Parameter(descriptorType, "descriptor");
-            //    var callExpression = Expression.Call(Expression.Constant(gqlConfig), configureMethodInfo, parameter);
-            //    var lambda = Expression.Lambda(callExpression, parameter).Compile();
-            //    AddObjectTypeMethod.MakeGenericMethod(entityType).Invoke(null, new object?[] { schemaBuilder, lambda });
-            //}
-            //schemaBuilder.AddDirectiveType(new OneOfDirectiveType());
-        }
-
-        /// <inheritdoc />
         public override void OnCreateSchemaError(IDescriptorContext context, Exception error)
         {
             base.OnCreateSchemaError(context, error);

@@ -113,7 +113,7 @@ namespace HotChocolate.Types
         public static IRequestExecutorBuilder AddCommonTypes(
       this IRequestExecutorBuilder builder)
         {
-            return builder
+            builder
                 .AddInterfaceType<IEntityBase>(x =>
                 {
                     x.BindFieldsExplicitly();
@@ -132,6 +132,8 @@ namespace HotChocolate.Types
                 .BindRuntimeType<MediaType, MimeTypeType>()
                 //.BindRuntimeType<byte[], Base64StringType>()
                 .BindRuntimeType<JsonNode, JsonNodeType>();
+
+            return builder;
         }
 
 

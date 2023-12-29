@@ -85,7 +85,8 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.AddScoped<DbContext>(x => x.GetService<IRepository>() as DbContext);
             builder.AddScoped<IUnitOfWork>(x => new GeexDbContext(x, transactional: true));
             // 直接从当前uow提取
-            builder.AddScoped<IRepository>(x => {
+            builder.AddScoped<IRepository>(x =>
+            {
                 var httpContext = x.GetService<IHttpContextAccessor>();
                 if (httpContext?.HttpContext?.Request.Headers.TryGetValue("x-readonly", out var value) == true && value == "1")
                 {
@@ -116,6 +117,21 @@ namespace Microsoft.Extensions.DependencyInjection
                 if (serviceDescriptor.ImplementationType != null)
                     schemaBuilder.AddTypeExtension(serviceDescriptor.ImplementationType);
             }
+
+            var classEnumTypes = GeexModule.ClassEnumTypes;
+
+            foreach (var classEnumType in classEnumTypes)
+            {
+                if ((classEnumType.GetClassEnumRealType().BaseType.GetProperty(nameof(Enumeration.DynamicValues)).GetValue(null) as IEnumerable<IEnumeration>).Any())
+                {
+                    schemaBuilder.AddConvention(typeof(IFilterConvention), sp => new FilterConventionExtension(x =>
+                    {
+                        x.BindRuntimeType(classEnumType, typeof(ClassEnumOperationFilterInput<>).MakeGenericType(classEnumType));
+                    }));
+                    schemaBuilder.BindRuntimeType(classEnumType, typeof(EnumerationType<>).MakeGenericType(classEnumType));
+                }
+            }
+
             return schemaBuilder;
         }
 
