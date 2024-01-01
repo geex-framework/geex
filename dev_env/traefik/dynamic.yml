@@ -8,20 +8,20 @@ http:
       service: api
       entryPoints: ["https"]
       tls: {}
-    app:
-      rule: "Host(`app.dev.geex.tech`)"
-      service: app
+    chatgpt:
+      rule: "Host(`chatgpt.dev.geex.tech`)"
+      service: chatgpt
       entryPoints: ["https"]
       tls: {}
   services:
     api:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:3000"
-    app:
+          - url: "https://api.dev.geex.tech:3001"
+    chatgpt:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:4000"
+          - url: "http://api.dev.geex.tech:4001"
 
 tls:
   options:

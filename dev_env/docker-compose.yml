@@ -216,6 +216,9 @@ services:
 
   traefik:
     hostname: traefik.${DOMAIN_NAME}
+    dns:
+      - ${NET_PREFIX}.255
+      - 8.8.8.8
     dns_search:   
       - ${DOMAIN_NAME}
     image: traefik:v3.0.0-beta5

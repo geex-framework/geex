@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 
@@ -71,7 +72,7 @@ namespace Geex.Common.Authentication
                     ValidateLifetime = authOptions.TokenExpireInSeconds.HasValue,
 
                     // If you want to allow a certain amount of clock drift, set that here
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
                 };
                 services.AddSingleton<TokenValidationParameters>(tokenValidationParameters);
                 authenticationBuilder
@@ -126,7 +127,10 @@ namespace Geex.Common.Authentication
 
                 services.AddSingleton<IMongoDatabase>(DB.DefaultDb);
                 services.AddOpenIddict()
-                    .AddCore(options => options.UseMongoDb())
+                    .AddCore(options =>
+                    {
+                        options.UseMongoDb();
+                    })
                     .AddServer(options =>
                     {
                         // Enable the authorization and token endpoints.
@@ -173,8 +177,19 @@ namespace Geex.Common.Authentication
                             ;
 
                         // Register the signing and encryption credentials.
-                        options.AddDevelopmentEncryptionCertificate()
-                               .AddDevelopmentSigningCertificate();
+                        if (Env.IsDevelopment())
+                        {
+                            options.AddDevelopmentEncryptionCertificate()
+                              .AddDevelopmentSigningCertificate();
+                        }
+                        else
+                        {
+                            // todo:
+                            //options.AddEncryptionCertificate().AddSigningCertificate()
+                            options.AddDevelopmentEncryptionCertificate()
+                              .AddDevelopmentSigningCertificate();
+                        }
+
 
                         options.DisableAccessTokenEncryption();
 
@@ -191,18 +206,24 @@ namespace Geex.Common.Authentication
                         //
                         // Token requests will be handled by OpenIddict itself by reusing the identity
                         // created by the /authorize handler and stored in the authorization codes.
-                        options.UseAspNetCore()
+                        var aspNetCoreBuilder = options.UseAspNetCore();
+                        aspNetCoreBuilder
                             .EnableAuthorizationEndpointPassthrough()
                              .EnableLogoutEndpointPassthrough()
                              .EnableTokenEndpointPassthrough()
                              .EnableUserinfoEndpointPassthrough()
                              .EnableStatusCodePagesIntegration();
+
+                        if (Env.IsDevelopment())
+                        {
+                            aspNetCoreBuilder.DisableTransportSecurityRequirement();
+
+                        }
                     })
                     .AddValidation(options =>
                     {
                         // Import the configuration from the local OpenIddict server instance.
                         options.UseLocalServer();
-
                         // Register the ASP.NET Core host.
                         options.UseAspNetCore();
                     });
