@@ -60,7 +60,7 @@ namespace Geex.Common
                     return;
                 foreach (var unitOfWork in UowServices)
                 {
-                    unitOfWork.CommitAsync().Wait();
+                    unitOfWork.SaveChanges().Wait();
                 }
                 this.Transaction.Complete();
             }

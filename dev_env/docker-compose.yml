@@ -216,9 +216,6 @@ services:
 
   traefik:
     hostname: traefik.${DOMAIN_NAME}
-    dns:
-      - ${NET_PREFIX}.255
-      - 8.8.8.8
     dns_search:   
       - ${DOMAIN_NAME}
     image: traefik:v3.0.0-beta5
@@ -236,6 +233,7 @@ services:
       - "--log.level=DEBUG"
       - "--log.format=common"
       - "--accesslog=true"
+      - "--serversTransport.insecureSkipVerify=true"
       - "--entrypoints.http.address=:80" 
       - "--entrypoints.https.address=:443" 
       - "--entrypoints.http.http.redirections.entryPoint.to=https"
@@ -296,6 +294,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock  
     environment:  
       CONTAINERS: 1  
+    restart: unless-stopped
 
   tester:
     hostname: tester.${DOMAIN_NAME}

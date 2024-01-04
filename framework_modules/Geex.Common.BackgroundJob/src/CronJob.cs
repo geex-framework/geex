@@ -92,7 +92,7 @@ namespace Geex.Common.BackgroundJob
             {
                 using var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 await this.Run(scope.ServiceProvider, cancellationToken);
-                await uow.CommitAsync(cancellationToken);
+                await uow.SaveChanges(cancellationToken);
                 _logger.LogInformation("Job processed: [{JobName}]", typeof(TImplementation).Name);
             }
             catch (Exception e)

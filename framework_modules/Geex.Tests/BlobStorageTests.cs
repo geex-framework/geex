@@ -37,7 +37,7 @@ namespace Geex.Tests
             // Act
             var blob = await mediator.Send(new CreateBlobObjectRequest() { File = new StreamFile($"{dateTime}.txt", () => new MemoryStream(data)), StorageType = BlobStorageType.Db });
             var uow = service.GetService<IUnitOfWork>();
-            await uow.CommitAsync();
+            await uow.SaveChanges();
             // Assert
             using var service1 = service.CreateScope();
             var file = await service1.ServiceProvider.GetService<IMediator>().Send(new DownloadFileRequest(blob.Id, BlobStorageType.Db));

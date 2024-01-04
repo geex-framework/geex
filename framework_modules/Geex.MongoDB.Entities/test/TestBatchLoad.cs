@@ -27,7 +27,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1.1", parentId: "1.1"));
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
@@ -54,7 +54,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.2", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "2.1", parentId: "2"));
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
@@ -77,7 +77,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.2", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "2.1", parentId: "2"));
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
@@ -102,7 +102,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(new RootEntity.C1Entity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new RootEntity.C2Entity(thisId: "1.1.1", parentId: "1.1"));
             dbContext.Attach(new RootEntity.C3Entity(thisId: "1.1.1.1", parentId: "1.1.1"));
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
@@ -136,7 +136,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1.1", parentId: "1.1"));
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();
@@ -169,7 +169,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1.1", parentId: "1.1"));
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             await DB.RestartProfiler();

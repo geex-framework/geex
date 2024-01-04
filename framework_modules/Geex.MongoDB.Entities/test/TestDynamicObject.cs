@@ -28,7 +28,7 @@ namespace MongoDB.Entities.Tests
         //        Data = new { customerType = "VIP", customerName = tempName }
         //    };
         //    dbContext.Attach(data);
-        //    await dbContext.CommitAsync();
+        //    await dbContext.SaveChanges();
         //    dbContext.Dispose();
         //    dbContext = new DbContext();
         //    dbContext.Queryable<TableAnonymousData>().FirstOrDefault(x => x.TableType == tempName).ShouldNotBeNull();
@@ -66,7 +66,7 @@ namespace MongoDB.Entities.Tests
                 Data = "test"
             };
             dbContext.Attach(dataSimple);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var item = dbContext.Query<TableData>().ToList();
@@ -100,7 +100,7 @@ namespace MongoDB.Entities.Tests
                 Data = new JsonObject { { "int", 1 }, { "decimal", 1m }, { "datetime", now }, { "bool", true } }
             };
             dbContext.Attach(data);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var item = dbContext.Query<TableData>().ToList();

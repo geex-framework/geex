@@ -29,11 +29,9 @@ namespace Geex.Core.Authentication.Migrations
     {
         public override async Task UpgradeAsync(DbContext dbContext)
         {
-            await dbContext.SaveChanges();
             var superAdmin = User.New(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), "superAdmin", "superAdmin", "15055555555", "superAdmin@geex.com", "superAdmin");
             dbContext.Attach(superAdmin);
             superAdmin.Id = "000000000000000000000001";
-            await dbContext.SaveChanges();
             var adminRole = new Role("admin")
             {
                 IsStatic = true
@@ -67,6 +65,7 @@ namespace Geex.Core.Authentication.Migrations
             var permissions = AppPermission.List.Select(x => x.Value);
             await dbContext.ServiceProvider.GetService<IRbacEnforcer>().SetPermissionsAsync(adminRole.Id, permissions);
             await dbContext.ServiceProvider.GetService<IMediator>().Publish(new PermissionChangedEvent(adminRole.Id, permissions.ToArray()));
+            await dbContext.SaveChanges();
         }
     }
 }

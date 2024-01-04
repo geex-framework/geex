@@ -102,7 +102,7 @@ if (-not (Check-Command docker)) {
 $cert = Get-CCertificate -FriendlyName "dev.geex.tech" -StoreLocation LocalMachine -StoreName Root
 $pwd = ConvertTo-SecureString -String "dev.geex.tech" -AsPlainText -Force
 if ($null -eq $cert) {
-  $cert = New-SelfSignedCertificate -CertStoreLocation Cert:\LocalMachine\My -Subject dev.geex.tech -DnsName dev.geex.tech, *.api.dev.geex.tech, *.dev.geex.tech -FriendlyName "dev.geex.tech" -NotAfter (Get-Date).AddYears(1000)
+  $cert = New-SelfSignedCertificate -CertStoreLocation Cert:\LocalMachine\My -Subject dev.geex.tech -DnsName host.docker.internal, dev.geex.tech, *.api.dev.geex.tech, *.dev.geex.tech -FriendlyName "dev.geex.tech" -NotAfter (Get-Date).AddYears(1000)
   mkdir ./certs -ErrorAction Ignore
   Export-PfxCertificate -Cert "Cert:\LocalMachine\My\$($cert.Thumbprint)" -FilePath "./certs/dev.geex.tech.pfx" -Password $pwd
   openssl pkcs12 -in "./certs/dev.geex.tech.pfx" -nodes -out ./certs/dev.geex.tech.pem -passin pass:dev.geex.tech

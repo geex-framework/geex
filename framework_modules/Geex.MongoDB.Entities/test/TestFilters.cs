@@ -45,7 +45,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext = new DbContext();
             //var result = await dbContext.Find<InterceptedAndFiltered>().Match(x => x.Id == testEntity.Id).ExecuteFirstAsync();
             //Assert.IsNull(result);

@@ -34,7 +34,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InheritanceEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var a1 = new InheritanceEntity()
@@ -55,7 +55,7 @@ namespace MongoDB.Entities.Tests
             };
             var list = new List<InheritanceEntity>() { a1, a2, b1, b2 };
             dbContext.Attach(list);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
 
 
             dbContext = new DbContext();
@@ -77,7 +77,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InheritanceEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new InheritanceEntity()
@@ -91,7 +91,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(testEntity);
             dbContext.Attach<InheritanceEntity>(testEntityChild);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
@@ -107,7 +107,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new InheritanceEntityChild()
@@ -116,7 +116,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
@@ -133,7 +133,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new InheritanceEntityChild()
@@ -142,7 +142,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
@@ -179,7 +179,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
@@ -206,7 +206,7 @@ namespace MongoDB.Entities.Tests
                 }
             };
             dbContext.Attach(testEntities);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList().Cast<InheritanceEntity>().ToList();
@@ -227,7 +227,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new InheritanceEntityChild()
@@ -236,7 +236,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
@@ -260,7 +260,7 @@ namespace MongoDB.Entities.Tests
                 Name = "test"
             };
             dbContext.Attach(testEntity);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
@@ -268,13 +268,13 @@ namespace MongoDB.Entities.Tests
             result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
             result.Name.ShouldBe("test1");
             result.Name = "test2";
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
             result.Name.ShouldBe("test2");
             await result.DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
@@ -292,7 +292,7 @@ namespace MongoDB.Entities.Tests
                 Name = "test"
             };
             dbContext.Attach<InheritanceEntity>(testEntity);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
@@ -300,13 +300,13 @@ namespace MongoDB.Entities.Tests
             result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.Name.ShouldBe("test1");
             result.Name = "test2";
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().FirstOrDefault();
             result.Name.ShouldBe("test2");
             await result.DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
@@ -319,7 +319,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InheritanceEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var a1 = new InheritanceEntityChild()
@@ -328,7 +328,7 @@ namespace MongoDB.Entities.Tests
             };
             var list = new List<InheritanceEntity>() { a1, };
             dbContext.Attach(list);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
@@ -347,7 +347,7 @@ namespace MongoDB.Entities.Tests
             var result2 = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Where(x => x.Name.StartsWith("a"));
             result2.ToList().Count.ShouldBe(1);
             result2.Count().ShouldBe(1);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Query<InheritanceEntity>().Count(x => x.Name.StartsWith("a")).ShouldBe(2);
@@ -372,7 +372,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<NestedClass>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var entity = new NestedClass()
@@ -388,7 +388,7 @@ namespace MongoDB.Entities.Tests
             {
                 Name = "1.1"
             });
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var query = dbContext.Query<NestedClass>().Where(x => x.Name.StartsWith("1"));
@@ -406,7 +406,7 @@ namespace MongoDB.Entities.Tests
             var dbContext = new DbContext();
             {
                 await dbContext.DeleteAsync<InheritanceEntity>();
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
                 dbContext = new DbContext();
                 var a1 = new InheritanceEntity()
@@ -427,7 +427,7 @@ namespace MongoDB.Entities.Tests
                 };
                 var list = new List<InheritanceEntity>() { a1, a2, b1, b2 };
                 dbContext.Attach(list);
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
             }
             {
@@ -443,7 +443,7 @@ namespace MongoDB.Entities.Tests
                 var result1 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
                 result1.ToList().Count().ShouldBe(1);
                 result1.Count().ShouldBe(1);
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
                 dbContext = new DbContext();
                 var result2 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
@@ -460,7 +460,7 @@ namespace MongoDB.Entities.Tests
             //prepare
             {
                 await dbContext.DeleteAsync<InheritanceEntity>();
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
                 dbContext = new DbContext();
                 var a1 = new InheritanceEntity()
@@ -481,7 +481,7 @@ namespace MongoDB.Entities.Tests
                 };
                 var list = new List<InheritanceEntity>() { a1, a2, b1, b2 };
                 dbContext.Attach(list);
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
             }
             {
@@ -505,7 +505,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InheritanceEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var a1 = new InheritanceEntity()
@@ -533,7 +533,7 @@ namespace MongoDB.Entities.Tests
             var result1 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
             result1.ToList().Count().ShouldBe(1);
             result1.Count().ShouldBe(1);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result2 = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("a"));
@@ -547,7 +547,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InheritanceEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var a1 = new InheritanceEntity()
@@ -585,7 +585,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InheritanceEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var data = Enumerable.Range(1, 9999).Select(x =>
@@ -605,7 +605,7 @@ namespace MongoDB.Entities.Tests
             var sw = new Stopwatch();
             sw.Start();
             dbContext.Attach(data);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             sw.Stop();
             var t1 = sw.ElapsedMilliseconds;
             t1.ShouldBeLessThanOrEqualTo(2000);

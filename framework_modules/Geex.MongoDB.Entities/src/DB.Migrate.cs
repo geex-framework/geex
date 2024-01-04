@@ -67,7 +67,7 @@ namespace MongoDB.Entities
 
         public static async Task MigrateTargetAsync(params Type[] migrationTypes)
         {
-            using var dbContext = new DbContext(transactional: true);
+            using var dbContext = new DbContext();
             await dbContext.MigrateAsync(migrationTypes.Select(x => Activator.CreateInstance(x).As<DbMigration>()));
         }
     }

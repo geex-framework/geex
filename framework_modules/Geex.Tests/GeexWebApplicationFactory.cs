@@ -36,7 +36,7 @@ namespace Geex.Tests
         {
             var uow = this.Services.GetService<IUnitOfWork>();
             await uow.DeleteAsync<TestEntity>();
-            await uow.CommitAsync();
+            await uow.SaveChanges();
             await base.DisposeAsync();
         }
     }

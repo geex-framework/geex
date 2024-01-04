@@ -11,7 +11,7 @@ namespace MongoDB.Entities
         /// <param name="options">Client session options (not required)</param>
         public static DbContext Transaction(string database = default, ClientSessionOptions options = null)
         {
-            return new DbContext(default, database, true, options);
+            return new DbContext(default, database, options);
         }
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace MongoDB.Entities
         /// <param name="options">Client session options (not required)</param>
         public static DbContext Transaction<T>(ClientSessionOptions options = null) where T : IEntityBase
         {
-            return new DbContext(default, DatabaseName<T>(), true, options);
+            return new DbContext(default, DatabaseName<T>(), options);
         }
     }
 }

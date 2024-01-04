@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -15,7 +16,6 @@ public interface IRepository
     IQueryable<T> Query<T>() where T : IEntityBase;
     IServiceProvider ServiceProvider { get; }
 }
-
 public interface IUnitOfWork : IRepository, IDisposable
 {
     public event Func<Task>? OnCommitted;
@@ -25,12 +25,6 @@ public interface IUnitOfWork : IRepository, IDisposable
     /// <inheritdoc />
     Task<int> SaveChanges(CancellationToken cancellation = default);
 
-    /// <summary>
-    /// Commits a transaction
-    /// </summary>
-    /// <param name="cancellationToken">An optional cancellation token</param>
-    public Task CommitAsync(CancellationToken cancellationToken = default);
-    public Task AbortAsync(CancellationToken cancellationToken = default);
     public Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default)
             where T : IEntityBase;
 

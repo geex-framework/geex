@@ -29,7 +29,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
@@ -48,7 +48,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
@@ -67,7 +67,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
@@ -88,7 +88,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
@@ -104,7 +104,7 @@ namespace MongoDB.Entities.Tests
         {
            var dbContext = new DbContext();
             await dbContext.Query<TestEntity>().ToList().DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new TestEntity()
@@ -113,7 +113,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
@@ -130,7 +130,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.Query<TestEntity>().ToList().DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new TestEntity()
@@ -139,7 +139,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
@@ -176,7 +176,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
@@ -204,7 +204,7 @@ namespace MongoDB.Entities.Tests
             };
             //dbContext.Attach(testEntities);
             await testEntities.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().ToList();
@@ -219,7 +219,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.Query<TestEntity>().ToList().DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new TestEntity()
@@ -228,7 +228,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
@@ -252,7 +252,7 @@ namespace MongoDB.Entities.Tests
                 Name = "test"
             };
             dbContext.Attach(testEntity);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
@@ -260,13 +260,13 @@ namespace MongoDB.Entities.Tests
             result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.Name.ShouldBe("test1");
             result.Name = "test2";
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.Name.ShouldBe("test2");
             await result.DeleteAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             result = dbContext.Query<TestEntity>().FirstOrDefault();
@@ -279,7 +279,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<TestEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var a1 = new TestEntity()
@@ -288,7 +288,7 @@ namespace MongoDB.Entities.Tests
             };
             var list = new List<TestEntity>() { a1, };
             dbContext.Attach(list);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
@@ -301,7 +301,7 @@ namespace MongoDB.Entities.Tests
             var result1 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
             result1.ToList().Count.ShouldBe(2);
             result1.Count().ShouldBe(2);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Query<TestEntity>().Count(x => x.Name.StartsWith("a")).ShouldBe(2);
@@ -313,7 +313,7 @@ namespace MongoDB.Entities.Tests
             var dbContext = new DbContext();
             {
                 await dbContext.DeleteAsync<TestEntity>();
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
                 dbContext = new DbContext();
                 var a1 = new TestEntity()
@@ -334,7 +334,7 @@ namespace MongoDB.Entities.Tests
                 };
                 var list = new List<TestEntity>() { a1, a2, b1, b2 };
                 dbContext.Attach(list);
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
             }
             {
@@ -347,7 +347,7 @@ namespace MongoDB.Entities.Tests
                 var result1 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
                 result1.ToList().Count().ShouldBe(1);
                 result1.Count().ShouldBe(1);
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
                 dbContext = new DbContext();
                 var result2 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
@@ -364,7 +364,7 @@ namespace MongoDB.Entities.Tests
             //prepare
             {
                 await dbContext.DeleteAsync<TestEntity>();
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
                 dbContext = new DbContext();
                 var a1 = new TestEntity()
@@ -385,7 +385,7 @@ namespace MongoDB.Entities.Tests
                 };
                 var list = new List<TestEntity>() { a1, a2, b1, b2 };
                 dbContext.Attach(list);
-                await dbContext.CommitAsync();
+                await dbContext.SaveChanges();
                 dbContext.Dispose();
             }
             {
@@ -409,7 +409,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<TestEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var a1 = new TestEntity()
@@ -437,7 +437,7 @@ namespace MongoDB.Entities.Tests
             var result1 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
             result1.ToList().Count().ShouldBe(1);
             result1.Count().ShouldBe(1);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result2 = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
@@ -451,7 +451,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<TestEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var data = Enumerable.Range(1, 9999).Select(x => new TestEntity()
@@ -460,7 +460,7 @@ namespace MongoDB.Entities.Tests
             });
 
             dbContext.Attach(data);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var list = dbContext.Query<TestEntity>().ToList();

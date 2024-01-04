@@ -1,4 +1,7 @@
 http:
+  # serversTransports:
+  #   defaultTransport:
+  #     insecureSkipVerify: true
   middlewares:
     compress:
       compress: {}
@@ -17,11 +20,11 @@ http:
     api:
       loadBalancer:
         servers:
-          - url: "https://api.dev.geex.tech:3001"
+          - url: "https://host.docker.internal:3001"
     chatgpt:
       loadBalancer:
         servers:
-          - url: "http://api.dev.geex.tech:4001"
+          - url: "http://host.docker.internal:4001"
 
 tls:
   options:

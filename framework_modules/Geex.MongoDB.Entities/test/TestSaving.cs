@@ -524,7 +524,7 @@ namespace MongoDB.Entities.Tests
                 Data = new JsonObject { { "customerType", "VIP" }, { "customerName", tempName }, { "test", new JsonObject { { "key", "value" } } } }
             };
             dbContext.Attach(data);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var item = dbContext.Query<TableData>().ToList();
@@ -532,7 +532,7 @@ namespace MongoDB.Entities.Tests
             var objectData = item.First();
             objectData.Data["customerType"] = "VVIP";
             await objectData.SaveAsync();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             item = dbContext.Query<TableData>().ToList();

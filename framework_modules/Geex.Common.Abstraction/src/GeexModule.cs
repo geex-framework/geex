@@ -147,7 +147,7 @@ namespace Geex.Common.Abstractions
 
             if (coreModuleOptions.AutoMigration)
             {
-                new GeexDbContext(context.ServiceProvider, transactional:true).MigrateAsync().Wait();
+                new GeexDbContext(context.ServiceProvider).MigrateAsync().Wait();
             }
         }
     }

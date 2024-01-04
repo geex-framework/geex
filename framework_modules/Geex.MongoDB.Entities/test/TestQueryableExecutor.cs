@@ -53,7 +53,7 @@ namespace MongoDB.Entities.Tests
             };
             var list = new List<TestEntity>() { a1, a2, b1, b2 };
             dbContext.Attach(list);
-            dbContext.CommitAsync().Wait();
+            dbContext.SaveChanges().Wait();
             dbContext.Dispose();
         }
 
@@ -206,7 +206,7 @@ namespace MongoDB.Entities.Tests
             {
                 BypassDocumentValidation = true
             });
-            //await dbContext.CommitAsync();
+            //await dbContext.SaveChanges();
             sw.Stop();
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(60000);
             await Task.Delay(1000);
@@ -299,7 +299,7 @@ namespace MongoDB.Entities.Tests
                     }
                 });
             await dbContext.SaveChanges();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext = new DbContext();
             var temp = dbContext.Query<TestEntity>().OrderBy(x => x.Value).ToList();
             temp.Select(x => x.Value).SequenceEqual(new[] { 1, 2, 3, 4, 5, 5, 5 }).ShouldBeTrue();
@@ -359,7 +359,7 @@ namespace MongoDB.Entities.Tests
                     DateTimeOffset = new DateTimeOffset(DateTime.Today)
                 }
             });
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
 
             dbContext = new DbContext();
@@ -400,7 +400,7 @@ namespace MongoDB.Entities.Tests
                     new TestEntity(),
                     new TestEntity(),
                 });
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var PageIndex = 2;
@@ -441,7 +441,7 @@ namespace MongoDB.Entities.Tests
                     new TestEntity(){Value = 19},
                     new TestEntity(){Value = 20},
                 });
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var PageIndex = 2;
@@ -489,7 +489,7 @@ namespace MongoDB.Entities.Tests
                 Name = "local1",
                 Value = 5
             });
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var id = attached.Id;
@@ -510,7 +510,7 @@ namespace MongoDB.Entities.Tests
                 Name = "local1",
                 Value = 5,
             });
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var id = attached.Id;
@@ -549,7 +549,7 @@ namespace MongoDB.Entities.Tests
                 Value = 5,
                 Data = new[] { 3 }
             });
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var array = new List<int>() { 2, 3 };
@@ -567,7 +567,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext(TestFixture.ServiceProvider);
             await dbContext.DeleteAsync<TestEntity>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             return dbContext;

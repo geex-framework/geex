@@ -22,7 +22,7 @@ namespace MongoDB.Entities.Tests
         {
              var dbContext = new DbContext();
             await dbContext.DeleteAsync<InterceptedAndFiltered>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new InterceptedAndFiltered()
@@ -32,7 +32,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
             testEntity.Value.ShouldBe(2);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             testEntity.Value.ShouldBe(3);
             dbContext = new DbContext();
             testEntity = await dbContext.Find<InterceptedAndFiltered>().Match(x => x.Id == testEntity.Id).ExecuteFirstAsync();
@@ -44,7 +44,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InterceptedAndFiltered>();
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new InterceptedAndFiltered()
@@ -53,7 +53,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             testEntity.Value.ShouldBe(1);
-            await dbContext.CommitAsync();
+            await dbContext.SaveChanges();
             testEntity.Value.ShouldBe(2);
             dbContext = new DbContext();
             testEntity = await dbContext.Find<InterceptedAndFiltered>().Match(x => x.Id == testEntity.Id).ExecuteFirstAsync();

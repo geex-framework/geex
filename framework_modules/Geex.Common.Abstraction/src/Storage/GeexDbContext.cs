@@ -35,8 +35,7 @@ namespace Geex.Common.Abstraction.Storage
             DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
         }
         public GeexDbContext(IServiceProvider serviceProvider = default, string database = default,
-            bool transactional = false,
-            ClientSessionOptions options = null, bool entityTrackingEnabled = true) : base(serviceProvider, database, transactional, options, entityTrackingEnabled)
+            ClientSessionOptions options = null, bool entityTrackingEnabled = true) : base(serviceProvider, database, options, entityTrackingEnabled)
         {
 
         }
@@ -109,27 +108,6 @@ namespace Geex.Common.Abstraction.Storage
             CancellationToken cancellationToken = default)
         {
             return DB.DefaultDb.RunCommand(this.Session, command, readPreference, cancellationToken);
-        }
-
-
-        /// <summary>
-        /// Commits a transaction to MongoDB
-        /// </summary>
-        /// <param name="cancellation">An optional cancellation token</param>
-        public override async Task CommitAsync(CancellationToken cancellation = default)
-        {
-            await base.CommitAsync(cancellation);
-        }
-
-        /// <inheritdoc />
-        public async Task AbortAsync(CancellationToken cancellationToken = default)
-        {
-            if (Session.IsInTransaction)
-            {
-                await Session.AbortTransactionAsync(cancellationToken);
-                return;
-            }
-            throw new InvalidOperationException("session not in transaction, cannot abort");
         }
 
         /// <inheritdoc />

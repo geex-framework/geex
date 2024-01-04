@@ -75,16 +75,12 @@ namespace MongoDB.Entities
         /// <param name="database">The name of the database to use for this transaction. default db is used if not specified</param>
         /// <param name="transactional"></param>
         /// <param name="options">Client session options for this transaction</param>
-        public DbContext(IServiceProvider serviceProvider = default, string database = default, bool transactional = false,
-            ClientSessionOptions options = null, bool entityTrackingEnabled = true)
+        public DbContext(IServiceProvider serviceProvider = default, string database = default,
+            ClientSessionOptions? options = null, bool entityTrackingEnabled = true)
         {
             this.ServiceProvider = serviceProvider;
             EntityTrackingEnabled = entityTrackingEnabled;
-            this.session = DB.Database(database).Client.StartSession(options);
-            if (transactional)
-            {
-                session.StartTransaction(new TransactionOptions(new Optional<ReadConcern>(ReadConcern.Majority), new Optional<ReadPreference>(ReadPreference.Primary), writeConcern: new Optional<WriteConcern>(WriteConcern.WMajority), maxCommitTime: new Optional<TimeSpan?>(TimeSpan.FromSeconds(300))));
-            }
+            this.session = DB.Database(database).Client.StartSession(options ?? DefaultSessionOptions);
         }
 
         public IServiceProvider ServiceProvider { get; }
@@ -567,6 +563,10 @@ namespace MongoDB.Entities
 
         public virtual async Task<int> SaveChanges(CancellationToken cancellation = default)
         {
+            if (!Session.IsInTransaction)
+            {
+                Session.StartTransaction();
+            }
             var savedCount = 0;
             foreach (var (type, keyedEntities) in this.Local.TypedCacheDictionary)
             {
@@ -601,7 +601,7 @@ namespace MongoDB.Entities
 
             this.Local.TypedCacheDictionary.Clear();
             this.OriginLocal.TypedCacheDictionary.Clear();
-
+            await Session.CommitTransactionAsync(cancellation);
             return savedCount;
         }
         /// <summary>
@@ -698,18 +698,17 @@ namespace MongoDB.Entities
                 }
 
                 var sw = new Stopwatch();
-                // 默认的Session超时太短, 给Migration更多的超时时间
-                this.session.Dispose();
-                this.session = await DB.DefaultDb.Client.StartSessionAsync(new ClientSessionOptions() { DefaultTransactionOptions = new TransactionOptions(new Optional<ReadConcern>(ReadConcern.Majority), new Optional<ReadPreference>(ReadPreference.Primary), writeConcern: new Optional<WriteConcern>(WriteConcern.WMajority), maxCommitTime: new Optional<TimeSpan?>(TimeSpan.FromSeconds(300))) });
                 foreach (var migration in sortedMigrations)
                 {
+                    // 默认的Session超时太短, 给Migration更多的超时时间
+                    this.session.Dispose();
+                    this.session = await DB.DefaultDb.Client.StartSessionAsync(DbContext.DefaultSessionOptions);
                     var migrationName = migration.Value.GetType().Name;
                     currentMigrationName = migrationName;
                     await this.session.WithTransactionAsync(async (handle, token) =>
                     {
                         sw.Start();
                         await migration.Value.UpgradeAsync(this).ConfigureAwait(false);
-                        await SaveChanges(token);
                         var mig = new Migration
                         {
                             Number = migration.Key,
@@ -718,6 +717,7 @@ namespace MongoDB.Entities
                         };
                         this.Attach(mig);
                         var result = await mig.SaveAsync(cancellation: token).ConfigureAwait(false);
+                        await SaveChanges(token);
                         sw.Stop();
                         sw.Reset();
                         return result;
@@ -730,6 +730,16 @@ namespace MongoDB.Entities
                 throw new Exception($"Migration failed, failed migration: {currentMigrationName}", e);
             }
         }
+
+        public static ClientSessionOptions DefaultSessionOptions = new ClientSessionOptions
+        {
+            CausalConsistency = true,
+            DefaultTransactionOptions = new TransactionOptions(
+                            readPreference: ReadPreference.Primary,
+                            readConcern: ReadConcern.Local,
+                            writeConcern: WriteConcern.Acknowledged,
+                            maxCommitTime: new Optional<TimeSpan?>(TimeSpan.FromSeconds(300))),
+        };
 
         public void InsertOne<T>(T entity,
             InsertOneOptions? options = default, CancellationToken cancellationToken = default) where T : IEntityBase
@@ -770,5 +780,10 @@ namespace MongoDB.Entities
         }
         public virtual event Func<Task>? OnCommitted;
 
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{this.GetHashCode()}:{this.session?.GetHashCode()}";
+        }
     }
 }

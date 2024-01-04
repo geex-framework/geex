@@ -24,7 +24,7 @@ namespace MongoDB.Entities.Tests
             var author2 = new Author { Name = "uwtrcd2", Surname = guid }; await author2.SaveAsync();
             var author3 = new Author { Name = "uwtrcd3", Surname = guid }; await author3.SaveAsync();
 
-            using (var TN = new DbContext(transactional:true))
+            using (var TN = new DbContext())
             {
                 await TN.Update<Author>()
                   .Match(a => a.Surname == guid)
@@ -33,7 +33,7 @@ namespace MongoDB.Entities.Tests
                   .ExecuteAsync();
 
                 await TN.AbortAsync();
-                //TN.CommitAsync();
+                //TN.SaveChanges();
             }
 
             var res = await DB.Find<Author>().OneAsync(author1.Id);
@@ -57,7 +57,7 @@ namespace MongoDB.Entities.Tests
                   .Modify(a => a.Surname, author1.Name)
                   .ExecuteAsync();
 
-                await TN.CommitAsync();
+                await TN.SaveChanges();
             }
 
             var res = await DB.Find<Author>().OneAsync(author1.Id);
@@ -87,7 +87,7 @@ namespace MongoDB.Entities.Tests
                 fnt = TN.Fluent<Book>().Match(b => b.Id == book2.Id).SingleOrDefault();
                 fnt = TN.Fluent<Book>().Match(f => f.Eq(b => b.Id, book2.Id)).SingleOrDefault();
 
-                await TN.CommitAsync();
+                await TN.SaveChanges();
             }
 
             Assert.IsNotNull(res);
@@ -101,10 +101,10 @@ namespace MongoDB.Entities.Tests
             var book1 = new Book { Title = "caftrcd1" };
             await book1.SaveAsync();
 
-            using (var TN = new DbContext(transactional: true))
+            using (var TN = new DbContext())
             {
                 await TN.DeleteAsync<Book>(book1.Id);
-                await TN.CommitAsync();
+                await TN.SaveChanges();
             }
 
             Assert.AreEqual(null, await DB.Find<Book>().OneAsync(book1.Id));
@@ -147,7 +147,7 @@ namespace MongoDB.Entities.Tests
             {
                 TN.Attach(entities);
                 await entities.SaveAsync();
-                await TN.CommitAsync();
+                await TN.SaveChanges();
             }
 
             var res = await DB.Find<Book>().ManyAsync(b => b.Title.Contains(guid));
@@ -180,12 +180,12 @@ namespace MongoDB.Entities.Tests
             {
                 TN.Attach(entities);
                 await entities.SaveAsync();
-                await TN.CommitAsync();
+                await TN.SaveChanges();
             }
 
             var res = await DB.Find<Book>().ManyAsync(b => b.Title.Contains(guid));
             Assert.AreEqual(3, res.Count);
-            using (var db = new DbContext(transactional:true))
+            using (var db = new DbContext())
             {
                 res = await db.Find<Book>().ManyAsync(b => b.Title.Contains(guid));
                 Assert.AreEqual(entities.Count, res.Count);
@@ -209,13 +209,13 @@ namespace MongoDB.Entities.Tests
                     ent.Title = "updated " + guid1;
                 }
                 await res.SaveAsync();
-                await db.CommitAsync();
+                await db.SaveChanges();
             }
             res = await DB.Find<Book>().ManyAsync(b => b.Title.Contains(guid1));
             Assert.AreEqual(3, res.Count);
             Assert.AreEqual("updated " + guid1, res[0].Title);
 
-            //await db.CommitAsync();
+            //await db.SaveChanges();
             //res = await DB.Find<Book>().ManyAsync(b => b.Title.Contains(guid1));
             //Assert.AreEqual(3, res.Count);
             //Assert.AreEqual("updated " + guid1, res[0].Title);
@@ -243,7 +243,7 @@ namespace MongoDB.Entities.Tests
                      await Task.Delay(1000);
                      triggered = true;
                  };
-                await TN.CommitAsync();
+                await TN.SaveChanges();
             }
 
             Assert.IsTrue(triggered);
