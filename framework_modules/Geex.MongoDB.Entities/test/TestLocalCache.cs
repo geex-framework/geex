@@ -95,7 +95,7 @@ namespace MongoDB.Entities.Tests
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
             dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
             var saveResult = await dbContext.SaveChanges();
-            saveResult.ShouldBe(0);
+            saveResult.Count.ShouldBe(0);
             dbContext.Dispose();
         }
 

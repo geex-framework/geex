@@ -561,13 +561,13 @@ namespace MongoDB.Entities
         private static MethodInfo saveMethod = typeof(Extensions).GetMethods().First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
 
-        public virtual async Task<int> SaveChanges(CancellationToken cancellation = default)
+        public virtual async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
         {
             if (!Session.IsInTransaction)
             {
                 Session.StartTransaction();
             }
-            var savedCount = 0;
+            var savedIds = new List<string>();
             foreach (var (type, keyedEntities) in this.Local.TypedCacheDictionary)
             {
                 if (!keyedEntities.Any())
@@ -588,7 +588,7 @@ namespace MongoDB.Entities
                 // 如果本地有值变更
                 if (toSavedEntities.Any())
                 {
-                    savedCount += toSavedEntities.Count;
+                    savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
                     var list = (castMethod.MakeGenericMethod(type).Invoke(null, new object[] { toSavedEntities }));
                     var saveTask = saveMethod.MakeGenericMethod(type)
                         .Invoke(null, new object[] { list, this.Session, cancellation });
@@ -602,7 +602,11 @@ namespace MongoDB.Entities
             this.Local.TypedCacheDictionary.Clear();
             this.OriginLocal.TypedCacheDictionary.Clear();
             await Session.CommitTransactionAsync(cancellation);
-            return savedCount;
+             if (this.PostSaveChanges != default)
+            {
+                await this.PostSaveChanges();
+            }
+            return savedIds;
         }
         /// <summary>
         /// 检查value是否发生变更
@@ -614,12 +618,6 @@ namespace MongoDB.Entities
         {
             return !_compareLogic.Compare(newValue, originValue).AreEqual;
         }
-
-        /// <summary>
-        /// Aborts and rolls back a transaction
-        /// </summary>
-        /// <param name="cancellation">An optional cancellation token</param>
-        public Task AbortAsync(CancellationToken cancellation = default) => Session.AbortTransactionAsync(cancellation);
 
         #region IDisposable Support
 
@@ -762,23 +760,7 @@ namespace MongoDB.Entities
             return this.Collection<T>().InsertManyAsync(this.Session, entities, options, cancellationToken);
         }
 
-        /// <summary>
-        /// Commits a transaction to MongoDB
-        /// </summary>
-        /// <param name="cancellation">An optional cancellation token</param>
-        public virtual async Task CommitAsync(CancellationToken cancellation = default)
-        {
-            await SaveChanges(cancellation);
-            if (Session.IsInTransaction)
-            {
-                await Session.CommitTransactionAsync(cancellation);
-            }
-            if (this.OnCommitted != default)
-            {
-                await this.OnCommitted();
-            }
-        }
-        public virtual event Func<Task>? OnCommitted;
+        public virtual event Func<Task>? PostSaveChanges;
 
         /// <inheritdoc />
         public override string ToString()

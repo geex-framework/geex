@@ -18,12 +18,12 @@ public interface IRepository
 }
 public interface IUnitOfWork : IRepository, IDisposable
 {
-    public event Func<Task>? OnCommitted;
+    public event Func<Task>? PostSaveChanges;
     T Attach<T>(T entity) where T : IEntityBase;
     IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase;
 
     /// <inheritdoc />
-    Task<int> SaveChanges(CancellationToken cancellation = default);
+    Task<List<string>> SaveChanges(CancellationToken cancellation = default);
 
     public Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default)
             where T : IEntityBase;

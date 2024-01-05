@@ -26,13 +26,14 @@ namespace MongoDB.Entities.Tests
 
             using (var TN = new DbContext())
             {
+                TN.session.StartTransaction();
                 await TN.Update<Author>()
                   .Match(a => a.Surname == guid)
                   .Modify(a => a.Name, guid)
                   .Modify(a => a.Surname, author1.Name)
                   .ExecuteAsync();
 
-                await TN.AbortAsync();
+                await TN.session.AbortTransactionAsync();
                 //TN.SaveChanges();
             }
 
@@ -194,8 +195,7 @@ namespace MongoDB.Entities.Tests
                 {
                     ent.Title = "updated " + guid1;
                 }
-                await res.SaveAsync();
-                await db.AbortAsync();
+                //await res.SaveAsync();
             }
             res = await DB.Find<Book>().ManyAsync(b => b.Title.Contains(guid1));
             Assert.AreEqual(0, res.Count);
@@ -238,7 +238,7 @@ namespace MongoDB.Entities.Tests
             {
                 TN.Attach(entities);
                 await entities.SaveAsync();
-                TN.OnCommitted += async () =>
+                TN.PostSaveChanges += async () =>
                  {
                      await Task.Delay(1000);
                      triggered = true;

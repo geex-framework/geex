@@ -85,7 +85,7 @@ namespace Geex.Common.Abstraction.Storage
         public Queue<INotification> DomainEvents { get; } = new Queue<INotification>();
 
         /// <inheritdoc />
-        public override async Task<int> SaveChanges(CancellationToken cancellation = default)
+        public override async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
         {
             var mediator = ServiceProvider.GetService<IMediator>();
             if (this.DomainEvents.Any())
