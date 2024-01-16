@@ -192,7 +192,8 @@ namespace MongoDB.Entities
 
             if (entity is ISaveIntercepted intercepted)
             {
-                await intercepted.InterceptOnSave();
+                var original = dbContext.OriginLocal[typeof(T)].GetOrDefault(entity.Id);
+                await intercepted.InterceptOnSave(original);
             }
 
             if (entity is IModifiedOn modifiedOn)

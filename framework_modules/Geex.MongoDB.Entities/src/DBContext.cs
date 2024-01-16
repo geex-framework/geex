@@ -579,7 +579,7 @@ namespace MongoDB.Entities
                 {
                     // 如果值没有改变, 则不保存
                     var newValue = this.Local[type][key];
-                    if (this.OriginLocal[type].TryGetValue(key, out var originValue) && !this.IsValueChanged(newValue, originValue))
+                    if (this.OriginLocal[type].TryGetValue(key, out var originValue) && !this.EntityChangeSet(newValue, originValue).AreEqual)
                     {
                         continue;
                     }
@@ -614,9 +614,9 @@ namespace MongoDB.Entities
         /// <param name="newValue"></param>
         /// <param name="originValue"></param>
         /// <returns></returns>
-        protected virtual bool IsValueChanged(IEntityBase newValue, IEntityBase originValue)
+        protected virtual ComparisonResult EntityChangeSet(IEntityBase newValue, IEntityBase originValue)
         {
-            return !_compareLogic.Compare(newValue, originValue).AreEqual;
+            return _compareLogic.Compare(newValue, originValue);
         }
 
         #region IDisposable Support

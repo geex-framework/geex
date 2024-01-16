@@ -11,13 +11,13 @@ namespace MongoDB.Entities
         public int Value { get; set; }
 
         /// <inheritdoc />
-        public async Task InterceptOnSave()
+        public void InterceptOnAttached()
         {
             this.Value += 1;
         }
 
         /// <inheritdoc />
-        public void InterceptOnAttached()
+        public async Task InterceptOnSave(IEntityBase originalValue)
         {
             this.Value += 1;
         }

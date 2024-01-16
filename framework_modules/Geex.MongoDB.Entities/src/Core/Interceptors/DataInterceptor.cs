@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using KellermanSoftware.CompareNetObjects;
 
 namespace MongoDB.Entities.Interceptors
 {
@@ -7,8 +8,8 @@ namespace MongoDB.Entities.Interceptors
         public void InterceptOnAttached();
     }
 
-    public interface ISaveIntercepted : IEntityBase
+    public interface ISaveIntercepted: IEntityBase
     {
-        public Task InterceptOnSave();
+        Task InterceptOnSave(IEntityBase originalValue);
     }
 }
