@@ -579,7 +579,7 @@ namespace MongoDB.Entities
                 {
                     // 如果值没有改变, 则不保存
                     var newValue = this.Local[type][key];
-                    if (this.OriginLocal[type].TryGetValue(key, out var originValue) && !this.EntityChangeSet(newValue, originValue).AreEqual)
+                    if (this.OriginLocal[type].TryGetValue(key, out var originValue) && this.EntityChangeSet(newValue, originValue).AreEqual)
                     {
                         continue;
                     }

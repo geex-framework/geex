@@ -4,7 +4,27 @@ http:
   #     insecureSkipVerify: true
   middlewares:
     compress:
-      compress: {}
+      compress: 
+        excludedContentTypes:
+          - "audio/aac"
+          - "audio/mp3"
+          - "audio/mpeg"
+          - "audio/ogg"
+          - "audio/wav"
+          - "audio/webm"
+          - "video/mp4"
+          - "video/mpeg"
+          - "video/ogg"
+          - "video/webm"
+          - "image/bmp"
+          - "image/gif"
+          - "image/jpeg"
+          - "image/png"
+          - "image/webp"
+          - "application/zip"
+          - "application/gzip"
+          - "application/x-rar-compressed"
+          - "application/octet-stream"
   routers:
     api:
       rule: "Host(`api.dev.geex.tech`)"
