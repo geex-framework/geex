@@ -149,10 +149,11 @@ namespace MongoDB.Entities
                 return default(T);
             }
             var isNew = entity.Id == default;
+            var now = DateTimeOffset.Now;
             if (isNew)
             {
                 entity.Id = entity.GenerateNewId().ToString();
-                entity.CreatedOn = DateTimeOffset.Now;
+                entity.CreatedOn = now;
             }
             entity.DbContext = this;
             return entity;
@@ -169,11 +170,15 @@ namespace MongoDB.Entities
                 return default(T);
             }
             var isNew = entity.Id == default;
+            var now = DateTimeOffset.Now;
             if (isNew)
             {
                 entity.Id = entity.GenerateNewId().ToString();
-                entity.CreatedOn = DateTimeOffset.Now;
+                entity.CreatedOn = now;
             }
+
+            if (entity is IModifiedOn modifiedOn)
+                modifiedOn.ModifiedOn = now;
             var rootType = entity.GetType().GetRootBsonClassMap().ClassType;
             if (this.Local[rootType].TryGetValue(entity.Id, out var existed))
             {
@@ -602,7 +607,7 @@ namespace MongoDB.Entities
             this.Local.TypedCacheDictionary.Clear();
             this.OriginLocal.TypedCacheDictionary.Clear();
             await Session.CommitTransactionAsync(cancellation);
-             if (this.PostSaveChanges != default)
+            if (this.PostSaveChanges != default)
             {
                 await this.PostSaveChanges();
             }

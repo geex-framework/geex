@@ -177,6 +177,7 @@ namespace MongoDB.Entities
 
         private static async Task PrepareForSave<T>(T entity, DbContext dbContext) where T : IEntityBase
         {
+            var now = DateTimeOffset.Now;
             if (dbContext != default && entity.DbContext == default)
             {
                 entity = dbContext.Attach(entity);
@@ -186,7 +187,7 @@ namespace MongoDB.Entities
                 if (entity.Id == default)
                 {
                     entity.Id = entity.GenerateNewId().ToString();
-                    entity.CreatedOn = DateTimeOffset.Now;
+                    entity.CreatedOn = now;
                 }
             }
 
@@ -197,7 +198,7 @@ namespace MongoDB.Entities
             }
 
             if (entity is IModifiedOn modifiedOn)
-                modifiedOn.ModifiedOn = DateTimeOffset.Now;
+                modifiedOn.ModifiedOn = now;
         }
 
         private static IEnumerable<string> RootPropNames<T>(Expression<Func<T, object>> members) where T : IEntityBase

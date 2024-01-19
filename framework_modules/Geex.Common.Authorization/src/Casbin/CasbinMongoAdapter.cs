@@ -205,7 +205,7 @@ namespace Geex.Common.Authorization.Casbin
         {
             var casbinRule = new CasbinRule()
             {
-                CreatedOn = DateTimeOffset.Now
+                CreatedOn = DateTimeOffset.Now,
             };
             casbinRule.PType = pType;
             if (rule.Count() > 0)
