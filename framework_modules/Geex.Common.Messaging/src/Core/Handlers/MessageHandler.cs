@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Entities;
+using Geex.Common.Abstraction.Enumerations;
 using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstractions;
 using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;

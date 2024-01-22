@@ -1,4 +1,5 @@
-﻿using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
+﻿using Geex.Common.Abstraction.Enumerations;
+using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
 
 namespace Geex.Common.Messaging.Core.Aggregates.FrontendCalls
 {

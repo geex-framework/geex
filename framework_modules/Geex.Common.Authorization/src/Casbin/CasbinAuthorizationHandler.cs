@@ -14,13 +14,20 @@ using NetCasbin;
 
 namespace Geex.Common.Authorization.Casbin
 {
-    public class CasbinAuthorizationHandler : AuthorizationHandler<CasbinRequirement, AuthorizationContext>
+    public class CasbinAuthorizationHandler : AuthorizationHandler<CasbinRequirement, IMiddlewareContext>
     {
         private readonly IRbacEnforcer _enforcer;
 
         public CasbinAuthorizationHandler(IRbacEnforcer enforcer)
         {
             _enforcer = enforcer;
+        }
+
+        /// <inheritdoc />
+        public override Task HandleAsync(AuthorizationHandlerContext context)
+        {
+            var result = base.HandleAsync(context);
+            return result;
         }
 
         /// <summary>
@@ -30,7 +37,7 @@ namespace Geex.Common.Authorization.Casbin
         /// <param name="requirement">The requirement to evaluate.</param>
         /// <param name="resource">The resource to evaluate.</param>
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CasbinRequirement requirement,
-            AuthorizationContext resource)
+            IMiddlewareContext resource)
         {
             var mod = requirement.Mod ?? "*"; // the module.
             var act = requirement.Act ?? "*"; // the operation that the user performs on the resource.

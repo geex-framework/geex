@@ -18,6 +18,8 @@ using MongoDB.Entities;
 
 using NetCasbin;
 using NetCasbin.Abstractions;
+using HotChocolate;
+using MongoDB.Driver;
 
 namespace Geex.Common.Authorization.Casbin
 {
@@ -31,10 +33,16 @@ namespace Geex.Common.Authorization.Casbin
             services.AddSingleton(x => new CasbinMongoAdapter(() => DB.Collection<CasbinRule>()));
             services.AddSingleton<RbacEnforcer>();
             services.AddSingleton<IRbacEnforcer, RbacEnforcer>();
-            services.AddScoped<IAuthorizationPolicyProvider, CasbinAuthorizationPolicyProvider>();
+            services.AddSingleton<IAuthorizationPolicyProvider, CasbinAuthorizationPolicyProvider>();
 
             //// As always, handlers must be provided for the requirements of the authorization policies
-            services.AddScoped<IAuthorizationHandler, CasbinAuthorizationHandler>();
+            services.AddSingleton<IAuthorizationHandler, CasbinAuthorizationHandler>();
+            services.AddAuthorization(x =>
+            {
+                x.DefaultPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+            });
         }
     }
 }

@@ -25,6 +25,7 @@ namespace Geex.Common.Authorization
         {
             var services = context.Services;
             services.AddCasbinAuthorization();
+            SchemaBuilder.AddAuthorization();
             base.ConfigureServices(context);
         }
 

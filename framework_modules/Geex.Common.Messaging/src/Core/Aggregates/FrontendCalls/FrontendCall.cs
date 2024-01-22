@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.Enumerations;
 using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
 
 using HotChocolate.Types;

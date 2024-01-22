@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Castle.Core.Internal;
 
 using Geex.Common.Abstraction.Entities;
+using Geex.Common.Abstraction.Enumerations;
 using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
@@ -15,26 +17,35 @@ using Geex.Common.Identity.Api.GqlSchemas.Orgs.Inputs;
 using Geex.Common.Identity.Api.GqlSchemas.Roles.Inputs;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using Geex.Common.Identity.Core.Aggregates.Users;
+using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
+using Geex.Common.Messaging.Api.GqlSchemas.Messages;
+using Geex.Common.Messaging.Core.Aggregates.FrontendCalls;
+
+using HotChocolate.Subscriptions;
 
 using MediatR;
 
 using MongoDB.Entities;
 
-using DbContext = MongoDB.Entities.DbContext;
 
 namespace Geex.Common.Identity.Core.Handlers
 {
     public class OrgHandler :
         IRequestHandler<QueryInput<Org>, IQueryable<Org>>,
         IRequestHandler<CreateOrgInput, Org>,
-        IRequestHandler<FixUserOrgInput, bool>
+        IRequestHandler<FixUserOrgInput, bool>,
+        INotificationHandler<OrgCodeChangedEvent>,
+        INotificationHandler<EntityCreatedNotification<Org>>,
+        INotificationHandler<EntityDeletedNotification<Org>>
     {
+        private readonly ITopicEventSender _topicEventSender;
         private readonly LazyService<ClaimsPrincipal> _principalFactory;
-        public DbContext DbContext { get; }
+        public IUnitOfWork DbContext { get; }
 
-        public OrgHandler(DbContext dbContext, LazyService<ClaimsPrincipal> principalFactory)
+        public OrgHandler(IUnitOfWork dbContext, LazyService<ClaimsPrincipal> principalFactory, ITopicEventSender topicEventSender)
         {
             _principalFactory = principalFactory;
+            _topicEventSender = topicEventSender;
             DbContext = dbContext;
         }
 
@@ -81,7 +92,7 @@ namespace Geex.Common.Identity.Core.Handlers
         {
             try
             {
-                using var _ = DbContext.DisableAllDataFilters();
+                using var _ = (DbContext as DbContext).DisableAllDataFilters();
                 var userList = DbContext.Query<User>().ToList();
                 foreach (var user in userList.Where(x => !x.OrgCodes.Any()))
                 {
@@ -114,6 +125,30 @@ namespace Geex.Common.Identity.Core.Handlers
                 Console.WriteLine(e);
             }
             return true;
+        }
+
+        /// <inheritdoc />
+        public async Task Handle(OrgCodeChangedEvent notification, CancellationToken cancellationToken)
+        {
+            await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
+        }
+
+        /// <inheritdoc />
+        public async Task Handle(EntityCreatedNotification<Org> notification, CancellationToken cancellationToken)
+        {
+            await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
+        }
+
+        /// <inheritdoc />
+        public async Task Handle(EntityDeletedNotification<Org> notification, CancellationToken cancellationToken)
+        {
+            await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
+        }
+
+        private async Task NotifyCacheDataChange(ChangeDetectDataType type)
+        {
+            // bug:这里的type无法正常序列化为枚举, 暂时toString
+            await this._topicEventSender.SendAsync<IFrontendCall>(nameof(MessageSubscription.OnBroadcast), new FrontendCall(FrontendCallType.DataChange, JsonSerializer.SerializeToNode(new { Type = type.ToString() })));
         }
     }
 }

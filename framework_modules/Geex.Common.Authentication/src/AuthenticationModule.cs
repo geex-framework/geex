@@ -241,9 +241,6 @@ namespace Geex.Common.Authentication
                         };
                     }));
             }
-
-            services.AddAuthorization();
-            SchemaBuilder.AddAuthorization();
             base.ConfigureServices(context);
         }
 
