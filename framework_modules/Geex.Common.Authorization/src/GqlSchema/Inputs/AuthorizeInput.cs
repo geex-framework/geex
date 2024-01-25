@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using Geex.Common.Authorization.GqlSchema.Types;
+using MediatR;
+
 using MongoDB.Bson;
 
 namespace Geex.Common.Authorization.GqlSchema.Inputs
 {
-    public record AuthorizeInput
+    public record AuthorizeInput : IRequest<Unit>
     {
         public AuthorizeTargetType AuthorizeTargetType { get; set; }
         public List<AppPermission> AllowedPermissions { get; set; }

@@ -24,12 +24,9 @@ namespace Geex.Common.Authorization
         public async Task<bool> Authorize(
             [Service] IRbacEnforcer enforcer,
             [Service] IMediator mediator,
-            [Service] ICurrentTenant currentTenant,
             AuthorizeInput input)
         {
-            var permissions = input.AllowedPermissions.Select(x=>x.Value);
-            await enforcer.SetPermissionsAsync(input.Target, permissions);
-            await mediator.Publish(new PermissionChangedEvent(input.Target, permissions.ToArray()));
+            await mediator.Send(input);
             return true;
         }
     }

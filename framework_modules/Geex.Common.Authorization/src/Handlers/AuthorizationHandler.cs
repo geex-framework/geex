@@ -8,24 +8,33 @@ using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Events;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Authorization.Casbin;
+using Geex.Common.Authorization.Events;
+using Geex.Common.Authorization.GqlSchema.Inputs;
 
 using MediatR;
+
+using NetCasbin;
+
+using static Geex.Common.Abstraction.GqlConfig;
 
 namespace Geex.Common.Authorization.Handlers
 {
     public class AuthorizationHandler : IRequestHandler<UserRoleChangeRequest>,
-        IRequestHandler<GetSubjectPermissionsRequest, IEnumerable<string>>
+        IRequestHandler<GetSubjectPermissionsRequest, IEnumerable<string>>,
+        IRequestHandler<AuthorizeInput, Unit>
     {
+        private IMediator _mediator;
 
-        public AuthorizationHandler(IRbacEnforcer enforcer)
+        public AuthorizationHandler(IRbacEnforcer enforcer, IMediator mediator)
         {
-            Enforcer = enforcer;
+            _enforcer = enforcer;
+            _mediator = mediator;
         }
 
-        public IRbacEnforcer Enforcer { get; init; }
+        private IRbacEnforcer _enforcer { get; init; }
         public async Task<Unit> Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
-            await Enforcer.SetRoles(notification.UserId, notification.RoleIds);
+            await _enforcer.SetRoles(notification.UserId, notification.RoleIds);
             return Unit.Value;
         }
 
@@ -35,7 +44,15 @@ namespace Geex.Common.Authorization.Handlers
         /// <returns>Response from the request</returns>
         public async Task<IEnumerable<string>> Handle(GetSubjectPermissionsRequest request, CancellationToken cancellationToken)
         {
-            return Enforcer.GetImplicitPermissionsForUser(request.Subject);
+            return _enforcer.GetImplicitPermissionsForUser(request.Subject);
+        }
+
+        public async Task<Unit> Handle(AuthorizeInput request, CancellationToken cancellationToken)
+        {
+            var permissions = request.AllowedPermissions.Select(x => x.Value);
+            await _enforcer.SetPermissionsAsync(request.Target, permissions);
+            await _mediator.Publish(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
+            return Unit.Value;
         }
     }
 }
