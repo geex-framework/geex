@@ -15,7 +15,7 @@ namespace System
         public static List<TPropertyType> GetPropertiesOfType<TPropertyType>(this Type type)
         {
             return type.GetProperties(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                .Where(p => type.IsAssignableFrom(p.PropertyType))
+                .Where(p => p.PropertyType.IsAssignableTo(type))
                 .Select(pi => (TPropertyType)pi.GetValue(null))
                 .ToList();
         }

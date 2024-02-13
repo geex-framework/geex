@@ -107,7 +107,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
         public static object? GetSingletonInstanceOrNull(this IServiceCollection services, Type type) => services.FirstOrDefault<ServiceDescriptor>((Func<ServiceDescriptor, bool>)(d => d.ServiceType == type))?.ImplementationInstance;
 
-        public static IRequestExecutorBuilder ConfigExtensionTypes(this IRequestExecutorBuilder schemaBuilder)
+        public static IRequestExecutorBuilder EnsureGqlTypes(this IRequestExecutorBuilder schemaBuilder)
         {
             var rootTypes = schemaBuilder.Services.Where(x => x.ServiceType == typeof(ObjectTypeExtension)).ToList();
             schemaBuilder.Services.RemoveAll<ObjectTypeExtension>();
@@ -119,7 +119,6 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             var classEnumTypes = GeexModule.ClassEnumTypes;
-
             foreach (var classEnumType in classEnumTypes)
             {
                 if ((classEnumType.GetClassEnumRealType().BaseType.GetProperty(nameof(Enumeration.DynamicValues)).GetValue(null) as IEnumerable<IEnumeration>).Any())
@@ -130,6 +129,19 @@ namespace Microsoft.Extensions.DependencyInjection
                     }));
                     schemaBuilder.BindRuntimeType(classEnumType, typeof(EnumerationType<>).MakeGenericType(classEnumType));
                 }
+                else
+                {
+                    Console.WriteLine("Enumeration got no member: " + classEnumType.FullName);
+                }
+            }
+            foreach (var objectType in GeexModule.ObjectTypes)
+            {
+                schemaBuilder.AddType(objectType);
+            }
+
+            foreach (var directiveType in GeexModule.DirectiveTypes)
+            {
+                schemaBuilder.AddDirectiveType(directiveType);
             }
 
             return schemaBuilder;
@@ -149,9 +161,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 }
                 var exportedTypes = gqlModuleType.Assembly.GetExportedTypes();
 
-                var objectTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
-                schemaBuilder.AddTypes(objectTypes.ToArray());
-
                 var rootTypes = exportedTypes.Where(x => x.IsAssignableTo<ObjectTypeExtension>() && !x.IsAbstract);
                 foreach (var rootType in rootTypes)
                 {
@@ -168,14 +177,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 }
                 GeexModule.RootTypes.AddIfNotContains(rootTypes);
 
+                var objectTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
+                GeexModule.ObjectTypes.AddIfNotContains(objectTypes);
+
                 var classEnumTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsClassEnum() && x.Name != nameof(Enumeration)).ToList();
                 GeexModule.ClassEnumTypes.AddIfNotContains(classEnumTypes);
 
                 var directiveTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<DirectiveType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
-                foreach (var directiveType in directiveTypes)
-                {
-                    schemaBuilder.AddDirectiveType(directiveType);
-                }
+                GeexModule.DirectiveTypes.AddIfNotContains(directiveTypes);
 
                 foreach (var socketInterceptor in exportedTypes.Where(x => x.IsAssignableTo<ISocketSessionInterceptor>()).ToList())
                 {
@@ -186,7 +195,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 {
                     schemaBuilder.ConfigureSchemaServices(s => s.TryAdd(ServiceDescriptor.Scoped(typeof(IHttpRequestInterceptor), requestInterceptor)));
                 }
-                GeexModule.DirectiveTypes.AddIfNotContains(classEnumTypes);
             }
             return schemaBuilder;
         }

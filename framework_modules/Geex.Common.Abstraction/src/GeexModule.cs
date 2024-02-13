@@ -104,6 +104,7 @@ namespace Geex.Common.Abstractions
         public static HashSet<Type> RootTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> ClassEnumTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> DirectiveTypes { get; } = new HashSet<Type>();
+        public static HashSet<Type> ObjectTypes { get; } = new HashSet<Type>();
     }
 
     public abstract class GeexEntryModule<T> : GeexModule<T> where T : GeexModule
@@ -114,7 +115,7 @@ namespace Geex.Common.Abstractions
             context.Services.AddWebSockets(x => { });
 
             base.ConfigureServices(context);
-            this.SchemaBuilder.ConfigExtensionTypes();
+            this.SchemaBuilder.EnsureGqlTypes();
         }
 
         /// <inheritdoc />
