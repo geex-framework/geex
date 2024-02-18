@@ -41,5 +41,13 @@ namespace Geex.Common.Abstraction
         public bool DisableIntrospection { get; set; } = false;
 
         public string CorsRegex { get; set; } = ".+";
+        public RabbitMqConfiguration? RabbitMq { get; set; }
+    }
+
+    public class RabbitMqConfiguration
+    {
+        public string Url { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 }

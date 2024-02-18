@@ -5,12 +5,18 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
 using Autofac.Extensions.DependencyInjection;
+
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Storage;
+
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Voyager;
 using HotChocolate.Execution.Configuration;
+
+using MassTransit;
+using MassTransit.Testing.Implementations;
 
 using MediatR;
 
@@ -90,9 +96,7 @@ namespace Geex.Common.Abstractions
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             this.SchemaBuilder.AddModuleTypes(this.GetType());
-            context.Services.AddMediatR(configuration: configuration =>
-            {
-            }, typeof(TModule));
+            context.Services.AddMediator(x=>x.AddConsumers(typeof(TModule).Assembly));
             base.ConfigureServices(context);
         }
     }
