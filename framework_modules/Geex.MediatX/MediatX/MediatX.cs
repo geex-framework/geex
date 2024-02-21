@@ -33,9 +33,9 @@ namespace MediatX
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task SendRemoteNotification<TRequest>(TRequest request) where TRequest : INotification
         {
-            _logger.LogDebug($"Invoking remote handler for: {typeof(TRequest).TypeQueueName()}");
+            _logger.LogDebug($"Invoking remote handler for: {typeof(TRequest).TypeRouteKey()}");
             await _messageDispatcher.Notify(request);
-            _logger.LogDebug($"Remote request for {typeof(TRequest).TypeQueueName()} completed!");
+            _logger.LogDebug($"Remote request for {typeof(TRequest).TypeRouteKey()} completed!");
         }
     }
 }

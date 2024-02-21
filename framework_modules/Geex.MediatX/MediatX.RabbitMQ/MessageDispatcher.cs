@@ -97,7 +97,7 @@ namespace MediatX.RabbitMQ
         /// <returns>A task representing the asynchronous notification operation.</returns>
         public async Task Notify<TRequest>(TRequest request, CancellationToken cancellationToken = default) where TRequest : INotification
         {
-            var typeQueueName = request.GetType().TypeQueueName();
+            var typeQueueName = request.GetType().TypeRouteKey();
             using var stream = new MemoryStream();
             await JsonSerializer.SerializeAsync(stream, request, options.SerializerSettings, cancellationToken: cancellationToken);
             var message = stream.ToArray();

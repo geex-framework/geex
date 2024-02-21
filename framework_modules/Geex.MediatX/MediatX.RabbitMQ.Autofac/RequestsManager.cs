@@ -47,7 +47,7 @@ namespace MediatX.RabbitMQ
     {
       if (_connection == null)
       {
-        _logger.LogInformation($"ARBITRER: Creating RabbitMQ Connection to '{_options.HostName}'...");
+        _logger.LogInformation($"MediatX: Creating RabbitMQ Connection to '{_options.HostName}'...");
         var factory = new ConnectionFactory
         {
           HostName = _options.HostName,
@@ -62,7 +62,7 @@ namespace MediatX.RabbitMQ
         _channel = _connection.CreateModel();
         _channel.ExchangeDeclare(Constants.MediatXExchangeName, ExchangeType.Topic);
 
-        _logger.LogInformation("ARBITRER: ready !");
+        _logger.LogInformation("MediatX: ready !");
       }
 
 

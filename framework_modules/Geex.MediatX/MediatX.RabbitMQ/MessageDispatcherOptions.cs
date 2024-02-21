@@ -93,7 +93,7 @@ namespace MediatX.RabbitMQ
         /// </summary>
         public JsonSerializerOptions SerializerSettings { get; set; }
 
-        public HashSet<Type> NotificationTypes { get; set; } = new HashSet<Type>();
+        public Dictionary<Type, Type[]> NotificationHandlerTypes { get; set; } = new Dictionary<Type, Type[]>();
 
         /// Represents the options for message dispatcher.
         /// /

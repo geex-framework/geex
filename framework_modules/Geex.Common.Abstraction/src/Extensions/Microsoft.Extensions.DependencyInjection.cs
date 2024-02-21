@@ -31,6 +31,7 @@ using HotChocolate.Types.Pagination;
 using HotChocolate.Utilities;
 
 using ImpromptuInterface;
+
 using MediatR;
 
 using Microsoft.AspNetCore.Builder;
@@ -179,11 +180,17 @@ namespace Microsoft.Extensions.DependencyInjection
                 var objectTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
                 GeexModule.ObjectTypes.AddIfNotContains(objectTypes);
 
-                var notificationHandlers = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<INotification>()).ToList();
-                GeexModule.NotificationTypes.AddIfNotContains(notificationHandlers);
+                var notificationHandleTypes = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(INotificationHandler<>)));
+                //var inheritanceDeclarations = notificationHandleTypes.SelectMany(x => x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(INotificationHandler<>))));
+                //var notificationTypes = inheritanceDeclarations.Select(x => x.GenericTypeArguments[0]).ToArray().ToList();
+                var notificationHandlers = notificationHandleTypes
+                    .Select(x => (notifications: x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(INotificationHandler<>))).Select(x => x.GenericTypeArguments[0]).ToArray(), handlerType: x))
+                    .ToList();
+                var dic = notificationHandlers.ToDictionary(x => x.handlerType, x => x.notifications);
+                GeexModule.NotificationHandlerTypes.AddIfNotContains(dic);
 
-                var requestHandlers = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IRequest>()).ToList();
-                GeexModule.RequestTypes.AddIfNotContains(requestHandlers);
+                var requestHandlers = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRequestHandler<>))).ToList();
+                GeexModule.RequestHandlerTypes.AddIfNotContains(requestHandlers);
 
                 var classEnumTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsClassEnum() && x.Name != nameof(Enumeration)).ToList();
                 GeexModule.ClassEnumTypes.AddIfNotContains(classEnumTypes);

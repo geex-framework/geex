@@ -17,8 +17,11 @@ using HotChocolate.AspNetCore.Voyager;
 using HotChocolate.Execution.Configuration;
 
 using Humanizer.Configuration;
+
 using MediatR.NotificationPublishers;
+
 using MediatX;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -112,8 +115,8 @@ namespace Geex.Common.Abstractions
         public static HashSet<Type> ClassEnumTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> DirectiveTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> ObjectTypes { get; } = new HashSet<Type>();
-        public static HashSet<Type> NotificationTypes { get; } = new HashSet<Type>();
-        public static HashSet<Type> RequestTypes { get; } = new HashSet<Type>();
+        public static Dictionary<Type, Type[]> NotificationHandlerTypes { get; } = new Dictionary<Type, Type[]>();
+        public static HashSet<Type> RequestHandlerTypes { get; } = new HashSet<Type>();
     }
 
     public abstract class GeexEntryModule<T> : GeexModule<T> where T : GeexModule
@@ -129,17 +132,17 @@ namespace Geex.Common.Abstractions
                 context.Services.AddMediatX();
                 context.Services.AddMediatXRabbitMQ(x =>
                 {
-                   x.HostName = options.HostName;
-                   x.Port = options.Port;
-                   x.Password = options.Password;
-                   x.Username = options.Username;
-                   x.VirtualHost = options.VirtualHost;
-                   x.Durable = true;
-                   x.AutoDelete = false;
-                   x.QueueName = coreModuleOptions.AppName;
-                   x.DeDuplicationEnabled = true;
-                   x.SerializerSettings = System.Text.Json.Json.InternalSerializeSettings;
-                   x.NotificationTypes = NotificationTypes;
+                    x.HostName = options.HostName;
+                    x.Port = options.Port;
+                    x.Password = options.Password;
+                    x.Username = options.Username;
+                    x.VirtualHost = options.VirtualHost;
+                    x.Durable = true;
+                    x.AutoDelete = false;
+                    x.QueueName = coreModuleOptions.AppName;
+                    x.DeDuplicationEnabled = true;
+                    x.SerializerSettings = System.Text.Json.Json.InternalSerializeSettings;
+                    x.NotificationHandlerTypes = NotificationHandlerTypes;
                 });
             }
 
