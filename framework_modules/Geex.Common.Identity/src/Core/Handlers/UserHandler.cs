@@ -37,10 +37,10 @@ using Role = Geex.Common.Identity.Api.Aggregates.Roles.Role;
 namespace Geex.Common.Identity.Core.Handlers
 {
     public class UserHandler :
-        IRequestHandler<AssignRoleRequest, Unit>,
-        IRequestHandler<AssignOrgRequest, Unit>,
+        IRequestHandler<AssignRoleRequest>,
+        IRequestHandler<AssignOrgRequest>,
         IRequestHandler<CreateUserRequest, IUser>,
-        IRequestHandler<EditUserRequest, Unit>,
+        IRequestHandler<EditUserRequest>,
         IRequestHandler<ResetUserPasswordRequest>,
         INotificationHandler<UserOrgChangedEvent>,
         INotificationHandler<OrgCodeChangedEvent>,
@@ -64,7 +64,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Unit> Handle(AssignRoleRequest request, CancellationToken cancellationToken)
+        public async Task Handle(AssignRoleRequest request, CancellationToken cancellationToken)
         {
             var users = await Task.FromResult(DbContext.Query<User>().Where(x => request.UserIds.Contains(x.Id)).ToList());
             var roles = await Task.FromResult(DbContext.Query<Role>().Where(x => request.Roles.Contains(x.Id)).ToList());
@@ -72,14 +72,14 @@ namespace Geex.Common.Identity.Core.Handlers
             {
                 await user.AssignRoles(roles);
             }
-            return Unit.Value;
+            return;
         }
 
         /// <summary>Handles a request</summary>
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Unit> Handle(EditUserRequest request, CancellationToken cancellationToken)
+        public async Task Handle(EditUserRequest request, CancellationToken cancellationToken)
         {
             var user = await DbContext.Query<User>().OneAsync(request.Id.ToString(), cancellationToken);
             if (request.Claims.HasValue)
@@ -119,7 +119,7 @@ namespace Geex.Common.Identity.Core.Handlers
 
             await user.AssignRoles(request.RoleIds);
             await user.AssignOrgs(request.OrgCodes);
-            return Unit.Value;
+            return;
         }
 
         /// <summary>Handles a request</summary>
@@ -152,7 +152,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Unit> Handle(AssignOrgRequest request, CancellationToken cancellationToken)
+        public async Task Handle(AssignOrgRequest request, CancellationToken cancellationToken)
         {
             foreach (var item in request.UserOrgsMap)
             {
@@ -162,19 +162,19 @@ namespace Geex.Common.Identity.Core.Handlers
             }
 
 
-            return Unit.Value;
+            return;
         }
 
         /// <summary>Handles a request</summary>
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Unit> Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
+        public async Task Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
             var user = DbContext.Query<User>().FirstOrDefault(x => request.UserId == x.Id);
             Check.NotNull(user, nameof(user), "用户不存在.");
             user.SetPassword(request.Password);
-            return Unit.Value;
+            return;
         }
         /// <summary>
         /// 用户组织架构更新后, 需要更新用户claim

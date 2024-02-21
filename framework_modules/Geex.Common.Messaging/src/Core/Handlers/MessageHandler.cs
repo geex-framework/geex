@@ -32,11 +32,11 @@ namespace Geex.Common.Messaging.Core.Handlers
 {
     public class MessageHandler :
         ICommonHandler<IMessage, Message>,
-        IRequestHandler<DeleteMessageDistributionsInput, Unit>,
-        IRequestHandler<MarkMessagesReadInput, Unit>,
-        IRequestHandler<SendNotificationMessageRequest, Unit>,
+        IRequestHandler<DeleteMessageDistributionsInput>,
+        IRequestHandler<MarkMessagesReadInput>,
+        IRequestHandler<SendNotificationMessageRequest>,
         IRequestHandler<CreateMessageRequest, IMessage>,
-        IRequestHandler<EditMessageRequest, Unit>,
+        IRequestHandler<EditMessageRequest>,
     IRequestHandler<GetUnreadMessagesInput, IEnumerable<IMessage>>
     {
         public DbContext DbContext { get; }
@@ -50,16 +50,16 @@ namespace Geex.Common.Messaging.Core.Handlers
             Sender = sender;
         }
 
-        public async Task<Unit> Handle(DeleteMessageDistributionsInput request, CancellationToken cancellationToken)
+        public async Task Handle(DeleteMessageDistributionsInput request, CancellationToken cancellationToken)
         {
             var res = await DbContext.DeleteAsync<MessageDistribution>(x => request.UserIds.Contains(x.ToUserId) && request.MessageId == x.MessageId, cancellationToken);
-            return Unit.Value;
+            return;
         }
 
-        public async Task<Unit> Handle(MarkMessagesReadInput request, CancellationToken cancellationToken)
+        public async Task Handle(MarkMessagesReadInput request, CancellationToken cancellationToken)
         {
             await DbContext.Update<MessageDistribution>().Match(x => request.MessageIds.Contains(x.MessageId) && request.UserId == x.ToUserId).Modify(x => x.IsRead, true).ExecuteAsync(cancellationToken);
-            return Unit.Value;
+            return;
         }
 
         public async Task<IEnumerable<IMessage>> Handle(GetUnreadMessagesInput request, CancellationToken cancellationToken)
@@ -71,7 +71,7 @@ namespace Geex.Common.Messaging.Core.Handlers
             return messages;
         }
 
-        public async Task<Unit> Handle(SendNotificationMessageRequest request, CancellationToken cancellationToken)
+        public async Task Handle(SendNotificationMessageRequest request, CancellationToken cancellationToken)
         {
             var message = DbContext.Query<Message>().First(x => x.Id == request.MessageId);
             await message.DistributeAsync(request.ToUserIds.ToArray());
@@ -81,7 +81,7 @@ namespace Geex.Common.Messaging.Core.Handlers
                 await Sender.Value.SendAsync<IFrontendCall>($"{nameof(MessageSubscription.OnFrontendCall)}:{toUserId}", new FrontendCall(FrontendCallType.NewMessage, JsonSerializer.SerializeToNode(new { message.Content, message.FromUserId, message.MessageType, message.Severity })), cancellationToken);
             }
 
-            return Unit.Value;
+            return;
         }
 
         public async Task<IMessage> Handle(CreateMessageRequest request, CancellationToken cancellationToken)
@@ -92,7 +92,7 @@ namespace Geex.Common.Messaging.Core.Handlers
             return message;
         }
 
-        public async Task<Unit> Handle(EditMessageRequest request, CancellationToken cancellationToken)
+        public async Task Handle(EditMessageRequest request, CancellationToken cancellationToken)
         {
             var message = await DbContext.Query<Message>().OneAsync(request.Id);
             if (!request.Text.IsNullOrEmpty())
@@ -108,7 +108,7 @@ namespace Geex.Common.Messaging.Core.Handlers
                 message.MessageType = request.MessageType.Value;
             }
             await message.SaveAsync(cancellation: cancellationToken);
-            return Unit.Value;
+            return;
         }
     }
 }

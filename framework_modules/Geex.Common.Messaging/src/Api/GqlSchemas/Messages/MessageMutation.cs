@@ -27,7 +27,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         public async Task<bool> MarkMessagesRead(
             MarkMessagesReadInput input)
         {
-            var result = await this._mediator.Send(input);
+            await this._mediator.Send(input);
             return true;
         }
         /// <summary>
@@ -38,7 +38,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         public async Task<bool> DeleteMessageDistributions(
             DeleteMessageDistributionsInput input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
         /// <summary>
@@ -49,7 +49,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         public async Task<bool> SendMessage(
             SendNotificationMessageRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
 
@@ -73,7 +73,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         public async Task<bool> EditMessage(
             EditMessageRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
 

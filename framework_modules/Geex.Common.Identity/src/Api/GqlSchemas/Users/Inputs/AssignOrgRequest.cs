@@ -6,7 +6,7 @@ using MongoDB.Bson;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Users.Inputs
 {
-    public record AssignOrgRequest : IRequest<Unit>
+    public record AssignOrgRequest : IRequest
     {
         public List<UserOrgMapItem> UserOrgsMap { get; set; }
     }

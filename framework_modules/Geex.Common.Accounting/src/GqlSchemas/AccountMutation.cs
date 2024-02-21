@@ -35,7 +35,7 @@ namespace Geex.Common.Accounting.GqlSchemas
 
         public async Task<bool> Register(RegisterUserRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
     }

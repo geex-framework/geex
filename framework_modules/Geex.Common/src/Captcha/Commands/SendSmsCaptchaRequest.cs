@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Geex.Common.Captcha.Commands
 {
-    public record SendSmsCaptchaRequest : IRequest<Unit>
+    public record SendSmsCaptchaRequest : IRequest
     {
         public string PhoneNumber { get; }
         public SmsCaptcha Captcha { get; }

@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
+using Autofac.Core;
 using Autofac.Extensions.DependencyInjection;
 
 using Geex.Common.Abstraction;
@@ -15,11 +16,9 @@ using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Voyager;
 using HotChocolate.Execution.Configuration;
 
-using MassTransit;
-using MassTransit.Testing.Implementations;
-
-using MediatR;
-
+using Humanizer.Configuration;
+using MediatR.NotificationPublishers;
+using MediatX;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -95,8 +94,12 @@ namespace Geex.Common.Abstractions
 
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
+            context.Services.AddMediatR(x =>
+            {
+                x.RegisterServicesFromAssembly(typeof(TModule).Assembly);
+                x.AutoRegisterRequestProcessors = true;
+            });
             this.SchemaBuilder.AddModuleTypes(this.GetType());
-            context.Services.AddMediator(x=>x.AddConsumers(typeof(TModule).Assembly));
             base.ConfigureServices(context);
         }
     }
@@ -109,6 +112,8 @@ namespace Geex.Common.Abstractions
         public static HashSet<Type> ClassEnumTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> DirectiveTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> ObjectTypes { get; } = new HashSet<Type>();
+        public static HashSet<Type> NotificationTypes { get; } = new HashSet<Type>();
+        public static HashSet<Type> RequestTypes { get; } = new HashSet<Type>();
     }
 
     public abstract class GeexEntryModule<T> : GeexModule<T> where T : GeexModule
@@ -116,6 +121,28 @@ namespace Geex.Common.Abstractions
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             var env = context.Services.GetSingletonInstance<IWebHostEnvironment>();
+            var coreModuleOptions = context.Services.GetSingletonInstanceOrNull<GeexCoreModuleOptions>();
+
+            if (coreModuleOptions.RabbitMq != null)
+            {
+                var options = coreModuleOptions.RabbitMq;
+                context.Services.AddMediatX();
+                context.Services.AddMediatXRabbitMQ(x =>
+                {
+                   x.HostName = options.HostName;
+                   x.Port = options.Port;
+                   x.Password = options.Password;
+                   x.Username = options.Username;
+                   x.VirtualHost = options.VirtualHost;
+                   x.Durable = true;
+                   x.AutoDelete = false;
+                   x.QueueName = coreModuleOptions.AppName;
+                   x.DeDuplicationEnabled = true;
+                   x.SerializerSettings = System.Text.Json.Json.InternalSerializeSettings;
+                   x.NotificationTypes = NotificationTypes;
+                });
+            }
+
             context.Services.AddWebSockets(x => { });
 
             base.ConfigureServices(context);

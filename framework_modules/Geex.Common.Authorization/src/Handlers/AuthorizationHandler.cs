@@ -21,7 +21,7 @@ namespace Geex.Common.Authorization.Handlers
 {
     public class AuthorizationHandler : IRequestHandler<UserRoleChangeRequest>,
         IRequestHandler<GetSubjectPermissionsRequest, IEnumerable<string>>,
-        IRequestHandler<AuthorizeInput, Unit>
+        IRequestHandler<AuthorizeInput>
     {
         private IMediator _mediator;
 
@@ -32,10 +32,10 @@ namespace Geex.Common.Authorization.Handlers
         }
 
         private IRbacEnforcer _enforcer { get; init; }
-        public async Task<Unit> Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
+        public async Task Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
             await _enforcer.SetRoles(notification.UserId, notification.RoleIds);
-            return Unit.Value;
+            return;
         }
 
         /// <summary>Handles a request</summary>
@@ -47,12 +47,12 @@ namespace Geex.Common.Authorization.Handlers
             return _enforcer.GetImplicitPermissionsForUser(request.Subject);
         }
 
-        public async Task<Unit> Handle(AuthorizeInput request, CancellationToken cancellationToken)
+        public async Task Handle(AuthorizeInput request, CancellationToken cancellationToken)
         {
             var permissions = request.AllowedPermissions.Select(x => x.Value);
             await _enforcer.SetPermissionsAsync(request.Target, permissions);
             await _mediator.Publish(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
-            return Unit.Value;
+            return;
         }
     }
 }

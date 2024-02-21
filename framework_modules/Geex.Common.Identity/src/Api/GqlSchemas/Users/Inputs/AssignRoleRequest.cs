@@ -4,7 +4,7 @@ using MongoDB.Bson;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Users.Inputs
 {
-    public record AssignRoleRequest : IRequest<Unit>
+    public record AssignRoleRequest : IRequest
     {
         public List<string> UserIds { get; set; }
         public List<string> Roles { get; set; }

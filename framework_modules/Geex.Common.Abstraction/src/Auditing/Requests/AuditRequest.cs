@@ -2,7 +2,7 @@
 
 namespace Geex.Common.Abstraction.Auditing
 {
-    public class AuditRequest<T> : IRequest<Unit>
+    public class AuditRequest<T> : IRequest
     {
         public string? Remark { get; set; }
 

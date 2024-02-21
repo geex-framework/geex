@@ -51,7 +51,7 @@ namespace Geex.Common.Abstraction.Storage
             {
                 if (entity.Id.IsNullOrEmpty())
                 {
-                    this.DomainEvents.Enqueue(new EntityCreatedNotification<T>((T)(object)geexEntity));
+                    this.DomainEvents.Enqueue(new EntityCreatedNotification<T>((T)geexEntity));
                     entity = base.Attach(entity);
                     // todo: 区分innerAttach和外部attach, innerAttach不进行校验逻辑
 #pragma warning disable CS0618

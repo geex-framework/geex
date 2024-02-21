@@ -8,7 +8,7 @@ using MediatR;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Roles.Inputs
 {
-    public class SetRoleDefaultInput : IRequest<Unit>
+    public class SetRoleDefaultInput : IRequest
     {
         public string RoleId { get; set; }
 

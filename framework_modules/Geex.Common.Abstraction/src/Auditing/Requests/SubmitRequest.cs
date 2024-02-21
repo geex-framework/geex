@@ -2,7 +2,7 @@
 
 namespace Geex.Common.Abstraction.Auditing
 {
-    public class SubmitRequest<T> : IRequest<Unit>
+    public class SubmitRequest<T> : IRequest
     {
         public SubmitRequest(string? remark, string[] ids)
         {

@@ -25,7 +25,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
     public class BlobObjectHandler :
         ICommonHandler<IBlobObject, BlobObject>,
         IRequestHandler<CreateBlobObjectRequest, IBlobObject>,
-        IRequestHandler<DeleteBlobObjectRequest, Unit>,
+        IRequestHandler<DeleteBlobObjectRequest>,
         IRequestHandler<DownloadFileRequest, (IBlobObject blob, Stream dataStream)>
     {
         private readonly IMemoryCache _memCache;
@@ -68,7 +68,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             return entity;
         }
 
-        public async Task<Unit> Handle(DeleteBlobObjectRequest request, CancellationToken cancellationToken)
+        public async Task Handle(DeleteBlobObjectRequest request, CancellationToken cancellationToken)
         {
             if (request.StorageType == BlobStorageType.Db)
             {
@@ -83,7 +83,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                     }
                 }
                 await DbContext.DeleteAsync<BlobObject>(blobObjects.Select(x => x.Id), cancellationToken);
-                return Unit.Value;
+                return;
             }
             throw new NotImplementedException();
         }

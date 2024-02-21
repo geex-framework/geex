@@ -75,7 +75,7 @@ namespace Geex.Common.Abstraction.Entities
         /// <summary>
         ///     直系子组织
         /// </summary>
-        IQueryable<IOrg> DirectSubOrgs { get; }
+        IEnumerable<IOrg> DirectSubOrgs { get; }
 
         /// <summary>
         ///     父组织

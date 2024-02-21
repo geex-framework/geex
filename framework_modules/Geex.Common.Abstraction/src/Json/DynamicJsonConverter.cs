@@ -2,12 +2,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using ImpromptuInterface;
+
+using MongoDB.Bson;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
+using MongoDB.Entities;
+
+using JsonTokenType = System.Text.Json.JsonTokenType;
 
 namespace Geex.Common.Json
 {
@@ -170,6 +179,12 @@ namespace Geex.Common.Json
                 //    }
                 //    writer.WriteEndArray();
                 //}
+                else if (value is IEntityBase)
+                {
+                    var bsonDocument = new BsonDocument();
+                    BsonSerializer.LookupSerializer(value.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), value);
+                    writer.WriteRaw(bsonDocument.ToJson(new JsonWriterSettings() { OutputMode = JsonOutputMode.RelaxedExtendedJson }));
+                }
                 else
                 {
                     writer.WriteRaw(JsonSerializer.Serialize(value, value.GetType(), options));

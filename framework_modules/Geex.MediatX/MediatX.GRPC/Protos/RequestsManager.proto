@@ -1,0 +1,23 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+
+package MediatX.GRPC;
+
+service GrpcServices{
+  rpc ManageMediatXMessage(RequestMessage) returns (MessageResponse);
+  rpc ManageMediatXNotification(NotifyMessage) returns (google.protobuf.Empty);
+}
+
+message RequestMessage {
+  string MediatXType = 1;
+  string Body = 2;
+}
+
+message MessageResponse {
+  string Body = 1;
+}
+
+message NotifyMessage{
+  string MediatXType = 1;
+  string Body = 2;
+}

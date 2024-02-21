@@ -6,7 +6,7 @@ using MediatR;
 
 namespace Geex.Common.BlobStorage.Api.Aggregates.BlobObjects.Inputs
 {
-    public class DeleteBlobObjectRequest : IRequest<Unit>
+    public class DeleteBlobObjectRequest : IRequest
     {
         public List<string> Ids { get; set; }
         public BlobStorageType StorageType { get; set; }

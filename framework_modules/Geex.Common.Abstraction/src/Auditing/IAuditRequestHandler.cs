@@ -20,7 +20,7 @@ namespace Geex.Common.Abstraction.Auditing
         where TInterface : IAuditEntity where TEntity : TInterface
     {
 
-        async Task<Unit> IRequestHandler<SubmitRequest<TInterface>, Unit>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task IRequestHandler<SubmitRequest<TInterface>>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
         {
             var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
@@ -35,10 +35,9 @@ namespace Geex.Common.Abstraction.Auditing
                 }
                 await entity.Submit<TInterface>(request.Remark);
             }
-            return Unit.Value;
         }
 
-        async Task<Unit> IRequestHandler<AuditRequest<TInterface>, Unit>.Handle(AuditRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task IRequestHandler<AuditRequest<TInterface>>.Handle(AuditRequest<TInterface> request, CancellationToken cancellationToken)
         {
             var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
@@ -54,11 +53,9 @@ namespace Geex.Common.Abstraction.Auditing
 
                 await entity.Audit<TInterface>(request.Remark);
             }
-
-            return Unit.Value;
         }
 
-        async Task<Unit> IRequestHandler<UnsubmitRequest<TInterface>, Unit>.Handle(UnsubmitRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task IRequestHandler<UnsubmitRequest<TInterface>>.Handle(UnsubmitRequest<TInterface> request, CancellationToken cancellationToken)
         {
             var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
@@ -73,10 +70,9 @@ namespace Geex.Common.Abstraction.Auditing
                 }
                 await entity.UnSubmit<TInterface>(request.Remark);
             }
-            return Unit.Value;
         }
 
-        async Task<Unit> IRequestHandler<UnauditRequest<TInterface>, Unit>.Handle(UnauditRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task IRequestHandler<UnauditRequest<TInterface>>.Handle(UnauditRequest<TInterface> request, CancellationToken cancellationToken)
         {
             var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
@@ -92,8 +88,6 @@ namespace Geex.Common.Abstraction.Auditing
 
                 await entity.UnAudit<TInterface>(request.Remark);
             }
-
-            return Unit.Value;
         }
     }
 }

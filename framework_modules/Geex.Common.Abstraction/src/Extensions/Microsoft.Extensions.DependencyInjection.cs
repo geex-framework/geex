@@ -31,7 +31,6 @@ using HotChocolate.Types.Pagination;
 using HotChocolate.Utilities;
 
 using ImpromptuInterface;
-
 using MediatR;
 
 using Microsoft.AspNetCore.Builder;
@@ -179,6 +178,12 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 var objectTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
                 GeexModule.ObjectTypes.AddIfNotContains(objectTypes);
+
+                var notificationHandlers = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<INotification>()).ToList();
+                GeexModule.NotificationTypes.AddIfNotContains(notificationHandlers);
+
+                var requestHandlers = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IRequest>()).ToList();
+                GeexModule.RequestTypes.AddIfNotContains(requestHandlers);
 
                 var classEnumTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsClassEnum() && x.Name != nameof(Enumeration)).ToList();
                 GeexModule.ClassEnumTypes.AddIfNotContains(classEnumTypes);

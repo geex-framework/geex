@@ -26,30 +26,30 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
 
         public async Task<bool> AssignRoles(AssignRoleRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
 
         public async Task<bool> AssignOrgs(AssignOrgRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
 
         public async Task<bool> EditUser(EditUserRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
         public async Task<bool> CreateUser(CreateUserRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
 
         public async Task<bool> ResetUserPassword(ResetUserPasswordRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
     }

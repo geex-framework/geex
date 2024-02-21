@@ -13,7 +13,7 @@ using Geex.Common.Abstraction.Storage;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 
 using HotChocolate.Types;
-
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
@@ -34,8 +34,8 @@ public class Org : Entity<Org>, ITenantFilteredEntity, IOrg
 
     private IQueryable<Org> _allSubOrgsQuery => DbContext.Query<Org>().Where(x => x.Code.StartsWith(Code + "."));
 
-    private IQueryable<Org> _directSubOrgsQuery =>
-        DbContext.Query<Org>().Where(x => new Regex($@"^{Code}\.\w+(?!\.)$").IsMatch(x.Code));
+    private IEnumerable<IOrg> _directSubOrgsQuery =>
+        DbContext.Find<Org>().Match(builder => builder.Regex(x=>x.Code, BsonRegularExpression.Create($@"^{Code}\.\w+(?!\.)$"))).ExecuteAsync().GetAwaiter().GetResult();
 
     /// <summary>
     ///     所有父组织编码
@@ -67,7 +67,7 @@ public class Org : Entity<Org>, ITenantFilteredEntity, IOrg
     /// <summary>
     ///     直系子组织
     /// </summary>
-    public IQueryable<IOrg> DirectSubOrgs => _directSubOrgsQuery;
+    public IEnumerable<IOrg> DirectSubOrgs => _directSubOrgsQuery;
 
     /// <summary>
     ///     父组织

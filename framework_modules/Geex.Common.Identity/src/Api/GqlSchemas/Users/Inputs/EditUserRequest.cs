@@ -10,7 +10,7 @@ using MongoDB.Entities;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Users.Inputs
 {
-    public class EditUserRequest : IRequest<Unit>
+    public class EditUserRequest : IRequest
     {
         public string Id { get; set; }
         public bool? IsEnable { get; set; }

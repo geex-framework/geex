@@ -8,7 +8,7 @@ using MediatR;
 
 namespace Geex.Common.Accounting.Aggregates.Accounts.Inputs
 {
-    public class ChangePasswordRequest : IRequest<Unit>
+    public class ChangePasswordRequest : IRequest
     {
         /// <summary>
         /// 原密码

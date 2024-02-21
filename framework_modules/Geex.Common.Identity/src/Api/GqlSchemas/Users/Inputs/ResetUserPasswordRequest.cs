@@ -8,7 +8,7 @@ using MediatR;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Users.Inputs
 {
-    public record ResetUserPasswordRequest : IRequest<Unit>
+    public record ResetUserPasswordRequest : IRequest
     {
         /// <summary>
         /// 用户ID

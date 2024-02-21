@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
-
+using Force.DeepCloner;
 using Geex.Common.Abstraction.Json;
 using Geex.Common.Abstractions;
 using Geex.Common.Json;
@@ -32,8 +32,12 @@ namespace System.Text.Json
             DefaultSerializeSettings.Converters.Add(new GqlSyntaxNodeConverter());
             DefaultSerializeSettings.Converters.Add(new DynamicJsonConverter());
             DefaultSerializeSettings.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            DefaultSerializeSettings.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+            InternalSerializeSettings = DefaultSerializeSettings.ShallowClone();
+            InternalSerializeSettings.IgnoreReadOnlyProperties = true;
         }
         public static JsonSerializerOptions DefaultSerializeSettings { get; set; } = new();
+        public static JsonSerializerOptions InternalSerializeSettings { get; set; } = new();
 
         public static string ToJsonSafe<T>(this T @this)
         {

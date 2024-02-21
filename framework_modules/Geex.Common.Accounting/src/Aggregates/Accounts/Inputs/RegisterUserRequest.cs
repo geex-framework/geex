@@ -2,7 +2,7 @@
 
 namespace Geex.Common.Accounting.Aggregates.Accounts.Inputs
 {
-    public record RegisterUserRequest : IRequest<Unit>
+    public record RegisterUserRequest : IRequest
     {
         public string Password { get; set; }
         public string Username { get; set; }

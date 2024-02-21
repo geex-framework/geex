@@ -36,12 +36,12 @@ namespace Geex.Common.Accounting.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Unit> Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
+        public async Task Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
         {
             var query = await this._mediator.Send(new QueryInput<IUser>(x => x.Id == ClaimPrinciple.Value.FindUserId()), cancellationToken);
             var user = query.First();
             user.ChangePassword(request.OriginPassword, request.NewPassword);
-            return Unit.Value;
+            return;
         }
 
 
@@ -50,7 +50,7 @@ namespace Geex.Common.Accounting.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Unit> Handle(RegisterUserRequest request, CancellationToken cancellationToken)
+        public async Task Handle(RegisterUserRequest request, CancellationToken cancellationToken)
         {
             await this._mediator.Send(new CreateUserRequest
             {
@@ -64,7 +64,7 @@ namespace Geex.Common.Accounting.Handlers
                 PhoneNumber = request.PhoneNumber,
                 Password = request.Password
             }, cancellationToken);
-            return Unit.Value;
+            return;
         }
 
         public LazyService<ClaimsPrincipal> ClaimPrinciple { get; }

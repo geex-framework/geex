@@ -16,7 +16,7 @@ namespace Geex.Common.Identity.Core.Handlers
     public class RoleHandler :
         IRequestHandler<QueryInput<Role>, IQueryable<Role>>,
         IRequestHandler<CreateRoleInput, Role>,
-        IRequestHandler<SetRoleDefaultInput, Unit>,
+        IRequestHandler<SetRoleDefaultInput>,
         ICommonHandler<IRole, Role>
     {
         public DbContext DbContext { get; }
@@ -48,7 +48,7 @@ namespace Geex.Common.Identity.Core.Handlers
         }
 
         /// <inheritdoc />
-        public async Task<Unit> Handle(SetRoleDefaultInput request, CancellationToken cancellationToken)
+        public async Task Handle(SetRoleDefaultInput request, CancellationToken cancellationToken)
         {
             var originDefaultRoles = DbContext.Query<Role>().Where(x=>x.IsDefault);
             foreach (var originDefaultRole in originDefaultRoles)
@@ -57,7 +57,7 @@ namespace Geex.Common.Identity.Core.Handlers
             }
             var role = DbContext.Query<Role>().FirstOrDefault(x=>x.Id == request.RoleId);
             role.IsDefault = true;
-            return Unit.Value;
+            return;
         }
     }
 }

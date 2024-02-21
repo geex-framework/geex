@@ -41,7 +41,7 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         public async Task<bool> DeleteBlobObject(
             DeleteBlobObjectRequest input)
         {
-            var result = await _mediator.Send(input);
+            await _mediator.Send(input);
             return true;
         }
     }

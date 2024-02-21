@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Authors>Lulus,Geex</Authors>
+    <Description>RPC extensions for mediatr via pipeline</Description>
+    <Copyright>Copyright Lulus</Copyright>
+    <Features>strict</Features>
+    <PackageTags>mediator;request;response;queries;commands;notifications;rpc</PackageTags>
+    <!-- <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\MediatX.snk</AssemblyOriginatorKeyFile> -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Deterministic>true</Deterministic>
+    <RootNamespace>MediatX</RootNamespace>
+    <TargetFrameworks>net7.0</TargetFrameworks>
+
+    <RepositoryUrl>https://github.com/geex-framework/mediatx</RepositoryUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>mediatx.rabbitmq</_Parameter1>
+      <_Parameter1>mediatx.rabbitmq.autofac</_Parameter1>
+      <_Parameter1>mediatx.kafka</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.*" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.*" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.*" />
+  </ItemGroup>
+</Project>

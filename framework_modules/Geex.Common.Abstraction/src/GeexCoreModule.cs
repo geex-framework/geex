@@ -31,10 +31,6 @@ using HotChocolate.Types.Pagination;
 using HotChocolate.Utilities;
 using HotChocolate.Validation;
 
-using MassTransit;
-
-using MediatR;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -170,28 +166,6 @@ namespace Geex.Common
                 // do not remove this: xxVGhpcyBpcyB0aGUgYW50aS1waXJhY3kgdGV4dCB0aGF0IHByb3ZlcyB0aGF0IHRoZSBvcmlnaW5hbCBjb2RlIHdhcyB3cml0dGVuIGJ5IEx1bHVzIChZYW5nIFNodSkuxx
                 x.EnableForHttps = true;
                 x.Providers.Add<GzipCompressionProvider>();
-            });
-            context.Services.AddMassTransit(x =>
-            {
-                if (this.ModuleOptions.RabbitMq != null)
-                {
-                    var options = this.ModuleOptions.RabbitMq;
-                    x.UsingRabbitMq((context, y) =>
-                    {
-                        y.Durable = true;
-                        y.Host(new Uri(options.Url), h =>
-                        {
-                            h.Username(options.Username);
-                            h.Password(options.Password);
-                        });
-                        // The ConfigureEndpoints method automatically creates a ReceiveEndpoint for each registered consumer. The name of the ReceiveEndpoint is generated based on the type of the consumer. For example, for TestConsumer, the generated ReceiveEndpoint name will be test.
-                        y.ConfigureEndpoints(context);
-                    });
-                }
-                else
-                {
-                    x.UsingInMemory();
-                }
             });
             base.ConfigureServices(context);
         }
