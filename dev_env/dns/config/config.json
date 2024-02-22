@@ -28,16 +28,9 @@
       "type" : "A"
     }, {
       "id" : 1,
-      "hostname" : "dev.geex.tech",
-      "ip" : "127.0.0.1",
-      "target" : "127.0.0.1",
-      "ttl" : 10,
-      "type" : "A"
-    }, {
-      "id" : 2,
       "hostname" : ".dev.geex.tech",
       "ip" : "127.0.0.1",
-      "target" : "dev.geex.tech",
+      "target" : "127.0.0.1",
       "ttl" : 10,
       "type" : "A"
     } ]

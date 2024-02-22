@@ -7,7 +7,6 @@
     <PackageTags>mediator;request;response;queries;commands;notifications;rpc</PackageTags>
     <!-- <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\MediatX.snk</AssemblyOriginatorKeyFile> -->
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <MinVerTagPrefix>v</MinVerTagPrefix>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -17,7 +16,8 @@
     <Deterministic>true</Deterministic>
     <RootNamespace>MediatX</RootNamespace>
     <TargetFrameworks>net7.0</TargetFrameworks>
-
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
     <RepositoryUrl>https://github.com/geex-framework/mediatx</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
