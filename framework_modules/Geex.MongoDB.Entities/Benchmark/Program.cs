@@ -1,9 +1,11 @@
 ﻿using MongoDB.Driver;
 using MongoDB.Entities;
+
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Benchmark
@@ -13,15 +15,13 @@ namespace Benchmark
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public Date Birthday { get; set; }
-        public Many<Book> Books { get; set; }
-
-        public Author() => this.InitOneToMany(x => Books);
+        public IQueryable<Book> Books => DbContext.Query<Book>();
     }
 
     public class Book : EntityBase<Book>
     {
         public string Title { get; set; }
-        public One<Author> Author { get; set; }
+        public string AuthorId { get; set; }
         public Date PublishedOn { get; set; }
     }
 
@@ -29,7 +29,7 @@ namespace Benchmark
     {
         private static readonly ConcurrentBag<byte> booksCreated = new ConcurrentBag<byte>();
         private static readonly ConcurrentBag<byte> authorsCreated = new ConcurrentBag<byte>();
-        private const int authorCount = 1000;
+        private const int authorCount = 100;
         private const int booksPerAuthor = 1000;
         private const int concurrentTasks = 4;
 
@@ -44,8 +44,7 @@ namespace Benchmark
             sw.Start();
 
             var range = Enumerable.Range(1, authorCount);
-
-            Parallel.ForEach(range, new ParallelOptions { MaxDegreeOfParallelism = concurrentTasks }, number =>
+            var result = Parallel.ForEach(range, new ParallelOptions { MaxDegreeOfParallelism = concurrentTasks }, number =>
             {
                 var author = new Author
                 {
@@ -55,54 +54,53 @@ namespace Benchmark
                 };
                 author.SaveAsync().GetAwaiter().GetResult();
                 authorsCreated.Add(0);
-
-                var book = new Book();
+                var books = new ConcurrentBag<Book>();
 
                 for (int i = 1; i <= booksPerAuthor; i++)
                 {
+                    var book = new Book();
                     book.Id = default;
                     book.Title = $"author {number} - book {i}";
                     book.PublishedOn = DateTime.UtcNow;
-                    book.Author = author;
-                    book.SaveAsync().GetAwaiter().GetResult();
-                    author.Books.AddAsync(book).GetAwaiter().GetResult();
+                    book.AuthorId = author.Id;
+                    books.Add(book);
                     booksCreated.Add(0);
 
                     Console.Write($"\rauthors: {authorsCreated.Count} | books: {booksCreated.Count}                    ");
 
                 }
+                books.SaveAsync().GetAwaiter().GetResult();
             });
 
+            while (authorsCreated.Count != authorCount)
+            {
+                Thread.Sleep(100);
+            }
             Console.WriteLine();
             Console.WriteLine($"done in {sw.Elapsed:hh':'mm':'ss}");
-            Console.WriteLine("press a key to continnue...");
-            Console.ReadLine();
+
 
             sw.Restart();
-            var author = (await DB.Find<Author>()
-                           .Match(a => a.FirstName == "first name 66" && a.LastName == "last name 66")
-                           .ExecuteAsync())
-                           .FirstOrDefault();
+            var dbContext = new DbContext();
+            var author = dbContext.Query<Author>()
+                           .FirstOrDefault(a => a.FirstName == "first name 66" && a.LastName == "last name 66");
 
             Console.WriteLine();
             Console.WriteLine($"found author 66 by name in [{sw.Elapsed.TotalMilliseconds:0}ms] with an un-indexed query - his id: {author.Id}");
             Console.WriteLine();
-            Console.WriteLine("press a key to continnue...");
-            Console.ReadLine();
+
 
             sw.Restart();
-            author = await DB.Find<Author>()
+            author = await dbContext.Query<Author>()
                        .OneAsync(author.Id);
 
             Console.WriteLine();
             Console.WriteLine($"looking up author 66 by Id took [{sw.Elapsed.TotalMilliseconds:0}ms]");
             Console.WriteLine();
-            Console.WriteLine("press a key to continnue...");
-            Console.ReadLine();
+
 
             sw.Restart();
             var book555 = author.Books
-                            .ChildrenQueryable()
                             .Where(b => b.Title == "author 66 - book 55")
                             .ToList()
                             .FirstOrDefault();
@@ -110,8 +108,7 @@ namespace Benchmark
             Console.WriteLine();
             Console.WriteLine($"found book 55 of author 66 by title in [{sw.Elapsed.TotalMilliseconds:0}ms] - title field is not indexed");
             Console.WriteLine();
-            Console.WriteLine("press a key to continnue...");
-            Console.ReadLine();
+
 
             Console.WriteLine();
             Console.WriteLine("creating index for book title...");
@@ -129,12 +126,10 @@ namespace Benchmark
             Console.WriteLine();
             Console.WriteLine("indexing done!");
             Console.WriteLine();
-            Console.WriteLine("press a key to continnue...");
-            Console.ReadLine();
+
 
             sw.Restart();
             book555 = author.Books
-                            .ChildrenQueryable()
                             .Where(b => b.Title == "author 66 - book 55")
                             .ToList()
                             .FirstOrDefault();
@@ -142,25 +137,22 @@ namespace Benchmark
             Console.WriteLine();
             Console.WriteLine($"found book 55 of author 66 by title in [{sw.Elapsed.TotalMilliseconds:0}ms] - title field is indexed");
             Console.WriteLine();
-            Console.WriteLine("press a key to continnue...");
-            Console.ReadLine();
+
 
             sw.Restart();
-            var bookIDs = await DB.Find<Book, string>()
-                            .Match(b => b.Title == "author 99 - book 99" ||
+            var authorIds = dbContext.Query<Book>()
+                            .Where(b => b.Title == "author 99 - book 99" ||
                                         b.Title == "author 33 - book 33")
-                            .Project(b => b.Id)
-                            .ExecuteAsync();
+                            .Select(b => b.AuthorId)
+                            .ToList();
 
             Console.WriteLine();
             Console.WriteLine($"fetched 2 book Ids by title in [{sw.Elapsed.TotalMilliseconds:0}ms] - title field is indexed");
             Console.WriteLine();
-            Console.WriteLine("press a key to continnue...");
-            Console.ReadLine();
+
 
             sw.Restart();
-            var parents = DB.Entity<Author>().Books
-                            .ParentsQueryable<Author>(bookIDs)
+            var parents = dbContext.Query<Author>().Where(x => authorIds.Contains(x.Id))
                             .ToArray();
 
             Console.WriteLine();
