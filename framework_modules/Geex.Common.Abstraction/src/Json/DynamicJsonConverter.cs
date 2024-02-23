@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
@@ -30,15 +31,23 @@ namespace Geex.Common.Json
         {
             return (typeToConvert.IsInterface && !typeToConvert.IsAssignableTo<IEnumerable>()) || typeToConvert.IsDynamic() || typeToConvert == typeof(object);
         }
+        private static readonly ConcurrentDictionary<Type, JsonConverter> converterCache = new ConcurrentDictionary<Type, JsonConverter>();
 
         public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
-            return Activator.CreateInstance(typeof(DynamicJsonConverterInstance<>).MakeGenericType(typeToConvert)) as JsonConverter;
+            if (converterCache.TryGetValue(typeToConvert, out var converter))
+            {
+                return converter;
+            }
+            converter = Activator.CreateInstance(typeof(DynamicJsonConverterInstance<>).MakeGenericType(typeToConvert)) as JsonConverter;
+            converterCache.TryAdd(typeToConvert, converter);
+            return converter;
         }
+
         #region read methods
         private static object ReadObject(JsonElement jsonElement)
         {
-            IDictionary<string, object> expandoObject = new ExpandoObject();
+            IDictionary<string, object> expandoObject = new Dictionary<string, object>(jsonElement.EnumerateObject().Count());
             foreach (var obj in jsonElement.EnumerateObject())
             {
                 var k = obj.Name;
@@ -161,13 +170,13 @@ namespace Geex.Common.Json
                 if (value is IActLikeProxy proxy)
                 {
                     var data = (proxy.Original as ExpandoObject).ToDictionary();
-                    writer.WriteRaw(JsonSerializer.Serialize(data, options));
+                    JsonSerializer.Serialize(writer, data, options);
                 }
                 else if (value is ExpandoObject)
                 {
                     var settingsCopy = new JsonSerializerOptions(options);
                     settingsCopy.Converters.RemoveAll(x => x is DynamicJsonConverter);
-                    writer.WriteRaw(JsonSerializer.Serialize(value, settingsCopy));
+                    JsonSerializer.Serialize(writer, value, settingsCopy);
                 }
                 //else if (value is IEnumerable enumerable)
                 //{
@@ -183,11 +192,13 @@ namespace Geex.Common.Json
                 {
                     var bsonDocument = new BsonDocument();
                     BsonSerializer.LookupSerializer(value.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), value);
-                    writer.WriteRaw(bsonDocument.ToJson(new JsonWriterSettings() { OutputMode = JsonOutputMode.RelaxedExtendedJson }));
+                    var obj = BsonTypeMapper.MapToDotNetValue(bsonDocument);
+                    JsonSerializer.Serialize(writer, obj, options);
+                    //writer.WriteRaw(bsonDocument.ToJson(new JsonWriterSettings() { OutputMode = JsonOutputMode.RelaxedExtendedJson }));
                 }
                 else
                 {
-                    writer.WriteRaw(JsonSerializer.Serialize(value, value.GetType(), options));
+                    JsonSerializer.Serialize(writer, value, value.GetType(), options);
                 }
             }
         }
