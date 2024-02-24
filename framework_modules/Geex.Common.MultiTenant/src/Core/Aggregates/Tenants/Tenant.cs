@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,16 +7,8 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
-using Geex.Common.Abstractions;
-using Geex.Common.MultiTenant.Api.Aggregates.Tenants;
-
 using HotChocolate.Types;
-
-using Microsoft.Extensions.DependencyInjection;
-
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
-using MongoDB.Entities.Interceptors;
 
 namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
 {

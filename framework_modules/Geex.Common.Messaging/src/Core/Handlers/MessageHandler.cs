@@ -1,27 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Security;
 using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Enumerations;
-using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstractions;
 using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
-using Geex.Common.Messaging.Api.Aggregates.Messages.Inputs;
 using Geex.Common.Messaging.Api.GqlSchemas.Messages;
-using Geex.Common.Messaging.Core.Aggregates;
 using Geex.Common.Messaging.Core.Aggregates.FrontendCalls;
 using Geex.Common.Messaging.Core.Aggregates.Messages;
-
+using Geex.Common.Messaging.Requests;
 using HotChocolate.Subscriptions;
 
 using MediatR;
@@ -32,12 +25,12 @@ namespace Geex.Common.Messaging.Core.Handlers
 {
     public class MessageHandler :
         ICommonHandler<IMessage, Message>,
-        IRequestHandler<DeleteMessageDistributionsInput>,
-        IRequestHandler<MarkMessagesReadInput>,
+        IRequestHandler<DeleteMessageDistributionsRequest>,
+        IRequestHandler<MarkMessagesReadRequest>,
         IRequestHandler<SendNotificationMessageRequest>,
         IRequestHandler<CreateMessageRequest, IMessage>,
         IRequestHandler<EditMessageRequest>,
-    IRequestHandler<GetUnreadMessagesInput, IEnumerable<IMessage>>
+    IRequestHandler<GetUnreadMessagesRequest, IEnumerable<IMessage>>
     {
         public DbContext DbContext { get; }
         public LazyService<ClaimsPrincipal> ClaimsPrincipal { get; }
@@ -50,19 +43,19 @@ namespace Geex.Common.Messaging.Core.Handlers
             Sender = sender;
         }
 
-        public async Task Handle(DeleteMessageDistributionsInput request, CancellationToken cancellationToken)
+        public async Task Handle(DeleteMessageDistributionsRequest request, CancellationToken cancellationToken)
         {
             var res = await DbContext.DeleteAsync<MessageDistribution>(x => request.UserIds.Contains(x.ToUserId) && request.MessageId == x.MessageId, cancellationToken);
             return;
         }
 
-        public async Task Handle(MarkMessagesReadInput request, CancellationToken cancellationToken)
+        public async Task Handle(MarkMessagesReadRequest request, CancellationToken cancellationToken)
         {
             await DbContext.Update<MessageDistribution>().Match(x => request.MessageIds.Contains(x.MessageId) && request.UserId == x.ToUserId).Modify(x => x.IsRead, true).ExecuteAsync(cancellationToken);
             return;
         }
 
-        public async Task<IEnumerable<IMessage>> Handle(GetUnreadMessagesInput request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<IMessage>> Handle(GetUnreadMessagesRequest request, CancellationToken cancellationToken)
         {
             var claimsPrincipal = ClaimsPrincipal.Value;
             var messageDistributions = DbContext.Query<MessageDistribution>().Where(x => x.IsRead == false && x.ToUserId == claimsPrincipal.FindUserId()).ToList();

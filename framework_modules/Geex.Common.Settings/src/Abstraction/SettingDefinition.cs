@@ -1,12 +1,7 @@
-﻿using System;
-using System.Runtime.Serialization;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 
 using Geex.Common.Abstractions;
 using Geex.Common.Settings.Core;
-
-using JetBrains.Annotations;
 
 namespace Geex.Common.Settings.Abstraction
 {

@@ -1,10 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Settings.Api.Aggregates.Settings;
-using Geex.Common.Settings.Api.Aggregates.Settings.Inputs;
-using Geex.Common.Settings.Core;
-
-using HotChocolate;
+using Geex.Common.Settings.Requests;
 using HotChocolate.Types;
 
 using MediatR;
@@ -29,11 +26,11 @@ namespace Geex.Common.Settings.Api
         /// <summary>
         /// 更新设置
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<ISetting> EditSetting(EditSettingRequest input)
+        public async Task<ISetting> EditSetting(EditSettingRequest request)
         {
-            return await _mediator.Send(input);
+            return await _mediator.Send(request);
         }
     }
 }

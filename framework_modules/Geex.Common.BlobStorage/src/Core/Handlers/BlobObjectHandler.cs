@@ -5,20 +5,16 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects;
-using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects.Inputs;
-using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
 
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
 using Geex.Common.BlobStorage.Api.Abstractions;
+using Geex.Common.BlobStorage.Requests;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using MimeKit;
 using MongoDB.Entities;
-using RestSharp.Extensions;
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
-using HonkSharp.Fluency;
 
 namespace Geex.Common.BlobStorage.Core.Handlers
 {

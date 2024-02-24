@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Geex.Common.Authorization;
-using NetCasbin.Abstractions;
 
 namespace Geex.Common.Abstraction.Authorization
 {

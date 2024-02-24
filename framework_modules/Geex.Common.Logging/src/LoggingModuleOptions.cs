@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Elastic.Apm.Config;
 using Elastic.Apm.Helpers;
 using Elastic.Apm.Logging;
 
 using Geex.Common.Abstractions;
 using HotChocolate.Execution.Options;
-using ImpromptuInterface;
 
 namespace Geex.Common.Logging
 {

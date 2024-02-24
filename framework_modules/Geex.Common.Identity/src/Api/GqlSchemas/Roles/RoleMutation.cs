@@ -1,15 +1,9 @@
 ﻿using System.Threading.Tasks;
-
-using Autofac;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Identity.Api.Aggregates.Roles;
-using Geex.Common.Identity.Api.GqlSchemas.Roles.Inputs;
-
-using HotChocolate;
+using Geex.Common.Identity.Requests;
 using HotChocolate.Types;
 using MediatR;
-
-using MongoDB.Entities;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Roles
 {
@@ -29,15 +23,15 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Roles
         }
 
         public async Task<Role> CreateRole(
-            CreateRoleInput input)
+            CreateRoleRequest request)
         {
-            return await _mediator.Send(input);
+            return await _mediator.Send(request);
         }
 
          public async Task<bool> SetRoleDefault(
-            SetRoleDefaultInput input)
+            SetRoleDefaultRequest request)
         {
-            await _mediator.Send(input);
+            await _mediator.Send(request);
             return true;
         }
     }

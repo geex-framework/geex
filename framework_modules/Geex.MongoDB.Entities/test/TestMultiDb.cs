@@ -1,8 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MongoDB.Driver;
 using MongoDB.Entities.Tests.Models;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using MongoDB.Bson;
 

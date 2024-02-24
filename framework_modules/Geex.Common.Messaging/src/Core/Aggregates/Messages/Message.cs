@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
 
@@ -18,7 +17,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
 
 namespace Geex.Common.Messaging.Core.Aggregates.Messages;
 

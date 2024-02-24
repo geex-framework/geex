@@ -1,23 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstractions.Enumerations;
 using Geex.Common.Authentication.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
-
-using MongoDB.Entities;
-
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
@@ -62,7 +57,7 @@ namespace Geex.Common.Authentication.Utils
             //    return principal;
             //}
 
-            var user = (await _mediator.Send(new QueryInput<IUser>(userId))).FirstOrDefault();
+            var user = (await _mediator.Send(new QueryRequest<IUser>(userId))).FirstOrDefault();
             if (user == null)
             {
                 return principal;

@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 
 namespace Geex.Common.Authentication
 {

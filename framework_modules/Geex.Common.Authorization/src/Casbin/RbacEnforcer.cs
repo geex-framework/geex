@@ -4,16 +4,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstractions;
-using Geex.Common.Authorization.Events;
-
-using MediatR;
-
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using MoreLinq;
@@ -21,8 +12,6 @@ using MoreLinq;
 using NetCasbin;
 using NetCasbin.Abstractions;
 using NetCasbin.Model;
-using NetCasbin.Util;
-using NetCasbin.Util.Function;
 
 namespace Geex.Common.Authorization.Casbin
 {

@@ -1,19 +1,13 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects;
-using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects.Inputs;
+using Geex.Common.Abstraction.Requests;
 
-using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
-using HotChocolate;
 using HotChocolate.Types;
 
 using MediatR;
-
-using MongoDB.Entities;
 
 namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
 {
@@ -52,7 +46,7 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         public async Task<IQueryable<IBlobObject>> BlobObjects(
             )
         {
-            var result = await _mediator.Send(new QueryInput<IBlobObject>());
+            var result = await _mediator.Send(new QueryRequest<IBlobObject>());
             return result;
         }
 

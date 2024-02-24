@@ -1,7 +1,6 @@
 ﻿using Geex.Common.Abstractions;
 using Geex.Common.Accounting.Handlers;
 using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp;
 using Volo.Abp.Modularity;
 
 namespace Geex.Common.Accounting

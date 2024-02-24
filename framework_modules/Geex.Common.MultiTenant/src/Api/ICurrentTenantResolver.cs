@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Geex.Common.MultiTenant.Api
+﻿namespace Geex.Common.MultiTenant.Api
 {
     /// <summary>
     /// 租户解析器

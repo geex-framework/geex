@@ -1,14 +1,10 @@
 using Geex.Common;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.BlobStorage.Api.Abstractions;
-using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects.Inputs;
-using Geex.Tests.TestEntities;
-
+using Geex.Common.BlobStorage.Requests;
 using HotChocolate.Types;
 
 using MediatR;
-
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 using Shouldly;

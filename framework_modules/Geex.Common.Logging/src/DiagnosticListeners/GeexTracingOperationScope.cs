@@ -1,19 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 using Elastic.Apm;
 using Elastic.Apm.Api;
-
-using Geex.Common.Abstractions;
-
-using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Instrumentation;
-using HotChocolate.Execution.Processing;
-using HotChocolate.Utilities;
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

@@ -1,25 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Abstractions;
-using Geex.Common.Gql.Types;
 using Geex.Common.Settings.Abstraction;
 using Geex.Common.Settings.Api.Aggregates.Settings;
-using Geex.Common.Settings.Api.Aggregates.Settings.Inputs;
 using Geex.Common.Settings.Core;
-
-using HotChocolate;
-using HotChocolate.AspNetCore.Authorization;
+using Geex.Common.Settings.Requests;
 using HotChocolate.Data.Filters;
 using HotChocolate.Types;
 
 using MediatR;
-
-using MongoDB.Entities;
 
 namespace Geex.Common.Settings.Api
 {
@@ -56,9 +46,9 @@ namespace Geex.Common.Settings.Api
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        public async Task<IQueryable<ISetting>> Settings(GetSettingsInput input)
+        public async Task<IQueryable<ISetting>> Settings(GetSettingsRequest request)
         {
-            return await _mediator.Send(input);
+            return await _mediator.Send(request);
         }
 
         /// <summary>
@@ -68,7 +58,7 @@ namespace Geex.Common.Settings.Api
         /// <returns></returns>
         public async Task<List<ISetting>> InitSettings()
         {
-            return await _mediator.Send(new GetInitSettingsInput());
+            return await _mediator.Send(new GetInitSettingsRequest());
         }
     }
 }

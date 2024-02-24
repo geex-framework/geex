@@ -1,15 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.ServiceModel.Channels;
 using System.Text.Json;
-using Geex.Common.Abstraction.Json;
 using GeexBox.ElasticSearch.Zero.Logging.Commom;
-using Geexbox.Logging.ElasticSearch.ZeroLoggingCommom;
 using Microsoft.Extensions.Logging;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace GeexBox.ElasticSearch.Zero.Logging.Elasticsearch

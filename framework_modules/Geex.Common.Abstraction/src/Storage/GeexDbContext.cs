@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Geex.Common.Abstractions;
 using Geex.MongoDB.Entities.Utilities;
 
 using KellermanSoftware.CompareNetObjects;
@@ -20,10 +16,6 @@ using MongoDB.Driver;
 using MongoDB.Entities;
 
 using Nito.AsyncEx.Synchronous;
-
-using Volo.Abp;
-
-using BusinessException = Geex.Common.Abstractions.BusinessException;
 
 namespace Geex.Common.Abstraction.Storage
 {

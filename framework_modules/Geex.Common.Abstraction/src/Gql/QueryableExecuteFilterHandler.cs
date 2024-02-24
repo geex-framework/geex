@@ -10,7 +10,6 @@ using HotChocolate.Data.Filters;
 using HotChocolate.Data.Filters.Expressions;
 using HotChocolate.Language;
 using HotChocolate.Language.Visitors;
-using HotChocolate.Stitching;
 using HotChocolate.Types;
 
 namespace Geex.Common

@@ -1,12 +1,7 @@
-﻿using System;
-using System.Linq;
-
-using Geex.Common.Abstractions;
+﻿using Geex.Common.Abstractions;
 
 using HotChocolate.Configuration;
-using HotChocolate.Language;
 using HotChocolate.Types;
-using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 
 namespace Geex.Common.Gql.Types

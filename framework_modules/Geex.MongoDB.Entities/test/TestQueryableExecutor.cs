@@ -1,20 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-
-using Force.DeepCloner;
-
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Entities.Tests.Fixtures;
 using MongoDB.Entities.Tests.Models;

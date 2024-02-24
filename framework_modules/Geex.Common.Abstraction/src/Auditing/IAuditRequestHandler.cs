@@ -7,8 +7,6 @@ using Geex.Common.Abstractions;
 
 using MediatR;
 
-using MongoDB.Entities;
-
 namespace Geex.Common.Abstraction.Auditing
 {
     public interface IAuditRequestHandler<TInterface, TEntity> :

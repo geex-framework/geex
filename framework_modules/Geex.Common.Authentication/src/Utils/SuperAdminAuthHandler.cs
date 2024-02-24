@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
@@ -11,11 +8,7 @@ using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstractions.Enumerations;
 
 using JetBrains.Annotations;
-
-using MediatR;
-
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

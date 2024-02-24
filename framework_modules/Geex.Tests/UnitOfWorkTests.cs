@@ -1,7 +1,5 @@
 using Geex.Common;
 using Geex.Tests.TestEntities;
-
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson;

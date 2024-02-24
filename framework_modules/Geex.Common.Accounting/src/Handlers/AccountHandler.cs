@@ -1,22 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstractions;
-using Geex.Common.Accounting.Aggregates.Accounts.Inputs;
-using Geex.Common.Identity.Api.Aggregates.Users;
-using Geex.Common.Identity.Api.GqlSchemas.Users.Inputs;
-
-using HotChocolate;
-
+using Geex.Common.Accounting.Requests;
+using Geex.Common.Identity.Requests;
 using MediatR;
-
-using Volo.Abp;
 
 namespace Geex.Common.Accounting.Handlers
 {
@@ -38,7 +30,7 @@ namespace Geex.Common.Accounting.Handlers
         /// <returns>Response from the request</returns>
         public async Task Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
         {
-            var query = await this._mediator.Send(new QueryInput<IUser>(x => x.Id == ClaimPrinciple.Value.FindUserId()), cancellationToken);
+            var query = await this._mediator.Send(new QueryRequest<IUser>(x => x.Id == ClaimPrinciple.Value.FindUserId()), cancellationToken);
             var user = query.First();
             user.ChangePassword(request.OriginPassword, request.NewPassword);
             return;

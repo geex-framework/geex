@@ -1,17 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
-
-using HotChocolate.Types;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson.Serialization;
@@ -19,8 +10,6 @@ using MongoDB.Driver;
 using MongoDB.Entities;
 
 using Volo.Abp.DependencyInjection;
-
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Geex.Common.Abstraction
 {

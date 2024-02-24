@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
@@ -7,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Settings.Abstraction;
 using Geex.Common.Settings.Api.Aggregates.Settings;
@@ -15,7 +13,6 @@ using Geex.Common.Settings.Api.Aggregates.Settings;
 using HotChocolate.Types;
 
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
 
 namespace Geex.Common.Settings.Core;
 

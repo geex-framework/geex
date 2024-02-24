@@ -1,10 +1,4 @@
-﻿using System;
-
-using Geex.Common.Abstraction;
-
-using HotChocolate.Types;
-
-using KuanFang.Rms.MessageManagement.Messages;
+﻿using KuanFang.Rms.MessageManagement.Messages;
 
 namespace Geex.Common.Messaging.Core.Aggregates.Messages
 {

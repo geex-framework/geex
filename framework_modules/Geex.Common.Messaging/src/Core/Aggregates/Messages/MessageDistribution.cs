@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Storage;
-using Geex.Common.Abstractions;
 
 namespace Geex.Common.Messaging.Core.Aggregates.Messages
 {

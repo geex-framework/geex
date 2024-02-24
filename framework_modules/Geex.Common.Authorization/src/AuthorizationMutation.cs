@@ -1,12 +1,7 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Autofac;
+﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Authorization.Casbin;
-using Geex.Common.Authorization.Events;
-using Geex.Common.Authorization.GqlSchema.Inputs;
+using Geex.Common.Authorization.Requests;
 using HotChocolate;
 using HotChocolate.Types;
 using MediatR;
@@ -24,9 +19,9 @@ namespace Geex.Common.Authorization
         public async Task<bool> Authorize(
             [Service] IRbacEnforcer enforcer,
             [Service] IMediator mediator,
-            AuthorizeInput input)
+            AuthorizeRequest request)
         {
-            await mediator.Send(input);
+            await mediator.Send(request);
             return true;
         }
     }

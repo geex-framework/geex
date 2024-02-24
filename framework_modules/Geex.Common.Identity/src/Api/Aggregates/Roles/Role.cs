@@ -9,10 +9,7 @@ using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Users;
-
-using HotChocolate;
 using HotChocolate.Types;
 
 using MediatR;
@@ -20,11 +17,6 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
-using MongoDB.Entities;
-
-using NetCasbin.Abstractions;
-
 
 
 namespace Geex.Common.Identity.Api.Aggregates.Roles

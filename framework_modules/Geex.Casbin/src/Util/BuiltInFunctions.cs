@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using DotNet.Globbing;
-using NetCasbin.Abstractions;
 using NetCasbin.Extensions;
 using NetCasbin.Rbac;
 

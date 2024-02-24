@@ -3,10 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Identity.Api.Aggregates.Roles;
-using Geex.Common.Identity.Api.GqlSchemas.Roles.Inputs;
-
+using Geex.Common.Identity.Requests;
 using MediatR;
 
 using MongoDB.Entities;
@@ -14,9 +13,9 @@ using MongoDB.Entities;
 namespace Geex.Common.Identity.Core.Handlers
 {
     public class RoleHandler :
-        IRequestHandler<QueryInput<Role>, IQueryable<Role>>,
-        IRequestHandler<CreateRoleInput, Role>,
-        IRequestHandler<SetRoleDefaultInput>,
+        IRequestHandler<QueryRequest<Role>, IQueryable<Role>>,
+        IRequestHandler<CreateRoleRequest, Role>,
+        IRequestHandler<SetRoleDefaultRequest>,
         ICommonHandler<IRole, Role>
     {
         public DbContext DbContext { get; }
@@ -30,7 +29,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<IQueryable<Role>> Handle(QueryInput<Role> request, CancellationToken cancellationToken)
+        public async Task<IQueryable<Role>> Handle(QueryRequest<Role> request, CancellationToken cancellationToken)
         {
             return DbContext.Query<Role>().WhereIf(request.Filter != default, request.Filter);
         }
@@ -39,7 +38,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Role> Handle(CreateRoleInput request, CancellationToken cancellationToken)
+        public async Task<Role> Handle(CreateRoleRequest request, CancellationToken cancellationToken)
         {
             var role = Role.Create(request.RoleCode, request.RoleName, request.IsStatic ?? false, request.IsDefault ?? false);
             DbContext.Attach(role);
@@ -48,7 +47,7 @@ namespace Geex.Common.Identity.Core.Handlers
         }
 
         /// <inheritdoc />
-        public async Task Handle(SetRoleDefaultInput request, CancellationToken cancellationToken)
+        public async Task Handle(SetRoleDefaultRequest request, CancellationToken cancellationToken)
         {
             var originDefaultRoles = DbContext.Query<Role>().Where(x=>x.IsDefault);
             foreach (var originDefaultRole in originDefaultRoles)

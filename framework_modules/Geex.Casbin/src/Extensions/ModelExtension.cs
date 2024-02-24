@@ -1,5 +1,4 @@
-﻿using System;
-using NetCasbin.Model;
+﻿using NetCasbin.Model;
 using NetCasbin.Rbac;
 
 namespace NetCasbin.Extensions

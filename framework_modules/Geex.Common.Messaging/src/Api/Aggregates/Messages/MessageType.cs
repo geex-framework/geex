@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Geex.Common.Messaging.Api.Aggregates.Messages
+﻿namespace Geex.Common.Messaging.Api.Aggregates.Messages
 {
     public enum MessageType
     {

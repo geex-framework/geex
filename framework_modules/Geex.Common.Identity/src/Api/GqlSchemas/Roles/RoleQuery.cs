@@ -1,19 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Identity.Api.Aggregates.Roles;
-using Geex.Common.Identity.Api.GqlSchemas.Roles.Inputs;
-using Geex.Common.Identity.Api.GqlSchemas.Roles.Types;
-
-using HotChocolate;
 using HotChocolate.Types;
 
 using MediatR;
-
-using MongoDB.Entities;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Roles
 {
@@ -44,7 +36,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Roles
         public async Task<IQueryable<Role>> Roles(
             )
         {
-            return await _mediator.Send(new QueryInput<Role>());
+            return await _mediator.Send(new QueryRequest<Role>());
         }
     }
 }

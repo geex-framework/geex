@@ -1,17 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.Bson;
-
 using JetBrains.Annotations;
-
-using Microsoft.Extensions.DependencyInjection;
-
-using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Entities.Utilities;
 
 namespace Geex.Common.Abstractions

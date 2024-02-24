@@ -1,14 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Accounting.Aggregates.Accounts.Inputs;
-using Geex.Common.Identity.Api.GqlSchemas.Users.Inputs;
-
-using HotChocolate;
-
+using Geex.Common.Accounting.Requests;
 using MediatR;
 
 namespace Geex.Common.Accounting.GqlSchemas
@@ -25,17 +17,17 @@ namespace Geex.Common.Accounting.GqlSchemas
         /// <summary>
         /// 更新设置
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<bool> ChangePassword(ChangePasswordRequest input)
+        public async Task<bool> ChangePassword(ChangePasswordRequest request)
         {
-            await _mediator.Send(input);
+            await _mediator.Send(request);
             return true;
         }
 
-        public async Task<bool> Register(RegisterUserRequest input)
+        public async Task<bool> Register(RegisterUserRequest request)
         {
-            await _mediator.Send(input);
+            await _mediator.Send(request);
             return true;
         }
     }

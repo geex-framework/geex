@@ -14,4 +14,8 @@
     <ProjectReference Include="..\..\Geex.Common.Identity\src\Geex.Common.Identity.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Aggregates\Accounts\" />
+  </ItemGroup>
+
 </Project>

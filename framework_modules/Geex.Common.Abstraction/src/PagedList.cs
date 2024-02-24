@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Geex.Common.Abstraction
 {
     public class PagedList<T> : IPagedList
     {
-        public PagedList(IQueryable<T> dataSource, IPagedListQueryInput input)
+        public PagedList(IQueryable<T> dataSource, IPagedListQueryRequest request)
         {
             this.DataSource = dataSource;
-            this.PageIndex = input.PageIndex;
-            this.PageSize = input.PageSize;
+            this.PageIndex = request.PageIndex;
+            this.PageSize = request.PageSize;
         }
 
         private int _pageIndex = 1;
@@ -61,7 +58,7 @@ namespace Geex.Common.Abstraction
                 {
                     return 0;
                 }
-                if (PageSize <= 1)
+            if (PageSize <= 1)
                 {
                     return totalCount;
                 }

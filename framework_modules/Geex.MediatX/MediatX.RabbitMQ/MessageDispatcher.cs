@@ -3,17 +3,10 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 using System.Threading;
-using System.Text;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Security.Cryptography;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using MediatX.Messages;
 using System.IO;
 
 namespace MediatX.RabbitMQ

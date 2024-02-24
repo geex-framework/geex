@@ -3,14 +3,9 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Abstractions;
-using HotChocolate.Authorization;
 using HotChocolate.Resolvers;
 
 using Microsoft.AspNetCore.Authorization;
-
-using NetCasbin;
 
 namespace Geex.Common.Authorization.Casbin
 {

@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
+﻿using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Entities.Tests.Models;
-using MongoDB.Entities.Utilities;
-
 using Shouldly;
 
 namespace MongoDB.Entities.Tests

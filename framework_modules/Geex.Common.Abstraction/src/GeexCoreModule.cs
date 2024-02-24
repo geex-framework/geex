@@ -1,54 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-using Autofac.Core;
-
 using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Auditing;
 using Geex.Common.Abstraction.Bson;
 using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstractions;
 using Geex.Common.Gql;
-using Geex.Common.Gql.Types;
-
 using HotChocolate;
-using HotChocolate.AspNetCore;
-using HotChocolate.Data;
-using HotChocolate.Data.Filters;
-using HotChocolate.Data.Filters.Expressions;
-using HotChocolate.Execution;
-using HotChocolate.Execution.Configuration;
-using HotChocolate.Server;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Utilities;
-using HotChocolate.Validation;
-
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.WebSockets;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
-using Microsoft.Extensions.Options;
-
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
-using MongoDB.Entities;
 using MongoDB.Entities.Interceptors;
 
 using StackExchange.Redis.Extensions.Core;
@@ -140,12 +115,6 @@ namespace Geex.Common
                 .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddCommonTypes()
-                //.AddMutationConventions(new MutationConventionOptions()
-                //{
-                //    ApplyToAllMutations = true,
-                //    InputTypeNamePattern = "{MutationName}Request",
-                //    InputArgumentName = "request",
-                //})
                 .AddQueryFieldToMutationPayloads()
                 .InitializeOnStartup()
                 ;

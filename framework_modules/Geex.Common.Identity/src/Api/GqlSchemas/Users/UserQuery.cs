@@ -3,14 +3,10 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstractions;
-using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Users;
-
-using HotChocolate;
-using HotChocolate.AspNetCore.Authorization;
 using HotChocolate.Types;
 
 using MediatR;
@@ -62,14 +58,14 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
         public virtual async Task<IQueryable<IUser>> Users(
             )
         {
-            var result = await _mediator.Send(new QueryInput<IUser>());
+            var result = await _mediator.Send(new QueryRequest<IUser>());
             return result;
         }
 
         public async Task<IUser> CurrentUser()
         {
             var userId = _claimsPrincipal.Value.FindUserId();
-            var user = (await _mediator.Send(new QueryInput<IUser>(x => x.Id == userId))).FirstOrDefault();
+            var user = (await _mediator.Send(new QueryRequest<IUser>(x => x.Id == userId))).FirstOrDefault();
             return user;
         }
     }

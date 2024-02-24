@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Geex.Common.Abstraction
+﻿namespace Geex.Common.Abstraction
 {
-    public class PagedListQueryInputBase : IPagedListQueryInput
+    public class PagedListQueryRequestBase : IPagedListQueryRequest
     {
         #region PageIndex
         private int _pageIndex = 1;

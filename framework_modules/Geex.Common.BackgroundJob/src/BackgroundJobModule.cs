@@ -1,27 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Autofac.Core;
-
-using EasyCronJob.Abstractions;
-using EasyCronJob.Core;
-
-using Geex.Common.Abstraction;
+﻿using System.Threading.Tasks;
 using Geex.Common.Abstractions;
-
-using HotChocolate.Execution.Configuration;
-
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;

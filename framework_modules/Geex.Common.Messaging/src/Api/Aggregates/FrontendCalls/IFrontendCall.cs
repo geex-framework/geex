@@ -1,15 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-
+﻿using System.Text.Json.Nodes;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Enumerations;
-using Geex.Common.Gql.Types;
-
-using HotChocolate;
 using HotChocolate.Types;
 
 namespace Geex.Common.Messaging.Api.Aggregates.FrontendCalls

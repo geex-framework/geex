@@ -1,12 +1,6 @@
 ﻿using Geex.Common;
 using Geex.Common.Abstractions;
 using Geex.Common.BlobStorage.Core;
-
-using Microsoft.Extensions.DependencyInjection;
-
-using MongoDB.Driver;
-using MongoDB.Entities;
-
 using Volo.Abp;
 using Volo.Abp.Modularity;
 

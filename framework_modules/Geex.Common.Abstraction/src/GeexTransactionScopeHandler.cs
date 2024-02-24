@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Transactions;
 
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Processing;
-
-using MediatR;
-
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Geex.Common
 {

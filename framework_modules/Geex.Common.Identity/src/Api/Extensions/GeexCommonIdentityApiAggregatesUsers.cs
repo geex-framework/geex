@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Identity.Core.Aggregates.Users;
 
 using MongoDB.Bson;
-using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
 
 

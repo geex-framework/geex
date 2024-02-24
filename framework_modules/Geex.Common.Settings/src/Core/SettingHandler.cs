@@ -1,29 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
-using System.Security;
 using System.Security.Claims;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Castle.Core.Internal;
-
-using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstractions;
-using Geex.Common.Abstractions.Enumerations;
 using Geex.Common.Settings.Abstraction;
-using Geex.Common.Settings.Api;
 using Geex.Common.Settings.Api.Aggregates.Settings;
-using Geex.Common.Settings.Api.Aggregates.Settings.Inputs;
-
+using Geex.Common.Settings.Requests;
 using MediatR;
-
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using MongoDB.Entities;
@@ -31,13 +20,11 @@ using MongoDB.Entities;
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
-using Volo.Abp.DependencyInjection;
-
 namespace Geex.Common.Settings.Core
 {
     public class SettingHandler : IRequestHandler<EditSettingRequest, ISetting>,
-        IRequestHandler<GetSettingsInput, IQueryable<ISetting>>,
-         IRequestHandler<GetInitSettingsInput, List<ISetting>>
+        IRequestHandler<GetSettingsRequest, IQueryable<ISetting>>,
+         IRequestHandler<GetInitSettingsRequest, List<ISetting>>
     {
         public ILogger<SettingHandler> Logger { get; }
         private IRedisDatabase _redisClient;
@@ -201,7 +188,7 @@ namespace Geex.Common.Settings.Core
             return await SetAsync(request.Name, request.Scope, request.ScopedKey, request.Value);
         }
 
-        public virtual async Task<IQueryable<ISetting>> Handle(GetSettingsInput request, CancellationToken cancellationToken)
+        public virtual async Task<IQueryable<ISetting>> Handle(GetSettingsRequest request, CancellationToken cancellationToken)
         {
             IEnumerable<Setting> settingValues = Enumerable.Empty<Setting>();
             if (request.Scope != default)
@@ -225,7 +212,7 @@ namespace Geex.Common.Settings.Core
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<List<ISetting>> Handle(GetInitSettingsInput request, CancellationToken cancellationToken)
+        public async Task<List<ISetting>> Handle(GetInitSettingsRequest request, CancellationToken cancellationToken)
         {
             var settingValues = await this.GetActiveSettings();
             return settingValues.Cast<ISetting>().ToList();

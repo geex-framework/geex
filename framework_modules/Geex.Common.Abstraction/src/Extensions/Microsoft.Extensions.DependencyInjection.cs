@@ -1,47 +1,24 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Security.Claims;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-
 using Geex.Common;
 using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Auditing;
 using Geex.Common.Abstraction.Gql;
-using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
-using Geex.Common.Gql;
 using Geex.Common.Gql.Types;
 
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Serialization;
-using HotChocolate.AspNetCore.Voyager;
 using HotChocolate.Data.Filters;
 using HotChocolate.Data.Sorting;
-using HotChocolate.Execution;
 using HotChocolate.Execution.Configuration;
-using HotChocolate.Execution.Instrumentation;
-using HotChocolate.Execution.Options;
 using HotChocolate.Types;
-using HotChocolate.Types.Descriptors;
-using HotChocolate.Types.Pagination;
-using HotChocolate.Utilities;
-
-using ImpromptuInterface;
-
 using MediatR;
-
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using MongoDB.Bson;
@@ -137,7 +114,7 @@ namespace Microsoft.Extensions.DependencyInjection
                     schemaBuilder.BindRuntimeType(classEnumType, typeof(EnumerationType<>).MakeGenericType(classEnumType));
                     schemaBuilder.AddConvention(typeof(IFilterConvention), sp => new FilterConventionExtension(x =>
                     {
-                        x.BindRuntimeType(classEnumType, typeof(ClassEnumOperationFilterInput<>).MakeGenericType(classEnumType));
+                        x.BindRuntimeType(classEnumType, typeof(ClassEnumOperationFilterInputType<>).MakeGenericType(classEnumType));
                     }));
                     schemaBuilder.AddConvention(typeof(ISortConvention), sp => new SortConventionExtension(x =>
                     {

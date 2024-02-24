@@ -1,14 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Linq.Expressions;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 using MongoDB.Entities.InnerQuery;
-using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities

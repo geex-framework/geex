@@ -2,16 +2,10 @@
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-
-using Autofac;
-
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstractions;
-using Geex.Common.Authorization.Casbin;
-using Geex.Common.Authorization.GqlSchema.Inputs;
-
 using HotChocolate;
 using HotChocolate.Types;
 using MediatR;

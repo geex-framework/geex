@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,9 +10,6 @@ using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Events;
 using Geex.Common.Abstractions;
-using Geex.Common.Abstractions.Enumerations;
-using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects;
-using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using Geex.Common.Identity.Api.Aggregates.Roles;
 using Geex.Common.Identity.Api.Aggregates.Users;
@@ -27,11 +23,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
-using MongoDB.Entities;
-
-using NetCasbin.Abstractions;
-
 
 
 namespace Geex.Common.Identity.Core.Aggregates.Users

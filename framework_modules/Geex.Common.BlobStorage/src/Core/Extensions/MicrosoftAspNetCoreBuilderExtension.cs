@@ -1,27 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using System.Net;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstractions;
 using Geex.Common.BlobStorage.Api;
 using Geex.Common.BlobStorage.Api.Abstractions;
-
-using HotChocolate.AspNetCore;
-using HotChocolate.AspNetCore.Voyager;
-
 using MediatR;
-
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders.Physical;
-
 using RestSharp.Extensions;
 
 // ReSharper disable once CheckNamespace

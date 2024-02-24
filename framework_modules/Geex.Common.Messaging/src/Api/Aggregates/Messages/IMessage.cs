@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-
-using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.MultiTenant;
 
 using KuanFang.Rms.MessageManagement.Messages;

@@ -12,7 +12,6 @@ using HotChocolate.Data.Filters.Expressions;
 using HotChocolate.Language;
 using HotChocolate.Resolvers;
 using HotChocolate.Types;
-using HotChocolate.Types.Descriptors;
 
 namespace Geex.Common
 {

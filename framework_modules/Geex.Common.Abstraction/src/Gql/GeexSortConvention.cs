@@ -12,6 +12,7 @@ public class GeexSortConvention : SortConvention
         descriptor.BindRuntimeType<string, DefaultSortEnumType>();
         descriptor.DefaultBinding<DefaultSortEnumType>();
         descriptor.UseQueryableProvider();
+        descriptor.ArgumentName("sort");
         //descriptor.BindRuntimeType(descriptor);
     }
 }

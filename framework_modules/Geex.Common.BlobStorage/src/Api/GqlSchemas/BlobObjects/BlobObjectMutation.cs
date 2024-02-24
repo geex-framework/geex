@@ -1,14 +1,9 @@
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects;
-using Geex.Common.BlobStorage.Api.Aggregates.BlobObjects.Inputs;
-using HotChocolate;
-using HotChocolate.Types;
 
+using Geex.Common.BlobStorage.Requests;
 using MediatR;
-
-using MongoDB.Entities;
 
 namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
 {
@@ -24,24 +19,24 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         /// <summary>
         /// 创建BlobObject
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         public async Task<IBlobObject> CreateBlobObject(
-            CreateBlobObjectRequest input)
+            CreateBlobObjectRequest request)
         {
-            var result = await _mediator.Send(input);
+            var result = await _mediator.Send(request);
             return result;
         }
 
         /// <summary>
         /// 删除BlobObject
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         public async Task<bool> DeleteBlobObject(
-            DeleteBlobObjectRequest input)
+            DeleteBlobObjectRequest request)
         {
-            await _mediator.Send(input);
+            await _mediator.Send(request);
             return true;
         }
     }

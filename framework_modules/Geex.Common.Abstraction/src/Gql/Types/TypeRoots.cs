@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Auditing;
-
-using HotChocolate.Configuration;
-using HotChocolate.Execution;
 using HotChocolate.Types;
-using HotChocolate.Types.Descriptors.Definitions;
-
 using MediatR;
 
 using Volo.Abp.DependencyInjection;

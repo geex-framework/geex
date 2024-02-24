@@ -1,31 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+﻿using System.Linq;
 using System.Threading.Tasks;
-
-using Castle.Core.Internal;
-
 using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Abstractions;
-using Geex.Common.Authorization;
-using Geex.Common.MultiTenant.Api;
-using Geex.Common.MultiTenant.Api.Aggregates.Tenants;
-using Geex.Common.MultiTenant.Api.Aggregates.Tenants.Requests;
-using Geex.Common.MultiTenant.Core;
-using Geex.Common.MultiTenant.Core.Aggregates.Tenants;
-
-using HotChocolate;
 using HotChocolate.Types;
 
 using MediatR;
 
 using StackExchange.Redis.Extensions.Core.Abstractions;
+using Geex.Common.MultiTenant.Requests;
 
 namespace Geex.Common.MultiTenant.Gql.Schemas
 {
@@ -53,23 +37,23 @@ namespace Geex.Common.MultiTenant.Gql.Schemas
         /// <summary>
         /// 创建Tenant
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<ITenant> CreateTenant(CreateTenantRequest input)
+        public async Task<ITenant> CreateTenant(CreateTenantRequest request)
         {
-            var result = await _mediator.Send(input);
+            var result = await _mediator.Send(request);
             return result;
         }
 
         /// <summary>
         /// 编辑Tenant
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         public async Task<bool> EditTenant(
-            EditTenantRequest input)
+            EditTenantRequest request)
         {
-            var result = await _mediator.Send(input);
+            var result = await _mediator.Send(request);
             return true;
         }
 
@@ -78,9 +62,9 @@ namespace Geex.Common.MultiTenant.Gql.Schemas
         /// </summary>
         /// <returns>当前租户的可用性</returns>
         public async Task<bool> ToggleTenantAvailability(
-            ToggleTenantAvailabilityRequest input)
+            ToggleTenantAvailabilityRequest request)
         {
-            var result = await _mediator.Send(input);
+            var result = await _mediator.Send(request);
             return true;
         }
 
@@ -90,7 +74,7 @@ namespace Geex.Common.MultiTenant.Gql.Schemas
         /// <returns></returns>
         public async Task<ITenant?> CheckTenant(string code)
         {
-            var result = (await _mediator.Send(new QueryInput<ITenant>(x => x.Code == code))).FirstOrDefault();
+            var result = (await _mediator.Send(new QueryRequest<ITenant>(x => x.Code == code))).FirstOrDefault();
             if (result is not { ExternalInfo: null })
             {
                 result = await _mediator.Send(new SyncExternalTenantRequest(code));

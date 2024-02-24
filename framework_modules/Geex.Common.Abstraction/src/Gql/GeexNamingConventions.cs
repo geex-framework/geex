@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 
@@ -13,6 +8,20 @@ namespace Geex.Common.Abstraction.Gql
     {
         public GeexNamingConventions(IDocumentationProvider documentationProvider)
             : base(documentationProvider) { }
+
+        /// <inheritdoc />
+        public override string GetTypeName(Type type, TypeKind kind)
+        {
+            if (kind == TypeKind.InputObject)
+            {
+                var typeName = base.GetTypeName(type, kind);
+                if (typeName.EndsWith("RequestInput", StringComparison.Ordinal))
+                {
+                    return typeName.Substring(0, typeName.Length - "Input".Length);
+                }
+            }
+            return base.GetTypeName(type, kind);
+        }
 
         ///// <inheritdoc />
         //public override string GetMemberName(MemberInfo member, MemberKind kind)

@@ -6,22 +6,15 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Events;
-using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Authorization.Casbin;
 using Geex.Common.Authorization.Events;
-using Geex.Common.Authorization.GqlSchema.Inputs;
-
+using Geex.Common.Authorization.Requests;
 using MediatR;
-
-using NetCasbin;
-
-using static Geex.Common.Abstraction.GqlConfig;
 
 namespace Geex.Common.Authorization.Handlers
 {
     public class AuthorizationHandler : IRequestHandler<UserRoleChangeRequest>,
         IRequestHandler<GetSubjectPermissionsRequest, IEnumerable<string>>,
-        IRequestHandler<AuthorizeInput>
+        IRequestHandler<AuthorizeRequest>
     {
         private IMediator _mediator;
 
@@ -47,7 +40,7 @@ namespace Geex.Common.Authorization.Handlers
             return _enforcer.GetImplicitPermissionsForUser(request.Subject);
         }
 
-        public async Task Handle(AuthorizeInput request, CancellationToken cancellationToken)
+        public async Task Handle(AuthorizeRequest request, CancellationToken cancellationToken)
         {
             var permissions = request.AllowedPermissions.Select(x => x.Value);
             await _enforcer.SetPermissionsAsync(request.Target, permissions);

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace MongoDB.Entities
+﻿namespace MongoDB.Entities
 {
     /// <summary>
     /// Represents a migration history item in the database

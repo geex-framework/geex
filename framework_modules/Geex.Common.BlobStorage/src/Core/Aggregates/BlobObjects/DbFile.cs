@@ -1,7 +1,6 @@
 ﻿using Geex.Common.Abstraction;
 
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
 using MongoDB.Entities;
 
 namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects

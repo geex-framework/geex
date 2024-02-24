@@ -2,13 +2,6 @@
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using GeexBox.ElasticSearch.Zero.Logging.Elasticsearch;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Configuration;
-using Microsoft.Extensions.Options;
 
 
 // ReSharper disable once CheckNamespace

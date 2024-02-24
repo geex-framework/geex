@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.MultiTenant;
+﻿using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstractions;
 using Geex.Common.MultiTenant.Api;
 

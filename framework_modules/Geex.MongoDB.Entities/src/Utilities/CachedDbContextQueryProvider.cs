@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
 using FastExpressionCompiler;
-
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver.Linq;
 using MongoDB.Entities.Interceptors;
 
 namespace MongoDB.Entities.Utilities

@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.MultiTenant.Api;
-using Geex.Common.MultiTenant.Api.Aggregates.Tenants;
 using Geex.Common.MultiTenant.Core.Aggregates.Tenants;
 
 using MongoDB.Entities;

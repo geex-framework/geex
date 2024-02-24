@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MongoDB.Entities.Utilities
+﻿namespace MongoDB.Entities.Utilities
 {
     public class ProfilerLog
     {

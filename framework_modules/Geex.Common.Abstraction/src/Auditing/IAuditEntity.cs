@@ -1,14 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Auditing.Events;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
-
-using MediatR;
-
-using Microsoft.Extensions.DependencyInjection;
-
 using MongoDB.Entities;
 
 namespace Geex.Common.Abstraction.Auditing

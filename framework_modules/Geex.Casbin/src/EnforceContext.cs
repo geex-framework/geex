@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using NetCasbin.Model;
 using NetCasbin.Util;
 

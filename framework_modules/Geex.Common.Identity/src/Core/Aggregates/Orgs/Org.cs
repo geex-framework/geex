@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +14,6 @@ using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using HotChocolate.Types;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
 
 namespace Geex.Common.Identity.Core.Aggregates.Orgs;
 

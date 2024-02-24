@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
+﻿using System.Linq;
 using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
-
-using HotChocolate;
 using HotChocolate.Types;
 
 using MediatR;
@@ -44,7 +37,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
         }
         public async Task<IQueryable<Org>> Orgs()
         {
-            var orgs = await _mediator.Send(new QueryInput<Org>());
+            var orgs = await _mediator.Send(new QueryRequest<Org>());
             return orgs.OrderBy(x => x.Code);
         }
     }

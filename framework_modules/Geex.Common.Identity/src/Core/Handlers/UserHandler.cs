@@ -6,24 +6,14 @@ using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Gql.Inputs;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using Geex.Common.Identity.Api.Aggregates.Users;
-using Geex.Common.Identity.Api.GqlSchemas.Users.Inputs;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using Geex.Common.Identity.Core.Aggregates.Users;
-using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
-using Geex.Common.Messaging.Core.Aggregates.FrontendCalls;
-
-using HotChocolate.Subscriptions;
-
-using Mediator;
-
+using Geex.Common.Identity.Requests;
 using MediatR;
 
 using Microsoft.AspNetCore.Identity;
-
-using MongoDB.Bson;
 using MongoDB.Entities;
 
 using StackExchange.Redis;

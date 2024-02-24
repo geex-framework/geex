@@ -3,12 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Reflection;
-
 using Elastic.Apm;
 using Elastic.Apm.Api;
-
-using Geex.Common.Abstraction.Gql.Directives;
 using Geex.Common.Abstractions;
 using Geex.Common.Logging;
 
@@ -19,11 +15,7 @@ using HotChocolate.Execution.Processing;
 using HotChocolate.Language;
 using HotChocolate.Resolvers;
 using HotChocolate.Types;
-using HotChocolate.Utilities;
-
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Geex.Common.Gql
 {

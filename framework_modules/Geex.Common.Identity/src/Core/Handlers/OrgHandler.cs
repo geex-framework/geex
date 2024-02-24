@@ -4,19 +4,15 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Castle.Core.Internal;
-
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Enumerations;
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
-using Geex.Common.Identity.Api.GqlSchemas.Orgs.Inputs;
-using Geex.Common.Identity.Api.GqlSchemas.Roles.Inputs;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using Geex.Common.Identity.Core.Aggregates.Users;
+using Geex.Common.Identity.Requests;
 using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
 using Geex.Common.Messaging.Api.GqlSchemas.Messages;
 using Geex.Common.Messaging.Core.Aggregates.FrontendCalls;
@@ -31,9 +27,9 @@ using MongoDB.Entities;
 namespace Geex.Common.Identity.Core.Handlers
 {
     public class OrgHandler :
-        IRequestHandler<QueryInput<Org>, IQueryable<Org>>,
-        IRequestHandler<CreateOrgInput, Org>,
-        IRequestHandler<FixUserOrgInput, bool>,
+        IRequestHandler<QueryRequest<Org>, IQueryable<Org>>,
+        IRequestHandler<CreateOrgRequest, Org>,
+        IRequestHandler<FixUserOrgRequest, bool>,
         INotificationHandler<OrgCodeChangedEvent>,
         INotificationHandler<EntityCreatedNotification<Org>>,
         INotificationHandler<EntityDeletedNotification<Org>>
@@ -53,7 +49,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<IQueryable<Org>> Handle(QueryInput<Org> request, CancellationToken cancellationToken)
+        public async Task<IQueryable<Org>> Handle(QueryRequest<Org> request, CancellationToken cancellationToken)
         {
             return DbContext.Query<Org>().WhereIf(request.Filter != default, request.Filter);
         }
@@ -62,7 +58,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Org> Handle(CreateOrgInput request, CancellationToken cancellationToken)
+        public async Task<Org> Handle(CreateOrgRequest request, CancellationToken cancellationToken)
         {
             var entity = new Org(request.Code, request.Name, request.OrgType);
             DbContext.Attach(entity);
@@ -88,7 +84,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<bool> Handle(FixUserOrgInput request, CancellationToken cancellationToken)
+        public async Task<bool> Handle(FixUserOrgRequest request, CancellationToken cancellationToken)
         {
             try
             {

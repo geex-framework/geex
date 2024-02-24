@@ -2,21 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
-using Geex.Common.Abstraction.Gql.Directives;
-using Geex.Common.Abstractions;
-using Geex.Common.Gql.Types;
-
 using HotChocolate;
 using HotChocolate.Configuration;
-using HotChocolate.Data.Filters;
-using HotChocolate.Language;
-using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 using HotChocolate.Types.Helpers;
-
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Geex.Common.Abstraction.Gql
 {

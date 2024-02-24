@@ -3,12 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.MultiTenant;
-
 using MongoDB.Driver;
-using MongoDB.Entities;
-
 using NetCasbin.Model;
 using NetCasbin.Persist;
 

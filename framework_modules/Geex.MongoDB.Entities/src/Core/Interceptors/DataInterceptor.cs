@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using KellermanSoftware.CompareNetObjects;
 
 namespace MongoDB.Entities.Interceptors
 {

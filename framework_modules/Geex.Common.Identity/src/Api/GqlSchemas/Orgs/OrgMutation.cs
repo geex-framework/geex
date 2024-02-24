@@ -1,22 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Autofac;
-
+﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Identity.Api.GqlSchemas.Orgs.Inputs;
-using Geex.Common.Identity.Api.GqlSchemas.Roles.Inputs;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
-
-using HotChocolate;
+using Geex.Common.Identity.Requests;
 using HotChocolate.Types;
 
 using MediatR;
-
-using MongoDB.Entities;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
 {
@@ -36,14 +24,14 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
         }
 
         public async Task<Org> CreateOrg(
-            CreateOrgInput input)
+            CreateOrgRequest request)
         {
-            return await _mediator.Send(input);
+            return await _mediator.Send(request);
         }
 
         public async Task<bool> FixUserOrg()
         {
-            return await _mediator.Send(new FixUserOrgInput());
+            return await _mediator.Send(new FixUserOrgRequest());
         }
     }
 }

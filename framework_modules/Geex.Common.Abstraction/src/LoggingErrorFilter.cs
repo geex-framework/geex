@@ -1,7 +1,6 @@
 ﻿using HotChocolate;
 
 using Microsoft.Extensions.Logging;
-using Volo.Abp;
 
 namespace Geex.Common.Abstractions
 {

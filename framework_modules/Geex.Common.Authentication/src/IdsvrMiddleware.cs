@@ -2,19 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstractions;
 using Geex.Common.Abstractions.Enumerations;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc;
-
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using OpenIddict.Server.AspNetCore;
@@ -106,7 +102,7 @@ namespace Geex.Common.Authentication
             var claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
 
             var claims = claimsPrincipal.Claims;
-            var users = await HttpContext.RequestServices.GetService<IMediator>().Send(new QueryInput<IUser>());
+            var users = await HttpContext.RequestServices.GetService<IMediator>().Send(new QueryRequest<IUser>());
             var user = users.FirstOrDefault(x => x.Id == claimsPrincipal.FindUserId());
             if (user != null)
             {

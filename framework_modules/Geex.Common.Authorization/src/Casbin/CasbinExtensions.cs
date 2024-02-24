@@ -1,25 +1,7 @@
-﻿using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
-using System.Text;
-using System;
-using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.MultiTenant;
-
-using Microsoft.AspNetCore.Authentication;
+﻿using Geex.Common.Abstraction.Authorization;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-
 using MongoDB.Entities;
-
-using NetCasbin;
-using NetCasbin.Abstractions;
-using HotChocolate;
-using MongoDB.Driver;
 
 namespace Geex.Common.Authorization.Casbin
 {

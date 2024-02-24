@@ -1,15 +1,10 @@
-﻿using System.Security;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstractions;
 using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
-using Geex.Common.Messaging.Api.Aggregates.Messages;
-using Geex.Common.Messaging.Core.Aggregates.FrontendCalls;
-
 using HotChocolate;
-using HotChocolate.AspNetCore.Authorization;
 using HotChocolate.Execution;
 using HotChocolate.Subscriptions;
 using HotChocolate.Types;

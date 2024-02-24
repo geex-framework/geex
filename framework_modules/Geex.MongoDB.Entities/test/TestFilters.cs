@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Entities.Interceptors;
-using MongoDB.Entities.Tests.Models;
 
 namespace MongoDB.Entities.Tests
 {

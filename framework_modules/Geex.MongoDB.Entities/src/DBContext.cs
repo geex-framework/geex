@@ -9,20 +9,16 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Force.DeepCloner;
 using KellermanSoftware.CompareNetObjects;
-using KellermanSoftware.CompareNetObjects.TypeComparers;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using MongoDB.Driver.Linq;
 using MongoDB.Entities.Core.Comparers;
 using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
 using ReadConcern = MongoDB.Driver.ReadConcern;
 using WriteConcern = MongoDB.Driver.WriteConcern;
 using MongoDB.Bson.IO;
-using System.Text.Json;
 
 namespace MongoDB.Entities
 {

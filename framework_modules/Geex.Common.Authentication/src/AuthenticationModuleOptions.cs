@@ -1,8 +1,4 @@
-﻿using System.Text.Json.Nodes;
-
-using Geex.Common.Abstractions;
-
-using Microsoft.AspNetCore.Authentication;
+﻿using Geex.Common.Abstractions;
 
 namespace Geex.Common.Authentication
 {

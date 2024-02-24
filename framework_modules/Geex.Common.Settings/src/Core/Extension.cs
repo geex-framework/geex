@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Geex.Common.Settings.Core
+﻿namespace Geex.Common.Settings.Core
 {
     public static class Extension
     {

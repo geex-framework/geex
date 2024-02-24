@@ -1,17 +1,12 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Gql.Inputs;
+using Geex.Common.Abstraction.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
 using Geex.Common.Messaging.Core.Aggregates.Messages;
-using HotChocolate;
-using HotChocolate.Language;
+using Geex.Common.Messaging.Requests;
 using HotChocolate.Types;
-using HotChocolate.Types.Descriptors.Definitions;
-using HotChocolate.Types.Pagination;
 using MediatR;
-using MongoDB.Entities;
 
 namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
 {
@@ -44,7 +39,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         /// <returns></returns>
         public async Task<IQueryable<IMessage>> Messages()
         {
-            var result = await this._mediator.Send(new QueryInput<IMessage>());
+            var result = await this._mediator.Send(new QueryRequest<IMessage>());
             return result;
         }
 
@@ -53,10 +48,9 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        public async Task<IQueryable<IMessage>> UnreadMessages(
-            GetUnreadMessagesInput input)
+        public async Task<IQueryable<IMessage>> UnreadMessages()
         {
-            var result = await _mediator.Send(input);
+            var result = await _mediator.Send(new GetUnreadMessagesRequest());
             return result;
         }
     }

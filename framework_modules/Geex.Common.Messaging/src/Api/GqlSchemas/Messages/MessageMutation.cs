@@ -1,12 +1,8 @@
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
-using Geex.Common.Messaging.Api.Aggregates.Messages.Inputs;
-using HotChocolate;
-using HotChocolate.Subscriptions;
-using HotChocolate.Types;
+using Geex.Common.Messaging.Requests;
 using MediatR;
-using MongoDB.Entities;
 
 namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
 {
@@ -22,58 +18,58 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         /// <summary>
         /// 标记消息已读
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         public async Task<bool> MarkMessagesRead(
-            MarkMessagesReadInput input)
+            MarkMessagesReadRequest request)
         {
-            await this._mediator.Send(input);
+            await this._mediator.Send(request);
             return true;
         }
         /// <summary>
         /// 删除消息分配
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         public async Task<bool> DeleteMessageDistributions(
-            DeleteMessageDistributionsInput input)
+            DeleteMessageDistributionsRequest request)
         {
-            await _mediator.Send(input);
+            await _mediator.Send(request);
             return true;
         }
         /// <summary>
         /// 发送消息
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         public async Task<bool> SendMessage(
-            SendNotificationMessageRequest input)
+            SendNotificationMessageRequest request)
         {
-            await _mediator.Send(input);
+            await _mediator.Send(request);
             return true;
         }
 
         /// <summary>
         /// 创建消息
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         public async Task<IMessage> CreateMessage(
-            CreateMessageRequest input)
+            CreateMessageRequest request)
         {
-            var result = await _mediator.Send(input);
+            var result = await _mediator.Send(request);
             return result;
         }
 
         /// <summary>
         /// 编辑消息
         /// </summary>
-        /// <param name="input"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         public async Task<bool> EditMessage(
-            EditMessageRequest input)
+            EditMessageRequest request)
         {
-            await _mediator.Send(input);
+            await _mediator.Send(request);
             return true;
         }
 
