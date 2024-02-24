@@ -21,6 +21,7 @@ using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Serialization;
 using HotChocolate.AspNetCore.Voyager;
 using HotChocolate.Data.Filters;
+using HotChocolate.Data.Sorting;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Execution.Instrumentation;
@@ -118,22 +119,6 @@ namespace Microsoft.Extensions.DependencyInjection
                     schemaBuilder.AddTypeExtension(serviceDescriptor.ImplementationType);
             }
 
-            var classEnumTypes = GeexModule.ClassEnumTypes;
-            foreach (var classEnumType in classEnumTypes)
-            {
-                if ((classEnumType.GetClassEnumRealType().BaseType.GetProperty(nameof(Enumeration.DynamicValues)).GetValue(null) as IEnumerable<IEnumeration>).Any())
-                {
-                    schemaBuilder.AddConvention(typeof(IFilterConvention), sp => new FilterConventionExtension(x =>
-                    {
-                        x.BindRuntimeType(classEnumType, typeof(ClassEnumOperationFilterInput<>).MakeGenericType(classEnumType));
-                    }));
-                    schemaBuilder.BindRuntimeType(classEnumType, typeof(EnumerationType<>).MakeGenericType(classEnumType));
-                }
-                else
-                {
-                    Console.WriteLine("Enumeration got no member: " + classEnumType.FullName);
-                }
-            }
             foreach (var objectType in GeexModule.ObjectTypes)
             {
                 schemaBuilder.AddType(objectType);
@@ -142,6 +127,27 @@ namespace Microsoft.Extensions.DependencyInjection
             foreach (var directiveType in GeexModule.DirectiveTypes)
             {
                 schemaBuilder.AddDirectiveType(directiveType);
+            }
+
+            var classEnumTypes = GeexModule.ClassEnumTypes;
+            foreach (var classEnumType in classEnumTypes)
+            {
+                if ((classEnumType.GetClassEnumRealType().BaseType.GetProperty(nameof(Enumeration.DynamicValues)).GetValue(null) as IEnumerable<IEnumeration>).Any())
+                {
+                    schemaBuilder.BindRuntimeType(classEnumType, typeof(EnumerationType<>).MakeGenericType(classEnumType));
+                    schemaBuilder.AddConvention(typeof(IFilterConvention), sp => new FilterConventionExtension(x =>
+                    {
+                        x.BindRuntimeType(classEnumType, typeof(ClassEnumOperationFilterInput<>).MakeGenericType(classEnumType));
+                    }));
+                    schemaBuilder.AddConvention(typeof(ISortConvention), sp => new SortConventionExtension(x =>
+                    {
+                        x.BindRuntimeType(classEnumType, typeof(DefaultSortEnumType));
+                    }));
+                }
+                else
+                {
+                    Console.WriteLine("Enumeration got no member: " + classEnumType.FullName);
+                }
             }
 
             return schemaBuilder;

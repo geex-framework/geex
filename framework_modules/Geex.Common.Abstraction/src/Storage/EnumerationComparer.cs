@@ -15,16 +15,8 @@ namespace Geex.Common.Abstraction.Storage
 
         public override void CompareType(CompareParms parms)
         {
-            string v1 = parms.Object1.ToString();
-            if (parms.Object1 is IEnumeration e1)
-            {
-                v1 = e1.Value;
-            }
-            string v2 = parms.Object2.ToString();
-            if (parms.Object2 is IEnumeration e2)
-            {
-                v2 = e2.Value;
-            }
+            var v1 = GetValue(parms.Object1);
+            var v2 = GetValue(parms.Object2);
 
             if (v1 == v2)
             {
@@ -32,6 +24,16 @@ namespace Geex.Common.Abstraction.Storage
             }
 
             AddDifference(parms);
+        }
+
+        private string? GetValue(object? obj)
+        {
+            if (obj is IEnumeration e)
+            {
+                return e.Value;
+            }
+
+            return obj?.ToString();
         }
 
         public override bool IsTypeMatch(Type type1, Type type2)
