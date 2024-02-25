@@ -4,13 +4,11 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Requests;
-using Geex.Common.Abstraction.Storage;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
 
-namespace Geex.Common.Abstraction.Entities
+namespace Geex.Common.Abstraction
 {
     public interface ICommonHandler<TInterface, TEntity> :
         IRequestHandler<QueryRequest<TInterface>, IQueryable<TInterface>>,
