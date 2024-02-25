@@ -22,11 +22,11 @@ namespace Geex.Common.MultiTenant.Core.Handlers
         private readonly IMediator _mediator;
 
         /// <inheritdoc />
-        public DbContext DbContext { get; }
+        public IUnitOfWork Uow { get; }
 
-        public TenantHandler(DbContext dbContext, IMediator mediator)
+        public TenantHandler(IUnitOfWork uow, IMediator mediator)
         {
-            this.DbContext = dbContext;
+            this.Uow = uow;
             this._mediator = mediator;
         }
 
@@ -34,7 +34,7 @@ namespace Geex.Common.MultiTenant.Core.Handlers
         public async Task<ITenant> Handle(CreateTenantRequest request, CancellationToken cancellationToken)
         {
             var tenant = Tenant.Create(request.Code, request.Name, request.ExternalInfo);
-            DbContext.Attach(tenant);
+            Uow.Attach(tenant);
             return tenant;
         }
 

@@ -768,5 +768,11 @@ namespace MongoDB.Entities
         {
             return $"{this.GetHashCode()}:{this.session?.GetHashCode()}";
         }
+
+        internal void ThrowIfCancellationNotSupported(CancellationToken cancellation = default)
+        {
+            if (cancellation != default && this?.Session == null)
+                throw new NotSupportedException("Cancellation is only supported within transactions for delete operations!");
+        }
     }
 }

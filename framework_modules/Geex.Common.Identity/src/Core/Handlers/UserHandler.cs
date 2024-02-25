@@ -37,15 +37,15 @@ namespace Geex.Common.Identity.Core.Handlers
         ICommonHandler<IUser, User>
     {
         private IRedisDatabase _redis;
-        public DbContext DbContext { get; }
+        public IUnitOfWork Uow { get; }
         public IUserCreationValidator UserCreationValidator { get; }
         public IPasswordHasher<IUser> PasswordHasher { get; }
 
-        public UserHandler(DbContext dbContext,
+        public UserHandler(IUnitOfWork uow,
          IUserCreationValidator userCreationValidator,
             IPasswordHasher<IUser> passwordHasher, IRedisDatabase redis)
         {
-            DbContext = dbContext;
+            Uow = uow;
             UserCreationValidator = userCreationValidator;
             PasswordHasher = passwordHasher;
             _redis = redis;
@@ -56,8 +56,8 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task Handle(AssignRoleRequest request, CancellationToken cancellationToken)
         {
-            var users = await Task.FromResult(DbContext.Query<User>().Where(x => request.UserIds.Contains(x.Id)).ToList());
-            var roles = await Task.FromResult(DbContext.Query<Role>().Where(x => request.Roles.Contains(x.Id)).ToList());
+            var users = await Task.FromResult(Uow.Query<User>().Where(x => request.UserIds.Contains(x.Id)).ToList());
+            var roles = await Task.FromResult(Uow.Query<Role>().Where(x => request.Roles.Contains(x.Id)).ToList());
             foreach (var user in users)
             {
                 await user.AssignRoles(roles);
@@ -71,7 +71,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task Handle(EditUserRequest request, CancellationToken cancellationToken)
         {
-            var user = await DbContext.Query<User>().OneAsync(request.Id.ToString(), cancellationToken);
+            var user = await Uow.Query<User>().OneAsync(request.Id.ToString(), cancellationToken);
             if (request.Claims.HasValue)
             {
                 user.Claims = request.Claims;
@@ -128,7 +128,7 @@ namespace Geex.Common.Identity.Core.Handlers
                 user = User.NewExternal(this.UserCreationValidator, this.PasswordHasher, request.OpenId, request.Provider, request.Username, request.PhoneNumber, request.Email, request.Password);
             }
 
-            DbContext.Attach(user);
+            Uow.Attach(user);
             user.Nickname = request.Nickname;
             user.AvatarFileId = request.AvatarFileId;
             user.IsEnable = request.IsEnable;
@@ -146,8 +146,8 @@ namespace Geex.Common.Identity.Core.Handlers
         {
             foreach (var item in request.UserOrgsMap)
             {
-                var user = await DbContext.Query<User>().OneAsync(item.UserId, cancellationToken);
-                var orgs = DbContext.Query<Org>().Where(x => item.OrgCodes.Contains(x.Code)).ToList();
+                var user = await Uow.Query<User>().OneAsync(item.UserId, cancellationToken);
+                var orgs = Uow.Query<Org>().Where(x => item.OrgCodes.Contains(x.Code)).ToList();
                 await user.AssignOrgs(orgs);
             }
 
@@ -161,7 +161,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
-            var user = DbContext.Query<User>().FirstOrDefault(x => request.UserId == x.Id);
+            var user = Uow.Query<User>().FirstOrDefault(x => request.UserId == x.Id);
             Check.NotNull(user, nameof(user), "用户不存在.");
             user.SetPassword(request.Password);
             return;
@@ -187,7 +187,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns></returns>
         public async Task Handle(OrgCodeChangedEvent notification, CancellationToken cancellationToken)
         {
-            var users = DbContext.Query<User>().Where(x => x.OrgCodes.Contains(notification.OldOrgCode)).ToList();
+            var users = Uow.Query<User>().Where(x => x.OrgCodes.Contains(notification.OldOrgCode)).ToList();
             foreach (var user in users)
             {
                 // 替换被修改的orgCode

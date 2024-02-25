@@ -4,6 +4,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Geex.Common.Abstraction.Notifications;
 using Geex.MongoDB.Entities.Utilities;
 
 using KellermanSoftware.CompareNetObjects;
@@ -73,7 +75,6 @@ namespace Geex.Common.Abstraction.Storage
 
             return entities;
         }
-        [Obsolete("do not use event, use direct method or event publish instead")]
         public Queue<INotification> DomainEvents { get; } = new Queue<INotification>();
 
         /// <inheritdoc />
@@ -106,21 +107,54 @@ namespace Geex.Common.Abstraction.Storage
         public async Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default) where T : IEntityBase
         {
             var result = await base.DeleteAsync<T>(id, cancellation);
-            return result.IsAcknowledged;
+            if (result.IsAcknowledged)
+            {
+                this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(id));
+                return true;
+            }
+            return false;
         }
 
         /// <inheritdoc />
         public async Task<bool> DeleteAsync<T>(T entity, CancellationToken cancellation = default) where T : IEntityBase
         {
             var result = await base.DeleteAsync<T>(entity, cancellation);
-            return result.IsAcknowledged;
+            if (result.IsAcknowledged)
+            {
+                this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(entity.Id));
+                return true;
+            }
+            return false;
         }
 
         /// <inheritdoc />
         public async Task<long> DeleteAsync<T>(Expression<Func<T, bool>> expression, CancellationToken cancellation = default) where T : IEntityBase
         {
-            var result = await base.DeleteAsync<T>(expression, cancellation);
-            return result.DeletedCount;
+            ThrowIfCancellationNotSupported(cancellation);
+
+            long deletedCount = 0;
+
+            var cursor = await new Find<T, string>(this)
+                               .Match(expression)
+                               .Project(e => e.Id)
+                               .Option(o => o.BatchSize = 100000)
+                               .ExecuteCursorAsync(cancellation)
+                               .ConfigureAwait(false);
+
+            using (cursor)
+            {
+                while (await cursor.MoveNextAsync(cancellation).ConfigureAwait(false))
+                {
+                    if (cursor.Current.Any())
+                    {
+                        var toDeletes = cursor.Current;
+                        var batchResult = await this.DeleteAsync<T>(toDeletes, cancellation);
+                        deletedCount += batchResult;
+                    }
+                }
+            }
+
+            return deletedCount;
         }
 
         /// <inheritdoc />
@@ -133,6 +167,10 @@ namespace Geex.Common.Abstraction.Storage
         /// <inheritdoc />
         public async Task<long> DeleteAsync<T>(IEnumerable<string> ids, CancellationToken cancellation = default) where T : IEntityBase
         {
+            foreach (var id in ids)
+            {
+                this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(id));
+            }
             var result = await base.DeleteAsync<T>(ids, cancellation);
             return result.DeletedCount;
         }

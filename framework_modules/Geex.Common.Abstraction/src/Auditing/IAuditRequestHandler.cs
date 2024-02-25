@@ -20,7 +20,7 @@ namespace Geex.Common.Abstraction.Auditing
 
         async Task IRequestHandler<SubmitRequest<TInterface>>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
         {
-            var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
+            var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
             {
                 throw new BusinessException(GeexExceptionType.NotFound);
@@ -29,7 +29,7 @@ namespace Geex.Common.Abstraction.Auditing
             {
                 if (entity is { DbContext: null })
                 {
-                    DbContext.Attach(entity);
+                    Uow.Attach(entity);
                 }
                 await entity.Submit<TInterface>(request.Remark);
             }
@@ -37,7 +37,7 @@ namespace Geex.Common.Abstraction.Auditing
 
         async Task IRequestHandler<AuditRequest<TInterface>>.Handle(AuditRequest<TInterface> request, CancellationToken cancellationToken)
         {
-            var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
+            var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
             {
                 throw new BusinessException(GeexExceptionType.NotFound);
@@ -46,7 +46,7 @@ namespace Geex.Common.Abstraction.Auditing
             {
                 if (entity is { DbContext: null })
                 {
-                    DbContext.Attach(entity);
+                    Uow.Attach(entity);
                 }
 
                 await entity.Audit<TInterface>(request.Remark);
@@ -55,7 +55,7 @@ namespace Geex.Common.Abstraction.Auditing
 
         async Task IRequestHandler<UnsubmitRequest<TInterface>>.Handle(UnsubmitRequest<TInterface> request, CancellationToken cancellationToken)
         {
-            var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
+            var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
             {
                 throw new BusinessException(GeexExceptionType.NotFound);
@@ -64,7 +64,7 @@ namespace Geex.Common.Abstraction.Auditing
             {
                 if (entity is { DbContext: null })
                 {
-                    DbContext.Attach(entity);
+                    Uow.Attach(entity);
                 }
                 await entity.UnSubmit<TInterface>(request.Remark);
             }
@@ -72,7 +72,7 @@ namespace Geex.Common.Abstraction.Auditing
 
         async Task IRequestHandler<UnauditRequest<TInterface>>.Handle(UnauditRequest<TInterface> request, CancellationToken cancellationToken)
         {
-            var entities = DbContext.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
+            var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
             {
                 throw new BusinessException(GeexExceptionType.NotFound);
@@ -81,7 +81,7 @@ namespace Geex.Common.Abstraction.Auditing
             {
                 if (entity is { DbContext: null })
                 {
-                    DbContext.Attach(entity);
+                    Uow.Attach(entity);
                 }
 
                 await entity.UnAudit<TInterface>(request.Remark);

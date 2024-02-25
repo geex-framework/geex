@@ -1,27 +1,32 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
+using System.Threading.Tasks;
 using HotChocolate;
+
 using MediatR;
+
 using MongoDB.Entities;
 
 namespace Geex.Common.Abstraction.Requests
 {
-    public class QueryRequest<T> : IRequest<IQueryable<T>> where T : IEntityBase
+    public class DeleteRequest<T> : IRequest<long> where T : IEntityBase
     {
-        public QueryRequest()
+        public DeleteRequest()
         {
 
         }
-        public static QueryRequest<T> New(Expression<Func<T, bool>> filter = default)
+        public static DeleteRequest<T> New(Expression<Func<T, bool>> filter = default)
         {
-            return new QueryRequest<T>(filter);
+            return new DeleteRequest<T>(filter);
         }
-        public QueryRequest(Expression<Func<T, bool>> filter = default)
+        public DeleteRequest(Expression<Func<T, bool>> filter = default)
         {
             Filter = filter;
         }
-        public QueryRequest(params string[] ids)
+        public DeleteRequest(params string[] ids)
         {
             Filter = x => ids.Contains(x.Id);
             Ids = ids;
@@ -29,7 +34,7 @@ namespace Geex.Common.Abstraction.Requests
         [GraphQLIgnore]
         public Expression<Func<T, bool>> Filter { get; set; }
         /// <summary>
-        /// only works when query by id list
+        /// only works when deleting by id list
         /// </summary>
         [GraphQLIgnore]
         public string[] Ids { get; private set; }

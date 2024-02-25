@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Geex.Common.Abstraction.Notifications;
 using Geex.Common.Abstraction.Storage;
 
 using MongoDB.Driver;
@@ -27,7 +27,7 @@ namespace Geex.Common.Abstraction
         /// </summary>
         public static async Task<DeleteResult> DeleteAsync<T>(this T entity) where T : Storage.Entity<T>
         {
-            entity.AddDomainEvent(new EntityDeletedNotification<T>(entity));
+            entity.AddDomainEvent(new EntityDeletedNotification<T>(entity.Id));
             return await entity.DeleteAsync();
         }
 
@@ -36,7 +36,7 @@ namespace Geex.Common.Abstraction
             var enumerable = entities.ToList();
             foreach (var entity in enumerable)
             {
-                entity.AddDomainEvent(new EntityDeletedNotification<T>(entity));
+                entity.AddDomainEvent(new EntityDeletedNotification<T>(entity.Id));
             }
             var deletes = enumerable.Select(async x => await x.DeleteAsync());
             var result = await Task.WhenAll(deletes);

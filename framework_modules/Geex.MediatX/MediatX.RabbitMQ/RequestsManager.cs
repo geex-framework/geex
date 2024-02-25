@@ -112,7 +112,11 @@ namespace MediatX.RabbitMQ
                     { "alternate-exchange", Constants.MediatXFallbackExchangeName }
                 });
 
-                _channel.QueueDeclare(Constants.MediatXFallbackQueueName, true, false, false, null);
+                _channel.QueueDeclare(Constants.MediatXFallbackQueueName, true, false, false, new Dictionary<string, object>()
+                {
+                    { "x-max-length", 100000},
+                    { "x-message-ttl", 1000*3600*24 }
+                });
                 _channel.QueueDeclare(Constants.MediatXDeadLetterQueueName, true, false, false, null);
                 _channel.QueueBind(Constants.MediatXFallbackQueueName, Constants.MediatXFallbackExchangeName, "");
                 _channel.QueueBind(Constants.MediatXDeadLetterQueueName, Constants.MediatXDeadLetterExchangeName, "");

@@ -18,11 +18,11 @@ namespace Geex.Common.Identity.Core.Handlers
         IRequestHandler<SetRoleDefaultRequest>,
         ICommonHandler<IRole, Role>
     {
-        public DbContext DbContext { get; }
+        public IUnitOfWork Uow { get; }
 
-        public RoleHandler(DbContext dbContext)
+        public RoleHandler(IUnitOfWork uow)
         {
-            DbContext = dbContext;
+            Uow = uow;
         }
 
         /// <summary>Handles a request</summary>
@@ -31,7 +31,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public async Task<IQueryable<Role>> Handle(QueryRequest<Role> request, CancellationToken cancellationToken)
         {
-            return DbContext.Query<Role>().WhereIf(request.Filter != default, request.Filter);
+            return Uow.Query<Role>().WhereIf(request.Filter != default, request.Filter);
         }
 
         /// <summary>Handles a request</summary>
@@ -41,7 +41,7 @@ namespace Geex.Common.Identity.Core.Handlers
         public async Task<Role> Handle(CreateRoleRequest request, CancellationToken cancellationToken)
         {
             var role = Role.Create(request.RoleCode, request.RoleName, request.IsStatic ?? false, request.IsDefault ?? false);
-            DbContext.Attach(role);
+            Uow.Attach(role);
             await role.SaveAsync(cancellationToken);
             return role;
         }
@@ -49,12 +49,12 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <inheritdoc />
         public async Task Handle(SetRoleDefaultRequest request, CancellationToken cancellationToken)
         {
-            var originDefaultRoles = DbContext.Query<Role>().Where(x=>x.IsDefault);
+            var originDefaultRoles = Uow.Query<Role>().Where(x=>x.IsDefault);
             foreach (var originDefaultRole in originDefaultRoles)
             {
                 originDefaultRole.IsDefault = false;
             }
-            var role = DbContext.Query<Role>().FirstOrDefault(x=>x.Id == request.RoleId);
+            var role = Uow.Query<Role>().FirstOrDefault(x=>x.Id == request.RoleId);
             role.IsDefault = true;
             return;
         }
