@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Authentication.Domain;
-using Geex.Common.Authentication.Requests;
+using Geex.Common.Requests.Authentication;
 using HotChocolate;
 
 using MediatR;

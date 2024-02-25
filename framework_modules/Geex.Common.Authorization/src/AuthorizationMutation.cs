@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Authorization.Requests;
+using Geex.Common.Requests.Authorization;
 using HotChocolate;
 using HotChocolate.Types;
 using MediatR;

@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Requests;
+using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Identity.Api.Aggregates.Roles;
 using HotChocolate.Types;

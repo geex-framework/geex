@@ -4,10 +4,10 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Requests;
+using Geex.Common.Requests;
 using Geex.Common.Abstractions;
-using Geex.Common.Accounting.Requests;
-using Geex.Common.Identity.Requests;
+using Geex.Common.Requests.Accounting;
+using Geex.Common.Requests.Identity;
 using MediatR;
 
 namespace Geex.Common.Accounting.Handlers

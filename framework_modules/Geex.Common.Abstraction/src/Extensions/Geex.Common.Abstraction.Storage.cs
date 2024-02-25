@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Notifications;
+using Geex.Common.Notifications;
 using Geex.Common.Abstraction.Storage;
 
 using MongoDB.Driver;

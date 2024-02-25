@@ -5,9 +5,9 @@ using HotChocolate;
 
 using MediatR;
 
-namespace Geex.Common.Captcha.Requests
+namespace Geex.Common.Requests.Captcha
 {
-    public record SendCaptchaRequest : IRequest<Domain.Captcha>
+    public record SendCaptchaRequest : IRequest<Common.Captcha.Domain.Captcha>
     {
         public CaptchaProvider CaptchaProvider { get; set; }
         [GraphQLType(typeof(ChinesePhoneNumberType))]

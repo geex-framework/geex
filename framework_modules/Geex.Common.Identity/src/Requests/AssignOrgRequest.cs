@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using MediatR;
 
-namespace Geex.Common.Identity.Requests
+namespace Geex.Common.Requests.Identity
 {
     public record AssignOrgRequest : IRequest
     {

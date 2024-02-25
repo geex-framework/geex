@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using Geex.Common.Authorization;
 using Geex.Common.Authorization.GqlSchema.Types;
 using MediatR;
 
-namespace Geex.Common.Authorization.Requests
+namespace Geex.Common.Requests.Authorization
 {
     public record AuthorizeRequest : IRequest
     {

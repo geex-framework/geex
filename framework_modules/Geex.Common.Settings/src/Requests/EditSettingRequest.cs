@@ -3,7 +3,7 @@ using Geex.Common.Settings.Abstraction;
 using Geex.Common.Settings.Api.Aggregates.Settings;
 using MediatR;
 
-namespace Geex.Common.Settings.Requests
+namespace Geex.Common.Requests.Settings
 {
     public class EditSettingRequest : IRequest<ISetting>
     {

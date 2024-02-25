@@ -3,9 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Requests;
+using Geex.Common.Requests;
 using Geex.Common.Identity.Api.Aggregates.Roles;
-using Geex.Common.Identity.Requests;
+using Geex.Common.Requests.Identity;
 using MediatR;
 
 using MongoDB.Entities;

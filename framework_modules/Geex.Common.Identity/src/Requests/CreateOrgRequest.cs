@@ -2,7 +2,7 @@
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using MediatR;
 
-namespace Geex.Common.Identity.Requests
+namespace Geex.Common.Requests.Identity
 {
     public class CreateOrgRequest : IRequest<Org>
     {

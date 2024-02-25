@@ -10,7 +10,8 @@ using MediatR;
 
 using MongoDB.Entities;
 
-namespace Geex.Common.Abstraction.Requests
+// ReSharper disable once CheckNamespace
+namespace Geex.Common.Requests
 {
     public class DeleteRequest<T> : IRequest<long> where T : IEntityBase
     {

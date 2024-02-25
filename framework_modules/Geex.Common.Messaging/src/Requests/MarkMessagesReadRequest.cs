@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using MediatR;
 
-namespace Geex.Common.Messaging.Requests
+namespace Geex.Common.Requests.Messaging
 {
     public class MarkMessagesReadRequest : IRequest
     {

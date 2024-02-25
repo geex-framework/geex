@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Requests;
+using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstractions;
 using Geex.Common.Identity.Core.Aggregates.Users;

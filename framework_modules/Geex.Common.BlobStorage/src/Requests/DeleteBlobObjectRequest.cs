@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Geex.Common.Abstraction.Entities;
 using MediatR;
 
-namespace Geex.Common.BlobStorage.Requests
+namespace Geex.Common.Requests.BlobStorage
 {
     public class DeleteBlobObjectRequest : IRequest
     {

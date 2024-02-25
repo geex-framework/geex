@@ -10,7 +10,7 @@ using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using Geex.Common.Identity.Core.Aggregates.Users;
-using Geex.Common.Identity.Requests;
+using Geex.Common.Requests.Identity;
 using MediatR;
 
 using Microsoft.AspNetCore.Identity;

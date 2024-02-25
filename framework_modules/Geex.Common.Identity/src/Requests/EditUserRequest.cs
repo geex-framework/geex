@@ -3,7 +3,7 @@ using Geex.Common.Abstraction.Entities;
 using HotChocolate;
 using MediatR;
 
-namespace Geex.Common.Identity.Requests
+namespace Geex.Common.Requests.Identity
 {
     public class EditUserRequest : IRequest
     {

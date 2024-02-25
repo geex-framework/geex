@@ -1,6 +1,7 @@
 ﻿using MediatR;
 
-namespace Geex.Common.Accounting.Requests
+// ReSharper disable once CheckNamespace
+namespace Geex.Common.Requests.Accounting
 {
     public record RegisterUserRequest : IRequest
     {

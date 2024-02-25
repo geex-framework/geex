@@ -8,7 +8,7 @@ using Geex.Common.Abstraction.Entities;
 
 using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
 using Geex.Common.BlobStorage.Api.Abstractions;
-using Geex.Common.BlobStorage.Requests;
+using Geex.Common.Requests.BlobStorage;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using MimeKit;

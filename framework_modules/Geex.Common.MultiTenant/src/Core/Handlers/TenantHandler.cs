@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Requests;
+using Geex.Common.Requests;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstractions;
 using Geex.Common.MultiTenant.Core.Aggregates.Tenants;
@@ -10,7 +10,7 @@ using Geex.Common.MultiTenant.Core.Aggregates.Tenants;
 using MediatR;
 
 using MongoDB.Entities;
-using Geex.Common.MultiTenant.Requests;
+using Geex.Common.Requests.MultiTenant;
 
 namespace Geex.Common.MultiTenant.Core.Handlers
 {

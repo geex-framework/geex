@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Gql.Types;
 
-using Geex.Common.BlobStorage.Requests;
+using Geex.Common.Requests.BlobStorage;
 using MediatR;
 
 namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects

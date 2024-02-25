@@ -1,7 +1,7 @@
 ﻿using Geex.Common.Captcha.Domain;
 using MediatR;
 
-namespace Geex.Common.Captcha.Requests
+namespace Geex.Common.Requests.Captcha
 {
     public record SendSmsCaptchaRequest : IRequest
     {

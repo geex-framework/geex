@@ -7,7 +7,7 @@ using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Events;
 using Geex.Common.Authorization.Events;
-using Geex.Common.Authorization.Requests;
+using Geex.Common.Requests.Authorization;
 using MediatR;
 
 namespace Geex.Common.Authorization.Handlers

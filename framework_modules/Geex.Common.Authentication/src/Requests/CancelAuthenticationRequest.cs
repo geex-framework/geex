@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Geex.Common.Authentication.Requests
+namespace Geex.Common.Requests.Authentication
 {
     public class CancelAuthenticationRequest : IRequest<bool>
     {

@@ -2,7 +2,7 @@
 
 using MediatR;
 
-namespace Geex.Common.Captcha.Requests;
+namespace Geex.Common.Requests.Captcha;
 
 public class ValidateCaptchaRequest : IRequest<bool>
 {

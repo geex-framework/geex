@@ -5,7 +5,7 @@ using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Settings.Abstraction;
 using Geex.Common.Settings.Api.Aggregates.Settings;
 using Geex.Common.Settings.Core;
-using Geex.Common.Settings.Requests;
+using Geex.Common.Requests.Settings;
 using HotChocolate.Data.Filters;
 using HotChocolate.Types;
 

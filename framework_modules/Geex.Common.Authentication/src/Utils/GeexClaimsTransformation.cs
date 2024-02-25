@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Requests;
+using Geex.Common.Requests;
 using Geex.Common.Abstractions.Enumerations;
 using Geex.Common.Authentication.Domain;
 using MediatR;

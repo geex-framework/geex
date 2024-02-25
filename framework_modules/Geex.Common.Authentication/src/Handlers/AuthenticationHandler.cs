@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Requests;
+using Geex.Common.Requests;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstractions;
 using Geex.Common.Authentication.Domain;
@@ -13,7 +13,7 @@ using Geex.Common.Authentication.Utils;
 
 using MediatR;
 using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Authentication.Requests;
+using Geex.Common.Requests.Authentication;
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 

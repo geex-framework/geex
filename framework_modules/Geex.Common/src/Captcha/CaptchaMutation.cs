@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Captcha.Requests;
+using Geex.Common.Requests.Captcha;
 using HotChocolate;
 using MediatR;
 using StackExchange.Redis.Extensions.Core.Abstractions;

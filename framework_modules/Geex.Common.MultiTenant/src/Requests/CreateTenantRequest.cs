@@ -2,7 +2,7 @@
 using Geex.Common.Abstraction.MultiTenant;
 using MediatR;
 
-namespace Geex.Common.MultiTenant.Requests
+namespace Geex.Common.Requests.MultiTenant
 {
     public record CreateTenantRequest : IRequest<ITenant>
     {

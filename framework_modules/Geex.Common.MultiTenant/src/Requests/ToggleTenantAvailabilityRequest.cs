@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Geex.Common.MultiTenant.Requests;
+namespace Geex.Common.Requests.MultiTenant;
 
 public record ToggleTenantAvailabilityRequest : IRequest<bool>
 {

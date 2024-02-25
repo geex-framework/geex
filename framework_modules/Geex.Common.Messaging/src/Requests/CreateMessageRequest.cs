@@ -2,7 +2,7 @@
 using KuanFang.Rms.MessageManagement.Messages;
 using MediatR;
 
-namespace Geex.Common.Messaging.Requests
+namespace Geex.Common.Requests.Messaging
 {
     public class CreateMessageRequest : IRequest<IMessage>
     {

@@ -1,7 +1,7 @@
 using Geex.Common;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.BlobStorage.Api.Abstractions;
-using Geex.Common.BlobStorage.Requests;
+using Geex.Common.Requests.BlobStorage;
 using HotChocolate.Types;
 
 using MediatR;

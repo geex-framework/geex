@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Captcha.Domain;
-using Geex.Common.Captcha.Requests;
+using Geex.Common.Requests.Captcha;
 using MediatR;
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;

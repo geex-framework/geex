@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Geex.Common.Identity.Requests
+namespace Geex.Common.Requests.Identity
 {
     public record ResetUserPasswordRequest : IRequest
     {

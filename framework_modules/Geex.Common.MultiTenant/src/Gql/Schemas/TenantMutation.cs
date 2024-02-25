@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.Requests;
+using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstraction.MultiTenant;
 using HotChocolate.Types;
@@ -9,7 +9,7 @@ using HotChocolate.Types;
 using MediatR;
 
 using StackExchange.Redis.Extensions.Core.Abstractions;
-using Geex.Common.MultiTenant.Requests;
+using Geex.Common.Requests.MultiTenant;
 
 namespace Geex.Common.MultiTenant.Gql.Schemas
 {

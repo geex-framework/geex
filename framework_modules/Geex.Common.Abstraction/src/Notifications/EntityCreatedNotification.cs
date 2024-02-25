@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Geex.Common.Abstraction.Notifications;
+namespace Geex.Common.Notifications;
 
 /// <summary>
 /// entity创建的领域事件, 仅对geexEntity生效

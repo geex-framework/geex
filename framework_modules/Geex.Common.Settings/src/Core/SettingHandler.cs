@@ -11,7 +11,7 @@ using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstractions;
 using Geex.Common.Settings.Abstraction;
 using Geex.Common.Settings.Api.Aggregates.Settings;
-using Geex.Common.Settings.Requests;
+using Geex.Common.Requests.Settings;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

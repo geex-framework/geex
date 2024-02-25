@@ -14,7 +14,7 @@ using Geex.Common.Messaging.Api.Aggregates.Messages;
 using Geex.Common.Messaging.Api.GqlSchemas.Messages;
 using Geex.Common.Messaging.Core.Aggregates.FrontendCalls;
 using Geex.Common.Messaging.Core.Aggregates.Messages;
-using Geex.Common.Messaging.Requests;
+using Geex.Common.Requests.Messaging;
 using HotChocolate.Subscriptions;
 
 using MediatR;

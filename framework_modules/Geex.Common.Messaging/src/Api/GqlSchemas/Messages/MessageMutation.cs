@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
-using Geex.Common.Messaging.Requests;
+using Geex.Common.Requests.Messaging;
 using MediatR;
 
 namespace Geex.Common.Messaging.Api.GqlSchemas.Messages

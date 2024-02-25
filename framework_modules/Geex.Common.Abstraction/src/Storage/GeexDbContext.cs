@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Notifications;
+using Geex.Common.Notifications;
 using Geex.MongoDB.Entities.Utilities;
 
 using KellermanSoftware.CompareNetObjects;

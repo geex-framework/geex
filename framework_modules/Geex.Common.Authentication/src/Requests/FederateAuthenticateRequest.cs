@@ -2,7 +2,7 @@
 using Geex.Common.Authentication.Domain;
 using MediatR;
 
-namespace Geex.Common.Authentication.Requests
+namespace Geex.Common.Requests.Authentication
 {
     public class FederateAuthenticateRequest : IRequest<UserToken>
     {

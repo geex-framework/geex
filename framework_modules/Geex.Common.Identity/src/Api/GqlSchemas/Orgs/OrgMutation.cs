@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
-using Geex.Common.Identity.Requests;
+using Geex.Common.Requests.Identity;
 using HotChocolate.Types;
 
 using MediatR;

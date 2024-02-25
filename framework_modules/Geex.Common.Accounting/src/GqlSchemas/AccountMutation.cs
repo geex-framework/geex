@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Accounting.Requests;
+using Geex.Common.Requests.Accounting;
 using MediatR;
 
 namespace Geex.Common.Accounting.GqlSchemas
