@@ -132,7 +132,7 @@ namespace HotChocolate.Types
         {
             var moduleName = typeof(TAggregate).DomainName();
             var entityName = typeof(TAggregate).Name.ToCamelCase();
-            var prefix = $"{moduleName}_query_{entityName}";
+            var prefix = $"{moduleName}.query.{entityName}";
             return prefix;
         }
 
@@ -141,7 +141,7 @@ namespace HotChocolate.Types
 
         //    var moduleName = typeof(TAggregate).Assembly.GetName().Name.Split(".").ToList().Where(x => !x.IsIn("Gql", "Api", "Core", "Tests")).Last().ToCamelCase();
         //    var entityName = typeof(TAggregate).Name.RemovePreFix("I").ToCamelCase();
-        //    var prefix = $"{moduleName}_query_{entityName}";
+        //    var prefix = $"{moduleName}.query.{entityName}";
         //    return prefix;
         //}
 

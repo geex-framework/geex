@@ -9,14 +9,14 @@ namespace Geex.Common.Authorization
         public string GqlType { get; }
         public string Field { get; }
         private readonly string Value;
-        public static Regex Validator = new Regex(@"^(?<module>\w+)_(?<type>\w+)_((?<field>\w+))+$", RegexOptions.Compiled);
+        public static Regex Validator = new Regex(@"^(?<module>\w+)\.(?<type>\w+)\.((?<field>\w+))+$", RegexOptions.Compiled);
         public PermissionString(string permissionStr) : this()
         {
 
             var match = Validator.Match(permissionStr);
             if (!match.Success)
             {
-                throw new ArgumentException(@"权限字符串格式为: 模块名称_gql类型_字段, 如: order_mutation_createOrder, order_query_orders, identity_user_password, 参考正则: ^(?<module>\w+)_(?<type>\w+)_((?<field>\w+))+$", "permissionStr");
+                throw new ArgumentException(@"权限字符串格式为: 模块名称_gql类型_字段, 如: order.mutation.createOrder, order.query.orders, identity.user.password, 参考正则: ^(?<module>\w+)\.(?<type>\w+)\.((?<field>\w+))+$", "permissionStr");
             }
             this.Module = match.Groups["module"].Value;
             this.GqlType = match.Groups["type"].Value;

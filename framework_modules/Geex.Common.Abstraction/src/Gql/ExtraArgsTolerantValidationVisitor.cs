@@ -1,4 +1,5 @@
-﻿using HotChocolate.Language;
+﻿using System.Linq;
+using HotChocolate.Language;
 using HotChocolate.Language.Visitors;
 using HotChocolate.Validation;
 
@@ -10,7 +11,7 @@ namespace Geex.Common.Abstraction.Gql
         protected override ISyntaxVisitorAction Enter(ISyntaxNode node, IDocumentValidatorContext context)
         {
             var result = base.Enter(node, context);
-            //if (result.IsBreak() && context.Errors.All(x=>x.Code == "HC0016"))
+            //if (result.IsBreak() && context.Errors.All(x => x.Code == "HC0016"))
             //{
             //    return Continue;
             //}

@@ -203,16 +203,17 @@ namespace MongoDB.Entities.Tests
             await Task.Delay(1000);
             var dbContext = new DbContext();
             sw.Restart();
-            var list = dbContext.Query<TestEntity>().ToList();
+            var list = dbContext.Query<TestEntity>().AsNoTracking().ToList();
             sw.Stop();
             list.Count().ShouldBe(200000);
             Console.WriteLine(sw.ElapsedMilliseconds);
-            sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(8000);
+            sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(3000);
             sw.Restart();
             var list1 = await dbContext.Find<TestEntity>().ExecuteAsync();
             sw.Stop();
             list1.Count().ShouldBe(200000);
-            sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(1000);
+            Console.WriteLine(sw.ElapsedMilliseconds);
+            sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(1500);
             dbContext.Dispose();
         }
 

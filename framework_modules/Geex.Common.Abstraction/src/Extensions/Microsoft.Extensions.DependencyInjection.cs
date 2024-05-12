@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+
 using Geex.Common;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Gql;
@@ -16,7 +17,9 @@ using HotChocolate.Data.Filters;
 using HotChocolate.Data.Sorting;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Types;
+
 using MediatR;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -68,7 +71,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 var httpContext = x.GetService<IHttpContextAccessor>();
                 if (httpContext?.HttpContext?.Request.Headers.TryGetValue("x-readonly", out var value) == true && value == "1")
                 {
-                    return new GeexDbContext(x);
+                    return new GeexDbContext(x, entityTrackingEnabled: false);
                 }
                 return x.GetService<IUnitOfWork>() as GeexDbContext;
             });
