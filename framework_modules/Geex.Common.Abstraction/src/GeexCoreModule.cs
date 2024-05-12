@@ -8,9 +8,12 @@ using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Bson;
 using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
+using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
 using Geex.Common.Gql;
 using HotChocolate;
+using HotChocolate.Execution;
+using HotChocolate.Language;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Pagination;
@@ -112,6 +115,14 @@ namespace Geex.Common
                 .AddSorting<GeexSortConvention>()
                 .AddProjections()
                 .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
+                .UseRequest(next => context =>
+                {
+                    if (context.Operation?.Type == OperationType.Query)
+                    {
+                        context.Request.Services!.GetService<IUnitOfWork>().As<GeexDbContext>().EntityTrackingEnabled = false;
+                    }
+                    return next(context);
+                })
                 .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddCommonTypes()

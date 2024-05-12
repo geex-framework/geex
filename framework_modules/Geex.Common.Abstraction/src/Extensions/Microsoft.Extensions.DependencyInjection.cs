@@ -66,15 +66,7 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.AddScoped<DbContext>(x => x.GetService<IRepository>() as DbContext);
             builder.AddScoped<IUnitOfWork>(x => new GeexDbContext(x));
             // 直接从当前uow提取
-            builder.AddScoped<IRepository>(x =>
-            {
-                var httpContext = x.GetService<IHttpContextAccessor>();
-                if (httpContext?.HttpContext?.Request.Headers.TryGetValue("x-readonly", out var value) == true && value == "1")
-                {
-                    return new GeexDbContext(x, entityTrackingEnabled: false);
-                }
-                return x.GetService<IUnitOfWork>() as GeexDbContext;
-            });
+            builder.AddScoped<IRepository>(x => x.GetService<IUnitOfWork>());
             return builder;
         }
 

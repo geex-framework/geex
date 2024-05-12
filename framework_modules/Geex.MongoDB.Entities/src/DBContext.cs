@@ -80,7 +80,7 @@ namespace MongoDB.Entities
         }
 
         public IServiceProvider ServiceProvider { get; }
-        public bool EntityTrackingEnabled { get; }
+        public bool EntityTrackingEnabled { get; internal set;}
 
         /// <summary>
         /// Gets an accurate count of how many entities are matched for a given expression/filter in the transaction scope.
