@@ -7,7 +7,7 @@ namespace Geex.Common.Authorization
     {
         public AppPermission(string value) : base(value)
         {
-            var split = value.Split('_');
+            var split = value.Split('.');
             this.Mod = split[0];
             this.Act = split[1];
             this.Obj = split[2];

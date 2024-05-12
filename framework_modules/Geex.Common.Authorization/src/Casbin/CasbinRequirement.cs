@@ -12,7 +12,7 @@ namespace Geex.Common.Authorization.Casbin
 
         public CasbinRequirement(string policyName)
         {
-            var split = policyName.Split('_');
+            var split = policyName.Split('.');
             this.Mod = split[0];
             this.Act = split[1];
             this.Obj = split[2];

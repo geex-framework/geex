@@ -15,13 +15,13 @@ namespace MongoDB.Entities
     public abstract class EntityBase<T> : IEntityBase where T : IEntityBase
     {
         protected LazyMultiQuery<T, TRelated> ConfigLazyQuery<TRelated>(
-            Expression<Func<T, IQueryable<TRelated>>> propExpression, Expression<Func<TRelated, bool>> lazyQuery,
-            Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batchQuery,
+            Expression<Func<T, IQueryable<TRelated>>> propToLoad, Expression<Func<TRelated, bool>> loadCondition,
+            Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batchLoadRule,
             Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase
         {
-            var lazyObj = new LazyMultiQuery<T, TRelated>(lazyQuery, batchQuery, sourceProvider ??
+            var lazyObj = new LazyMultiQuery<T, TRelated>(loadCondition, batchLoadRule, sourceProvider ??
                                                                            (() => DbContext.Query<TRelated>()));
-            var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
+            var propertyMember = propToLoad.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;
         }
