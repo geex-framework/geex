@@ -114,15 +114,18 @@ namespace Geex.Common
                 .AddFiltering<GeexFilterConvention>()
                 .AddSorting<GeexSortConvention>()
                 .AddProjections()
-                .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
-                .UseRequest(next => context =>
+                .UseDefaultPipeline()
+                .UseRequest(next => async context =>
                 {
+                    // todo: extract to request middleware
                     if (context.Operation?.Type == OperationType.Query)
                     {
-                        context.Request.Services!.GetService<IUnitOfWork>().As<GeexDbContext>().EntityTrackingEnabled = false;
+                        var work = context.Services.GetService<IUnitOfWork>();
+                        if (work != null) work.DbContext.EntityTrackingEnabled = false;
                     }
-                    return next(context);
+                    await next(context);
                 })
+                .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddCommonTypes()
@@ -165,24 +168,20 @@ namespace Geex.Common
         {
             this.ConfigureModuleEntityMaps(context.ServiceProvider);
             var _env = context.GetEnvironment();
-            if (!_env.IsUnitTest())
+            var app = context.GetApplicationBuilder();
+            app.UseCors();
+            app.UseRouting();
+            app.UseWebSockets();
+            //if (_env.IsDevelopment())
+            //{
+            //    app.UseDeveloperExceptionPage();
+            //}
+            app.UseCookiePolicy(new CookiePolicyOptions
             {
-                var app = context.GetApplicationBuilder();
+                MinimumSameSitePolicy = SameSiteMode.Strict,
+            });
 
-                app.UseCors();
-                app.UseRouting();
-                app.UseWebSockets();
-                //if (_env.IsDevelopment())
-                //{
-                //    app.UseDeveloperExceptionPage();
-                //}
-                app.UseCookiePolicy(new CookiePolicyOptions
-                {
-                    MinimumSameSitePolicy = SameSiteMode.Strict,
-                });
-
-                app.UseResponseCompression();
-            }
+            app.UseResponseCompression();
 
             return base.OnPreApplicationInitializationAsync(context);
         }

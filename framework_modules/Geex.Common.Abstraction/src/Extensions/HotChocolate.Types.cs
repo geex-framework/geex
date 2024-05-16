@@ -132,7 +132,7 @@ namespace HotChocolate.Types
         {
             var moduleName = typeof(TAggregate).DomainName();
             var entityName = typeof(TAggregate).Name.ToCamelCase();
-            var prefix = $"{moduleName}.query.{entityName}";
+            var prefix = $"{moduleName}_query_{entityName}";
             return prefix;
         }
 
@@ -141,7 +141,7 @@ namespace HotChocolate.Types
 
         //    var moduleName = typeof(TAggregate).Assembly.GetName().Name.Split(".").ToList().Where(x => !x.IsIn("Gql", "Api", "Core", "Tests")).Last().ToCamelCase();
         //    var entityName = typeof(TAggregate).Name.RemovePreFix("I").ToCamelCase();
-        //    var prefix = $"{moduleName}.query.{entityName}";
+        //    var prefix = $"{moduleName}_query_{entityName}";
         //    return prefix;
         //}
 
@@ -198,7 +198,7 @@ namespace HotChocolate.Types
                     if (AppPermission.List.Any(x => x.Value == policy) && AppPermission.List.Any(x => x.Value == policy))
                     {
                         // gql版本限制, 重写resolve的字段需要重新指定类型
-                        @this.Field(policy.Split('.').Last()).Type<BooleanType>().Authorize(policy);
+                        @this.Field(policy.Split('_').Last()).Type<BooleanType>().Authorize(policy);
                         logger.LogInformation($@"成功匹配权限规则:{policy} for {typeof(T).Name}.{item.Name}");
                     }
                     else

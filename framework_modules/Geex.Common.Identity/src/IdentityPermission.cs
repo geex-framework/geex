@@ -7,14 +7,14 @@ namespace Geex.Common.Identity
     public class IdentityPermission : AppPermission<IdentityPermission>
     {
 
-        public IdentityPermission(string value) : base($"{typeof(IdentityPermission).DomainName()}.{value}")
+        public IdentityPermission(string value) : base($"{typeof(IdentityPermission).DomainName()}_{value}")
         {
         }
         public class UserPermission : IdentityPermission
         {
-            public static UserPermission Query { get; } = new("query.users");
-            public static UserPermission Create { get; } = new("mutation.createUser");
-            public static UserPermission Edit { get; } = new("mutation.editUser");
+            public static UserPermission Query { get; } = new("query_users");
+            public static UserPermission Create { get; } = new("mutation_createUser");
+            public static UserPermission Edit { get; } = new("mutation_editUser");
 
             public UserPermission([NotNull] string value) : base(value)
             {
@@ -22,9 +22,9 @@ namespace Geex.Common.Identity
         }
         public class RolePermission : IdentityPermission
         {
-            public static RolePermission Query { get; } = new("query.roles");
-            public static RolePermission Create { get; } = new("mutation.createRole");
-            public static RolePermission Edit { get; } = new("mutation.editRole");
+            public static RolePermission Query { get; } = new("query_roles");
+            public static RolePermission Create { get; } = new("mutation_createRole");
+            public static RolePermission Edit { get; } = new("mutation_editRole");
 
             public RolePermission([NotNull] string value) : base(value)
             {
@@ -32,9 +32,9 @@ namespace Geex.Common.Identity
         }
         public class OrgPermission : IdentityPermission
         {
-            public static OrgPermission Query { get; } = new("query.orgs");
-            public static OrgPermission Create { get; } = new("mutation.createOrg");
-            public static OrgPermission Edit { get; } = new("mutation.editOrg");
+            public static OrgPermission Query { get; } = new("query_orgs");
+            public static OrgPermission Create { get; } = new("mutation_createOrg");
+            public static OrgPermission Edit { get; } = new("mutation_editOrg");
 
             public OrgPermission([NotNull] string value) : base(value)
             {

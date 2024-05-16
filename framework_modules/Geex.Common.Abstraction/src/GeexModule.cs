@@ -147,7 +147,7 @@ namespace Geex.Common.Abstractions
             var coreModuleOptions = context.ServiceProvider.GetService<GeexCoreModuleOptions>();
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHealthChecks("/health-check");
+                endpoints.MapHealthChecks("/health");
                 endpoints.MapGraphQL().WithOptions(new GraphQLServerOptions()
                 {
                     EnableSchemaRequests = !coreModuleOptions.DisableIntrospection,

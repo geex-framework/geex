@@ -116,7 +116,7 @@ m = (p.sub == ""*"" || g(r.sub, p.sub)) && (r.mod == p.mod) && (p.obj == ""*"" |
             foreach (var permission in permissions)
             {
                 await this._innerEnforcer.AddPermissionForUserAsync(sub,
-                permission.Split('.').Pad(4).Select(x => x ?? ".").ToList());
+                permission.Split('_').Pad(4).Select(x => x ?? "_").ToList());
             }
         }
 
@@ -132,7 +132,7 @@ m = (p.sub == ""*"" || g(r.sub, p.sub)) && (r.mod == p.mod) && (p.obj == ""*"" |
             var roles = this.GetImplicitRolesForUser(sub);
             var subs = roles.Concat(new[] { sub });
             _logger.LogInformation(nameof(GetImplicitPermissionsForUser) + "subs:" + subs.ToJsonSafe());
-            var permissions = subs.SelectMany(x => this._innerEnforcer.GetPermissionsForUser(x).Select(y => string.Join(".", y.Skip(1).ToArray()).Trim('.'))).Distinct().ToList();
+            var permissions = subs.SelectMany(x => this._innerEnforcer.GetPermissionsForUser(x).Select(y => string.Join("_", y.Skip(1).ToArray()).Trim('_'))).Distinct().ToList();
             return permissions;
         }
 
