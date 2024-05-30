@@ -11,7 +11,7 @@ namespace Geex.Common.Abstraction
     {
         private readonly ILogger _logger;
 
-        public LoggedRestClient(ILogger logger)
+        public LoggedRestClient(ILogger<LoggedRestClient> logger)
         {
             _logger = logger;
         }

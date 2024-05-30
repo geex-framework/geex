@@ -32,223 +32,223 @@ using Volo.Abp.Modularity;
 
 namespace Geex.Common.Authentication
 {
-    [DependsOn(
-        typeof(GeexCoreModule)
-    )]
-    public class AuthenticationModule : GeexModule<AuthenticationModule>
+  [DependsOn(
+      typeof(GeexCoreModule)
+  )]
+  public class AuthenticationModule : GeexModule<AuthenticationModule>
+  {
+    public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        public override void ConfigureServices(ServiceConfigurationContext context)
+      IdentityModelEventSource.ShowPII = true;
+      JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+      var services = context.Services;
+      services.AddTransient<IPasswordHasher<IUser>, PasswordHasher<IUser>>();
+      var moduleOptions = services.GetSingletonInstance<AuthenticationModuleOptions>();
+
+      services.AddSingleton<GeexJwtSecurityTokenHandler>();
+      var authenticationBuilder = services
+         .AddAuthentication("SuperAdmin");
+
+      if (moduleOptions.InternalAuthOptions != default)
+      {
+        var authOptions = moduleOptions.InternalAuthOptions;
+        var tokenValidationParameters = new TokenValidationParameters
         {
-            IdentityModelEventSource.ShowPII = true;
-            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
-            var services = context.Services;
-            services.AddTransient<IPasswordHasher<IUser>, PasswordHasher<IUser>>();
-            var moduleOptions = services.GetSingletonInstance<AuthenticationModuleOptions>();
+          // 签名键必须匹配!
+          ValidateIssuerSigningKey = !authOptions.SecurityKey.IsNullOrEmpty(),
+          IssuerSigningKey = authOptions.SecurityKey.IsNullOrEmpty() ? default : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions.SecurityKey)),
 
-            services.AddSingleton<GeexJwtSecurityTokenHandler>();
-            var authenticationBuilder = services
-               .AddAuthentication("SuperAdmin");
+          // 验证JWT发行者(iss)的 claim
+          ValidateIssuer = !authOptions.ValidIssuer.IsNullOrEmpty(),
+          ValidIssuer = authOptions.ValidIssuer,
 
-            if (moduleOptions.InternalAuthOptions != default)
-            {
-                var authOptions = moduleOptions.InternalAuthOptions;
-                var tokenValidationParameters = new TokenValidationParameters
+          // Validate the JWT Audience (aud) claim
+          ValidateAudience = !authOptions.ValidAudience.IsNullOrEmpty(),
+          ValidAudience = authOptions.ValidAudience,
+
+          // 验证过期
+          ValidateLifetime = authOptions.TokenExpireInSeconds.HasValue,
+
+          // If you want to allow a certain amount of clock drift, set that here
+          ClockSkew = TimeSpan.Zero,
+        };
+        services.AddSingleton<TokenValidationParameters>(tokenValidationParameters);
+        authenticationBuilder
+            .AddJwtBearer(options =>
+        {
+          options.TokenValidationParameters = tokenValidationParameters;
+          options.SecurityTokenValidators.Clear();
+          options.SecurityTokenValidators.Add(services.GetRequiredServiceLazy<GeexJwtSecurityTokenHandler>().Value);
+          options.Events ??= new JwtBearerEvents();
+          options.Events.OnMessageReceived = receivedContext =>
+                  {
+              if (receivedContext.HttpContext.WebSockets.IsWebSocketRequest)
+              {
+                if (receivedContext.HttpContext.Items.TryGetValue("jwtToken", out var token1))
                 {
-                    // 签名键必须匹配!
-                    ValidateIssuerSigningKey = !authOptions.SecurityKey.IsNullOrEmpty(),
-                    IssuerSigningKey = authOptions.SecurityKey.IsNullOrEmpty() ? default : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions.SecurityKey)),
+                  receivedContext.Token = token1.ToString();
+                }
+                else if (receivedContext.Request.Query.TryGetValue("access_token", out var token2))
+                {
+                  receivedContext.Token = token2.ToString();
+                }
+              }
+              return Task.CompletedTask;
+            };
 
-                    // 验证JWT发行者(iss)的 claim
-                    ValidateIssuer = !authOptions.ValidIssuer.IsNullOrEmpty(),
-                    ValidIssuer = authOptions.ValidIssuer,
+          options.Events.OnAuthenticationFailed = receivedContext => { return Task.CompletedTask; };
+          options.Events.OnChallenge = receivedContext => { return Task.CompletedTask; };
+          options.Events.OnForbidden = receivedContext => { return Task.CompletedTask; };
+          options.Events.OnTokenValidated = receivedContext => { return Task.CompletedTask; };
+          options.ForwardChallenge = "Local";
+        })
+            .AddCookie()
+            .AddScheme<AuthenticationSchemeOptions, LocalAuthHandler>("Local", "Local", o =>
+            {
 
-                    // Validate the JWT Audience (aud) claim
-                    ValidateAudience = !authOptions.ValidAudience.IsNullOrEmpty(),
-                    ValidAudience = authOptions.ValidAudience,
-
-                    // 验证过期
-                    ValidateLifetime = authOptions.TokenExpireInSeconds.HasValue,
-
-                    // If you want to allow a certain amount of clock drift, set that here
-                    ClockSkew = TimeSpan.Zero,
+            })
+            .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>("SuperAdmin", "SuperAdmin", (o =>
+            {
+              o.ForwardDefaultSelector = httpContext =>
+                      {
+                  var schema = httpContext.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                  return schema ?? "Local";
                 };
-                services.AddSingleton<TokenValidationParameters>(tokenValidationParameters);
-                authenticationBuilder
-                    .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = tokenValidationParameters;
-                    options.SecurityTokenValidators.Clear();
-                    options.SecurityTokenValidators.Add(services.GetRequiredServiceLazy<GeexJwtSecurityTokenHandler>().Value);
-                    options.Events ??= new JwtBearerEvents();
-                    options.Events.OnMessageReceived = receivedContext =>
-                    {
-                        if (receivedContext.HttpContext.WebSockets.IsWebSocketRequest)
-                        {
-                            if (receivedContext.HttpContext.Items.TryGetValue("jwtToken", out var token1))
-                            {
-                                receivedContext.Token = token1.ToString();
-                            }
-                            else if (receivedContext.Request.Query.TryGetValue("access_token", out var token2))
-                            {
-                                receivedContext.Token = token2.ToString();
-                            }
-                        }
-                        return Task.CompletedTask;
-                    };
+            }));
+        services.AddSingleton(new UserTokenGenerateOptions(authOptions.ValidIssuer, authOptions.ValidAudience, authOptions.SecurityKey, authOptions.TokenExpireInSeconds.HasValue ? TimeSpan.FromSeconds(authOptions.TokenExpireInSeconds.Value) : default));
+        services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
 
-                    options.Events.OnAuthenticationFailed = receivedContext => { return Task.CompletedTask; };
-                    options.Events.OnChallenge = receivedContext => { return Task.CompletedTask; };
-                    options.Events.OnForbidden = receivedContext => { return Task.CompletedTask; };
-                    options.Events.OnTokenValidated = receivedContext => { return Task.CompletedTask; };
-                    options.ForwardChallenge = "Local";
-                })
-                    .AddCookie()
-                    .AddScheme<AuthenticationSchemeOptions, LocalAuthHandler>("Local", "Local", o =>
-                    {
+        services.AddSingleton<IdsvrMiddleware>();
 
-                    })
-                    .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>("SuperAdmin", "SuperAdmin", (o =>
-                    {
-                        o.ForwardDefaultSelector = httpContext =>
-                        {
-                            var schema = httpContext.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-                            return schema ?? "Local";
-                        };
-                    }));
-                services.AddSingleton(new UserTokenGenerateOptions(authOptions.ValidIssuer, authOptions.ValidAudience, authOptions.SecurityKey, authOptions.TokenExpireInSeconds.HasValue ? TimeSpan.FromSeconds(authOptions.TokenExpireInSeconds.Value) : default));
-                services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
+        services.AddSingleton<ISocketSessionInterceptor, SubscriptionAuthInterceptor>(x => new SubscriptionAuthInterceptor(x.GetApplicationService<TokenValidationParameters>(), x.GetApplicationService<GeexJwtSecurityTokenHandler>(), x.GetApplicationService<IAuthenticationSchemeProvider>()));
+        SchemaBuilder.AddSocketSessionInterceptor(x => new SubscriptionAuthInterceptor(x.GetApplicationService<TokenValidationParameters>(), x.GetApplicationService<GeexJwtSecurityTokenHandler>(), x.GetApplicationService<IAuthenticationSchemeProvider>()));
 
-                services.AddSingleton<IdsvrMiddleware>();
-
-                services.AddSingleton<ISocketSessionInterceptor, SubscriptionAuthInterceptor>(x => new SubscriptionAuthInterceptor(x.GetApplicationService<TokenValidationParameters>(), x.GetApplicationService<GeexJwtSecurityTokenHandler>(), x.GetApplicationService<IAuthenticationSchemeProvider>()));
-                SchemaBuilder.AddSocketSessionInterceptor(x => new SubscriptionAuthInterceptor(x.GetApplicationService<TokenValidationParameters>(), x.GetApplicationService<GeexJwtSecurityTokenHandler>(), x.GetApplicationService<IAuthenticationSchemeProvider>()));
-
-                services.AddSingleton<IMongoDatabase>(DB.DefaultDb);
-                services.AddOpenIddict()
-                    .AddCore(options =>
-                    {
-                        options.UseMongoDb();
-                    })
-                    .AddServer(options =>
-                    {
-                        // Enable the authorization and token endpoints.
-                        options
-                            //connect/checksession
-                            .SetUserinfoEndpointUris("/idsvr/userinfo")
-                            .SetLogoutEndpointUris("/idsvr/endsession")
-                            .SetRevocationEndpointUris("/idsvr/revocation")
-                            .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
-                            .SetIntrospectionEndpointUris("/idsvr/introspect")
-                            .SetVerificationEndpointUris("/idsvr/deviceauthorization")
-                            .SetAuthorizationEndpointUris("/idsvr/authorize")
-                            .SetDeviceEndpointUris("/idsvr/device")
-                            .SetTokenEndpointUris("/idsvr/token");
-
-                        options.RegisterClaims(
-                            GeexClaimType.Provider,
-                            GeexClaimType.Sub,
-                            GeexClaimType.Tenant,
-                            GeexClaimType.Role,
-                            GeexClaimType.Org,
-                            GeexClaimType.ClientId,
-                            GeexClaimType.Expires,
-                            GeexClaimType.FullName,
-                            GeexClaimType.Nickname
-                        );
-
-                        options.RegisterScopes(
-                            OpenIddictConstants.Scopes.OpenId,
-                            OpenIddictConstants.Scopes.Email,
-                            OpenIddictConstants.Scopes.Phone,
-                            OpenIddictConstants.Scopes.Profile,
-                            OpenIddictConstants.Scopes.Roles,
-                            OpenIddictConstants.Scopes.OfflineAccess
-                            );
-
-                        // Enable the flows.
-                        options.AllowAuthorizationCodeFlow()
-                            .RequireProofKeyForCodeExchange()
-                            .AllowClientCredentialsFlow()
-                            .AllowDeviceCodeFlow()
-                            .AllowRefreshTokenFlow()
-                            .AllowImplicitFlow()
-                            ;
-
-                        // Register the signing and encryption credentials.
-                        if (Env.IsDevelopment())
-                        {
-                            options.AddDevelopmentEncryptionCertificate()
-                              .AddDevelopmentSigningCertificate();
-                        }
-                        else
-                        {
-                            // todo:
-                            //options.AddEncryptionCertificate().AddSigningCertificate()
-                            options.AddDevelopmentEncryptionCertificate()
-                              .AddDevelopmentSigningCertificate();
-                        }
-
-
-                        options.DisableAccessTokenEncryption();
-
-                        // 配置选项
-                        options.Configure(x =>
-                        {
-                            x.IgnoreEndpointPermissions = true;
-                            x.IgnoreResponseTypePermissions = true;
-                        });
-
-                        // Register the ASP.NET Core host and configure the authorization endpoint
-                        // to allow the /authorize minimal API handler to handle authorization requests
-                        // after being validated by the built-in OpenIddict server event handlers.
-                        //
-                        // Token requests will be handled by OpenIddict itself by reusing the identity
-                        // created by the /authorize handler and stored in the authorization codes.
-                        var aspNetCoreBuilder = options.UseAspNetCore();
-                        aspNetCoreBuilder
-                            .EnableAuthorizationEndpointPassthrough()
-                             .EnableLogoutEndpointPassthrough()
-                             .EnableTokenEndpointPassthrough()
-                             .EnableUserinfoEndpointPassthrough()
-                             .EnableStatusCodePagesIntegration();
-
-                        if (Env.IsDevelopment())
-                        {
-                            aspNetCoreBuilder.DisableTransportSecurityRequirement();
-
-                        }
-                    })
-                    .AddValidation(options =>
-                    {
-                        // Import the configuration from the local OpenIddict server instance.
-                        options.UseLocalServer();
-                        // Register the ASP.NET Core host.
-                        options.UseAspNetCore();
-                    });
-
-            }
-            else
+        services.AddSingleton<IMongoDatabase>(DB.DefaultDb);
+        services.AddOpenIddict()
+            .AddCore(options =>
             {
-                authenticationBuilder.AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>("SuperAdmin", "SuperAdmin", (
-                    o =>
-                    {
-                        o.ForwardDefaultSelector = httpContext =>
-                        {
-                            var schema = httpContext.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-                            return schema;
-                        };
-                    }));
-            }
-            base.ConfigureServices(context);
-        }
+              options.UseMongoDb();
+            })
+            .AddServer(options =>
+            {
+              // Enable the authorization and token endpoints.
+              options
+                          //connect/checksession
+                          .SetUserinfoEndpointUris("/idsvr/userinfo")
+                          .SetLogoutEndpointUris("/idsvr/endsession")
+                          .SetRevocationEndpointUris("/idsvr/revocation")
+                          .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
+                          .SetIntrospectionEndpointUris("/idsvr/introspect")
+                          .SetVerificationEndpointUris("/idsvr/deviceauthorization")
+                          .SetAuthorizationEndpointUris("/idsvr/authorize")
+                          .SetDeviceEndpointUris("/idsvr/device")
+                          .SetTokenEndpointUris("/idsvr/token");
 
-        public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
-        {
-            var app = context.GetApplicationBuilder();
-            app.UseAuthentication();
-            app.Map("/idsvr", x => x.UseMiddleware<IdsvrMiddleware>());
-            app.UseAuthorization();
-            return base.OnPreApplicationInitializationAsync(context);
-        }
+              options.RegisterClaims(
+                          GeexClaimType.Provider,
+                          GeexClaimType.Sub,
+                          GeexClaimType.Tenant,
+                          GeexClaimType.Role,
+                          GeexClaimType.Org,
+                          GeexClaimType.ClientId,
+                          GeexClaimType.Expires,
+                          GeexClaimType.FullName,
+                          GeexClaimType.Nickname
+                      );
+
+              options.RegisterScopes(
+                          OpenIddictConstants.Scopes.OpenId,
+                          OpenIddictConstants.Scopes.Email,
+                          OpenIddictConstants.Scopes.Phone,
+                          OpenIddictConstants.Scopes.Profile,
+                          OpenIddictConstants.Scopes.Roles,
+                          OpenIddictConstants.Scopes.OfflineAccess
+                          );
+
+              // Enable the flows.
+              options.AllowAuthorizationCodeFlow()
+                          .RequireProofKeyForCodeExchange()
+                          .AllowClientCredentialsFlow()
+                          .AllowDeviceCodeFlow()
+                          .AllowRefreshTokenFlow()
+                          .AllowImplicitFlow()
+                          ;
+
+              // Register the signing and encryption credentials.
+              if (Env.IsDevelopment())
+              {
+                options.AddDevelopmentEncryptionCertificate()
+                          .AddDevelopmentSigningCertificate();
+              }
+              else
+              {
+                // todo:
+                //options.AddEncryptionCertificate().AddSigningCertificate()
+                options.AddDevelopmentEncryptionCertificate()
+                          .AddDevelopmentSigningCertificate();
+              }
+
+
+              options.DisableAccessTokenEncryption();
+
+              // 配置选项
+              options.Configure(x =>
+                      {
+                  x.IgnoreEndpointPermissions = true;
+                  x.IgnoreResponseTypePermissions = true;
+                });
+
+              // Register the ASP.NET Core host and configure the authorization endpoint
+              // to allow the /authorize minimal API handler to handle authorization requests
+              // after being validated by the built-in OpenIddict server event handlers.
+              //
+              // Token requests will be handled by OpenIddict itself by reusing the identity
+              // created by the /authorize handler and stored in the authorization codes.
+              var aspNetCoreBuilder = options.UseAspNetCore();
+              aspNetCoreBuilder
+                          .EnableAuthorizationEndpointPassthrough()
+                           .EnableLogoutEndpointPassthrough()
+                           .EnableTokenEndpointPassthrough()
+                           .EnableUserinfoEndpointPassthrough()
+                           .EnableStatusCodePagesIntegration();
+
+              if (Env.IsDevelopment())
+              {
+                aspNetCoreBuilder.DisableTransportSecurityRequirement();
+
+              }
+            })
+            .AddValidation(options =>
+            {
+              // Import the configuration from the local OpenIddict server instance.
+              options.UseLocalServer();
+              // Register the ASP.NET Core host.
+              options.UseAspNetCore();
+            });
+
+      }
+      else
+      {
+        authenticationBuilder.AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>("SuperAdmin", "SuperAdmin", (
+            o =>
+            {
+              o.ForwardDefaultSelector = httpContext =>
+                      {
+                  var schema = httpContext.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                  return schema;
+                };
+            }));
+      }
+      base.ConfigureServices(context);
     }
+
+    public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+    {
+      var app = context.GetApplicationBuilder();
+      app.UseAuthentication();
+      app.Map("/idsvr", x => x.UseMiddleware<IdsvrMiddleware>());
+      app.UseAuthorization();
+      return base.OnPreApplicationInitializationAsync(context);
+    }
+  }
 }

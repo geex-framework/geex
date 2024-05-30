@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -81,6 +82,13 @@ namespace Geex.Common.Abstraction.Storage
         public override async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
         {
             var mediator = ServiceProvider.GetService<IMediator>();
+
+            var entities = Local.TypedCacheDictionary.Values.SelectMany(y => y.Values).OfType<IEntity>();
+            foreach (var entity in entities)
+            {
+                entity.Validate().WaitAndUnwrapException(cancellation);
+            }
+            var result = await base.SaveChanges(cancellation);
             if (this.DomainEvents.Any())
             {
                 while (this.DomainEvents.TryDequeue(out var @event))
@@ -88,13 +96,7 @@ namespace Geex.Common.Abstraction.Storage
                     await mediator?.Publish(@event, cancellation);
                 }
             }
-
-            var entities = Local.TypedCacheDictionary.Values.SelectMany(y => y.Values).OfType<IEntity>();
-            foreach (var entity in entities)
-            {
-                entity.Validate().WaitAndUnwrapException(cancellation);
-            }
-            return await base.SaveChanges(cancellation);
+            return result;
         }
 
         public TResult RawCommand<TResult>(Command<TResult> command, ReadPreference readPreference = default,

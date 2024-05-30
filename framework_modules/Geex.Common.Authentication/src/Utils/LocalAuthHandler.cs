@@ -21,7 +21,7 @@ namespace Geex.Common.Authentication.Utils
         private GeexJwtSecurityTokenHandler _tokenHandler;
         private UserTokenGenerateOptions _userTokenGenerateOptions;
 
-        private const string SchemeName = "Local";
+        public const string SchemeName = "Local";
 
 
         /// <inheritdoc />
@@ -55,5 +55,7 @@ namespace Geex.Common.Authentication.Utils
             var ticket = new AuthenticationTicket(principal, SchemeName);
             return AuthenticateResult.Success(ticket);
         }
+
+
     }
 }

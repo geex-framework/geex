@@ -80,7 +80,7 @@ namespace MongoDB.Entities
         }
 
         public IServiceProvider ServiceProvider { get; }
-        public bool EntityTrackingEnabled { get; internal set;}
+        public bool EntityTrackingEnabled { get; internal set; }
 
         /// <summary>
         /// Gets an accurate count of how many entities are matched for a given expression/filter in the transaction scope.
@@ -700,28 +700,23 @@ namespace MongoDB.Entities
                 foreach (var migration in sortedMigrations)
                 {
                     // 默认的Session超时太短, 给Migration更多的超时时间
-                    this.session.Dispose();
-                    this.session = await DB.DefaultDb.Client.StartSessionAsync(DbContext.DefaultSessionOptions);
                     var migrationName = migration.Value.GetType().Name;
                     currentMigrationName = migrationName;
-                    await this.session.WithTransactionAsync(async (handle, token) =>
+                    this.session.StartTransaction(DefaultSessionOptions.DefaultTransactionOptions);
+                    sw.Start();
+                    await migration.Value.UpgradeAsync(this);
+                    var mig = new Migration
                     {
-                        sw.Start();
-                        await migration.Value.UpgradeAsync(this).ConfigureAwait(false);
-                        var mig = new Migration
-                        {
-                            Number = migration.Key,
-                            Name = migrationName,
-                            TimeTakenSeconds = sw.Elapsed.TotalSeconds
-                        };
-                        this.Attach(mig);
-                        var result = await mig.SaveAsync(cancellation: token).ConfigureAwait(false);
-                        await SaveChanges(token);
-                        sw.Stop();
-                        sw.Reset();
-                        return result;
-                    });
-
+                        Number = migration.Key,
+                        Name = migrationName,
+                        TimeTakenSeconds = sw.Elapsed.TotalSeconds
+                    };
+                    this.Attach(mig);
+                    var result = await mig.SaveAsync();
+                    await SaveChanges();
+                    sw.Stop();
+                    sw.Reset();
+                    this.session.CommitTransaction();
                 }
             }
             catch (Exception e)

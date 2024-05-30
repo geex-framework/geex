@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+
 using MediatR;
+
 using Microsoft.Extensions.Logging;
 
 namespace MediatX
@@ -50,14 +53,25 @@ namespace MediatX
     {
       try
       {
+        var remoteHandlerExecutors = handlerExecutors.Where(x => x.HandlerInstance is IRemoteNotificationHandler);
+        var localHandlerExecutors = handlerExecutors.Where(x => x.HandlerInstance is not IRemoteNotificationHandler);
         if (_allowRemoteRequest)
         {
-          _logger.LogDebug("Propagating: {Json}", JsonSerializer.Serialize(notification));
-          await _mediatx.SendRemoteNotification(notification);
+          if (remoteHandlerExecutors.Any())
+          {
+            _logger.LogDebug("Propagating: {Json}", JsonSerializer.Serialize(notification));
+            await _mediatx.SendRemoteNotification(notification);
+          }
+
+          if (localHandlerExecutors.Any())
+          {
+            await base.PublishCore(handlerExecutors, notification, cancellationToken);
+          }
         }
         else
           await base.PublishCore(handlerExecutors, notification, cancellationToken);
-      }      catch (Exception ex)
+      }
+      catch (Exception ex)
       {
         _logger.LogError(ex, ex.Message);
         throw;

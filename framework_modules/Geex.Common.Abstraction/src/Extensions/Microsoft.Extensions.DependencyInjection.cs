@@ -158,14 +158,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 var objectTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
                 GeexModule.ObjectTypes.AddIfNotContains(objectTypes);
 
-                var notificationHandleTypes = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(INotificationHandler<>)));
+                var remoteNotificationHandleTypes = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRemoteNotificationHandler)));
                 //var inheritanceDeclarations = notificationHandleTypes.SelectMany(x => x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(INotificationHandler<>))));
                 //var notificationTypes = inheritanceDeclarations.Select(x => x.GenericTypeArguments[0]).ToArray().ToList();
-                var notificationHandlers = notificationHandleTypes
-                    .Select(x => (notifications: x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(INotificationHandler<>))).Select(x => x.GenericTypeArguments[0]).ToArray(), handlerType: x))
+                var remoteNotificationHandlers = remoteNotificationHandleTypes
+                    .Select(x => (notifications: x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(IRemoteNotificationHandler<>))).Select(x => x.GenericTypeArguments[0]).ToArray(), handlerType: x))
                     .ToList();
-                var dic = notificationHandlers.ToDictionary(x => x.handlerType, x => x.notifications);
-                GeexModule.NotificationHandlerTypes.AddIfNotContains(dic);
+                var dic = remoteNotificationHandlers.ToDictionary(x => x.handlerType, x => x.notifications);
+                GeexModule.RemoteNotificationHandlerTypes.AddIfNotContains(dic);
 
                 var requestHandlers = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRequestHandler<>))).ToList();
                 GeexModule.RequestHandlerTypes.AddIfNotContains(requestHandlers);

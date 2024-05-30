@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -61,7 +62,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
                 return roleNames;
             }
         }
-
+        [JsonConstructor]
         protected User()
         {
             IsEnable = true;

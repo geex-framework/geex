@@ -212,8 +212,9 @@ namespace MediatX.RabbitMQ
 #pragma warning restore CS4014
                 }
 
-                _logger.LogDebug("Elaborating notification : {0}", Encoding.UTF8.GetString(msg));
-                var message = JsonSerializer.Deserialize(Encoding.UTF8.GetString(msg), messageType, _options.SerializerSettings) as INotification;
+                var msgStr = Encoding.UTF8.GetString(msg);
+                _logger.LogDebug("Elaborating notification : {0}", msgStr);
+                var message = JsonSerializer.Deserialize(msgStr, messageType, _options.SerializerSettings) as INotification;
                 return message;
             }
             catch (Exception ex)

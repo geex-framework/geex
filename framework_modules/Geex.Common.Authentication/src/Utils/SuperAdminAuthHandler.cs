@@ -18,7 +18,7 @@ namespace Geex.Common.Authentication.Utils
     {
 
         private const string AuthorizationHeaderName = "Authorization";
-        private const string SchemeName = "SuperAdmin";
+        public const string SchemeName = "SuperAdmin";
 
 
         /// <inheritdoc />
