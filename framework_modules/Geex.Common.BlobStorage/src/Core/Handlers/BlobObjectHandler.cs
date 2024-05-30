@@ -69,7 +69,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         {
             if (request.StorageType == BlobStorageType.Db)
             {
-                var blobObjects = await Task.FromResult(Uow.Query<DbFile>().Where(x => request.Ids.Contains(x.Id)));
+                var blobObjects = await Task.FromResult(Uow.Query<BlobObject>().Where(x => request.Ids.Contains(x.Id)));
                 foreach (var blobObject in blobObjects)
                 {
                     var duplicateCount = await Uow.DbContext.CountAsync<BlobObject>(x => x.Md5 == blobObject.Md5, cancellationToken);
@@ -77,9 +77,10 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                     {
                         var dbFile = await Task.FromResult(Uow.Query<DbFile>().Single(x => x.Md5 == blobObject.Md5));
                         await dbFile.Data.ClearAsync(cancellationToken);
+                        await dbFile.DeleteAsync();
                     }
                 }
-                await Uow.DeleteAsync<BlobObject>(blobObjects.Select(x => x.Id), cancellationToken);
+                await blobObjects.DeleteAsync();
                 return;
             }
             throw new NotImplementedException();
