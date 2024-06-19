@@ -14,7 +14,7 @@ namespace Geex.Common.MultiTenant.Core
     public class CurrentTenant : ICurrentTenant
     {
         private readonly ICurrentTenantResolver _currentTenantResolver;
-        private readonly DbContext _dbContext;
+        private readonly IUnitOfWork _uow;
         private string? _tenantCode;
         private ITenant? _detail;
         private readonly Queue<string?> _parentScopes = new Queue<string?>();
@@ -23,13 +23,13 @@ namespace Geex.Common.MultiTenant.Core
         public string? Code => _tenantCode ?? _currentTenantResolver.Resolve();
 
         /// <inheritdoc />
-        public ITenant Detail => _detail ??= _dbContext.Query<Tenant>().FirstOrDefault(x => x.Code == Code);
+        public ITenant Detail => _detail ??= _uow.Query<Tenant>().FirstOrDefault(x => x.Code == Code);
 
 
-        public CurrentTenant(ICurrentTenantResolver currentTenantResolver, DbContext dbContext)
+        public CurrentTenant(ICurrentTenantResolver currentTenantResolver, IUnitOfWork uow)
         {
             _currentTenantResolver = currentTenantResolver;
-            _dbContext = dbContext;
+            _uow = uow;
         }
         /// <inheritdoc />
         public virtual IDisposable Change(string? tenantCode)
@@ -41,7 +41,7 @@ namespace Geex.Common.MultiTenant.Core
         {
             this._parentScopes.Enqueue(Code);
             this._tenantCode = tenantCode;
-            this._detail = _dbContext.Query<Tenant>().FirstOrDefault(x => x.Code == tenantCode);
+            this._detail = _uow.Query<Tenant>().FirstOrDefault(x => x.Code == tenantCode);
             return new DisposeAction(() =>
             {
                 _tenantCode = _parentScopes.Dequeue();
