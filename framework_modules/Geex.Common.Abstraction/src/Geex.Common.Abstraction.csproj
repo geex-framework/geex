@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -42,29 +41,24 @@
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Desensitization\" />
     <Folder Include="Gql\Interceptors\" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Casbin\src\Geex.Casbin.csproj" />
     <ProjectReference Include="..\..\Geex.MediatX\MediatX.RabbitMQ\MediatX.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="KellermanSoftware.Compare-NET-Objects">
       <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>
-
   <PropertyGroup>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
-
   <Target Name="CompareDll">
     <ItemGroup>
       <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />

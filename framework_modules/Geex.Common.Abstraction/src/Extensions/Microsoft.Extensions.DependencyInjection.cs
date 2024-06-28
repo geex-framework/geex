@@ -104,9 +104,12 @@ namespace Microsoft.Extensions.DependencyInjection
             var classEnumTypes = GeexModule.ClassEnumTypes;
             foreach (var classEnumType in classEnumTypes)
             {
+                var typeName = classEnumType.Name;
                 if ((classEnumType.GetClassEnumRealType().BaseType.GetProperty(nameof(Enumeration.DynamicValues)).GetValue(null) as IEnumerable<IEnumeration>).Any())
                 {
-                    schemaBuilder.BindRuntimeType(classEnumType, typeof(EnumerationType<>).MakeGenericType(classEnumType));
+                    var enumGqlType = typeof(EnumerationType<>).MakeGenericType(classEnumType);
+                    schemaBuilder.AddType(enumGqlType);
+                    schemaBuilder.BindRuntimeType(classEnumType, enumGqlType);
                     schemaBuilder.AddConvention(typeof(IFilterConvention), sp => new FilterConventionExtension(x =>
                     {
                         x.BindRuntimeType(classEnumType, typeof(ClassEnumOperationFilterInputType<>).MakeGenericType(classEnumType));
@@ -129,6 +132,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             if (GeexModule.KnownModuleAssembly.AddIfNotContains(gqlModuleType.Assembly))
             {
+                var moduleName = gqlModuleType.Name;
                 var dependedModuleTypes = gqlModuleType.GetCustomAttribute<DependsOnAttribute>()?.DependedTypes;
                 if (dependedModuleTypes?.Any() == true)
                 {

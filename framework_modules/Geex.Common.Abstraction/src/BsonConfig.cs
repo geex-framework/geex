@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
+using Fasterflect;
+
 using Geex.Common.Abstraction.Storage;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson.Serialization;
@@ -31,7 +35,15 @@ namespace Geex.Common.Abstraction
             {
                 map.MapConstructor(noParamCtor);
             }
-            BsonClassMap.RegisterClassMap(map);
+
+            if (!BsonClassMap.TryRegisterClassMap(map))
+            {
+                var existingMap = BsonClassMap.LookupClassMap(entityType);
+                if (existingMap != default)
+                {
+                    this.Map(existingMap);
+                }
+            }
             //this.IndexConfig.Indexes.Where()
             //if (Cache<TEntity>.Indexes.All(x => x.ToString() != indexModel.Keys.Render(BsonSerializer.LookupSerializer<TEntity>(), BsonSerializer.SerializerRegistry)))
             //{

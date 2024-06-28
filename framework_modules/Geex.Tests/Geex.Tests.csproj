@@ -1,19 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="appsettings.json" />
     <None Remove="appsettings.Production.json" />
     <None Remove="appsettings.Test.json" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="appsettings.Test.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -25,7 +21,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
@@ -40,7 +35,6 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
     <ProjectReference Include="..\Geex.Common.Accounting\src\Geex.Common.Accounting.csproj" />
@@ -55,5 +49,4 @@
     <ProjectReference Include="..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
     <ProjectReference Include="..\Geex.Common\src\Geex.Common.csproj" />
   </ItemGroup>
-
 </Project>

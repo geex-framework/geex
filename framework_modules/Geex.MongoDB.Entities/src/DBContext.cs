@@ -673,7 +673,7 @@ namespace MongoDB.Entities
             {
                 var migrationTypes = migrations.Select(x => (type: x.GetType(), instance: x));
                 //迁移时禁用所有filter
-                this.DataFilters.Clear();
+                using var _ = this.DisableAllDataFilters();
                 var lastMigNum = (
                         await this.Find<Migration, long>()
                             .Sort(m => m.Number, FindSortType.Descending)

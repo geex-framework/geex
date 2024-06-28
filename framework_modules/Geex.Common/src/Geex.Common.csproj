@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -7,7 +6,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="AutoEquality" Version="0.5.4" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.1.0" />
@@ -26,7 +24,6 @@
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
     <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
     <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
@@ -38,5 +35,4 @@
     <ProjectReference Include="..\..\Geex.Common.Messaging\src\Geex.Common.Messaging.csproj" />
     <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
   </ItemGroup>
-
 </Project>

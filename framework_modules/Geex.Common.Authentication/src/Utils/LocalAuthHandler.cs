@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+
 using Geex.Common.Authentication.Domain;
 
 using JetBrains.Annotations;
@@ -15,7 +17,7 @@ using Microsoft.Extensions.Options;
 
 namespace Geex.Common.Authentication.Utils
 {
-    internal class LocalAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    internal class LocalAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>, IAuthenticationHandler
     {
         private readonly IMediator _mediator;
         private GeexJwtSecurityTokenHandler _tokenHandler;
@@ -38,18 +40,14 @@ namespace Geex.Common.Authentication.Utils
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var request = Context.GetOpenIddictServerRequest();
+            var accessToken = request != default ? request.AccessToken : Context.Request.Headers.Authorization.ToString().Split(' ',StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(1);
 
-            if (request == default)
+            if (accessToken.IsNullOrEmpty())
             {
                 return AuthenticateResult.NoResult();
             }
 
-            if (request.AccessToken.IsNullOrEmpty())
-            {
-                return AuthenticateResult.NoResult();
-            }
-
-            var jwt = _tokenHandler.ReadJwtToken(request.AccessToken);
+            var jwt = _tokenHandler.ReadJwtToken(accessToken);
             var identity = new ClaimsIdentity(jwt.Claims, SchemeName);
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, SchemeName);

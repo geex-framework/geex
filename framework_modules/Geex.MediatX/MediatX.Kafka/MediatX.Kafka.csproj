@@ -1,36 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <Authors>Lulus, Alessandro Esposito, Geex</Authors>
-        <Description>RPC extensions for mediatr via pipeline using Apache Kafka</Description>
-        <Copyright>Copyright Lulus</Copyright>
-        <Features>strict</Features>
-        <PackageTags>mediator;request;response;queries;commands;notifications;rpc;kafka</PackageTags>
-        <!-- <SignAssembly>true</SignAssembly>
+  <PropertyGroup>
+    <Authors>Lulus, Alessandro Esposito, Geex</Authors>
+    <Description>RPC extensions for mediatr via pipeline using Apache Kafka</Description>
+    <Copyright>Copyright Lulus</Copyright>
+    <Features>strict</Features>
+    <PackageTags>mediator;request;response;queries;commands;notifications;rpc;kafka</PackageTags>
+    <!-- <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\MediatX.snk</AssemblyOriginatorKeyFile> -->
-        <GenerateDocumentationFile>false</GenerateDocumentationFile>
-        <MinVerTagPrefix>v</MinVerTagPrefix>
-        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <Deterministic>true</Deterministic>
-        <RootNamespace>mediatx.kafka</RootNamespace>
-        <TargetFrameworks>net6.0</TargetFrameworks>
-        
-        <RepositoryUrl>https://github.com/geex-framework/mediatx</RepositoryUrl>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Confluent.Kafka" Version="2.*" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="7.*" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.*" />
-        <PackageReference Include="MediatR" Version="12.*" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\MediatX\MediatX.csproj" />
-    </ItemGroup>
-
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Deterministic>true</Deterministic>
+    <RootNamespace>mediatx.kafka</RootNamespace>
+    <TargetFrameworks>net6.0</TargetFrameworks>
+    <RepositoryUrl>https://github.com/geex-framework/mediatx</RepositoryUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="2.*" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="7.*" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.*" />
+    <PackageReference Include="MediatR" Version="12.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MediatX\MediatX.csproj" />
+  </ItemGroup>
 </Project>

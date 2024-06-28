@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <ServerGarbageCollection>true</ServerGarbageCollection>
@@ -7,15 +6,12 @@
     <LangVersion>10.0</LangVersion>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetCasbin.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <None Update="examples\abac_model.conf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -108,5 +104,4 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
 </Project>

@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 using FastExpressionCompiler;
+
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Interceptors;
 
@@ -170,7 +171,7 @@ namespace MongoDB.Entities.Utilities
             {
                 var subQueryType = propertyInfo.PropertyType;
                 Type subQueryEntityType;
-                if (subQueryType.IsAssignableTo<IQueryable>())
+                if (subQueryType.IsAssignableTo<IQueryable>() || subQueryType.Name.StartsWith($"{nameof(Lazy<object>)}`"))
                 {
                     subQueryEntityType = subQueryType.GenericTypeArguments.First().GetRootBsonClassMap().ClassType;
                 }
@@ -193,7 +194,9 @@ namespace MongoDB.Entities.Utilities
                         var allQuery = lazyQuery.DefaultSourceProvider();
                         var filterExpression = lazyQuery.BatchQuery.As<LambdaExpression>().CompileFast()
                             .DynamicInvoke(entities).As<LambdaExpression>();
+
                         filterExpression = filterExpression.CastParamType(subQueryEntityType);
+
                         var filteredQuery = (IQueryable)queryableWhereMethodInfo.MakeGenericMethod(subQueryEntityType)
                             .Invoke(null, new object[] { allQuery, filterExpression });
 

@@ -44,156 +44,163 @@ using Volo.Abp.Modularity;
 
 namespace Geex.Common
 {
-  public class GeexCoreModule : GeexModule<GeexCoreModule, GeexCoreModuleOptions>
-  {
-    static GeexCoreModule()
+    public class GeexCoreModule : GeexModule<GeexCoreModule, GeexCoreModuleOptions>
     {
-      ConventionRegistry.Register("enumeration", new ConventionPack()
+        static GeexCoreModule()
+        {
+            ConventionRegistry.Register("enumeration", new ConventionPack()
             {
                 new EnumerationRepresentationConvention()
             }, _ => true);
-    }
-    public override void ConfigureServices(ServiceConfigurationContext context)
-    {
-      var moduleOptions = this.ModuleOptions;
-      context.Services.AddCors(options =>
-      {
-        if (this.Env.IsDevelopment())
-        {
-          options.AddDefaultPolicy(x =>
-                    x.SetIsOriginAllowed(x => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
         }
-        else
+        public override void ConfigureServices(ServiceConfigurationContext context)
         {
-          var corsRegex = moduleOptions.CorsRegex;
-          if (!corsRegex.IsNullOrEmpty())
-          {
-            var regex = new Regex(corsRegex, RegexOptions.Compiled);
-            options.AddDefaultPolicy(x => x.SetIsOriginAllowed(origin => regex.Match(origin).Success).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
-          }
-          else
-          {
-            options.AddDefaultPolicy(x =>
-                  x.SetIsOriginAllowed(x => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
-          }
-        }
-      });
-      context.Services.AddStorage();
-      context.Services.TryAddTransient<IRestClient, LoggedRestClient>();
-      context.Services.TryAddTransient<RestClient, LoggedRestClient>();
-      context.Services.TryAddTransient<LoggedRestClient>();
-      var schemaBuilder = context.Services
-          .AddGraphQLServer()
-          .AllowIntrospection(!moduleOptions.DisableIntrospection);
-      if (moduleOptions.Redis != default)
-      {
-        context.Services.AddStackExchangeRedisExtensions();
-      }
-      context.Services.AddSingleton(schemaBuilder);
-      context.Services.AddHttpResultSerializer(x => new GeexResultSerializerWithCustomStatusCodes(new LazyService<ClaimsPrincipal>(x)));
-      IReadOnlySchemaOptions capturedSchemaOptions = default;
-      schemaBuilder.AddConvention<ITypeInspector>(typeof(GeexTypeInspector))
-          .ModifyOptions(opt =>
-          {
-            opt.EnableOneOf = true;
-            capturedSchemaOptions = opt;
-          })
-          .AddConvention<INamingConventions>(sp => new GeexNamingConventions(new XmlDocumentationProvider(new XmlDocumentationFileResolver(capturedSchemaOptions.ResolveXmlDocumentationFileName), sp.GetApplicationService<ObjectPool<StringBuilder>>())))
-          .TryAddTypeInterceptor<GeexTypeInterceptor>()
-          .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
-          {
-            converter = o => o;
-            return source.GetBaseClasses(false).Intersect(target.GetBaseClasses(false)).Any();
-          })
-          .ModifyRequestOptions(options =>
-         {
-           options.IncludeExceptionDetails = moduleOptions.IncludeExceptionDetails;
-           options.ExecutionTimeout = TimeSpan.FromSeconds(300);
-         })
-          .SetPagingOptions(new PagingOptions()
-          {
-            DefaultPageSize = 10,
-            IncludeTotalCount = true,
-            MaxPageSize = moduleOptions.MaxPageSize
-          })
-          .AddErrorFilter<LoggingErrorFilter>(_ =>
-              new LoggingErrorFilter(_.GetService<ILoggerFactory>()))
-          .AddInMemorySubscriptions()
-          .AddValidationVisitor<ExtraArgsTolerantValidationVisitor>()
-          .AddTransactionScopeHandler<GeexTransactionScopeHandler>()
-          .AddFiltering<GeexFilterConvention>()
-          .AddSorting<GeexSortConvention>()
-          .AddProjections()
-          .UseDefaultPipeline()
-          .UseRequest(next => async context =>
-          {
-            // todo: extract to request middleware
-            if (context.Operation?.Type == OperationType.Query)
+            var moduleOptions = this.ModuleOptions;
+            context.Services.AddCors(options =>
             {
-              var work = context.Services.GetService<IUnitOfWork>();
-              if (work != null) work.DbContext.EntityTrackingEnabled = false;
+                if (this.Env.IsDevelopment())
+                {
+                    options.AddDefaultPolicy(x =>
+                        x.SetIsOriginAllowed(x => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+                }
+                else
+                {
+                    var corsRegex = moduleOptions.CorsRegex;
+                    if (!corsRegex.IsNullOrEmpty())
+                    {
+                        var regex = new Regex(corsRegex, RegexOptions.Compiled);
+                        options.AddDefaultPolicy(x => x.SetIsOriginAllowed(origin => regex.Match(origin).Success).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+                    }
+                    else
+                    {
+                        options.AddDefaultPolicy(x =>
+                        x.SetIsOriginAllowed(x => true).AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+                    }
+                }
+            });
+            context.Services.AddStorage();
+            context.Services.TryAddTransient<IRestClient, LoggedRestClient>();
+            context.Services.TryAddTransient<RestClient, LoggedRestClient>();
+            context.Services.TryAddTransient<LoggedRestClient>();
+            var schemaBuilder = context.Services
+                .AddGraphQLServer()
+                .AllowIntrospection(!moduleOptions.DisableIntrospection);
+            if (moduleOptions.Redis != default)
+            {
+                context.Services.AddStackExchangeRedisExtensions();
             }
-            await next(context);
-          })
-          .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
-          .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
-          .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
-          .AddCommonTypes()
-          .AddQueryFieldToMutationPayloads()
-          .InitializeOnStartup()
-          ;
-      //.OnSchemaError((ctx, err) => { throw new Exception("schema error", err); });
-      context.Services.AddHttpContextAccessor();
-      context.Services.AddObjectAccessor<IApplicationBuilder>();
+            context.Services.AddSingleton(schemaBuilder);
+            context.Services.AddHttpResultSerializer(x => new GeexResultSerializerWithCustomStatusCodes(new LazyService<ClaimsPrincipal>(x)));
+            IReadOnlySchemaOptions capturedSchemaOptions = default;
+            schemaBuilder.AddConvention<ITypeInspector>(typeof(GeexTypeInspector))
+                .TrimTypes(false)
+                .ModifyOptions(opt =>
+                {
+                    opt.RemoveUnreachableTypes = false;
+                    opt.RemoveUnusedTypeSystemDirectives = false;
+                    opt.EnsureAllNodesCanBeResolved = true;
+                    opt.PreserveSyntaxNodes = true;
+                    opt.SortFieldsByName = true;
+                    opt.EnableTrueNullability = true;
+                    opt.EnableOneOf = true;
+                    capturedSchemaOptions = opt;
+                })
+                .AddConvention<INamingConventions>(sp => new GeexNamingConventions(new XmlDocumentationProvider(new XmlDocumentationFileResolver(capturedSchemaOptions.ResolveXmlDocumentationFileName), sp.GetApplicationService<ObjectPool<StringBuilder>>())))
+                .TryAddTypeInterceptor<GeexTypeInterceptor>()
+                .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
+                {
+                    converter = o => o;
+                    return source.GetBaseClasses(false).Intersect(target.GetBaseClasses(false)).Any();
+                })
+                .ModifyRequestOptions(options =>
+               {
+                   options.IncludeExceptionDetails = moduleOptions.IncludeExceptionDetails;
+                   options.ExecutionTimeout = TimeSpan.FromSeconds(300);
+               })
+                .SetPagingOptions(new PagingOptions()
+                {
+                    DefaultPageSize = 10,
+                    IncludeTotalCount = true,
+                    MaxPageSize = moduleOptions.MaxPageSize
+                })
+                .AddErrorFilter<LoggingErrorFilter>(_ =>
+                    new LoggingErrorFilter(_.GetService<ILoggerFactory>()))
+                .AddInMemorySubscriptions()
+                .AddValidationVisitor<ExtraArgsTolerantValidationVisitor>()
+                .AddTransactionScopeHandler<GeexTransactionScopeHandler>()
+                .AddFiltering<GeexFilterConvention>()
+                .AddSorting<GeexSortConvention>()
+                .AddProjections()
+                .UseDefaultPipeline()
+                .UseRequest(next => async context =>
+                {
+                    // todo: extract to request middleware
+                    if (context.Operation?.Type == OperationType.Query)
+                    {
+                        var work = context.Services.GetService<IUnitOfWork>();
+                        if (work != null) work.DbContext.EntityTrackingEnabled = false;
+                    }
+                    await next(context);
+                })
+                .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
+                .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
+                .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
+                .AddCommonTypes()
+                .AddQueryFieldToMutationPayloads()
+                .InitializeOnStartup()
+                ;
+            //.OnSchemaError((ctx, err) => { throw new Exception("schema error", err); });
+            context.Services.AddHttpContextAccessor();
+            context.Services.AddObjectAccessor<IApplicationBuilder>();
 
-      context.Services.AddHealthChecks();
+            context.Services.AddHealthChecks();
 
-      context.Services.AddTransient(typeof(LazyService<>));
-      context.Services.AddTransient<ClaimsPrincipal>(x =>
-      x.GetService<IHttpContextAccessor>()?.HttpContext?.User);
-      context.Services.AddResponseCompression(x =>
-      {
-        // todo: 此处可能有安全风险
-        // https://security.stackexchange.com/questions/19911/crime-how-to-beat-the-beast-successor/19914#19914
-        // do not remove this: xxVGhpcyBpcyB0aGUgYW50aS1waXJhY3kgdGV4dCB0aGF0IHByb3ZlcyB0aGF0IHRoZSBvcmlnaW5hbCBjb2RlIHdhcyB3cml0dGVuIGJ5IEx1bHVzIChZYW5nIFNodSkuxx
-        x.EnableForHttps = true;
-        x.Providers.Add<GzipCompressionProvider>();
-      });
-      base.ConfigureServices(context);
+            context.Services.AddTransient(typeof(LazyService<>));
+            context.Services.AddTransient<ClaimsPrincipal>(x =>
+            x.GetService<IHttpContextAccessor>()?.HttpContext?.User);
+            context.Services.AddResponseCompression(x =>
+            {
+                // todo: 此处可能有安全风险
+                // https://security.stackexchange.com/questions/19911/crime-how-to-beat-the-beast-successor/19914#19914
+                // do not remove this: xxVGhpcyBpcyB0aGUgYW50aS1waXJhY3kgdGV4dCB0aGF0IHByb3ZlcyB0aGF0IHRoZSBvcmlnaW5hbCBjb2RlIHdhcyB3cml0dGVuIGJ5IEx1bHVzIChZYW5nIFNodSkuxx
+                x.EnableForHttps = true;
+                x.Providers.Add<GzipCompressionProvider>();
+            });
+            base.ConfigureServices(context);
+        }
+
+        /// <inheritdoc />
+        public override void PostConfigureServices(ServiceConfigurationContext context)
+        {
+            context.Services.AddDataFilters();
+            base.PostConfigureServices(context);
+            foreach (var name in GeexTypeInterceptor.IgnoredTypes.Select(x => x.Name))
+            {
+                this.SchemaBuilder.IgnoreType(name);
+            }
+        }
+
+        /// <inheritdoc />
+        public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+        {
+            this.ConfigureModuleEntityMaps(context.ServiceProvider);
+            var _env = context.GetEnvironment();
+            var app = context.GetApplicationBuilder();
+            app.UseCors();
+            app.UseRouting();
+            app.UseWebSockets();
+            //if (_env.IsDevelopment())
+            //{
+            //    app.UseDeveloperExceptionPage();
+            //}
+            app.UseCookiePolicy(new CookiePolicyOptions
+            {
+                MinimumSameSitePolicy = SameSiteMode.Strict,
+            });
+
+            app.UseResponseCompression();
+
+            return base.OnPreApplicationInitializationAsync(context);
+        }
     }
-
-    /// <inheritdoc />
-    public override void PostConfigureServices(ServiceConfigurationContext context)
-    {
-      context.Services.AddDataFilters();
-      base.PostConfigureServices(context);
-      foreach (var name in GeexTypeInterceptor.IgnoredTypes.Select(x => x.Name))
-      {
-        this.SchemaBuilder.IgnoreType(name);
-      }
-    }
-
-    /// <inheritdoc />
-    public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
-    {
-      this.ConfigureModuleEntityMaps(context.ServiceProvider);
-      var _env = context.GetEnvironment();
-      var app = context.GetApplicationBuilder();
-      app.UseCors();
-      app.UseRouting();
-      app.UseWebSockets();
-      //if (_env.IsDevelopment())
-      //{
-      //    app.UseDeveloperExceptionPage();
-      //}
-      app.UseCookiePolicy(new CookiePolicyOptions
-      {
-        MinimumSameSitePolicy = SameSiteMode.Strict,
-      });
-
-      app.UseResponseCompression();
-
-      return base.OnPreApplicationInitializationAsync(context);
-    }
-  }
 }

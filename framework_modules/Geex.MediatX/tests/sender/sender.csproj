@@ -1,17 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
-
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-sender-2903A8C6-AF7B-45C9-A99C-61648471A0E9</UserSecretsId>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="MediatR" Version="12.1.1" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\MediatX.Kafka\MediatX.Kafka.csproj" />
     <ProjectReference Include="..\cqrs.models\cqrs.models.csproj" />

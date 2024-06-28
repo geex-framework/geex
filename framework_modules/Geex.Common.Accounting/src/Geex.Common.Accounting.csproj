@@ -1,21 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
-
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
     <ProjectReference Include="..\..\Geex.Common.Identity\src\Geex.Common.Identity.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Aggregates\Accounts\" />
   </ItemGroup>
-
 </Project>

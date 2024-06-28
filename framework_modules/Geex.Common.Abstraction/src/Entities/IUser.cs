@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+
 using Geex.Common.Abstraction.MultiTenant;
 
 using MongoDB.Entities;
@@ -18,6 +20,7 @@ namespace Geex.Common.Abstraction.Entities
         public bool IsEnable { get; set; }
         List<string> RoleIds { get; }
         List<string> OrgCodes { get; set; }
+        public List<string> Permissions { get; }
         void ChangePassword(string originPassword, string newPassword);
         bool CheckPassword(string password);
     }

@@ -27,9 +27,15 @@ namespace Geex.Common.BlobStorage.Core
         /// <inheritdoc />
         public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
         {
+            return base.OnPreApplicationInitializationAsync(context);
+        }
+
+        /// <inheritdoc />
+        public override Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+        {
             var app = context.GetApplicationBuilder();
             app.UseEndpoints(endpoints => endpoints.UseFileDownload());
-            return base.OnPreApplicationInitializationAsync(context);
+            return base.OnPostApplicationInitializationAsync(context);
         }
     }
 }

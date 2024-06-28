@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81;</AssetTargetFallback>
@@ -8,14 +7,11 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.7.1" />
     <PackageReference Include="EasyCronJob.Core" Version="2.1.0" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
   </ItemGroup>
-
 </Project>

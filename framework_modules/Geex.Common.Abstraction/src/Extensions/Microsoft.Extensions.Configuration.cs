@@ -1,4 +1,5 @@
-﻿using Geex.Common.Abstractions;
+﻿using System;
+using Geex.Common.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.Configuration
@@ -14,8 +15,12 @@ namespace Microsoft.Extensions.Configuration
         {
             var configurationSection = configuration.GetSection(typeof(TModuleOption).Name);
             var moduleOptions = configurationSection.Get<TModuleOption>();
-            moduleOptions.ConfigurationSection = configurationSection;
-            return moduleOptions;
+            if (moduleOptions != null)
+            {
+                moduleOptions.ConfigurationSection = configurationSection;
+                return moduleOptions;
+            }
+            return Activator.CreateInstance<TModuleOption>();
         }
     }
 }
