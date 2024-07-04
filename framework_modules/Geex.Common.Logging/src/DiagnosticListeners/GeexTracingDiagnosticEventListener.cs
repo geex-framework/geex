@@ -67,6 +67,18 @@ namespace Geex.Common.Gql
             return new ResolveFieldValueScope(context, this._timestampProvider);
         }
 
+        /// <inheritdoc />
+        public override void StartProcessing(IRequestContext context)
+        {
+            base.StartProcessing(context);
+        }
+
+        /// <inheritdoc />
+        public override void StopProcessing(IRequestContext context)
+        {
+            base.StopProcessing(context);
+        }
+
         private static GeexTracingResultBuilder CreateBuilder(IRequestContext context,
             ILogger<GeexTracingDiagnosticEventListener> logger)
         {
@@ -187,8 +199,8 @@ namespace Geex.Common.Gql
                     }
                     var parentPathStr = parentPath?.Print();
                     this._parentSpan = context.GetTypedContextData<ISpan>("apm_span:field_resolve:" + parentPathStr) ?? context.GetTypedContextData<ISpan>("apm_span:operation");
-                    this._span = this._parentSpan?.StartSpan("apm_span:field_resolve:" + pathStr, "request", "field_resolve");
-                    context.ContextData.Add(pathStr, this._span);
+                    this._span = this._parentSpan?.StartSpan("field_resolve:" + pathStr, "request", "field_resolve");
+                    context.ContextData.Add("apm_span:field_resolve:" + pathStr, this._span);
                 }
             }
 

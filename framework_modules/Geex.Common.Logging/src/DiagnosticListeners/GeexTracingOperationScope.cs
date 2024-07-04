@@ -37,7 +37,7 @@ namespace Geex.Common.Gql
             if (Agent.IsConfigured)
             {
                 context.ContextData["ApmTransaction"] = Agent.Tracer.CurrentTransaction;
-                context.ContextData["ApmOperationSpan"] = this._span = Agent.Tracer.CurrentTransaction?.StartSpan(context.GetOperationDisplay(), "request", "operation");
+                context.ContextData["apm_span:operation"] = this._span = Agent.Tracer.CurrentTransaction?.StartSpan(context.GetOperationDisplay(), "request", "operation");
             }
 
             builder.SetOperationStartTime(startTime, timestampProvider.NowInNanoseconds());

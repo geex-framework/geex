@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+
 using FastExpressionCompiler;
+using Geex.MongoDB.Entities.Utilities;
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Interceptors;
 
@@ -37,95 +40,128 @@ namespace MongoDB.Entities.Utilities
 
         public IEnumerator<TSelect> GetEnumerator()
         {
-            if (_dbContext == default)
+            //var expression = ExpressionOptimizer.Visit(this.Expression);
+            var expression = this.Expression;
+            //var sw = Stopwatch.StartNew();
+            var selectType = typeof(TSelect);
+            var sourceType = typeof(T);
+            try
             {
-                return this.InnerProvider.CreateQuery<TSelect>(this.Expression).GetEnumerator();
-            }
-            if (!this.TypedProvider.EntityTrackingEnabled)
-            {
-                IEnumerable<TSelect> result = this.InnerProvider.CreateQuery<TSelect>(this.Expression).AsEnumerable();
-                if (typeof(TSelect).IsAssignableFrom(typeof(T)) || typeof(T).IsAssignableFrom(typeof(TSelect)))
+                //Debug.WriteLine($"CachedDbContextQueryable.GetEnumerator {selectType} started.");
+                if (_dbContext == default)
                 {
-                    var sourceResult = _dbContext?.AttachNoTracking(result.Cast<T>());
-                    BatchLoadLazyQueries(sourceResult.AsQueryable(), this.TypedProvider.BatchLoadConfig);
-                    result = sourceResult.Cast<TSelect>();
-
-                }
-                return result.GetEnumerator();
-            }
-            else
-            {
-                var visitor = this.Expression.ExtractQueryParts<T, TSelect>();
-                var rootType = typeof(T).GetRootBsonClassMap().ClassType;
-
-                var localEntities = this._dbContext.Local[rootType].Values.OfType<T>();
-
-                var originLocalEntities = this._dbContext.OriginLocal[rootType].Values.OfType<T>();
-
-                var localIds = localEntities.Select(x => x.Id).ToList();
-                var deletedEntities = Enumerable.Empty<T>();
-                if (localIds.Any())
-                {
-                    deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
+                    return this.InnerProvider.CreateQuery<TSelect>(expression).GetEnumerator();
                 }
 
-                var dbQuery = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression);
-                if (localIds.Any())
+                if (!this.TypedProvider.EntityTrackingEnabled)
                 {
-                    dbQuery = dbQuery.Where(x => !localIds.Contains(x.Id));
-                }
-                var dbEntities = dbQuery.ToList();
-                if (dbEntities.Any())
-                {
-                    dbEntities = this._dbContext.Attach(dbEntities);
-                }
-                var entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
-                var resultQueryExpression = visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
-                entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
+                    IEnumerable<TSelect> result = this.InnerProvider.CreateQuery<TSelect>(expression)
+                        .AsEnumerable();
+                    if (selectType.IsAssignableFrom(sourceType) || sourceType.IsAssignableFrom(selectType))
+                    {
+                        var sourceResult = _dbContext?.AttachNoTracking(result.Cast<T>());
+                        BatchLoadLazyQueries(sourceResult.AsQueryable(), this.TypedProvider.BatchLoadConfig);
+                        result = sourceResult.Cast<TSelect>();
 
-                BatchLoadLazyQueries(entities, this.TypedProvider.BatchLoadConfig);
+                    }
 
-                IEnumerable<TSelect> result;
-                if (visitor.PostSelectExpression != default)
-                {
-                    var postSelectExpression = visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.SelectSource);
-                    //entities = entities.Provider.CreateQuery<T>(postSelectExpression);
-                    var results = entities.Provider.CreateQuery<TSelect>(postSelectExpression);
-                    return results.GetEnumerator();
-                    //if (visitor.ExecuteExpression != default)
-                    //{
-                    //    return results.Provider.CreateQuery<TSelect>(visitor.ExecuteExpression.ReplaceSource(results, ReplaceType.DirectSource)).GetEnumerator();
-                    //}
-                }
-
-                if (visitor.ExecuteExpression != default)
-                {
-                    result = entities.Provider.Execute<IEnumerable<TSelect>>(visitor.ExecuteExpression.ReplaceSource(entities, ReplaceType.OriginSource));
+                    var @return = result.GetEnumerator();
+                    //Debug.WriteLine($"CachedDbContextQueryable.GetEnumerator {selectType} finished, within {sw.ElapsedMilliseconds}ms.");
+                    return @return;
                 }
                 else
                 {
-                    result = entities.Cast<TSelect>();
-                }
+                    var visitor = expression.ExtractQueryParts<T, TSelect>();
+                    var rootType = sourceType.GetRootBsonClassMap().ClassType;
 
-                if (_dbContext?.DataFilters.Any() == true)
-                {
-                    foreach (var (targetType, value) in _dbContext.DataFilters)
+                    var localEntities = this._dbContext.Local[rootType].Values.OfType<T>();
+
+                    var originLocalEntities = this._dbContext.OriginLocal[rootType].Values.OfType<T>();
+
+                    var localIds = localEntities.Select(x => x.Id).ToList();
+                    var deletedEntities = Enumerable.Empty<T>();
+                    if (localIds.Any())
                     {
-                        if (targetType.IsAssignableFrom(typeof(T)))
+                        deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
+                    }
+
+                    var dbQuery = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression);
+                    if (localIds.Any())
+                    {
+                        dbQuery = dbQuery.Where(x => !localIds.Contains(x.Id));
+                    }
+
+                    var dbEntities = dbQuery.ToList();
+                    if (dbEntities.Any())
+                    {
+                        dbEntities = this._dbContext.Attach(dbEntities);
+                    }
+
+                    var entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
+                    var resultQueryExpression =
+                        visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
+                    entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
+
+                    BatchLoadLazyQueries(entities, this.TypedProvider.BatchLoadConfig);
+
+                    IEnumerable<TSelect> result;
+                    if (visitor.PostSelectExpression != default)
+                    {
+                        var postSelectExpression =
+                            visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.SelectSource);
+                        //entities = entities.Provider.CreateQuery<T>(postSelectExpression);
+                        var results = entities.Provider.CreateQuery<TSelect>(postSelectExpression);
+                        var @return = results.GetEnumerator();
+                        //Debug.WriteLine($"CachedDbContextQueryable.GetEnumerator {selectType} finished, within {sw.ElapsedMilliseconds}ms.");
+                        return @return;
+                        //if (visitor.ExecuteExpression != default)
+                        //{
+                        //    return results.Provider.CreateQuery<TSelect>(visitor.ExecuteExpression.ReplaceSource(results, ReplaceType.DirectSource)).GetEnumerator();
+                        //}
+                    }
+
+                    if (visitor.ExecuteExpression != default)
+                    {
+                        result = entities.Provider.Execute<IEnumerable<TSelect>>(
+                            visitor.ExecuteExpression.ReplaceSource(entities, ReplaceType.OriginSource));
+                    }
+                    else
+                    {
+                        result = entities.Cast<TSelect>();
+                    }
+
+                    if (_dbContext?.DataFilters.Any() == true)
+                    {
+                        foreach (var (targetType, value) in _dbContext.DataFilters)
                         {
-                            if (typeof(ExpressionDataFilter<>).MakeGenericType(targetType)
-                                    .GetProperty(nameof(ExpressionDataFilter<T>.PostFilterExpression))
-                                    ?.GetValue(value) is LambdaExpression originExpression)
+                            if (targetType.IsAssignableFrom(sourceType))
                             {
-                                var lambda = originExpression.CastParamType<T>();
-                                result = Queryable.Where(result.AsQueryable(), (Expression<Func<TSelect, bool>>)lambda);
+                                if (typeof(ExpressionDataFilter<>).MakeGenericType(targetType)
+                                        .GetProperty(nameof(ExpressionDataFilter<T>.PostFilterExpression))
+                                        ?.GetValue(value) is LambdaExpression originExpression)
+                                {
+                                    var lambda = originExpression.CastParamType<T>();
+                                    result = Queryable.Where(result.AsQueryable(),
+                                        (Expression<Func<TSelect, bool>>)lambda);
+                                }
                             }
                         }
                     }
-                }
 
-                return result.GetEnumerator();
+                    var @return1 = result.GetEnumerator();
+                    //Debug.WriteLine($"CachedDbContextQueryable.GetEnumerator {selectType} finished, within {sw.ElapsedMilliseconds}ms.");
+                    return @return1;
+                }
             }
+            finally
+            {
+
+                //if (sw.ElapsedMilliseconds > 200)
+                //{
+                    //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{selectType} takes long, query: {expression}");
+                //}
+            }
+
         }
 
         static Type ListType = typeof(List<>);

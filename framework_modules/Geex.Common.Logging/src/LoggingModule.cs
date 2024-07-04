@@ -3,8 +3,10 @@
 using Elastic.Apm.AspNetCore;
 
 using Geex.Common.Abstractions;
+
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -26,9 +28,10 @@ namespace Geex.Common.Logging
         {
             var app = context.GetApplicationBuilder();
             var moduleOptions = Configuration.GetModuleOptions<LoggingModuleOptions>();
-            if (moduleOptions.ElasticApm.Enabled)
+            var apmConfigurationSection = moduleOptions.ConfigurationSection.GetSection(nameof(LoggingModuleOptions.ElasticApm));
+            if (apmConfigurationSection?.GetValue<bool>("Enabled") == true)
             {
-                app.UseElasticApm(moduleOptions.ConfigurationSection.GetSection(nameof(LoggingModuleOptions.ElasticApm)));
+                app.UseElasticApm(moduleOptions.ConfigurationSection);
             }
             return base.OnPreApplicationInitializationAsync(context);
         }

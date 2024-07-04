@@ -1628,11 +1628,26 @@ namespace MongoDB.Entities.InnerQuery
                     var newExp = (NewExpression)lambdaExp.Body;
 
                     // Get the mongo field names for each property in the new {...}
-                    var fieldNames = newExp.Arguments.Cast<MemberExpression>()
-                        .Select((c, i) => new
+                    var fieldNames = newExp.Arguments.Select(x =>
                         {
-                            FieldName = GetMongoFieldName(c.Member),
-                            ExpressionValue = BuildMongoSelectExpression(c, true)
+                            if (x is MemberExpression memberExp)
+                            {
+                                return new
+                                {
+                                    FieldName = GetMongoFieldName(memberExp.Member),
+                                    ExpressionValue = BuildMongoSelectExpression(memberExp, true)
+                                };
+                            }
+                            if (x is UnaryExpression unaryExpression)
+                            {
+                                memberExp = unaryExpression.Operand as MemberExpression;
+                                return new
+                                {
+                                    FieldName = GetMongoFieldName(memberExp.Member),
+                                    ExpressionValue = BuildMongoSelectExpression(memberExp, true)
+                                };
+                            }
+                            throw new NotSupportedException("Not supported express of: " + x);
                         })
                         .Select(c => new BsonElement(c.FieldName, c.ExpressionValue))
                         .ToList();

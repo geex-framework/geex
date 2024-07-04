@@ -15,6 +15,7 @@ using Geex.Common.Gql;
 
 using HotChocolate;
 using HotChocolate.Execution;
+using HotChocolate.Execution.Configuration;
 using HotChocolate.Language;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
@@ -128,25 +129,25 @@ namespace Geex.Common
                 .AddInMemorySubscriptions()
                 .AddValidationVisitor<ExtraArgsTolerantValidationVisitor>()
                 .AddTransactionScopeHandler<GeexTransactionScopeHandler>()
-                .AddFiltering<GeexFilterConvention>()
-                .AddSorting<GeexSortConvention>()
-                .AddProjections()
-                .UseDefaultPipeline()
                 .UseRequest(next => async context =>
                 {
                     // todo: extract to request middleware
-                    if (context.Operation?.Type == OperationType.Query)
+                    if (context.Request.Query?.ToString().StartsWith("query ", StringComparison.InvariantCultureIgnoreCase) == true)
                     {
                         var work = context.Services.GetService<IUnitOfWork>();
                         if (work != null) work.DbContext.EntityTrackingEnabled = false;
                     }
                     await next(context);
                 })
+                .UseDefaultPipeline()
                 .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddCommonTypes()
                 .AddQueryFieldToMutationPayloads()
+                .AddFiltering<GeexFilterConvention>()
+                .AddSorting<GeexSortConvention>()
+                .AddProjections()
                 .InitializeOnStartup()
                 ;
             //.OnSchemaError((ctx, err) => { throw new Exception("schema error", err); });

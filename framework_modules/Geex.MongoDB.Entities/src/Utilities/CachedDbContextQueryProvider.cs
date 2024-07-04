@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
 using FastExpressionCompiler;
-
+using Geex.MongoDB.Entities.Utilities;
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Interceptors;
 
@@ -92,76 +93,103 @@ namespace MongoDB.Entities.Utilities
 
         public TResult Execute<TResult>(Expression expression)
         {
-            if (this.DbContext != null)
+            //expression = ExpressionOptimizer.Visit(expression);
+            //var sw = Stopwatch.StartNew();
+            var sourceType = typeof(T);
+            var resultType = typeof(TResult);
+            //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} started.");
+            try
             {
-                if (!this.EntityTrackingEnabled)
+                if (this.DbContext != null)
                 {
-                    var result = this.InnerProvider.Execute<TResult>(expression);
-                    if (typeof(TResult).IsAssignableFrom(typeof(T)) || typeof(T).IsAssignableFrom(typeof(TResult)))
+                    if (!this.EntityTrackingEnabled)
                     {
-                        result = (TResult)(object)DbContext.AttachNoTracking((T)(object)result);
-                    }
-                    return result;
-                }
-                if (expression is MethodCallExpression methodCallExpression)
-                {
-                    var visitor = expression.ExtractQueryParts<T, TResult>();
+                        var result = this.InnerProvider.Execute<TResult>(expression);
+                        if (resultType.IsAssignableFrom(sourceType) || sourceType.IsAssignableFrom(resultType))
+                        {
+                            result = (TResult)(object)DbContext.AttachNoTracking((T)(object)result);
+                        }
 
-                    var localEntities = this.DbContext.Local[typeof(T)].Values.OfType<T>();
-
-                    var originLocalEntities = this.DbContext.OriginLocal[typeof(T)].Values.OfType<T>();
-
-                    var localIds = localEntities.Select(x => x.Id).ToList();
-                    var deletedEntities = Enumerable.Empty<T>();
-                    if (localIds.Any())
-                    {
-                        deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
+                        //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} finished, within {sw.ElapsedMilliseconds}ms.");
+                        return result;
                     }
 
-                    var ts = this.CreateQuery<T>(visitor.PreSelectExpression);
-                    var dbEntities = ts
-                        //.Where(x => !localIds.Contains(x.Id))
-                        .ToList();
-
-                    if (dbEntities.Any())
+                    if (expression is MethodCallExpression methodCallExpression)
                     {
-                        dbEntities = this.DbContext.Attach(dbEntities);
-                    }
+                        var visitor = expression.ExtractQueryParts<T, TResult>();
 
-                    var entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
-                    var resultQueryExpression = visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
-                    entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
+                        var localEntities = this.DbContext.Local[sourceType].Values.OfType<T>();
 
-                    BatchLoadLazyQueries(entities, this.BatchLoadConfig);
+                        var originLocalEntities = this.DbContext.OriginLocal[sourceType].Values.OfType<T>();
 
-                    TResult result;
-                    if (visitor.PostSelectExpression != default)
-                    {
-                        var postSelectExpression = visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.SelectSource);
-                        var results = entities.Provider.CreateQuery<TResult>(postSelectExpression);
+                        var localIds = localEntities.Select(x => x.Id).ToList();
+                        var deletedEntities = Enumerable.Empty<T>();
+                        if (localIds.Any())
+                        {
+                            deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
+                        }
+
+                        var ts = this.CreateQuery<T>(visitor.PreSelectExpression);
+                        var dbEntities = ts
+                            //.Where(x => !localIds.Contains(x.Id))
+                            .ToList();
+
+                        if (dbEntities.Any())
+                        {
+                            dbEntities = this.DbContext.Attach(dbEntities);
+                        }
+
+                        var entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
+                        var resultQueryExpression =
+                            visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
+                        entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
+
+                        BatchLoadLazyQueries(entities, this.BatchLoadConfig);
+
+                        TResult result;
+                        if (visitor.PostSelectExpression != default)
+                        {
+                            var postSelectExpression =
+                                visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.SelectSource);
+                            var results = entities.Provider.CreateQuery<TResult>(postSelectExpression);
+                            if (visitor.ExecuteExpression != default)
+                            {
+                                result = results.Provider.Execute<TResult>(
+                                    visitor.ExecuteExpression.ReplaceSource(results, ReplaceType.DirectSource));
+                                //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} finished, within {sw.ElapsedMilliseconds}ms.");
+                                return result;
+                            }
+                        }
+
                         if (visitor.ExecuteExpression != default)
                         {
-                            return results.Provider.Execute<TResult>(visitor.ExecuteExpression.ReplaceSource(results, ReplaceType.DirectSource));
+                            result = entities.Provider.Execute<TResult>(
+                                visitor.ExecuteExpression.ReplaceSource(entities, ReplaceType.OriginSource));
+
                         }
+                        else
+                        {
+                            result = (TResult)entities;
+                        }
+
+                        //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} finished, within {sw.ElapsedMilliseconds}ms.");
+                        return result;
                     }
 
-                    if (visitor.ExecuteExpression != default)
-                    {
-                        result = entities.Provider.Execute<TResult>(visitor.ExecuteExpression.ReplaceSource(entities, ReplaceType.OriginSource));
-
-                    }
-                    else
-                    {
-                        result = (TResult)entities;
-                    }
-                    return result;
+                    throw new NotSupportedException();
                 }
 
-                throw new NotSupportedException();
+                var otherResult = this.InnerProvider.Execute<TResult>(expression);
+                //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} finished, within {sw.ElapsedMilliseconds}ms.");
+                return otherResult;
             }
-
-            var otherResult = this.InnerProvider.Execute<TResult>(expression);
-            return otherResult;
+            finally
+            {
+                //if (sw.ElapsedMilliseconds > 200)
+                //{
+                    //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} takes long, query: {expression}");
+                //}
+            }
         }
 
         static Type ListType = typeof(List<>);

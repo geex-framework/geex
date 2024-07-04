@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Nodes;
+
 using Fasterflect;
 
 using Geex.Common;
@@ -21,6 +22,7 @@ using HotChocolate.Data.Filters;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
+
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -44,13 +46,21 @@ namespace HotChocolate.Types
                 @this.Field(x => ((IAuditEntity)x).Submittable);
             }
 
-            var getters = typeof(T).GetProperties().Where(x => x.PropertyType.Name == "ResettableLazy`1" || x.PropertyType.Name == "Lazy`1");
-            foreach (var getter in getters)
+            var properties = typeof(T).GetProperties();
+            var lazyGetters = properties.Where(x => x.PropertyType.Name == "ResettableLazy`1" || x.PropertyType.Name == "Lazy`1");
+            foreach (var getter in lazyGetters)
             {
                 var field = @this.Field(getter);
                 var valueType = getter.PropertyType.GenericTypeArguments[0];
                 field.Resolve(x => getter.GetMethod!.Invoke(x.Parent<T>(), Array.Empty<object>())?.GetLazyValue(valueType));
                 field.Type(valueType);
+            }
+
+            var queryGetters = properties.Where(x => x.PropertyType.Name == "IQueryable`1");
+            foreach (var getter in queryGetters)
+            {
+                var field = @this.Field(getter);
+                field.Resolve(x => getter.GetMethod!.Invoke(x.Parent<T>(), Array.Empty<object>()));
             }
         }
 
