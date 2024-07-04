@@ -169,6 +169,7 @@ namespace Geex.Common.Abstractions
                 endpoints.MapGraphQL().WithOptions(new GraphQLServerOptions()
                 {
                     EnableSchemaRequests = !coreModuleOptions.DisableIntrospection,
+                    EnforceMultipartRequestsPreflightHeader = false,
                     EnableGetRequests = false,
                     Tool =
                     {
