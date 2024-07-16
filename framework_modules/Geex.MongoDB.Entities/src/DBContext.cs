@@ -187,6 +187,7 @@ namespace MongoDB.Entities
                     //throw new NotSupportedException("Queryable Api不支持数量过多的Entity查询/写入, 请考虑使用原生Api");
                 }
                 this.Local[rootType].TryAdd(entity.Id, entity);
+                entity.DbContext = this;
                 if (!isNew)
                 {
                     // bug: 这里只需要拷贝所有数据库的数据即可
@@ -194,7 +195,6 @@ namespace MongoDB.Entities
                     var dbValue = serializer.Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(entity.ToBsonDocument(serializer))));
                     this.OriginLocal[rootType].TryAdd(entity.Id, dbValue);
                 }
-                entity.DbContext = this;
                 if (entity is IAttachIntercepted intercepted)
                 {
                     intercepted.InterceptOnAttached();

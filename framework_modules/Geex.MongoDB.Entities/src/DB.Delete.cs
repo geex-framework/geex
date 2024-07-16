@@ -39,17 +39,21 @@ namespace MongoDB.Entities
             {
                 if (dbContext?.Local[typeof(T)].Remove(id, out var item) == true)
                 {
-                    foreach (var lazyQuery in item.LazyQueryCache.Values.Where(x => x.CascadeDelete))
+                    var lazyQeuryCacheValues = item.LazyQueryCache?.Values;
+                    if (lazyQeuryCacheValues?.Any() == true)
                     {
-                        var value = lazyQuery.Value;
-                        switch (value)
+                        foreach (var lazyQuery in lazyQeuryCacheValues.Where(x => x.CascadeDelete))
                         {
-                            case IQueryable<T> query:
-                                await query.DeleteAsync();
-                                break;
-                            case Lazy<T> lazy:
-                                await lazy.Value.DeleteAsync();
-                                break;
+                            var value = lazyQuery.Value;
+                            switch (value)
+                            {
+                                case IQueryable<T> query:
+                                    await query.DeleteAsync();
+                                    break;
+                                case Lazy<T> lazy:
+                                    await lazy.Value.DeleteAsync();
+                                    break;
+                            }
                         }
                     }
                 }

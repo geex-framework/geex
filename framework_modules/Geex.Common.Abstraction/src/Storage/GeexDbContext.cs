@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,6 +15,7 @@ using KellermanSoftware.CompareNetObjects;
 using MediatR;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using MongoDB.Driver;
 using MongoDB.Entities;
@@ -82,20 +84,36 @@ namespace Geex.Common.Abstraction.Storage
         public override async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
         {
             var mediator = ServiceProvider.GetService<IMediator>();
+            var logger = ServiceProvider.GetService<ILogger<GeexDbContext>>();
 
             var entities = Local.TypedCacheDictionary.Values.SelectMany(y => y.Values).OfType<IEntity>();
             foreach (var entity in entities)
             {
                 entity.Validate().WaitAndUnwrapException(cancellation);
             }
-            var result = await base.SaveChanges(cancellation);
+
+            if (!Session.IsInTransaction)
+            {
+                Session.StartTransaction();
+            }
+
             if (this.DomainEvents.Any())
             {
                 while (this.DomainEvents.TryDequeue(out var @event))
                 {
-                    await mediator?.Publish(@event, cancellation);
+                    try
+                    {
+                        await mediator?.Publish(@event, cancellation);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger?.LogError(ex, "Domain event failed to process: {event}", @event.ToJson());
+                    }
                 }
             }
+
+            var result = await base.SaveChanges(cancellation);
+
             return result;
         }
 

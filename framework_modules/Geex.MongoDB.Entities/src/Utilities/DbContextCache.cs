@@ -11,12 +11,29 @@ namespace MongoDB.Entities.Utilities
         {
             get
             {
-                if (!TypedCacheDictionary.ContainsKey(index.GetRootBsonClassMap().ClassType))
+                var rootClassType = index.GetRootBsonClassMap().ClassType;
+                if (!TypedCacheDictionary.ContainsKey(rootClassType))
                 {
-                    TypedCacheDictionary[index.GetRootBsonClassMap().ClassType] = new ConcurrentDictionary<string, IEntityBase>();
+                    TypedCacheDictionary[rootClassType] = new ConcurrentDictionary<string, IEntityBase>();
                 }
-                return TypedCacheDictionary[index.GetRootBsonClassMap().ClassType];
+                return TypedCacheDictionary[rootClassType];
             }
+        }
+
+        /// <summary>
+        /// Get entity object from cache, if not found, return null
+        /// </summary>
+        /// <typeparam name="T">the type to cast the entity</typeparam>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public T? Get<T>(string id) where T : class, IEntityBase
+        {
+            var type = typeof(T).GetRootBsonClassMap().ClassType;
+            if (TypedCacheDictionary.TryGetValue(type, out var cacheDictionary) && cacheDictionary.TryGetValue(id, out var entity))
+            {
+                return entity as T;
+            }
+            return default;
         }
     }
 }
