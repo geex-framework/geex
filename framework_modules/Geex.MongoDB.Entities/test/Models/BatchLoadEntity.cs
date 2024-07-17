@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
+
+using MongoDB.Driver;
 
 namespace MongoDB.Entities.Tests.Models;
 
@@ -27,6 +30,12 @@ public class BatchLoadEntity : EntityBase<BatchLoadEntity>
 
     public string ThisId { get; set; }
     public string ParentId { get; set; }
+
+    /// <inheritdoc />
+    public override async Task<long> DeleteAsync()
+    {
+        return await this.Children.DeleteAsync() + await base.DeleteAsync();
+    }
 }
 
 public class RootEntity : EntityBase<RootEntity>

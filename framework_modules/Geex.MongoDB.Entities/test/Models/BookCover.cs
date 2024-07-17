@@ -12,7 +12,7 @@ namespace MongoDB.Entities.Tests.Models
 
         public BookCover()
         {
-            this.ConfigLazyQuery(x => x.BookMarks, author => this.BookMarkIds.Contains(author.Id), books => author => books.SelectMany(x => x.BookMarkIds).Contains(author.Id)).ConfigCascadeDelete();
+            this.ConfigLazyQuery(x => x.BookMarks, author => this.BookMarkIds.Contains(author.Id), books => author => books.SelectMany(x => x.BookMarkIds).Contains(author.Id));
         }
 
         public List<string> BookMarkIds { get; set; }

@@ -10,7 +10,7 @@ namespace MongoDB.Entities.Tests.Models
 
         public BookMark()
         {
-            this.ConfigLazyQuery(x => x.BookCover, bookCover => this.BookCoverId == bookCover.Id, bookMarks => bookCover => bookMarks.SelectList(x=>x.BookCoverId).Contains(bookCover.Id)).ConfigCascadeDelete();
+            this.ConfigLazyQuery(x => x.BookCover, bookCover => this.BookCoverId == bookCover.Id, bookMarks => bookCover => bookMarks.SelectList(x=>x.BookCoverId).Contains(bookCover.Id));
         }
 
         public string BookCoverId { get; set; }

@@ -9,7 +9,6 @@ namespace MongoDB.Entities.Utilities
     public interface ILazyQuery
     {
         Expression BatchQuery { get; }
-        bool CascadeDelete { get; }
         Func<IQueryable> DefaultSourceProvider { get; }
         Expression LazyQuery { get; }
         object Value { get; }
@@ -67,9 +66,6 @@ namespace MongoDB.Entities.Utilities
 
         Expression ILazyQuery.BatchQuery => Batch;
 
-        /// <inheritdoc />
-        public bool CascadeDelete { get; set; }
-
         Func<IQueryable> ILazyQuery.DefaultSourceProvider => DefaultSourceProvider;
 
         /// <inheritdoc />
@@ -91,12 +87,6 @@ namespace MongoDB.Entities.Utilities
 
         /// <inheritdoc />
         public IQueryProvider Provider => this.Value.Provider;
-
-        public LazyMultiQuery<T, TRelated> ConfigCascadeDelete(bool cascadeDelete = true)
-        {
-            this.CascadeDelete = cascadeDelete;
-            return this;
-        }
     }
 
     public class LazySingleQuery<T, TRelated> : ILazySingleQuery where TRelated : IEntityBase where T : IEntityBase
@@ -124,9 +114,6 @@ namespace MongoDB.Entities.Utilities
 
         Expression ILazyQuery.BatchQuery => Batch;
 
-        /// <inheritdoc />
-        public bool CascadeDelete { get; set; }
-
         Func<IQueryable> ILazyQuery.DefaultSourceProvider => DefaultSourceProvider;
 
         /// <inheritdoc />
@@ -141,11 +128,5 @@ namespace MongoDB.Entities.Utilities
 
         /// <inheritdoc />
         object ILazyQuery.Value => Value;
-
-        public LazySingleQuery<T, TRelated> ConfigCascadeDelete(bool cascadeDelete = true)
-        {
-            this.CascadeDelete = cascadeDelete;
-            return this;
-        }
     }
 }

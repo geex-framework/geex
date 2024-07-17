@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Bson.Serialization;
+using MongoDB.Entities.Utilities;
 
 #pragma warning disable 618
 
@@ -19,7 +20,7 @@ namespace MongoDB.Entities
         private static MethodInfo DeleteCascadingAsyncMethod = typeof(DB).GetMethod(nameof(DeleteCascadingAsync), BindingFlags.Static | BindingFlags.NonPublic);
 
 
-        private static async Task<DeleteResult> DeleteCascadingAsync<T>(IEnumerable<string> Ids,
+        private static async Task<long> DeleteCascadingAsync<T>(IEnumerable<string> Ids,
             DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             // note: cancellation should not be enabled outside of transactions because multiple collections are involved
@@ -28,38 +29,16 @@ namespace MongoDB.Entities
             //       also make consumers call ThrowIfCancellationNotSupported() before calling this method.
 
             var db = Database<T>();
-            var options = new ListCollectionNamesOptions
-            {
-                Filter = "{$and:[{name:/~/},{name:/" + CollectionName<T>() + "/}]}"
-            };
+            //var options = new ListCollectionNamesOptions
+            //{
+            //    Filter = "{$and:[{name:/~/},{name:/" + CollectionName<T>() + "/}]}"
+            //};
 
             var tasks = new HashSet<Task>();
-
             foreach (var id in Ids)
             {
-                if (dbContext?.Local[typeof(T)].Remove(id, out var item) == true)
-                {
-                    var lazyQeuryCacheValues = item.LazyQueryCache?.Values;
-                    if (lazyQeuryCacheValues?.Any() == true)
-                    {
-                        foreach (var lazyQuery in lazyQeuryCacheValues.Where(x => x.CascadeDelete))
-                        {
-                            var value = lazyQuery.Value;
-                            switch (value)
-                            {
-                                case IQueryable<T> query:
-                                    await query.DeleteAsync();
-                                    break;
-                                case Lazy<T> lazy:
-                                    await lazy.Value.DeleteAsync();
-                                    break;
-                            }
-                        }
-                    }
-                }
+                dbContext?.Local[typeof(T)].Remove(id, out _);
                 dbContext?.OriginLocal[typeof(T)].Remove(id, out _);
-
-
             }
             var delResTask =
                     dbContext?.Session == null
@@ -78,7 +57,8 @@ namespace MongoDB.Entities
             Task.WhenAll(tasks).Wait();
             //await Task.WhenAll(tasks).ConfigureAwait(false);
 
-            return await delResTask.ConfigureAwait(false);
+            var delRes = await delResTask.ConfigureAwait(false);
+            return delRes.DeletedCount;
         }
 
         /// <summary>
@@ -89,11 +69,12 @@ namespace MongoDB.Entities
         /// <param name="id">The Id of the entity to delete</param>
         /// <param name = "session" >An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<DeleteResult> DeleteAsync<T>(string id, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<long> DeleteAsync<T>(string id, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
             var rootType = typeof(T).GetRootBsonClassMap().ClassType;
-            return DeleteCascadingAsyncMethod.MakeGenericMethod(rootType).Invoke(null, new object[] { new[] { id }, dbContext, cancellation }) as Task<DeleteResult>;
+            return await (DeleteCascadingAsyncMethod.MakeGenericMethod(rootType)
+                .Invoke(null, new object[] { new[] { id }, dbContext, cancellation }) as Task<long>);
             //return DeleteCascadingAsync<T>();
         }
 
@@ -107,12 +88,13 @@ namespace MongoDB.Entities
         /// <param name="dbContext"></param>
         /// <param name="cancellation">An optional cancellation token</param>
         /// <param name = "session" >An optional session if using within a transaction</param>
-        public static Task<DeleteResult> DeleteAsync(Type type, string id, DbContext dbContext = null,
+        public static async Task<long> DeleteAsync(Type type, string id, DbContext dbContext = null,
             CancellationToken cancellation = default)
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
             var rootType = type.GetRootBsonClassMap().ClassType;
-            return DeleteCascadingAsyncMethod.MakeGenericMethod(rootType).Invoke(null, new object[] { new[] { id }, dbContext, cancellation }) as Task<DeleteResult>;
+            return await (DeleteCascadingAsyncMethod.MakeGenericMethod(rootType)
+                .Invoke(null, new object[] { new[] { id }, dbContext, cancellation }) as Task<long>);
             //return DeleteCascadingAsync<T>();
         }
 
@@ -125,7 +107,7 @@ namespace MongoDB.Entities
         /// <param name="expression">A lambda expression for matching entities to delete.</param>
         /// <param name = "session" >An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static async Task<DeleteResult> DeleteAsync<T>(Expression<Func<T, bool>> expression, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<long> DeleteAsync<T>(Expression<Func<T, bool>> expression, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
 
@@ -145,17 +127,17 @@ namespace MongoDB.Entities
                     if (cursor.Current.Any())
                     {
                         var toDeletes = cursor.Current;
-                        deletedCount += (await (DeleteCascadingAsyncMethod
+                        deletedCount += await (DeleteCascadingAsyncMethod
                             .MakeGenericMethod(typeof(T).GetRootBsonClassMap().ClassType)
-                            .Invoke(null, new object[] { toDeletes, dbContext, cancellation }) as Task<DeleteResult>)).DeletedCount;
+                            .Invoke(null, new object[] { toDeletes, dbContext, cancellation }) as Task<long>);
                     }
                 }
             }
 
-            return new DeleteResult.Acknowledged(deletedCount);
+            return deletedCount;
         }
 
-        public static async Task<DeleteResult> DeleteAsync<T>(DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<long> DeleteAsync<T>(DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
 
@@ -174,14 +156,14 @@ namespace MongoDB.Entities
                     if (cursor.Current.Any())
                     {
                         var toDeletes = cursor.Current;
-                        deletedCount += (await (DeleteCascadingAsyncMethod
+                        deletedCount += await (DeleteCascadingAsyncMethod
                             .MakeGenericMethod(typeof(T).GetRootBsonClassMap().ClassType)
-                            .Invoke(null, new object[] { toDeletes, dbContext, cancellation }) as Task<DeleteResult>)).DeletedCount;
+                            .Invoke(null, new object[] { toDeletes, dbContext, cancellation }) as Task<long>);
                     }
                 }
             }
 
-            return new DeleteResult.Acknowledged(deletedCount);
+            return deletedCount;
         }
 
         /// <summary>
@@ -193,7 +175,7 @@ namespace MongoDB.Entities
         /// <param name="Ids">An IEnumerable of entity Ids</param>
         /// <param name = "session" > An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static async Task<DeleteResult> DeleteAsync<T>(IEnumerable<string> Ids, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<long> DeleteAsync<T>(IEnumerable<string> Ids, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
 
@@ -206,10 +188,10 @@ namespace MongoDB.Entities
             {
                 deletedCount += (await ((DeleteCascadingAsyncMethod
                             .MakeGenericMethod(typeof(T).GetRootBsonClassMap().ClassType)
-                            .Invoke(null, new object[] { batch, dbContext, cancellation }) as Task<DeleteResult>)).ConfigureAwait(false)).DeletedCount;
+                            .Invoke(null, new object[] { batch, dbContext, cancellation }) as Task<long>)).ConfigureAwait(false));
             }
 
-            return new DeleteResult.Acknowledged(deletedCount);
+            return deletedCount;
         }
     }
 }

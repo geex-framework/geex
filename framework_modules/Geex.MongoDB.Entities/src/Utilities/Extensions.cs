@@ -1,12 +1,14 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace MongoDB.Entities
 {
@@ -317,11 +319,13 @@ namespace MongoDB.Entities
         /// <summary>
         /// Deletes multiple entities from the database
         /// </summary>
-        [Obsolete("batch delete will not respect entity delete method")]
-        internal static Task<DeleteResult> DeleteAsync<T>(this IEnumerable<T> entities) where T : IEntityBase
+        internal static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities) where T : IEntityBase
         {
             var enumerable = entities.ToList();
-            return DB.DeleteAsync<T>(enumerable.Select(e => e.Id), enumerable.FirstOrDefault()?.DbContext);
+            var deletes = enumerable.Select(async x => await x.DeleteAsync());
+            // todo: possible deadlock for duplicate delete in parallel
+            var result = await Task.WhenAll(deletes);
+           return result.Sum();
         }
 
         /// <summary>

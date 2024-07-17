@@ -1,9 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Bson;
+using MongoDB.Entities.Tests.Models;
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Shouldly;
 
 namespace MongoDB.Entities.Tests
 {
@@ -29,6 +32,33 @@ namespace MongoDB.Entities.Tests
 
             Assert.AreEqual(null, a2);
             Assert.AreEqual(author1.Name, a1.Name);
+        }
+
+        [TestMethod]
+        public async Task cascade_delete_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<BatchLoadEntity>();
+            dbContext.Attach(new BatchLoadEntity(thisId: "0"));
+            dbContext.Attach(new BatchLoadEntity(thisId: "1"));
+            dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
+            dbContext.Attach(new BatchLoadEntity(thisId: "1.2", parentId: "1"));
+            dbContext.Attach(new BatchLoadEntity(thisId: "2", parentId: "0"));
+            var saved = await dbContext.SaveChanges();
+            saved.Count.ShouldBe(5);
+
+            dbContext = new DbContext();
+            var count = dbContext.Query<BatchLoadEntity>().Count();
+            count.ShouldBe(5);
+            var item1 = dbContext.Query<BatchLoadEntity>().FirstOrDefault(x => x.ThisId == "1");
+            var deleteResult = await item1.DeleteAsync();
+            deleteResult.ShouldBe(3);
+            saved = await dbContext.SaveChanges();
+            saved.Count.ShouldBe(0);
+
+            dbContext = new DbContext();
+            count = dbContext.Query<BatchLoadEntity>().Count();
+            count.ShouldBe(2);
         }
 
         [TestMethod]

@@ -39,6 +39,7 @@ namespace Geex.Common.Abstraction
                 entity.AddDomainEvent(new EntityDeletedNotification<T>(entity.Id));
             }
             var deletes = enumerable.Select(async x => await x.DeleteAsync());
+            // todo: possible deadlock for duplicate delete in parallel
             var result = await Task.WhenAll(deletes);
             if (result.All(x => x.IsAcknowledged))
             {

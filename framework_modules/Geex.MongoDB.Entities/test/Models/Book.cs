@@ -36,8 +36,8 @@ namespace MongoDB.Entities.Tests
 
         public Book()
         {
-            this.ConfigLazyQuery(x => x.GoodAuthors, author => this.GoodAuthorIds.Contains(author.Id), books => author => books.SelectMany(x => x.GoodAuthorIds).Contains(author.Id)).ConfigCascadeDelete();
-            this.ConfigLazyQuery(x => x.BadAuthors, author => this.BadAuthorIds.Contains(author.Id), books => author => books.SelectMany(x => x.BadAuthorIds).Contains(author.Id)).ConfigCascadeDelete();
+            this.ConfigLazyQuery(x => x.GoodAuthors, author => this.GoodAuthorIds.Contains(author.Id), books => author => books.SelectMany(x => x.GoodAuthorIds).Contains(author.Id));
+            this.ConfigLazyQuery(x => x.BadAuthors, author => this.BadAuthorIds.Contains(author.Id), books => author => books.SelectMany(x => x.BadAuthorIds).Contains(author.Id));
             this.ConfigLazyQuery(x => x.Genres, author => this.GenreIds.Contains(author.Id), books => author => books.SelectMany(x => x.GenreIds).Contains(author.Id));
             this.ConfigLazyQuery(x => x.MainAuthor, author => this.MainAuthorId == (author.Id), books => author => books.SelectList(x => x.MainAuthorId).Contains(author.Id));
         }

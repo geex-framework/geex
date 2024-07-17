@@ -97,7 +97,7 @@ namespace MongoDB.Entities
             => ObjectId.GenerateNewId();
 
         /// <inheritdoc />
-        public virtual async Task<DeleteResult> DeleteAsync()
+        public virtual async Task<long> DeleteAsync()
         {
             if (DbContext != default)
             {

@@ -29,7 +29,7 @@ namespace MongoDB.Entities
         /// <summary>
         /// Deletes a single entity from MongoDB.
         /// </summary>
-        virtual async Task<DeleteResult> DeleteAsync()
+        virtual async Task<long> DeleteAsync()
         {
             return await DB.DeleteAsync(this.GetType(), this.Id, this.DbContext);
         }

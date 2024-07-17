@@ -29,6 +29,6 @@ namespace MongoDB.Entities.Tests
 
         public DateTimeOffset ModifiedOn { get; set; }
 
-        public Author() => this.ConfigLazyQuery(x => Books, book => book.MainAuthorId == this.Id, authors => book => authors.SelectMany(x => x.BookIds).Distinct().Contains(book.Id)).ConfigCascadeDelete();
+        public Author() => this.ConfigLazyQuery(x => Books, book => book.MainAuthorId == this.Id, authors => book => authors.SelectMany(x => x.BookIds).Distinct().Contains(book.Id));
     }
 }

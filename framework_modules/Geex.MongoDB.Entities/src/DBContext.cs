@@ -495,33 +495,36 @@ namespace MongoDB.Entities
         /// <typeparam name="T">The type of entity</typeparam>
         /// <param name="id">The Id of the entity to delete</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<DeleteResult> DeleteAsync<T>(string id, CancellationToken cancellation = default)
+        public virtual Task<long> DeleteAsync<T>(string id, CancellationToken cancellation = default)
             where T : IEntityBase
         {
             return DB.DeleteAsync<T>(id, this, cancellation);
         }
 
-        public virtual Task<DeleteResult> DeleteAsync<T>(T entity, CancellationToken cancellation = default)
+        public virtual Task<long> DeleteAsync<T>(T entity, CancellationToken cancellation = default)
             where T : IEntityBase
         {
             return DB.DeleteAsync(entity.GetType(), entity.Id, this, cancellation);
         }
 
         /// <summary>
-        /// Deletes matching entities from MongoDB in the transaction scope
-        /// <para>HINT: If these entities are referenced by one-to-many/many-to-many relationships, those references are also deleted.</para>
-        /// <para>TIP: Try to keep the number of entities to delete under 100 in a single call</para>
+        /// Bulk delete entities without any tracking
         /// </summary>
         /// <typeparam name="T">The type of entity</typeparam>
         /// <param name="expression">A lambda expression for matching entities to delete.</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<DeleteResult> DeleteAsync<T>(Expression<Func<T, bool>> expression,
+        public virtual Task<long> DeleteAsync<T>(Expression<Func<T, bool>> expression,
             CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.DeleteAsync(expression, this, cancellation);
         }
-
-        public virtual Task<DeleteResult> DeleteAsync<T>(
+        /// <summary>
+        /// Bulk delete entities without any tracking
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="cancellation"></param>
+        /// <returns></returns>
+        public virtual Task<long> DeleteAsync<T>(
             CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.DeleteAsync<T>(this, cancellation);
@@ -535,7 +538,7 @@ namespace MongoDB.Entities
         /// <typeparam name="T">The type of entity</typeparam>
         /// <param name="Ids">An IEnumerable of entity Ids</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<DeleteResult> DeleteAsync<T>(IEnumerable<string> Ids,
+        public virtual Task<long> DeleteAsync<T>(IEnumerable<string> Ids,
             CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.DeleteAsync<T>(Ids, this, cancellation);
