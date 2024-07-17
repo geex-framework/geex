@@ -13,25 +13,17 @@ namespace Geex.Common.Abstraction
 {
     public static class GeexCommonAbstractionStorageExtensions
     {
-        public static DeleteResult Merge(this DeleteResult result, DeleteResult anotherResult)
-        {
-            if (result.IsAcknowledged && anotherResult.IsAcknowledged)
-            {
-                return new DeleteResult.Acknowledged(result.DeletedCount + anotherResult.DeletedCount);
-            }
-            throw new Exception($"bulk deletion failed. expected: {result.DeletedCount + anotherResult.DeletedCount}, actual:{(result.IsAcknowledged ? result.DeletedCount : 0) + (anotherResult.IsAcknowledged ? anotherResult.DeletedCount : 0)}");
-        }
         /// <summary>
         /// Deletes a single entity from MongoDB.
         /// <para>HINT: If this entity is referenced by one-to-many/many-to-many relationships, those references are also deleted.</para>
         /// </summary>
-        public static async Task<DeleteResult> DeleteAsync<T>(this T entity) where T : Storage.Entity<T>
+        public static async Task<long> DeleteAsync<T>(this T entity) where T : Storage.Entity<T>
         {
             entity.AddDomainEvent(new EntityDeletedNotification<T>(entity.Id));
             return await entity.DeleteAsync();
         }
 
-        public static async Task<DeleteResult> DeleteAsync<T>(this IEnumerable<T> entities) where T : Storage.Entity<T>
+        public static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities) where T : Storage.Entity<T>
         {
             var enumerable = entities.ToList();
             foreach (var entity in enumerable)
@@ -41,11 +33,7 @@ namespace Geex.Common.Abstraction
             var deletes = enumerable.Select(async x => await x.DeleteAsync());
             // todo: possible deadlock for duplicate delete in parallel
             var result = await Task.WhenAll(deletes);
-            if (result.All(x => x.IsAcknowledged))
-            {
-                return new DeleteResult.Acknowledged(result.Sum(x => x.DeletedCount));
-            }
-            throw new Exception($"bulk deletion failed. expected: {result.Sum(x => x.DeletedCount)}, actual:{result.Where(x => x.IsAcknowledged).Sum(x => x.DeletedCount)}");
+            return result.Sum();
         }
     }
 }

@@ -1630,7 +1630,7 @@ namespace MongoDB.Entities.InnerQuery
                     // Get the mongo field names for each property in the new {...}
                     var fieldNames = newExp.Arguments.Select(x =>
                         {
-                            if (x is MemberExpression memberExp)
+                            if (x is MemberExpression { Expression: { NodeType: ExpressionType.Parameter } } memberExp)
                             {
                                 return new
                                 {
@@ -1638,13 +1638,19 @@ namespace MongoDB.Entities.InnerQuery
                                     ExpressionValue = BuildMongoSelectExpression(memberExp, true)
                                 };
                             }
-                            if (x is UnaryExpression unaryExpression)
+
+                            if (x is UnaryExpression
+                                {
+                                    Operand: MemberExpression
+                                    {
+                                        Expression: { NodeType: ExpressionType.Parameter }
+                                    } nestedMemberExp
+                                })
                             {
-                                memberExp = unaryExpression.Operand as MemberExpression;
                                 return new
                                 {
-                                    FieldName = GetMongoFieldName(memberExp.Member),
-                                    ExpressionValue = BuildMongoSelectExpression(memberExp, true)
+                                    FieldName = GetMongoFieldName(nestedMemberExp.Member),
+                                    ExpressionValue = BuildMongoSelectExpression(nestedMemberExp, true)
                                 };
                             }
                             throw new NotSupportedException("Not supported express of: " + x);

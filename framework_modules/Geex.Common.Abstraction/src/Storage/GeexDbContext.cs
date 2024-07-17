@@ -127,7 +127,7 @@ namespace Geex.Common.Abstraction.Storage
         public async Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default) where T : IEntityBase
         {
             var result = await base.DeleteAsync<T>(id, cancellation);
-            if (result.IsAcknowledged)
+            if (result > 0)
             {
                 this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(id));
                 return true;
@@ -139,7 +139,7 @@ namespace Geex.Common.Abstraction.Storage
         public async Task<bool> DeleteAsync<T>(T entity, CancellationToken cancellation = default) where T : IEntityBase
         {
             var result = await base.DeleteAsync<T>(entity, cancellation);
-            if (result.IsAcknowledged)
+            if (result > 0)
             {
                 this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(entity.Id));
                 return true;
@@ -181,7 +181,7 @@ namespace Geex.Common.Abstraction.Storage
         public async Task<long> DeleteAsync<T>(CancellationToken cancellation = default) where T : IEntityBase
         {
             var result = await base.DeleteAsync<T>(cancellation);
-            return result.DeletedCount;
+            return result;
         }
 
         /// <inheritdoc />
@@ -192,7 +192,7 @@ namespace Geex.Common.Abstraction.Storage
                 this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(id));
             }
             var result = await base.DeleteAsync<T>(ids, cancellation);
-            return result.DeletedCount;
+            return result;
         }
 
         /// <inheritdoc />
