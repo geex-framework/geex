@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Bson;
@@ -25,21 +26,25 @@ namespace MongoDB.Entities.Tests
             var a1 = new TestEntity()
             {
                 Name = "a1",
+                Enum = TestEntityEnum.Value1,
                 Value = 1
             };
             var a2 = new TestEntity()
             {
                 Name = "a2",
+                Enum = TestEntityEnum.Value1,
                 Value = 2
             };
             var b1 = new TestEntity()
             {
                 Name = "b1",
+                Enum = TestEntityEnum.Value1,
                 Value = 3
             };
             var b2 = new TestEntity()
             {
                 Name = "b2",
+                Enum = TestEntityEnum.Value1,
                 Value = 4
             };
             var list = new List<TestEntity>() { a1, a2, b1, b2 };
@@ -220,6 +225,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task select_should_work()
         {
+
             var dbContext = new DbContext();
             dbContext = new DbContext();
             dbContext.Attach(new List<TestEntity>()
@@ -228,6 +234,7 @@ namespace MongoDB.Entities.Tests
                     {
                         Name = "local1",
                         Value = 5,
+                        Enum = TestEntityEnum.Value1,
                         Data = new []{1,2}
                     }
                 });
@@ -243,9 +250,18 @@ namespace MongoDB.Entities.Tests
 
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name }).First().Name.ShouldBe("a1");
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name }).ToList().Select(x => x.Name).First().ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name }).First().SelectName.ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name }).ToList().Select(x => x.SelectName).First().ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Name, x.Value, x.Enum)).First().SelectEnum.ShouldBe(TestEntityEnum.Value1);
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectEnum).First().ShouldBe(TestEntityEnum.Value1);
 
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name }).First().Name.ShouldBe("local1");
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name }).ToList().Select(x => x.Name).First().ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name }).First().SelectName.ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name }).First().SelectName.ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Name, x.Value, x.Enum)).First().SelectEnum.ShouldBe(TestEntityEnum.Value1);
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectEnum).First().ShouldBe(TestEntityEnum.Value1);
+
             dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name }).Count().ShouldBe(5);
             dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name }).ToList().Count().ShouldBe(5);
             //dbContext.Queryable<TestEntity>().SelectMany(x=>x.Data).Sum().ShouldBe(3);
