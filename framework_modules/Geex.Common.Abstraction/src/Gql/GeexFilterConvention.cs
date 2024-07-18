@@ -7,8 +7,8 @@ public class GeexFilterConvention : FilterConvention
 {
     protected override void Configure(IFilterConventionDescriptor descriptor)
     {
-        descriptor.Provider(new GeexQueryablePostFilterProvider(y => y.AddDefaultFieldHandlers()));
-        descriptor.ArgumentName("filter");
         descriptor.AddDefaults();
+        descriptor.ArgumentName("filter");
+        descriptor.Provider(new GeexQueryablePostFilterProvider(y => y.AddDefaultFieldHandlers()));
     }
 }

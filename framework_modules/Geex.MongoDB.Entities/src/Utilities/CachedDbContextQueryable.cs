@@ -7,7 +7,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 using FastExpressionCompiler;
+
 using Geex.MongoDB.Entities.Utilities;
+
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Interceptors;
 
@@ -55,15 +57,58 @@ namespace MongoDB.Entities.Utilities
 
                 if (!this.TypedProvider.EntityTrackingEnabled)
                 {
-                    IEnumerable<TSelect> result = this.InnerProvider.CreateQuery<TSelect>(expression)
-                        .AsEnumerable();
+                    IEnumerable<TSelect> result = ArraySegment<TSelect>.Empty;
+
+                    // if select entity
                     if (selectType.IsAssignableFrom(sourceType) || sourceType.IsAssignableFrom(selectType))
                     {
+                        result = this.InnerProvider.CreateQuery<TSelect>(expression).AsEnumerable();
                         var sourceResult = _dbContext?.AttachNoTracking(result.Cast<T>());
                         BatchLoadLazyQueries(sourceResult.AsQueryable(), this.TypedProvider.BatchLoadConfig);
                         result = sourceResult.Cast<TSelect>();
-
                     }
+                    // if not select entity but with batch load config, force to load as entities
+                    else if (this.TypedProvider.BatchLoadConfig.SubBatchLoadConfigs.Any())
+                    {
+                        var visitor = expression.ExtractQueryParts<T, TSelect>();
+                        var dbQuery = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression);
+                        var dbEntities = dbQuery.ToList();
+                        if (dbEntities.Any())
+                        {
+                            dbEntities = this._dbContext.Attach(dbEntities);
+                        }
+                        var entities = dbEntities.AsQueryable();
+
+                        var resultQueryExpression = visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
+                        entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
+
+                        BatchLoadLazyQueries(entities, this.TypedProvider.BatchLoadConfig);
+
+                        if (visitor.PostSelectExpression != default)
+                        {
+                            var postSelectExpression =
+                                visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.SelectSource);
+                            var results = entities.Provider.CreateQuery<TSelect>(postSelectExpression);
+                            return results.GetEnumerator();
+                        }
+
+                        if (visitor.ExecuteExpression != default)
+                        {
+                            result = entities.Provider.Execute<IEnumerable<TSelect>>(
+                                visitor.ExecuteExpression.ReplaceSource(entities, ReplaceType.OriginSource));
+                        }
+                        else
+                        {
+                            result = entities.Cast<TSelect>();
+                        }
+                    }
+                    // if not select entity and without batch load config
+                    else
+                    {
+                        result = this.InnerProvider.CreateQuery<TSelect>(expression).AsEnumerable();
+                    }
+
+                    result = PostFilter(result);
 
                     var @return = result.GetEnumerator();
                     //Debug.WriteLine($"CachedDbContextQueryable.GetEnumerator {selectType} finished, within {sw.ElapsedMilliseconds}ms.");
@@ -130,23 +175,7 @@ namespace MongoDB.Entities.Utilities
                         result = entities.Cast<TSelect>();
                     }
 
-                    if (_dbContext?.DataFilters.Any() == true)
-                    {
-                        foreach (var (targetType, value) in _dbContext.DataFilters)
-                        {
-                            if (targetType.IsAssignableFrom(sourceType))
-                            {
-                                if (typeof(ExpressionDataFilter<>).MakeGenericType(targetType)
-                                        .GetProperty(nameof(ExpressionDataFilter<T>.PostFilterExpression))
-                                        ?.GetValue(value) is LambdaExpression originExpression)
-                                {
-                                    var lambda = originExpression.CastParamType<T>();
-                                    result = Queryable.Where(result.AsQueryable(),
-                                        (Expression<Func<TSelect, bool>>)lambda);
-                                }
-                            }
-                        }
-                    }
+                    result = PostFilter(result);
 
                     var @return1 = result.GetEnumerator();
                     //Debug.WriteLine($"CachedDbContextQueryable.GetEnumerator {selectType} finished, within {sw.ElapsedMilliseconds}ms.");
@@ -158,10 +187,32 @@ namespace MongoDB.Entities.Utilities
 
                 //if (sw.ElapsedMilliseconds > 200)
                 //{
-                    //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{selectType} takes long, query: {expression}");
+                //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{selectType} takes long, query: {expression}");
                 //}
             }
 
+            IEnumerable<TSelect> PostFilter(IEnumerable<TSelect> result)
+            {
+                if (_dbContext?.DataFilters.Any() == true)
+                {
+                    foreach (var (targetType, value) in _dbContext.DataFilters)
+                    {
+                        if (targetType.IsAssignableFrom(sourceType))
+                        {
+                            if (typeof(ExpressionDataFilter<>).MakeGenericType(targetType)
+                                    .GetProperty(nameof(ExpressionDataFilter<T>.PostFilterExpression))
+                                    ?.GetValue(value) is LambdaExpression originExpression)
+                            {
+                                var lambda = originExpression.CastParamType<T>();
+                                result = Queryable.Where(result.AsQueryable(),
+                                    (Expression<Func<TSelect, bool>>)lambda);
+                            }
+                        }
+                    }
+                }
+
+                return result;
+            }
         }
 
         static Type ListType = typeof(List<>);

@@ -136,12 +136,12 @@ namespace MongoDB.Entities.Utilities
         }
     }
 
-    internal class FindMemberAccessVisitor<T> : ExpressionVisitor
+    internal class FindStringAsObjectIdVisitor<T> : ExpressionVisitor
     {
         public bool IsStringAsObjectId { get; set; }
         //there must be only one instance of parameter expression for each parameter
         //there is one so one passed here
-        public FindMemberAccessVisitor()
+        public FindStringAsObjectIdVisitor()
         {
 
         }

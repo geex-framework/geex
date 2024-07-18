@@ -17,7 +17,7 @@ namespace System.Linq
             this.ParentProp = parentProp;
             if (sources.Provider is not ICachedDbContextQueryProvider rootProvider)
             {
-                throw new NotSupportedException("只支持CachedDbContextQueryable");
+                throw new NotSupportedException("Only CachedDbContextQueryable is supported for batch load");
             }
 
             BatchLoadConfig config = rootProvider.BatchLoadConfig;

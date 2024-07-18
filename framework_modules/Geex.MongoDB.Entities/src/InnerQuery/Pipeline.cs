@@ -921,7 +921,7 @@ namespace MongoDB.Entities.InnerQuery
         public BsonValue BuildMongoSelectExpression(Expression expression, bool specialTreatmentForConst = false)
         {
             // TODO: What about enums here?
-            var visitor = new FindMemberAccessVisitor<TDocType>();
+            var visitor = new FindStringAsObjectIdVisitor<TDocType>();
             visitor.Visit(expression);
             var isStringAsObjectId = visitor.IsStringAsObjectId;
 
@@ -1630,7 +1630,13 @@ namespace MongoDB.Entities.InnerQuery
                     // Get the mongo field names for each property in the new {...}
                     var fieldNames = newExp.Arguments.Select(x =>
                         {
-                            if (x is MemberExpression { Expression: { NodeType: ExpressionType.Parameter } } memberExp)
+                            if (x is MemberExpression
+                                {
+                                    Expression:
+                                    {
+                                        //NodeType: ExpressionType.Parameter
+                                    }
+                                } memberExp)
                             {
                                 return new
                                 {
@@ -1643,7 +1649,7 @@ namespace MongoDB.Entities.InnerQuery
                                 {
                                     Operand: MemberExpression
                                     {
-                                        Expression: { NodeType: ExpressionType.Parameter }
+                                        //Expression: { NodeType: ExpressionType.Parameter }
                                     } nestedMemberExp
                                 })
                             {
