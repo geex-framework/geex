@@ -14,6 +14,35 @@ namespace MongoDB.Entities
 {
     public abstract class EntityBase<T> : IEntityBase where T : IEntityBase
     {
+        protected LazyMultiQuery<TEntity, TRelated> ConfigLazyQuery<TEntity,TRelated>(
+            Expression<Func<TEntity, IQueryable<TRelated>>> propToLoad, Expression<Func<TRelated, bool>> loadCondition,
+            Expression<Func<IQueryable<TEntity>, Expression<Func<TRelated, bool>>>> batchLoadRule,
+            Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase where TEntity : T
+        {
+            var lazyObj = new LazyMultiQuery<TEntity, TRelated>(loadCondition, batchLoadRule, sourceProvider ??
+                                                                           (() => DbContext.Query<TRelated>()));
+            var propertyMember = propToLoad.Body.As<MemberExpression>().Member.As<PropertyInfo>();
+            LazyQueryCache[propertyMember.Name] = lazyObj;
+            return lazyObj;
+        }
+
+        protected LazySingleQuery<TEntity, TRelated> ConfigLazyQuery<TEntity,TRelated>(
+            // 关联导航属性
+            Expression<Func<TEntity, Lazy<TRelated>>> propExpression,
+            // 导航属性的懒加载实现
+            Expression<Func<TRelated, bool>> lazyQuery,
+            // 导航属性的批量加载实现
+            Expression<Func<IQueryable<TEntity>, Expression<Func<TRelated, bool>>>> batchQuery,
+            // 批量加载时的数据源, 默认从DbContext查, 可替换成任意第三方Service返回的IQueryable
+            Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase where TEntity : T
+        {
+            var lazyObj = new LazySingleQuery<TEntity, TRelated>(lazyQuery, batchQuery, sourceProvider ??
+                                                                          (() => DbContext.Query<TRelated>()));
+            var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
+            LazyQueryCache[propertyMember.Name] = lazyObj;
+            return lazyObj;
+        }
+
         protected LazyMultiQuery<T, TRelated> ConfigLazyQuery<TRelated>(
             Expression<Func<T, IQueryable<TRelated>>> propToLoad, Expression<Func<TRelated, bool>> loadCondition,
             Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batchLoadRule,
