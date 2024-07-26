@@ -635,6 +635,7 @@ namespace MongoDB.Entities
             MaxStructDepth = 5,
             Caching = true,
             AutoClearCache = false,
+            IgnoreLogicGetters = true
         });
 
         protected virtual void Dispose(bool disposing)

@@ -428,7 +428,7 @@
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.InterfaceMembers">
             <summary>
-            If a class implements an interface then only members of the interface will be compared.  The default is all members are compared. 
+            If a class implements an interface then only members of the interface will be compared.  The default is all members are compared.
             </summary>
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.ShowBreadcrumb">
@@ -501,6 +501,11 @@
             If true, private fields will be compared. The default is false.  Silverlight and WinRT restricts access to private variables.
             </summary>
         </member>
+        <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.CompareBackingFields">
+            <summary>
+            If true and <see cref="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.ComparePrivateFields"/> true, then backing fields will be compared. The default is true.  Silverlight and WinRT restricts access to private variables.
+            </summary>
+        </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.CompareStaticProperties">
             <summary>
             If true, static properties will be compared.  The default is true.
@@ -513,7 +518,7 @@
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.CompareChildren">
             <summary>
-            If true, child objects will be compared. The default is true. 
+            If true, child objects will be compared. The default is true.
             If false, and a list or array is compared list items will be compared but not their children.
             </summary>
         </member>
@@ -529,7 +534,12 @@
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.IgnoreCollectionOrder">
             <summary>
-            If true, compare each item within a collection to every item in the other.  The default is false. WARNING: setting this to true significantly impacts performance.  
+            If true, compare each item within a collection to every item in the other.  The default is false. WARNING: setting this to true significantly impacts performance.
+            </summary>
+        </member>
+        <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.ShowCollectionKeyName">
+            <summary>
+            If true, breadcrumb shows the name of the key for each item in a collection. If false, will only show the key value. Default is true.
             </summary>
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.CompareProperties">
@@ -578,7 +588,7 @@
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.ExpectedName">
             <summary>
-            In the differences string, this is the name for expected name. The default is: Expected 
+            In the differences string, this is the name for expected name. The default is: Expected
             </summary>
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.ActualName">
@@ -592,21 +602,23 @@
             </summary>
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.CollectionMatchingSpec">
-            <summary>
-            Sometimes one wants to match items between collections by some key first, and then
-            compare the matched objects.  Without this, the comparer basically says there is no 
-            match in collection B for any given item in collection A that doesn't Compare with a result of true.  
-            The results of this aren't particularly useful for object graphs that are mostly the same, but not quite. 
-            Enter CollectionMatchingSpec
+             <summary>
+             This property is used when IgnoreCollectionOrder is set to true, otherwise it has no effect.
+             Sometimes one wants to match items between collections by some key first, and then
+             compare the matched objects.  Without this, the comparer basically says there is no
+             match in collection B for any given item in collection A that doesn't Compare with a result of true.
+             The results of this aren't particularly useful for object graphs that are mostly the same, but not quite.
+             Enter CollectionMatchingSpec
             
-            The enumerable strings should be property (not field, for now, to keep it simple) names of the
-            Type when encountered that will be used for matching
+             The enumerable strings should be property (not field, for now, to keep it simple) names of the
+             Type when encountered that will be used for matching
             
-            You can use complex type properties, too, as part of the key to match.  To match on all props/fields on 
-            such a matching key, Don't set this property (default comparer behavior)
-            NOTE: types are looked up as exact.  e.g. if foo is an entry in the dictionary and bar is a 
-            sub-class of foo, upon encountering a bar type, the comparer will not find the entry of foo
-            </summary>
+             You can use complex type properties, too, as part of the key to match.  To match on all props/fields on
+             such a matching key, Don't set this property (default comparer behavior)
+             NOTE: types are looked up as exact.  e.g. if foo is an entry in the dictionary and bar is a
+             sub-class of foo, upon encountering a bar type, the comparer will not find the entry of foo.
+             It can use derived types:  https://github.com/GregFinzer/Compare-Net-Objects/issues/280
+             </summary>
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.CustomComparers">
             <summary>
@@ -615,7 +627,7 @@
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.CustomPropertyComparers">
             <summary>
-            A list of custom property comparers that take priority over the built in and type comparers 
+            A list of custom property comparers that take priority over the built in and type comparers
             </summary>
         </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.TreatStringEmptyAndNullTheSame">
@@ -638,6 +650,11 @@
             The precision to compare decimal values.  The default is 0.
             </summary>
         </member>
+        <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.IgnoreConcreteTypes">
+            <summary>
+            When comparing Fields and Properties the types have to be the same.  If IgnoreConcretTypes is true then they will be ignored.  The default is false.
+            </summary>
+        </member>
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.IgnoreMissingProperties">
             <summary>
             If true, properties that are defined in the actual object but missing in the expected object will not be flagged as differences. Default is true.
@@ -646,6 +663,11 @@
         <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.IgnoreMissingFields">
             <summary>
             If true, fields that are defined in the actual object but missing in the expected object will not be flagged as differences. Default is true.
+            </summary>
+        </member>
+        <member name="P:KellermanSoftware.CompareNetObjects.ComparisonConfig.DateTimeKindToUseWhenUnspecified">
+            <summary>
+            Specify a DateTimeKind to use when it is unspecified.  The default is DateTimeKind.Utc.  If null is specified it will not be defaulted.
             </summary>
         </member>
         <member name="F:KellermanSoftware.CompareNetObjects.ComparisonConfig._hasWildcardInMembersToIgnore">
@@ -1636,18 +1658,18 @@
             <param name="type2">The type of the second object</param>
             <returns></returns>
         </member>
-        <member name="T:KellermanSoftware.CompareNetObjects.TypeComparers.DateComparer">
+        <member name="T:KellermanSoftware.CompareNetObjects.TypeComparers.DateTimeComparer">
             <summary>
             Compare dates with the option to ignore based on milliseconds
             </summary>
         </member>
-        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.DateComparer.#ctor(KellermanSoftware.CompareNetObjects.RootComparer)">
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.DateTimeComparer.#ctor(KellermanSoftware.CompareNetObjects.RootComparer)">
             <summary>
             Constructor that takes a root comparer
             </summary>
             <param name="rootComparer"></param>
         </member>
-        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.DateComparer.IsTypeMatch(System.Type,System.Type)">
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.DateTimeComparer.IsTypeMatch(System.Type,System.Type)">
             <summary>
             Returns true if both types are DateTime
             </summary>
@@ -1655,7 +1677,7 @@
             <param name="type2"></param>
             <returns></returns>
         </member>
-        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.DateComparer.CompareType(KellermanSoftware.CompareNetObjects.CompareParms)">
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.DateTimeComparer.CompareType(KellermanSoftware.CompareNetObjects.CompareParms)">
             <summary>
             Compare two DateTime variables
             </summary>
@@ -1993,6 +2015,29 @@
             <param name="info"></param>
             <param name="object2Properties"></param>
         </member>
+        <member name="T:KellermanSoftware.CompareNetObjects.TypeComparers.ReadOnlyCollectionComparer">
+            <summary>
+            Logic to compare two ReadOnlyCollections.
+            </summary>
+        </member>
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.ReadOnlyCollectionComparer.#ctor(KellermanSoftware.CompareNetObjects.RootComparer)">
+            <summary>
+            The main constructor.
+            </summary>
+        </member>
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.ReadOnlyCollectionComparer.IsTypeMatch(System.Type,System.Type)">
+            <summary>
+            Returns true if both objects are ReadOnlyCollections.
+            </summary>
+            <param name="type1">The type of the first object</param>
+            <param name="type2">The type of the second object</param>
+            <returns></returns>
+        </member>
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeComparers.ReadOnlyCollectionComparer.CompareType(KellermanSoftware.CompareNetObjects.CompareParms)">
+            <summary>
+            Compare two ReadOnlyCollections.
+            </summary>
+        </member>
         <member name="T:KellermanSoftware.CompareNetObjects.TypeComparers.RuntimeTypeComparer">
             <summary>
             Logic to compare two runtime types
@@ -2206,6 +2251,13 @@
             <param name="type"></param>
             <returns></returns>
         </member>
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeHelper.IsReadOnlyCollection(System.Type)">
+            <summary>
+            True if the type is a System.Collections.ObjectModel.ReadOnlyCollection
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
         <member name="M:KellermanSoftware.CompareNetObjects.TypeHelper.IsStruct(System.Type)">
             <summary>
             Returns true if it is a struct
@@ -2307,6 +2359,20 @@
         <member name="M:KellermanSoftware.CompareNetObjects.TypeHelper.IsDateTime(System.Type)">
             <summary>
             Return true if the type is a DateTime
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeHelper.IsDateOnly(System.Type)">
+            <summary>
+            Return true if the type is a DateTime
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="M:KellermanSoftware.CompareNetObjects.TypeHelper.IsTimeOnly(System.Type)">
+            <summary>
+            Return true if the type is a TimeOnly
             </summary>
             <param name="type"></param>
             <returns></returns>
