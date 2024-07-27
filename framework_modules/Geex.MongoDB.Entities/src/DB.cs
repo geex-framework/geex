@@ -42,8 +42,9 @@ namespace MongoDB.Entities
                 "DefaultConventions",
                 new ConventionPack
                 {
-                        new IgnoreExtraElementsConvention(true),
-                        new EntityInheritanceConvention(),
+                    new IgnoreGetterConvention(),
+                    new IgnoreExtraElementsConvention(true),
+                    new EntityInheritanceConvention(),
                 },
                 _ => true);
             //ConventionRegistry.Register("Json", new ConventionPack
@@ -358,6 +359,18 @@ namespace MongoDB.Entities
         public void Apply(BsonClassMap classMap)
         {
             classMap.MapInheritance();
+        }
+    }
+
+    internal class IgnoreGetterConvention : ConventionBase, IMemberMapConvention
+    {
+        /// <inheritdoc />
+        public void Apply(BsonMemberMap memberMap)
+        {
+            if (memberMap.MemberInfo is PropertyInfo { CanWrite: true } propertyInfo && !propertyInfo.GetMethod.IsSpecialName)
+            {
+                memberMap.SetShouldSerializeMethod((o => false));
+            }
         }
     }
 

@@ -92,11 +92,6 @@ namespace Geex.Common.Abstraction.Storage
                 entity.Validate().WaitAndUnwrapException(cancellation);
             }
 
-            if (!Session.IsInTransaction)
-            {
-                Session.StartTransaction();
-            }
-
             if (this.DomainEvents.Any())
             {
                 while (this.DomainEvents.TryDequeue(out var @event))

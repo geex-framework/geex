@@ -6,7 +6,7 @@ namespace System.Security.Cryptography
 {
     public static class SystemSecurityCryptographyExtensions
     {
-        static readonly MD5CryptoServiceProvider _md5 = new MD5CryptoServiceProvider();
+        static readonly MD5 _md5 = MD5CryptoServiceProvider.Create();
 
         /// <summary>
         /// 使用MD5加密字符串

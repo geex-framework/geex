@@ -325,7 +325,7 @@ namespace MongoDB.Entities
             var deletes = enumerable.Select(async x => await x.DeleteAsync());
             // todo: possible deadlock for duplicate delete in parallel
             var result = await Task.WhenAll(deletes);
-           return result.Sum();
+            return result.Sum();
         }
 
         /// <summary>

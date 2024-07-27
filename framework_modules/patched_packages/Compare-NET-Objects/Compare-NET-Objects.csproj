@@ -1,0 +1,156 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>CompareNETObjects</PackageId>
+    <AssemblyTitle>Kellerman-Serialization</AssemblyTitle>
+    <AssemblyCompany>Kellerman Software</AssemblyCompany>
+    <AssemblyProduct>Kellerman-Serialization</AssemblyProduct>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>KellermanSoftware.Compare-NET-Objects</AssemblyName>
+    <RootNamespace>KellermanSoftware.CompareNetObjects</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>MyStrongName.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <IsNetStandard>false</IsNetStandard>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageTags>compare comparison equality equal deep objects difference compareobjects deepequal deepequals</PackageTags>
+    <Description>What you have been waiting for. Perform a deep compare of any two .NET objects using reflection. Shows the differences between the two objects.</Description>
+    <Authors>gfinzer</Authors>
+    <Version>4.83.0</Version>
+    <AssemblyVersion>4.83.0.0</AssemblyVersion>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Company>Kellerman Software</Company>
+    <PackageReleaseNotes>Compatibility with .NET Core 8.0</PackageReleaseNotes>
+    <Copyright>Copyright © 2023</Copyright>
+    <FileVersion>4.83.0.0</FileVersion>
+
+    <!--<PackageLicenseFile>License.txt</PackageLicenseFile>-->
+    <!--<PackageIcon>NuGetIcon.png</PackageIcon>-->
+    <Title>Compare .NET Objects</Title>
+    <AutoGenerateBindingRedirects>False</AutoGenerateBindingRedirects>
+
+
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
+    <IsNetStandard>true</IsNetStandard>
+    <DefineConstants>$(DefineConstants);NETSTANDARD1</DefineConstants>
+    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50</PackageTargetFallback>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <IsNetStandard>true</IsNetStandard>
+    <DefineConstants>$(DefineConstants);NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <IsNetStandard>true</IsNetStandard>
+    <DefineConstants>$(DefineConstants);NETSTANDARD2_1</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(IsNetStandard)">
+    <DefineConstants>$(DefineConstants);DNCORE;NETCORE;NETSTANDARD</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net40'">
+    <DefineConstants>$(DefineConstants);NET40;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45'">
+    <DefineConstants>$(DefineConstants);NET45;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net451'">
+    <DefineConstants>$(DefineConstants);NET451;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net452'">
+    <DefineConstants>$(DefineConstants);NET452;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net46'">
+    <DefineConstants>$(DefineConstants);NET46;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net47'">
+    <DefineConstants>$(DefineConstants);NET47;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net471'">
+    <DefineConstants>$(DefineConstants);NET471;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net472'">
+    <DefineConstants>$(DefineConstants);NET472;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net48'">
+    <DefineConstants>$(DefineConstants);NET48;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net481'">
+    <DefineConstants>$(DefineConstants);NET481;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net6.0'">
+    <DefineConstants>$(DefineConstants);NET6_0;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net7.0'">
+    <DefineConstants>$(DefineConstants);NET7_0;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0'">
+    <DefineConstants>$(DefineConstants);NET8_0;NETFULL</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup Condition="$(IsNetStandard)">
+    <Compile Remove="Properties\Settings.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(IsNetStandard)' == 'false'">
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="System.Configuration.Configurationmanager" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <PackageReference Include="System.Configuration.Configurationmanager" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="System.Configuration.Configurationmanager" Version="8.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+  </ItemGroup>
+</Project>
