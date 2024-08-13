@@ -34,8 +34,6 @@
     </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="KellermanSoftware.Compare-NET-Objects">
-      <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj" />
   </ItemGroup>
 </Project>

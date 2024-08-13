@@ -50,16 +50,9 @@
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="KellermanSoftware.Compare-NET-Objects">
-      <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
-    </Reference>
+	  <ProjectReference Include="..\..\patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
-  <Target Name="CompareDll">
-    <ItemGroup>
-      <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />
-    </ItemGroup>
-  </Target>
 </Project>

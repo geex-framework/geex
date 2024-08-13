@@ -71,6 +71,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatX.RabbitMQ", "Geex.Me
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatX", "Geex.MediatX\MediatX\MediatX.csproj", "{3B0A9854-B72A-41D0-B75A-1D87BF43794E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compare-NET-Objects", "patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj", "{3C6D84D9-CA61-432D-8320-1B2180296124}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -149,6 +151,10 @@ Global
 		{3B0A9854-B72A-41D0-B75A-1D87BF43794E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B0A9854-B72A-41D0-B75A-1D87BF43794E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B0A9854-B72A-41D0-B75A-1D87BF43794E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C6D84D9-CA61-432D-8320-1B2180296124}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C6D84D9-CA61-432D-8320-1B2180296124}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C6D84D9-CA61-432D-8320-1B2180296124}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C6D84D9-CA61-432D-8320-1B2180296124}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

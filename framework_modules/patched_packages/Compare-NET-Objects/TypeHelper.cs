@@ -539,13 +539,13 @@ namespace KellermanSoftware.CompareNetObjects
         /// Returns true if the type is a font
         /// </summary>
         /// <param name="type">The type1.</param>
-        public static bool IsFont(Type type)
-        {
-            if (type == null)
-                return false;
+        //public static bool IsFont(Type type)
+        //{
+        //    if (type == null)
+        //        return false;
 
-            return type == typeof(Font);
-        }
+        //    return type == typeof(Font);
+        //}
 #endif
 
 #if !NETSTANDARD
