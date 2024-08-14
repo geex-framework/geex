@@ -34,6 +34,8 @@
     </AssemblyAttribute>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj" />
+    <ProjectReference Include="..\..\patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj" >
+        <IncludeAssets>all</IncludeAssets>
+    </ProjectReference>
   </ItemGroup>
 </Project>
