@@ -1,39 +1,49 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <NoWarn>1701;1702;1591</NoWarn>
-    <DocumentationFile />
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Castle.Core" Version="4.4.1" />
-    <PackageReference Include="DeepCloner" Version="0.10.3" />
-    <PackageReference Include="FastExpressionCompiler" Version="3.3.4" />
-    <PackageReference Include="LinqToAnything" Version="2.1.28" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="MongoDB.Driver" Version="2.20.0" />
-    <PackageReference Include="Neleus.LambdaCompare" Version="1.0.3" />
-    <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
-    <PackageReference Include="Fody" Version="*">
-      <IncludeAssets>all</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="MethodTimer.Fody" Version="3.2.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\LICENSE" Pack="true" PackagePath="\" />
-    <None Include="..\icon.png" Pack="true" PackagePath="\" />
-  </ItemGroup>
-  <ItemGroup>
-    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-      <_Parameter1>Geex.Common.Abstraction</_Parameter1>
-    </AssemblyAttribute>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <NoWarn>1701;1702;1591</NoWarn>
+        <DocumentationFile />
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Castle.Core" Version="4.4.1" />
+        <PackageReference Include="DeepCloner" Version="0.10.3" />
+        <PackageReference Include="FastExpressionCompiler" Version="3.3.4" />
+        <PackageReference Include="LinqToAnything" Version="2.1.28" />
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
+        <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+        <PackageReference Include="MongoDB.Driver" Version="2.20.0" />
+        <PackageReference Include="Neleus.LambdaCompare" Version="1.0.3" />
+        <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
+        <PackageReference Include="Fody" Version="*">
+            <IncludeAssets>all</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="MethodTimer.Fody" Version="3.2.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="..\LICENSE" Pack="true" PackagePath="\" />
+        <None Include="..\icon.png" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Geex.Common.Abstraction</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+    <ItemGroup>
+        <Reference Include="KellermanSoftware.Compare-NET-Objects">
+            <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+    <PropertyGroup>
+        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
+    </PropertyGroup>
+    <Target Name="CompareDll">
+        <ItemGroup>
+            <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />
+        </ItemGroup>
+    </Target>
 </Project>
