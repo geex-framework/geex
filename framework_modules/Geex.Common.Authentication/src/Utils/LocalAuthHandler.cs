@@ -12,12 +12,13 @@ using MediatR;
 
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Geex.Common.Authentication.Utils
 {
-    internal class LocalAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>, IAuthenticationHandler
+    internal class LocalAuthHandler : JwtBearerHandler, IAuthenticationHandler
     {
         private readonly IMediator _mediator;
         private GeexJwtSecurityTokenHandler _tokenHandler;
@@ -27,7 +28,7 @@ namespace Geex.Common.Authentication.Utils
 
 
         /// <inheritdoc />
-        public LocalAuthHandler([NotNull][ItemNotNull] IOptionsMonitor<AuthenticationSchemeOptions> options,
+        public LocalAuthHandler([NotNull][ItemNotNull] IOptionsMonitor<JwtBearerOptions> options,
             [NotNull] ILoggerFactory logger, [NotNull] UrlEncoder encoder, [NotNull] ISystemClock clock, IMediator mediator, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions) : base(options,
             logger, encoder, clock)
         {

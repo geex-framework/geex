@@ -10,6 +10,7 @@ using Geex.Common.Abstractions.Enumerations;
 using Geex.Common.Authentication.Domain;
 using Geex.Common.Authentication.Utils;
 
+using HotChocolate;
 using HotChocolate.AspNetCore;
 
 using Microsoft.AspNetCore.Authentication;
@@ -19,6 +20,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 
@@ -74,14 +76,14 @@ namespace Geex.Common.Authentication
                     ClockSkew = TimeSpan.Zero,
                 };
                 services.AddSingleton<TokenValidationParameters>(tokenValidationParameters);
-                authenticationBuilder
-                    .AddJwtBearer(options =>
+
+                void ConfigJwtBearerOptions(JwtBearerOptions jwtBearerOptions)
                 {
-                    options.TokenValidationParameters = tokenValidationParameters;
-                    options.SecurityTokenValidators.Clear();
-                    options.SecurityTokenValidators.Add(services.GetRequiredServiceLazy<GeexJwtSecurityTokenHandler>().Value);
-                    options.Events ??= new JwtBearerEvents();
-                    options.Events.OnMessageReceived = receivedContext =>
+                    jwtBearerOptions.TokenValidationParameters = tokenValidationParameters;
+                    jwtBearerOptions.SecurityTokenValidators.Clear();
+                    jwtBearerOptions.SecurityTokenValidators.Add(services.GetRequiredServiceLazy<GeexJwtSecurityTokenHandler>().Value);
+                    jwtBearerOptions.Events ??= new JwtBearerEvents();
+                    jwtBearerOptions.Events.OnMessageReceived = receivedContext =>
                     {
                         if (receivedContext.HttpContext.WebSockets.IsWebSocketRequest)
                         {
@@ -96,18 +98,12 @@ namespace Geex.Common.Authentication
                         }
                         return Task.CompletedTask;
                     };
+                }
 
-                    options.Events.OnAuthenticationFailed = receivedContext => { return Task.CompletedTask; };
-                    options.Events.OnChallenge = receivedContext => { return Task.CompletedTask; };
-                    options.Events.OnForbidden = receivedContext => { return Task.CompletedTask; };
-                    options.Events.OnTokenValidated = receivedContext => { return Task.CompletedTask; };
-                    options.ForwardDefault = "Local";
-                })
+                authenticationBuilder
+                    .AddScheme<JwtBearerOptions, LocalAuthHandler>("Bearer", "Bearer", ConfigJwtBearerOptions)
                     .AddCookie()
-                    .AddScheme<AuthenticationSchemeOptions, LocalAuthHandler>("Local", "Local", o =>
-                    {
-
-                    })
+                    .AddScheme<JwtBearerOptions, LocalAuthHandler>("Local", "Local", ConfigJwtBearerOptions)
                     .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>("SuperAdmin", "SuperAdmin", (o =>
                     {
                         o.ForwardDefaultSelector = httpContext =>
