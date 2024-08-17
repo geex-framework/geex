@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Subscriptions;
 using HotChocolate.AspNetCore.Subscriptions.Protocols;
 using HotChocolate.AspNetCore.Subscriptions.Protocols.Apollo;
 using HotChocolate.Execution;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
@@ -36,14 +38,16 @@ namespace Geex.Common.Authentication.Utils
             try
             {
                 var payload = (connectionInitMessage as InitializeConnectionMessage)?.Payload.GetValueOrDefault();
-                var jwtHeader = payload?.GetString( HeaderNames.Authorization)??payload?.GetString(HeaderNames.Authorization.ToLowerInvariant());
+                var jwtHeader = payload?.GetString(HeaderNames.Authorization) ?? payload?.GetString(HeaderNames.Authorization.ToLowerInvariant());
 
                 //if (string.IsNullOrEmpty(jwtHeader) || !jwtHeader.StartsWith("Bearer "))
                 //    return ConnectionStatus.Reject("Unauthorized");
 
                 if (!jwtHeader.IsNullOrEmpty())
                 {
-                    var token = jwtHeader.Replace("Bearer ", "");
+                    var authParts = jwtHeader.Split(' ', 2);
+                    var schema = authParts[0];
+                    var token = authParts[1];
                     var context = session.Connection.HttpContext;
                     context.Items[HTTP_CONTEXT_WEBSOCKET_AUTH_KEY] = token;
                     context.Request.Headers[HeaderNames.Authorization] = jwtHeader;
@@ -57,7 +61,7 @@ namespace Geex.Common.Authentication.Utils
                     //    OriginalPath = context.Request.Path,
                     //    OriginalPathBase = context.Request.PathBase
                     //});
-                    var result = await context.AuthenticateAsync();
+                    var result = await context.AuthenticateAsync(schema);
                     if (result?.Principal != null && result.Principal.Identity.IsAuthenticated)
                     {
                         context.User = result.Principal;
