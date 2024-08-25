@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
@@ -16,12 +16,12 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
     public class UserQuery : QueryExtension<UserQuery>
     {
         private readonly IMediator _mediator;
-        private readonly LazyService<ClaimsPrincipal> _claimsPrincipal;
+        private readonly ICurrentUser _currentUser;
 
-        public UserQuery(IMediator mediator, LazyService<ClaimsPrincipal> claimsPrincipal)
+        public UserQuery(IMediator mediator, ICurrentUser currentUser)
         {
             this._mediator = mediator;
-            this._claimsPrincipal = claimsPrincipal;
+            this._currentUser = currentUser;
         }
 
         protected override void Configure(IObjectTypeDescriptor<UserQuery> descriptor)
@@ -64,7 +64,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
 
         public async Task<IUser> CurrentUser()
         {
-            var userId = _claimsPrincipal.Value.FindUserId();
+            var userId = _currentUser.UserId;
             var user = (await _mediator.Send(new QueryRequest<IUser>(x => x.Id == userId))).FirstOrDefault();
             return user;
         }

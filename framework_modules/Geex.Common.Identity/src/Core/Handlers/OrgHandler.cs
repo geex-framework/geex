@@ -35,12 +35,10 @@ namespace Geex.Common.Identity.Core.Handlers
         INotificationHandler<EntityDeletedNotification<Org>>
     {
         private readonly ITopicEventSender _topicEventSender;
-        private readonly LazyService<ClaimsPrincipal> _principalFactory;
         public IUnitOfWork DbContext { get; }
 
-        public OrgHandler(IUnitOfWork dbContext, LazyService<ClaimsPrincipal> principalFactory, ITopicEventSender topicEventSender)
+        public OrgHandler(IUnitOfWork dbContext, ITopicEventSender topicEventSender)
         {
-            _principalFactory = principalFactory;
             _topicEventSender = topicEventSender;
             DbContext = dbContext;
         }

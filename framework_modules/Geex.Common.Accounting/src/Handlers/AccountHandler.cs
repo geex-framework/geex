@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Requests;
 using Geex.Common.Abstractions;
@@ -18,10 +19,10 @@ namespace Geex.Common.Accounting.Handlers
     {
         private IMediator _mediator;
 
-        public AccountHandler(IMediator mediator, LazyService<ClaimsPrincipal> claimPrinciple)
+        public AccountHandler(IMediator mediator, ICurrentUser currentUser)
         {
             _mediator = mediator;
-            this.ClaimPrinciple = claimPrinciple;
+            this.CurrentUser = currentUser;
         }
 
         /// <summary>Handles a request</summary>
@@ -30,7 +31,7 @@ namespace Geex.Common.Accounting.Handlers
         /// <returns>Response from the request</returns>
         public async Task Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
         {
-            var query = await this._mediator.Send(new QueryRequest<IUser>(x => x.Id == ClaimPrinciple.Value.FindUserId()), cancellationToken);
+            var query = await this._mediator.Send(new QueryRequest<IUser>(x => x.Id == CurrentUser.UserId), cancellationToken);
             var user = query.First();
             user.ChangePassword(request.OriginPassword, request.NewPassword);
             return;
@@ -59,7 +60,7 @@ namespace Geex.Common.Accounting.Handlers
             return;
         }
 
-        public LazyService<ClaimsPrincipal> ClaimPrinciple { get; }
+        public ICurrentUser CurrentUser { get; }
     }
 
 }

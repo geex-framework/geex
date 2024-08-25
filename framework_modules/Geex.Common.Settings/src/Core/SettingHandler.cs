@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstractions;
 using Geex.Common.Settings.Abstraction;
@@ -29,7 +30,7 @@ namespace Geex.Common.Settings.Core
         public ILogger<SettingHandler> Logger { get; }
         private IRedisDatabase _redisClient;
         private readonly DbContext _dbContext;
-        private readonly LazyService<ClaimsPrincipal> _principal;
+        private readonly ICurrentUser _currentUser;
         private readonly LazyService<ICurrentTenant> _currentTenant;
         private static IReadOnlyList<SettingDefinition> _settingDefinitions;
         private static IReadOnlyList<Setting> _settingDefaults;
@@ -37,12 +38,12 @@ namespace Geex.Common.Settings.Core
         private static IReadOnlyList<Setting> SettingDefaults => _settingDefaults ??= _settingDefinitions?.Select(x => x.DefaultInstance).ToList();
 
 
-        public SettingHandler(IRedisDatabase redisClient, IEnumerable<GeexModule> modules, DbContext dbContext, LazyService<ClaimsPrincipal> principal, ILogger<SettingHandler> logger, LazyService<ICurrentTenant> currentTenant)
+        public SettingHandler(IRedisDatabase redisClient, IEnumerable<GeexModule> modules, DbContext dbContext, ICurrentUser currentUser, ILogger<SettingHandler> logger, LazyService<ICurrentTenant> currentTenant)
         {
             Logger = logger;
             _redisClient = redisClient;
             _dbContext = dbContext;
-            _principal = principal;
+            _currentUser = currentUser;
             _currentTenant = currentTenant;
             if (_settingDefinitions == default)
             {
@@ -157,16 +158,16 @@ namespace Geex.Common.Settings.Core
 
         public async Task<List<Setting>> GetUserSettings()
         {
-            var identity = _principal.Value;
-            if (identity == null || identity.FindUserId().IsNullOrEmpty())
+            var userId = _currentUser.UserId;
+            if (userId == null || userId.IsNullOrEmpty())
             {
                 return new List<Setting>();
             }
             IEnumerable<Setting> result;
-            var userSettings = await _redisClient.GetAllNamedByKeyAsync<Setting>($"{SettingScopeEnumeration.User}:{identity.FindUserId()}:*");
+            var userSettings = await _redisClient.GetAllNamedByKeyAsync<Setting>($"{SettingScopeEnumeration.User}:{userId}:*");
             if (SettingDefinitions.Except(userSettings.Select(x => x.Value.Name)).Any())
             {
-                var dbSettings = _dbContext.Query<Setting>().Where(x => x.Scope == SettingScopeEnumeration.User && x.ScopedKey == identity.FindUserId()).ToList();
+                var dbSettings = _dbContext.Query<Setting>().Where(x => x.Scope == SettingScopeEnumeration.User && x.ScopedKey == userId).ToList();
                 await TrySyncSettings(userSettings, dbSettings);
                 result = dbSettings;
             }

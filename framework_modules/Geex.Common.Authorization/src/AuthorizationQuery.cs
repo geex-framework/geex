@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstractions;
@@ -14,12 +15,12 @@ namespace Geex.Common.Authorization
 {
     public class AuthorizationQuery : QueryExtension<AuthorizationQuery>
     {
-        private readonly LazyService<ClaimsPrincipal> _claimsPrincipal;
+        private readonly ICurrentUser _currentUser;
         private readonly IMediator _mediator;
 
-        public AuthorizationQuery(LazyService<ClaimsPrincipal> claimsPrincipal,IMediator mediator)
+        public AuthorizationQuery(ICurrentUser currentUser,IMediator mediator)
         {
-            _claimsPrincipal = claimsPrincipal;
+            _currentUser = currentUser;
             _mediator = mediator;
         }
 
@@ -32,7 +33,7 @@ namespace Geex.Common.Authorization
         public async Task<List<string>> MyPermissions(
             [Service] IRbacEnforcer enforcer)
         {
-            var myId = _claimsPrincipal?.Value?.Identity?.FindUserId();
+            var myId = _currentUser?.UserId;
             return _mediator.Send(new GetSubjectPermissionsRequest(myId)).Result.ToList();
         }
     }

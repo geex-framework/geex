@@ -1,5 +1,5 @@
 ﻿using System.Security.Claims;
-
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstractions;
 using Geex.Common.Identity.Api;
 
@@ -16,7 +16,7 @@ namespace Geex.Common.Identity.Core
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
-            context.Services.AddScoped<IDataFilter<IOrgFilteredEntity>, OrgDataFilter>(x => new OrgDataFilter(x.GetService<LazyService<ClaimsPrincipal>>()));
+            context.Services.AddScoped<IDataFilter<IOrgFilteredEntity>, OrgDataFilter>(x => new OrgDataFilter(x.GetService<ICurrentUser>()));
             base.ConfigureServices(context);
         }
 

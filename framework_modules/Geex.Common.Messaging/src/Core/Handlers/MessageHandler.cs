@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Enumerations;
 using Geex.Common.Abstractions;
@@ -33,13 +34,13 @@ namespace Geex.Common.Messaging.Core.Handlers
     IRequestHandler<GetUnreadMessagesRequest, IEnumerable<IMessage>>
     {
         public IUnitOfWork Uow { get; }
-        public LazyService<ClaimsPrincipal> ClaimsPrincipal { get; }
+        public ICurrentUser CurrentUser { get; }
         public LazyService<ITopicEventSender> Sender { get; }
 
-        public MessageHandler(IUnitOfWork uow, LazyService<ClaimsPrincipal> claimsPrincipal, LazyService<ITopicEventSender> sender)
+        public MessageHandler(IUnitOfWork uow, ICurrentUser currentUser, LazyService<ITopicEventSender> sender)
         {
             Uow = uow;
-            this.ClaimsPrincipal = claimsPrincipal;
+            this.CurrentUser = currentUser;
             Sender = sender;
         }
 
@@ -57,8 +58,7 @@ namespace Geex.Common.Messaging.Core.Handlers
 
         public async Task<IEnumerable<IMessage>> Handle(GetUnreadMessagesRequest request, CancellationToken cancellationToken)
         {
-            var claimsPrincipal = ClaimsPrincipal.Value;
-            var messageDistributions = Uow.Query<MessageDistribution>().Where(x => x.IsRead == false && x.ToUserId == claimsPrincipal.FindUserId()).ToList();
+            var messageDistributions = Uow.Query<MessageDistribution>().Where(x => x.IsRead == false && x.ToUserId == CurrentUser.UserId).ToList();
             var messageIds = messageDistributions.Select(x => x.MessageId);
             var messages = Uow.Query<Message>().Where(x => messageIds.Contains(x.Id)).ToList();
             return messages;

@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Bson;
 using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
@@ -91,7 +92,7 @@ namespace Geex.Common
                 context.Services.AddStackExchangeRedisExtensions();
             }
             context.Services.AddSingleton(schemaBuilder);
-            context.Services.AddHttpResultSerializer(x => new GeexResultSerializerWithCustomStatusCodes(new LazyService<ClaimsPrincipal>(x)));
+            context.Services.AddHttpResultSerializer(x => new GeexResultSerializerWithCustomStatusCodes(x.GetService<ICurrentUser>()));
             IReadOnlySchemaOptions capturedSchemaOptions = default;
             schemaBuilder.AddConvention<ITypeInspector>(typeof(GeexTypeInspector))
                 .TrimTypes(false)

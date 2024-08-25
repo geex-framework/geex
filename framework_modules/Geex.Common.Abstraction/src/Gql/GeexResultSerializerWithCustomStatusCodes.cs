@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstractions;
 
 using HotChocolate;
@@ -12,11 +14,11 @@ namespace Geex.Common.Abstraction.Gql
 {
     public class GeexResultSerializerWithCustomStatusCodes : DefaultHttpResponseFormatter
     {
-        private readonly LazyService<ClaimsPrincipal> _claimsPrincipalFactory;
+        private readonly ICurrentUser _currentUser;
 
-        public GeexResultSerializerWithCustomStatusCodes(LazyService<ClaimsPrincipal> claimsPrincipalFactory)
+        public GeexResultSerializerWithCustomStatusCodes(ICurrentUser currentUser)
         {
-            _claimsPrincipalFactory = claimsPrincipalFactory;
+            _currentUser = currentUser;
         }
 
         /// <inheritdoc />
@@ -28,7 +30,7 @@ namespace Geex.Common.Abstraction.Gql
             {
                 if (result.Errors.Any(e => e.Code == ErrorCodes.Authentication.NotAuthorized || e.Code == ErrorCodes.Authentication.NotAuthenticated))
                 {
-                    var userId = _claimsPrincipalFactory.Value?.FindUserId();
+                    var userId = _currentUser.UserId;
                     return userId.IsNullOrEmpty() ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
                 }
 

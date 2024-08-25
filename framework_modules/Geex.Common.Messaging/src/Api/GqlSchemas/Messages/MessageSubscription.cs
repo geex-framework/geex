@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
-
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstractions;
 using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
@@ -20,9 +20,9 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         /// <param name="claimsPrincipal"></param>
         /// <returns></returns>
         [SubscribeAndResolve]
-        public ValueTask<ISourceStream<IFrontendCall>> OnFrontendCall([Service] ITopicEventReceiver receiver, [Service] LazyService<ClaimsPrincipal> claimsPrincipal)
+        public ValueTask<ISourceStream<IFrontendCall>> OnFrontendCall([Service] ITopicEventReceiver receiver, [Service] ICurrentUser claimsPrincipal)
         {
-            return receiver.SubscribeAsync<IFrontendCall>($"{nameof(OnFrontendCall)}:{claimsPrincipal.Value?.FindUserId()}");
+            return receiver.SubscribeAsync<IFrontendCall>($"{nameof(OnFrontendCall)}:{claimsPrincipal.UserId}");
         }
 
         /// <summary>

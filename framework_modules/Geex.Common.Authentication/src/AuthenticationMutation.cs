@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Authentication.Domain;
 using Geex.Common.Requests.Authentication;
@@ -31,10 +32,10 @@ namespace Geex.Common.Authentication
 
         public async Task<bool> CancelAuthentication(
             [Service] IRedisDatabase redis,
-            [Service] ClaimsPrincipal claimsPrincipal
+            [Service] ICurrentUser currentUser
             )
         {
-            var userId = claimsPrincipal?.FindUserId();
+            var userId = currentUser?.UserId;
             return await _mediator.Send(new CancelAuthenticationRequest(userId));
         }
     }

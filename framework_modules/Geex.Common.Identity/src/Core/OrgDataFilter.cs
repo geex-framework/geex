@@ -1,6 +1,9 @@
 ﻿using System.Linq;
 using System.Security.Claims;
+
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstractions;
+
 using MongoDB.Entities;
 using MongoDB.Entities.Interceptors;
 
@@ -11,7 +14,7 @@ namespace Geex.Common.Identity.Core
     /// </summary>
     public class OrgDataFilter : ExpressionDataFilter<IOrgFilteredEntity>
     {
-        public OrgDataFilter(LazyService<ClaimsPrincipal> claimsPrincipal) : base(PredicateBuilder.New<IOrgFilteredEntity>(entity => claimsPrincipal.Value.FindUserId() == "000000000000000000000001" || entity.OrgCode == null || claimsPrincipal.Value.FindOrgCodes().Contains(entity.OrgCode)), null)
+        public OrgDataFilter(ICurrentUser currentUser) : base(PredicateBuilder.New<IOrgFilteredEntity>(entity => currentUser.UserId == "000000000000000000000001" || entity.OrgCode == null || (currentUser.User != null && currentUser.User.OrgCodes.Contains(entity.OrgCode))), null)
         {
 
         }
