@@ -160,6 +160,7 @@ namespace Geex.Common
             context.Services.AddTransient(typeof(LazyService<>));
             context.Services.AddTransient<ClaimsPrincipal>(x =>
             x.GetService<IHttpContextAccessor>()?.HttpContext?.User);
+            context.Services.AddScoped<ICurrentUser,CurrentUser>();
             context.Services.AddResponseCompression(x =>
             {
                 // todo: 此处可能有安全风险

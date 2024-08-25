@@ -73,6 +73,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatX", "Geex.MediatX\Med
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compare-NET-Objects", "patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj", "{3C6D84D9-CA61-432D-8320-1B2180296124}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common.AuditLogs", "Geex.Common.AuditLogs", "{B17EB9C2-B7E3-487F-B2A0-03869115A348}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.AuditLogs", "Geex.Common.AuditLog\src\Geex.Common.AuditLogs.csproj", "{20573EB5-B7A2-4106-9015-6E188977C8AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -155,6 +159,10 @@ Global
 		{3C6D84D9-CA61-432D-8320-1B2180296124}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C6D84D9-CA61-432D-8320-1B2180296124}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C6D84D9-CA61-432D-8320-1B2180296124}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20573EB5-B7A2-4106-9015-6E188977C8AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20573EB5-B7A2-4106-9015-6E188977C8AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20573EB5-B7A2-4106-9015-6E188977C8AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20573EB5-B7A2-4106-9015-6E188977C8AA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -178,6 +186,7 @@ Global
 		{98F0E5DF-828D-4D43-A1D6-EE75DED97429} = {49E63855-3CE4-4530-A8A1-A08EA703BBEC}
 		{FA32CF69-8DF5-457A-BE58-467A01C80C3B} = {8A44E7C5-AF56-4D4F-8A24-DD9BEF34925B}
 		{3B0A9854-B72A-41D0-B75A-1D87BF43794E} = {8A44E7C5-AF56-4D4F-8A24-DD9BEF34925B}
+		{20573EB5-B7A2-4106-9015-6E188977C8AA} = {B17EB9C2-B7E3-487F-B2A0-03869115A348}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {65E33D9A-23A7-46EA-9E8C-8B20AB9B6F0D}

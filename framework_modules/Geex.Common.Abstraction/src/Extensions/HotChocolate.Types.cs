@@ -225,13 +225,14 @@ namespace HotChocolate.Types
         {
             return GetFieldsMethodInfo.Invoke(descriptor, new object?[] { }) as ICollection<ObjectFieldDescriptor>;
         }
-        public static void AuthorizeFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : class
+        public static IObjectTypeDescriptor<T> AuthorizeFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : class
         {
             var propertyList = descriptor.GetFields();
             foreach (var item in propertyList)
             {
                 descriptor.FieldWithDefaultAuthorize(item);
             }
+            return descriptor;
         }
 
         public static IObjectFieldDescriptor FieldWithDefaultAuthorize<T>(this IObjectTypeDescriptor<T> @this, IObjectFieldDescriptor fieldDescriptor)

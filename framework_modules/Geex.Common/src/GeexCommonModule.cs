@@ -1,5 +1,6 @@
 ﻿using Geex.Common.Abstractions;
 using Geex.Common.Accounting;
+using Geex.Common.AuditLogs;
 using Geex.Common.Authorization;
 using Geex.Common.BackgroundJob;
 using Geex.Common.BlobStorage.Core;
@@ -20,6 +21,7 @@ namespace Geex.Common
         typeof(BlobStorageCoreModule),
         typeof(BackgroundJobModule),
         typeof(SettingsModule),
+        typeof(AuditLogsModule),
         typeof(AuthorizationModule)
         )]
     public class GeexCommonModule : GeexModule<GeexCommonModule>

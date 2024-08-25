@@ -567,6 +567,10 @@ namespace MongoDB.Entities
 
         public virtual async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
         {
+            if (this.PreSaveChanges != default)
+            {
+                await this.PreSaveChanges();
+            }
             if (!Session.IsInTransaction)
             {
                 Session.StartTransaction();
@@ -760,6 +764,7 @@ namespace MongoDB.Entities
             return this.Collection<T>().InsertManyAsync(this.Session, entities, options, cancellationToken);
         }
 
+        public virtual event Func<Task>? PreSaveChanges;
         public virtual event Func<Task>? PostSaveChanges;
 
         /// <inheritdoc />

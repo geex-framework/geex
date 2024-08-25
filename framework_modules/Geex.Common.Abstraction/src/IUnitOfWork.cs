@@ -4,7 +4,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Common.Abstraction.Storage;
+
 using MongoDB.Entities;
 
 namespace Geex.Common;
@@ -17,6 +19,7 @@ public interface IRepository
 public interface IUnitOfWork : IRepository, IDisposable
 {
     GeexDbContext DbContext => this as GeexDbContext;
+    public event Func<Task>? PreSaveChanges;
     public event Func<Task>? PostSaveChanges;
     T Attach<T>(T entity) where T : IEntityBase;
     IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase;
