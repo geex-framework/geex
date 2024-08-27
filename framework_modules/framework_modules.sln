@@ -75,7 +75,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compare-NET-Objects", "patc
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common.AuditLogs", "Geex.Common.AuditLogs", "{B17EB9C2-B7E3-487F-B2A0-03869115A348}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.AuditLogs", "Geex.Common.AuditLog\src\Geex.Common.AuditLogs.csproj", "{20573EB5-B7A2-4106-9015-6E188977C8AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.AuditLogs", "Geex.Common.AuditLogs\src\Geex.Common.AuditLogs.csproj", "{20573EB5-B7A2-4106-9015-6E188977C8AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -24,7 +24,7 @@
     <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Geex.Common.AuditLog\src\Geex.Common.AuditLogs.csproj" />
+    <ProjectReference Include="..\..\Geex.Common.AuditLogs\src\Geex.Common.AuditLogs.csproj" />
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
     <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
     <ProjectReference Include="..\..\Geex.Common.Accounting\src\Geex.Common.Accounting.csproj" />
