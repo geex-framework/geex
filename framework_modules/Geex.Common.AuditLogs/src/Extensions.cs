@@ -25,7 +25,7 @@ namespace Geex.Common.AuditLogs
 
         public static IObjectFieldDescriptor Audit(this IObjectFieldDescriptor fieldDescriptor)
         {
-            fieldDescriptor = fieldDescriptor.Directive<AuditDirectiveType>();
+            fieldDescriptor = fieldDescriptor.Directive<ApproveDirectiveType>();
             return fieldDescriptor;
         }
     }

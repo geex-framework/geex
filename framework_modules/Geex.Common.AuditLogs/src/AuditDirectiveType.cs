@@ -13,15 +13,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Geex.Common.AuditLogs
 {
-    public class AuditDirectiveType
+    public class ApproveDirectiveType
     {
 
-        public class Config : GqlConfig.Directive<AuditDirectiveType>
+        public class Config : GqlConfig.Directive<ApproveDirectiveType>
         {
             /// <inheritdoc />
-            protected override void Configure(IDirectiveTypeDescriptor<AuditDirectiveType> descriptor)
+            protected override void Configure(IDirectiveTypeDescriptor<ApproveDirectiveType> descriptor)
             {
-                descriptor.Name("audit");
+                descriptor.Name("approve");
                 descriptor.Location(DirectiveLocation.FieldDefinition);
                 descriptor.Use((next, directive) => async context =>
                 {
@@ -61,7 +61,7 @@ namespace Geex.Common.AuditLogs
                         }
                         catch (Exception e)
                         {
-                            context.Service<ILogger<AuditDirectiveType>>().LogError(e, "AuditLog failed with exception.");
+                            context.Service<ILogger<ApproveDirectiveType>>().LogError(e, "AuditLog failed with exception.");
                         }
                     });
                 });

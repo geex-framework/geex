@@ -1,17 +1,17 @@
 ﻿using MediatR;
 
-namespace Geex.Common.Abstraction.Auditing
+namespace Geex.Common.Abstraction.Approbation
 {
-    public class AuditRequest<T> : IRequest
+    public class ApproveRequest<T> : IRequest
     {
         public string? Remark { get; set; }
 
-        public AuditRequest(string? remark, string[] ids)
+        public ApproveRequest(string? remark, string[] ids)
         {
             Remark = remark;
             this.Ids = ids;
         }
-        public AuditRequest(string? remark, string id)
+        public ApproveRequest(string? remark, string id)
         {
             Remark = remark;
             this.Ids = new[] { id };

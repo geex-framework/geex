@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Geex.Common.Abstraction.Auditing
+namespace Geex.Common.Abstraction.Approbation
 {
     public class SubmitRequest<T> : IRequest
     {

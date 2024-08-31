@@ -1,22 +1,21 @@
 ﻿using System.Threading.Tasks;
-
-using Geex.Common.Abstraction.Auditing.Events;
+using Geex.Common.Abstraction.Approbation.Events;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
 using MongoDB.Entities;
 
-namespace Geex.Common.Abstraction.Auditing
+namespace Geex.Common.Abstraction.Approbation
 {
-    public interface IAuditEntity : IEntityBase
+    public interface IApproveEntity : IEntityBase
     {
         /// <summary>
         /// 对象审批状态
         /// </summary>
-        public AuditStatus AuditStatus { get; set; }
+        public ApproveStatus ApproveStatus { get; set; }
         /// <summary>
         /// 审批操作备注文本
         /// </summary>
-        public string? AuditRemark { get; set; }
+        public string? ApproveRemark { get; set; }
         /// <summary>
         /// 上报
         /// </summary>
@@ -28,8 +27,8 @@ namespace Geex.Common.Abstraction.Auditing
         {
             if (this.Submittable)
             {
-                this.AuditStatus |= AuditStatus.Submitted;
-                this.AuditRemark = remark;
+                this.ApproveStatus |= ApproveStatus.Submitted;
+                this.ApproveRemark = remark;
                 (this as IEntity)?.AddDomainEvent(new EntitySubmittedNotification<TEntity>(this));
             }
             else
@@ -44,13 +43,13 @@ namespace Geex.Common.Abstraction.Auditing
         /// <param name="remark"></param>
         /// <returns></returns>
         /// <exception cref="BusinessException"></exception>
-        async Task Audit<TEntity>(string? remark = default)
+        async Task Approve<TEntity>(string? remark = default)
         {
-            if (this.AuditStatus == AuditStatus.Submitted)
+            if (this.ApproveStatus == ApproveStatus.Submitted)
             {
-                this.AuditStatus |= AuditStatus.Audited;
-                this.AuditRemark = remark;
-                (this as IEntity)?.AddDomainEvent(new EntityAuditedNotification<TEntity>(this));
+                this.ApproveStatus |= ApproveStatus.Approved;
+                this.ApproveRemark = remark;
+                (this as IEntity)?.AddDomainEvent(new EntityApprovedNotification<TEntity>(this));
             }
             else
             {
@@ -66,13 +65,13 @@ namespace Geex.Common.Abstraction.Auditing
         /// <exception cref="BusinessException"></exception>
         async Task UnSubmit<TEntity>(string? remark = default)
         {
-            if (this.AuditStatus == AuditStatus.Submitted)
+            if (this.ApproveStatus == ApproveStatus.Submitted)
             {
-                this.AuditStatus ^= AuditStatus.Submitted;
-                this.AuditRemark = remark;
+                this.ApproveStatus ^= ApproveStatus.Submitted;
+                this.ApproveRemark = remark;
                 (this as IEntity)?.AddDomainEvent(new EntityUnsubmittedNotification<TEntity>(this));
             }
-            else if (this.AuditStatus == AuditStatus.Audited)
+            else if (this.ApproveStatus == ApproveStatus.Approved)
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "已审核，无法取消上报.");
             }
@@ -83,20 +82,20 @@ namespace Geex.Common.Abstraction.Auditing
         /// <typeparam name="TEntity"></typeparam>
         /// <param name="remark"></param>
         /// <returns></returns>
-        async Task UnAudit<TEntity>(string? remark = default, bool backToSubmited = false)
+        async Task UnApprove<TEntity>(string? remark = default, bool backToSubmited = false)
         {
-            if (this.AuditStatus == AuditStatus.Audited)
+            if (this.ApproveStatus == ApproveStatus.Approved)
             {
                 if (backToSubmited)
                 {
-                    this.AuditStatus = AuditStatus.Submitted;
+                    this.ApproveStatus = ApproveStatus.Submitted;
                 }
                 else
                 {
-                    this.AuditStatus ^= AuditStatus.Audited;
+                    this.ApproveStatus ^= ApproveStatus.Approved;
                 }
-                this.AuditRemark = remark;
-                (this as IEntity)?.AddDomainEvent(new EntityUnauditedNotification<TEntity>(this));
+                this.ApproveRemark = remark;
+                (this as IEntity)?.AddDomainEvent(new EntityUnApprovedNotification<TEntity>(this));
             }
         }
         /// <summary>

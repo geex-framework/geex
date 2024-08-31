@@ -10,7 +10,7 @@ using Fasterflect;
 
 using Geex.Common;
 using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Auditing;
+using Geex.Common.Abstraction.Approbation;
 using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstraction.Gql.Types.Scalars;
@@ -40,10 +40,10 @@ namespace HotChocolate.Types
         {
             @this.IgnoreMethods();
             @this.AuthorizeFieldsImplicitly();
-            if (typeof(T).IsAssignableTo<IAuditEntity>())
+            if (typeof(T).IsAssignableTo<IApproveEntity>())
             {
-                @this.Field(x => ((IAuditEntity)x).AuditStatus);
-                @this.Field(x => ((IAuditEntity)x).Submittable);
+                @this.Field(x => ((IApproveEntity)x).ApproveStatus);
+                @this.Field(x => ((IApproveEntity)x).Submittable);
             }
 
             var properties = typeof(T).GetProperties();
@@ -121,11 +121,11 @@ namespace HotChocolate.Types
                     x.Field(y => y.Id);
                     x.Field(y => y.CreatedOn);
                 })
-                .AddInterfaceType<IAuditEntity>(x =>
+                .AddInterfaceType<IApproveEntity>(x =>
                 {
                     x.BindFieldsExplicitly();
                     //x.Implements<IEntityType>();
-                    x.Field(y => y.AuditStatus);
+                    x.Field(y => y.ApproveStatus);
                     x.Field(y => y.Submittable);
                 })
                 .AddInterfaceType<IPagedList>()
@@ -196,12 +196,12 @@ namespace HotChocolate.Types
             }
 
             // 判断是否继承了审核基类
-            if (typeof(T).GetInterfaces().Contains(typeof(IHasAuditMutation)))
+            if (typeof(T).GetInterfaces().Contains(typeof(IHasApproveMutation)))
             {
-                var auditMutationType = typeof(T).GetInterfaces().First(x => x.Name.StartsWith(nameof(IHasAuditMutation) + "`1"));
-                var auditPropertyList = auditMutationType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                var entityType = auditMutationType.GenericTypeArguments[0];
-                foreach (var item in auditPropertyList)
+                var approveMutationType = typeof(T).GetInterfaces().First(x => x.Name.StartsWith(nameof(IHasApproveMutation) + "`1"));
+                var approvePropertyList = approveMutationType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                var entityType = approveMutationType.GenericTypeArguments[0];
+                foreach (var item in approvePropertyList)
                 {
                     var policy = $"{prefix}_{item.Name.ToCamelCase()}{entityType.Name.RemovePreFix("I")}";
 

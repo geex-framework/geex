@@ -1,12 +1,12 @@
 ﻿using MediatR;
 
-namespace Geex.Common.Abstraction.Auditing.Events
+namespace Geex.Common.Abstraction.Approbation.Events
 {
     public class EntityUnsubmittedNotification<TEntity> : INotification
     {
-        public IAuditEntity Entity { get; }
+        public IApproveEntity Entity { get; }
 
-        public EntityUnsubmittedNotification(IAuditEntity entity)
+        public EntityUnsubmittedNotification(IApproveEntity entity)
         {
             Entity = entity;
         }

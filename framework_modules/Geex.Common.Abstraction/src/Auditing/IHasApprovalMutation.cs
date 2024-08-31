@@ -4,12 +4,12 @@ using HotChocolate;
 
 using MediatR;
 
-namespace Geex.Common.Abstraction.Auditing
+namespace Geex.Common.Abstraction.Approbation
 {
-    public interface IHasAuditMutation
+    public interface IHasApproveMutation
     {
     }
-    public interface IHasAuditMutation<T> : IHasAuditMutation where T : IAuditEntity
+    public interface IHasApproveMutation<T> : IHasApproveMutation where T : IApproveEntity
     {
         async Task<bool> Submit([Service] IMediator mediator, string[] ids, string? remark)
         {
@@ -17,9 +17,9 @@ namespace Geex.Common.Abstraction.Auditing
             return true;
         }
 
-        async Task<bool> Audit([Service] IMediator mediator, string[] ids, string? remark)
+        async Task<bool> Approve([Service] IMediator mediator, string[] ids, string? remark)
         {
-            await mediator.Send(new AuditRequest<T>(remark, ids));
+            await mediator.Send(new ApproveRequest<T>(remark, ids));
             return true;
         }
         async Task<bool> UnSubmit([Service] IMediator mediator, string[] ids, string? remark)
@@ -28,9 +28,9 @@ namespace Geex.Common.Abstraction.Auditing
             return true;
         }
 
-        async Task<bool> UnAudit([Service] IMediator mediator, string[] ids, string? remark)
+        async Task<bool> UnApprove([Service] IMediator mediator, string[] ids, string? remark)
         {
-            await mediator.Send(new UnauditRequest<T>(remark, ids));
+            await mediator.Send(new UnApproveRequest<T>(remark, ids));
             return true;
         }
     }

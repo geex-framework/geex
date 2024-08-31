@@ -7,15 +7,15 @@ using Geex.Common.Abstractions;
 
 using MediatR;
 
-namespace Geex.Common.Abstraction.Auditing
+namespace Geex.Common.Abstraction.Approbation
 {
-    public interface IAuditRequestHandler<TInterface, TEntity> :
+    public interface IApproveRequestHandler<TInterface, TEntity> :
         ICommonHandler<TInterface, TEntity>,
         IRequestHandler<SubmitRequest<TInterface>>,
-        IRequestHandler<AuditRequest<TInterface>>,
+        IRequestHandler<ApproveRequest<TInterface>>,
         IRequestHandler<UnsubmitRequest<TInterface>>,
-        IRequestHandler<UnauditRequest<TInterface>>
-        where TInterface : IAuditEntity where TEntity : TInterface
+        IRequestHandler<UnApproveRequest<TInterface>>
+        where TInterface : IApproveEntity where TEntity : TInterface
     {
 
         async Task IRequestHandler<SubmitRequest<TInterface>>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
@@ -35,7 +35,7 @@ namespace Geex.Common.Abstraction.Auditing
             }
         }
 
-        async Task IRequestHandler<AuditRequest<TInterface>>.Handle(AuditRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task IRequestHandler<ApproveRequest<TInterface>>.Handle(ApproveRequest<TInterface> request, CancellationToken cancellationToken)
         {
             var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
@@ -49,7 +49,7 @@ namespace Geex.Common.Abstraction.Auditing
                     Uow.Attach(entity);
                 }
 
-                await entity.Audit<TInterface>(request.Remark);
+                await entity.Approve<TInterface>(request.Remark);
             }
         }
 
@@ -70,7 +70,7 @@ namespace Geex.Common.Abstraction.Auditing
             }
         }
 
-        async Task IRequestHandler<UnauditRequest<TInterface>>.Handle(UnauditRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task IRequestHandler<UnApproveRequest<TInterface>>.Handle(UnApproveRequest<TInterface> request, CancellationToken cancellationToken)
         {
             var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())
@@ -84,7 +84,7 @@ namespace Geex.Common.Abstraction.Auditing
                     Uow.Attach(entity);
                 }
 
-                await entity.UnAudit<TInterface>(request.Remark);
+                await entity.UnApprove<TInterface>(request.Remark);
             }
         }
     }

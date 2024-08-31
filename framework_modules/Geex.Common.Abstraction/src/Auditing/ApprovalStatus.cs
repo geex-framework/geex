@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace Geex.Common.Abstraction.Auditing
+namespace Geex.Common.Abstraction.Approbation
 {
     [Flags]
-    public enum AuditStatus
+    public enum ApproveStatus
     {
         /// <summary>
         /// 待上报/默认
@@ -16,7 +16,7 @@ namespace Geex.Common.Abstraction.Auditing
         /// <summary>
         /// 已审批
         /// </summary>
-        Audited = 3,
+        Approved = 3,
 
     }
 }
