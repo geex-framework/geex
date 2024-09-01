@@ -33,7 +33,7 @@ namespace Geex.Common.Abstraction.Approbation
         }
         async Task<bool> UnSubmit(string[] ids, string? remark, [Service] IMediator mediator = default)
         {
-            await mediator.Send(new UnsubmitRequest<T>(remark, ids));
+            await mediator.Send(new UnSubmitRequest<T>(remark, ids));
             return true;
         }
 

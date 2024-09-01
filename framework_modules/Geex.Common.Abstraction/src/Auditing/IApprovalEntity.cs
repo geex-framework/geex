@@ -69,7 +69,7 @@ namespace Geex.Common.Abstraction.Approbation
             {
                 this.ApproveStatus ^= ApproveStatus.Submitted;
                 this.ApproveRemark = remark;
-                (this as IEntity)?.AddDomainEvent(new EntityUnsubmittedNotification<TEntity>(this));
+                (this as IEntity)?.AddDomainEvent(new EntityUnSubmittedNotification<TEntity>(this));
             }
             else if (this.ApproveStatus == ApproveStatus.Approved)
             {

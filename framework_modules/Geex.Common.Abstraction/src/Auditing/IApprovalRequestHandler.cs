@@ -13,7 +13,7 @@ namespace Geex.Common.Abstraction.Approbation
         ICommonHandler<TInterface, TEntity>,
         IRequestHandler<SubmitRequest<TInterface>>,
         IRequestHandler<ApproveRequest<TInterface>>,
-        IRequestHandler<UnsubmitRequest<TInterface>>,
+        IRequestHandler<UnSubmitRequest<TInterface>>,
         IRequestHandler<UnApproveRequest<TInterface>>
         where TInterface : IApproveEntity where TEntity : TInterface
     {
@@ -53,7 +53,7 @@ namespace Geex.Common.Abstraction.Approbation
             }
         }
 
-        async Task IRequestHandler<UnsubmitRequest<TInterface>>.Handle(UnsubmitRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task IRequestHandler<UnSubmitRequest<TInterface>>.Handle(UnSubmitRequest<TInterface> request, CancellationToken cancellationToken)
         {
             var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
             if (!entities.Any())

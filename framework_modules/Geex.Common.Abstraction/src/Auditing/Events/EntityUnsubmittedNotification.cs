@@ -2,11 +2,11 @@
 
 namespace Geex.Common.Abstraction.Approbation.Events
 {
-    public class EntityUnsubmittedNotification<TEntity> : INotification
+    public class EntityUnSubmittedNotification<TEntity> : INotification
     {
         public IApproveEntity Entity { get; }
 
-        public EntityUnsubmittedNotification(IApproveEntity entity)
+        public EntityUnSubmittedNotification(IApproveEntity entity)
         {
             Entity = entity;
         }
