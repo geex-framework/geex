@@ -1,53 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authentication;
+using Geex.Common.Abstraction.Storage;
 
+using HotChocolate.Language;
 using HotChocolate.Types;
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using DirectiveLocation = HotChocolate.Types.DirectiveLocation;
+
+
 namespace Geex.Common.AuditLogs
 {
-    public class ApproveDirectiveType
+    public class AuditDirectiveType
     {
 
-        public class Config : GqlConfig.Directive<ApproveDirectiveType>
+        public class Config : GqlConfig.Directive<AuditDirectiveType>
         {
             /// <inheritdoc />
-            protected override void Configure(IDirectiveTypeDescriptor<ApproveDirectiveType> descriptor)
+            protected override void Configure(IDirectiveTypeDescriptor<AuditDirectiveType> descriptor)
             {
-                descriptor.Name("approve");
+                descriptor.Name("audit");
                 descriptor.Location(DirectiveLocation.FieldDefinition);
                 descriptor.Use((next, directive) => async context =>
                 {
                     var user = context.Service<ICurrentUser>();
-                    var type = context.Operation.Type;
+                    var operationType = context.Operation.Type;
+                    var operationName = context.Operation.Name;
                     var operation = context.Operation.Document.ToString();
-                    var valueTask = next.Invoke(context);
-                    await valueTask.AsTask()
-                        .ContinueWith(async task =>
+                    var variables = context.Variables.ToJson();
+                    var mainTask = next.Invoke(context).AsTask();
+                    await mainTask.ContinueWith(async task =>
                     {
                         try
                         {
-                            var uow = context.Service<IUnitOfWork>();
+                            using var uow = new GeexDbContext(context.RequestServices);
                             var logEntry = new AuditLog()
                             {
-                                OperationType = type,
+                                OperationType = operationType,
+                                OperationName = operationName,
                                 OperatorId = user.UserId,
-                                Query = operation,
+                                Operation = operation,
+                                Variables = JsonNode.Parse(variables),
                             };
                             if (task.IsFaulted)
                             {
                                 // Handle the exception
                                 var innerExceptions = task.Exception.InnerExceptions;
                                 logEntry.Result = JsonNode.Parse(innerExceptions.Count == 1
-                                    ? innerExceptions[0].ToJson()
-                                    : innerExceptions.ToJson());
+                                    ? innerExceptions[0].ToExceptionModel().ToJson()
+                                    : innerExceptions.Select(x => x.ToExceptionModel()).ToJson());
                                 logEntry.IsSuccess = false;
                             }
                             else if (task.IsCompleted)
@@ -55,16 +67,20 @@ namespace Geex.Common.AuditLogs
                                 logEntry.Result = JsonNode.Parse(context.Result.ToJson());
                                 logEntry.IsSuccess = true;
                             }
-
                             uow?.Attach(logEntry);
                             await uow.SaveChanges();
                         }
                         catch (Exception e)
                         {
-                            context.Service<ILogger<ApproveDirectiveType>>().LogError(e, "AuditLog failed with exception.");
+                            context.Service<ILogger<AuditDirectiveType>>().LogError(e, "AuditLog failed with exception.");
                         }
                     });
+                    if (mainTask.IsFaulted && mainTask.Exception.InnerException != default)
+                    {
+                        context.ReportError(mainTask.Exception.InnerException);
+                    }
                 });
+
                 base.Configure(descriptor);
             }
         }

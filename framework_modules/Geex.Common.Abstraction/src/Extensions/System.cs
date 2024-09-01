@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction;
 
 namespace System
 {
@@ -75,6 +76,20 @@ namespace System
                 await gzip.CopyToAsync(output);
                 return Encoding.UTF8.GetString(output.ToArray());
             }
+        }
+
+        /// <summary>
+        /// generic exception model
+        /// </summary>
+        public static ExceptionModel? ToExceptionModel(this Exception value)
+        {
+            return new ExceptionModel()
+            {
+                ExceptionType = value.GetType().ToString(),
+                Message = value.Message,
+                Source = value.Source,
+                Data = value.Data
+            };
         }
     }
 }

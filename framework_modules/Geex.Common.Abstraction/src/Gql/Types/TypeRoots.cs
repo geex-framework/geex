@@ -1,9 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Approbation;
+
 using HotChocolate.Types;
+
 using MediatR;
+
+using RestSharp.Extensions;
 
 using Volo.Abp.DependencyInjection;
 
@@ -16,7 +21,7 @@ namespace Geex.Common.Abstraction.Gql.Types
             descriptor.Name(OperationTypeNames.Query);
             if (typeof(T).IsAssignableTo<ObjectTypeExtension>())
             {
-                descriptor.ConfigExtensionFields();
+                descriptor.IgnoreExtensionFields();
             }
             base.Configure(descriptor);
         }
@@ -25,57 +30,62 @@ namespace Geex.Common.Abstraction.Gql.Types
     {
         protected override void Configure(IObjectTypeDescriptor<T> descriptor)
         {
+            var mutationType = typeof(T);
             descriptor.Name(OperationTypeNames.Mutation);
-            if (typeof(T).IsAssignableTo<ObjectTypeExtension>())
+            if (mutationType.IsAssignableTo<ObjectTypeExtension>())
             {
-                descriptor.ConfigExtensionFields();
+                descriptor.IgnoreExtensionFields();
             }
 
-            if (typeof(T).IsAssignableTo<IHasApproveMutation>())
+            if (mutationType.IsAssignableTo<IHasApproveMutation>())
             {
-                var mutationType = this.GetType().GetInterface("IHasApproveMutation`1");
-                var entityType = mutationType.GenericTypeArguments[0];
-                var name = entityType.Name;
-                var submit = mutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.Submit));
-                var approve = mutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.Approve));
-                var unsubmit = mutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.UnSubmit));
-                var unApprove = mutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.UnApprove));
-                var submitFieldDescriptor = descriptor.Field("submit" + entityType.Name.RemovePreFix("I"))
+                var hasApproveMutationType = mutationType.GetInterface("IHasApproveMutation`1");
+                var entityType = hasApproveMutationType.GenericTypeArguments[0];
+                var entityName = entityType.Name;
+                if (entityName.StartsWith("I") && char.IsUpper(entityName[1]))
+                {
+                    entityName = entityName[1..];
+                }
+                var submit = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.Submit));
+                var approve = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.Approve));
+                var unSubmit = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.UnSubmit));
+                var unApprove = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.UnApprove));
+                var submitFieldDescriptor = descriptor.Field("submit" + entityName)
                     .Type<BooleanType>()
                     .Argument("ids", argumentDescriptor => argumentDescriptor.Type(typeof(string[])))
                     .Argument("remark", argumentDescriptor => argumentDescriptor.Type(typeof(string)))
                     .Resolve(resolver: async (context, token) =>
                     {
                         return await (submit.Invoke(this,
-                            new object?[] { context.Service<IMediator>(), context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark") }) as Task<bool>);
+                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IMediator>() }) as Task<bool>);
                     });
-                var approveFieldDescriptor = descriptor.Field("approve" + entityType.Name.RemovePreFix("I"))
+                var approveFieldDescriptor = descriptor.Field("approve" + entityName)
                     .Type<BooleanType>()
                     .Argument("ids", argumentDescriptor => argumentDescriptor.Type(typeof(string[])))
                     .Argument("remark", argumentDescriptor => argumentDescriptor.Type(typeof(string)))
                     .Resolve(resolver: async (context, token) =>
                     {
                         return await (approve.Invoke(this,
-                            new object?[] { context.Service<IMediator>(), context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark") }) as Task<bool>);
+                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IMediator>() }) as Task<bool>);
                     });
-                var unsubmitFieldDescriptor = descriptor.Field("unsubmit" + entityType.Name.RemovePreFix("I"))
+                var unSubmitFieldDescriptor = descriptor.Field("unSubmit" + entityName)
                     .Type<BooleanType>()
                     .Argument("ids", argumentDescriptor => argumentDescriptor.Type(typeof(string[])))
                     .Argument("remark", argumentDescriptor => argumentDescriptor.Type(typeof(string)))
                     .Resolve(resolver: async (context, token) =>
                     {
-                        return await (unsubmit.Invoke(this,
-                            new object?[] { context.Service<IMediator>(), context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark") }) as Task<bool>);
+                        return await (unSubmit.Invoke(this,
+                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IMediator>() }) as Task<bool>);
                     })
                     ;
-                var unApproveFieldDescriptor = descriptor.Field("unApprove" + entityType.Name.RemovePreFix("I"))
+                var unApproveFieldDescriptor = descriptor.Field("unApprove" + entityName)
                     .Type<BooleanType>()
                     .Argument("ids", argumentDescriptor => argumentDescriptor.Type(typeof(string[])))
                     .Argument("remark", argumentDescriptor => argumentDescriptor.Type(typeof(string)))
                     .Resolve(resolver: async (context, token) =>
                     {
                         return await (unApprove.Invoke(this,
-                            new object?[] { context.Service<IMediator>(), context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark") }) as Task<bool>);
+                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IMediator>() }) as Task<bool>);
                     });
                 base.Configure(descriptor);
             }
@@ -89,7 +99,7 @@ namespace Geex.Common.Abstraction.Gql.Types
             descriptor.Name(OperationTypeNames.Subscription);
             if (typeof(T).IsAssignableTo<ObjectTypeExtension>())
             {
-                descriptor.ConfigExtensionFields();
+                descriptor.IgnoreExtensionFields();
             }
 
             base.Configure(descriptor);

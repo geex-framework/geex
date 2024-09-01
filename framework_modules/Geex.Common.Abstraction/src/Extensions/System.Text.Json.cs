@@ -21,12 +21,14 @@ namespace System.Text.Json
             DefaultSerializeSettings.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
             DefaultSerializeSettings.PropertyNameCaseInsensitive = true;
             DefaultSerializeSettings.Converters.Add(new JsonNodeConverter());
+            DefaultSerializeSettings.Converters.Add(new ValueNodeJsonConverter());
+            DefaultSerializeSettings.Converters.Add(new VariableValueCollectionJsonConverter());
             DefaultSerializeSettings.Converters.Add(new ObjectIdConverter());
             DefaultSerializeSettings.Converters.Add(new BsonObjectIdConverter());
             DefaultSerializeSettings.Converters.Add(new JsonStringEnumConverter());
             DefaultSerializeSettings.Converters.Add(new EnumerationConverter());
             DefaultSerializeSettings.Converters.Add(new ExceptionConverter());
-            DefaultSerializeSettings.Converters.Add(new GqlSyntaxNodeConverter());
+            //DefaultSerializeSettings.Converters.Add(new GqlSyntaxNodeConverter());
             DefaultSerializeSettings.Converters.Add(new DynamicJsonConverter());
             DefaultSerializeSettings.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             DefaultSerializeSettings.ReferenceHandler = ReferenceHandler.IgnoreCycles;

@@ -283,7 +283,7 @@ namespace HotChocolate.Types
             return fieldDescriptor;
         }
 
-        internal static void ConfigExtensionFields<T>(this IObjectTypeDescriptor<T> descriptor)
+        internal static void IgnoreExtensionFields<T>(this IObjectTypeDescriptor<T> descriptor)
         {
             var type = typeof(T);
             descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.Kind))).Ignore();

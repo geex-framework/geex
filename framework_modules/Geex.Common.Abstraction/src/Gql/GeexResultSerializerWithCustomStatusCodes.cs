@@ -45,6 +45,5 @@ namespace Geex.Common.Abstraction.Gql
 
             return baseStatusCode;
         }
-
     }
 }
