@@ -47,7 +47,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<IQueryable<Org>> Handle(QueryRequest<Org> request, CancellationToken cancellationToken)
+        public virtual async Task<IQueryable<Org>> Handle(QueryRequest<Org> request, CancellationToken cancellationToken)
         {
             return DbContext.Query<Org>().WhereIf(request.Filter != default, request.Filter);
         }
@@ -56,7 +56,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Org> Handle(CreateOrgRequest request, CancellationToken cancellationToken)
+        public virtual async Task<Org> Handle(CreateOrgRequest request, CancellationToken cancellationToken)
         {
             var entity = new Org(request.Code, request.Name, request.OrgType);
             DbContext.Attach(entity);
@@ -82,7 +82,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<bool> Handle(FixUserOrgRequest request, CancellationToken cancellationToken)
+        public virtual async Task<bool> Handle(FixUserOrgRequest request, CancellationToken cancellationToken)
         {
             try
             {
@@ -122,19 +122,19 @@ namespace Geex.Common.Identity.Core.Handlers
         }
 
         /// <inheritdoc />
-        public async Task Handle(OrgCodeChangedEvent notification, CancellationToken cancellationToken)
+        public virtual async Task Handle(OrgCodeChangedEvent notification, CancellationToken cancellationToken)
         {
             await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
         }
 
         /// <inheritdoc />
-        public async Task Handle(EntityCreatedNotification<Org> notification, CancellationToken cancellationToken)
+        public virtual async Task Handle(EntityCreatedNotification<Org> notification, CancellationToken cancellationToken)
         {
             await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
         }
 
         /// <inheritdoc />
-        public async Task Handle(EntityDeletedNotification<Org> notification, CancellationToken cancellationToken)
+        public virtual async Task Handle(EntityDeletedNotification<Org> notification, CancellationToken cancellationToken)
         {
             await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
         }

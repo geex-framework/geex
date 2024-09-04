@@ -22,30 +22,30 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
             base.Configure(descriptor);
         }
 
-        public async Task<bool> AssignRoles(AssignRoleRequest request)
+        public virtual async Task<bool> AssignRoles(AssignRoleRequest request)
         {
             await _mediator.Send(request);
             return true;
         }
 
-        public async Task<bool> AssignOrgs(AssignOrgRequest request)
+        public virtual async Task<bool> AssignOrgs(AssignOrgRequest request)
         {
             await _mediator.Send(request);
             return true;
         }
 
-        public async Task<bool> EditUser(EditUserRequest request)
+        public virtual async Task<bool> EditUser(EditUserRequest request)
         {
             await _mediator.Send(request);
             return true;
         }
-        public async Task<bool> CreateUser(CreateUserRequest request)
+        public virtual async Task<bool> CreateUser(CreateUserRequest request)
         {
             await _mediator.Send(request);
             return true;
         }
 
-        public async Task<bool> ResetUserPassword(ResetUserPasswordRequest request)
+        public virtual async Task<bool> ResetUserPassword(ResetUserPasswordRequest request)
         {
             await _mediator.Send(request);
             return true;

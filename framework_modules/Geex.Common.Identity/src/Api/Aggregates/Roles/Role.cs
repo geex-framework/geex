@@ -10,6 +10,7 @@ using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Identity.Core.Aggregates.Users;
+
 using HotChocolate.Types;
 
 using MediatR;
@@ -35,6 +36,13 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
             this.Code = code;
         }
 
+        public Role(string roleCode, string roleName, bool isStatic = false, bool isDefault = false) : this(roleCode)
+        {
+            this.Name = roleName;
+            this.IsStatic = isStatic;
+            this.IsDefault = isDefault;
+        }
+
         public IQueryable<IUser> Users
         {
             get
@@ -50,16 +58,6 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
         public bool IsStatic { get; set; }
         public bool IsEnabled { get; set; } = true;
 
-        public static Role Create(string roleCode, string roleName, bool isStatic = false,
-            bool isDefault = false)
-        {
-            return new Role(roleCode)
-            {
-                Name = roleName,
-                IsStatic = isStatic,
-                IsDefault = isDefault
-            };
-        }
         public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
         {
             var duplicateRole = this.DbContext.Query<Role>()
@@ -78,8 +76,8 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
                 map.Inherit<IRole>();
                 map.AutoMap();
                 indexConfig.MapEntityDefaultIndex();
-                indexConfig.MapIndex(x=>x.Ascending(y=>y.Name), options => options.Background = true);
-                indexConfig.MapIndex(x=>x.Ascending(y=>y.Code), options => options.Background = true);
+                indexConfig.MapIndex(x => x.Ascending(y => y.Name), options => options.Background = true);
+                indexConfig.MapIndex(x => x.Ascending(y => y.Code), options => options.Background = true);
             }
         }
         public class RoleGqlConfig : GqlConfig.Object<Role>

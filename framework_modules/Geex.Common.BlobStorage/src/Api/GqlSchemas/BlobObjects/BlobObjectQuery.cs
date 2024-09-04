@@ -23,7 +23,7 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         protected override void Configure(IObjectTypeDescriptor<BlobObjectQuery> descriptor)
         {
             descriptor.Field(x => x.BlobObjects())
-            .UseOffsetPaging<ObjectType<BlobObject>>()
+            .UseOffsetPaging<InterfaceType<IBlobObject>>()
             .UseFiltering<IBlobObject>(x =>
             {
                 x.BindFieldsExplicitly();
@@ -43,7 +43,7 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        public async Task<IQueryable<IBlobObject>> BlobObjects(
+        public virtual async Task<IQueryable<IBlobObject>> BlobObjects(
             )
         {
             var result = await _mediator.Send(new QueryRequest<IBlobObject>());

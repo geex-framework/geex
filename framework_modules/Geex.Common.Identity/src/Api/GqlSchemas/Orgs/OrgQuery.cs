@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction.Entities;
 using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
@@ -23,8 +24,8 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
             descriptor.AuthorizeWithDefaultName();
             descriptor
                 .Field(x => x.Orgs())
-                .UseOffsetPaging<ObjectType<Org>>()
-                .UseFiltering<Org>(x =>
+                .UseOffsetPaging<InterfaceType<IOrg>>()
+                .UseFiltering<IOrg>(x =>
                 {
                     x.BindFieldsExplicitly();
                     x.Field(y => y.Name);
@@ -35,7 +36,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
             ;
             base.Configure(descriptor);
         }
-        public async Task<IQueryable<Org>> Orgs()
+        public virtual async Task<IQueryable<Org>> Orgs()
         {
             var orgs = await _mediator.Send(new QueryRequest<Org>());
             return orgs.OrderBy(x => x.Code);

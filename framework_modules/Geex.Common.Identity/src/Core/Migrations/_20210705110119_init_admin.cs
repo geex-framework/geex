@@ -29,7 +29,7 @@ namespace Geex.Core.Authentication.Migrations
     {
         public override async Task UpgradeAsync(DbContext dbContext)
         {
-            var superAdmin = User.New(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), "superAdmin", "superAdmin", "15055555555", "superAdmin@geex.com", "superAdmin");
+            var superAdmin = new User(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), "superAdmin", "superAdmin", "15055555555", "superAdmin@geex.com", "superAdmin");
             dbContext.Attach(superAdmin);
             superAdmin.Id = "000000000000000000000001";
             var adminRole = new Role("admin")
@@ -54,11 +54,11 @@ namespace Geex.Core.Authentication.Migrations
             };
             dbContext.Attach(orgs);
 
-            var admin = User.New(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), "admin", "admin", "13333333332", "admin@geex.com", "admin");
+            var admin = new User(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), "admin", "admin", "13333333332", "admin@geex.com", "admin");
             dbContext.Attach(admin);
             await admin.AssignOrgs(orgs);
             await admin.AssignRoles(adminRole.Id);
-            var user = User.New(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), "user", "user", "15555555555", "user@geex.com", "user");
+            var user = new User(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), "user", "user", "15555555555", "user@geex.com", "user");
             dbContext.Attach(user);
             await user.AssignRoles(userRole.Id);
             await user.AssignOrgs(orgs);

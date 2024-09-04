@@ -19,7 +19,7 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
     /// </summary>
     public class BlobObject : Abstraction.Storage.Entity<BlobObject>, IBlobObject
     {
-        public BlobObject(string fileName, string md5, BlobStorageType storageType, string mimeType, long fileSize)
+        internal BlobObject(string fileName, string md5, BlobStorageType storageType, string mimeType, long fileSize)
         {
             this.FileName = fileName;
             this.Md5 = md5;
@@ -28,7 +28,7 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
             this.StorageType = storageType;
         }
         [Obsolete("for internal use only.", false)]
-        public BlobObject()
+        internal BlobObject()
         {
 
         }

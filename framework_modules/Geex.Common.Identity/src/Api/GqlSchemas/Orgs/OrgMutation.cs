@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using Geex.Common.Requests.Identity;
@@ -23,13 +24,13 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
             base.Configure(descriptor);
         }
 
-        public async Task<Org> CreateOrg(
+        public async Task<IOrg> CreateOrg(
             CreateOrgRequest request)
         {
             return await _mediator.Send(request);
         }
 
-        public async Task<bool> FixUserOrg()
+        public virtual async Task<bool> FixUserOrg()
         {
             return await _mediator.Send(new FixUserOrgRequest());
         }

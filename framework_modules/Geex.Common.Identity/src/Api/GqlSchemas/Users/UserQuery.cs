@@ -28,7 +28,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
         {
             descriptor.AuthorizeWithDefaultName();
             descriptor.Field(x => x.Users())
-            .UseOffsetPaging<ObjectType<User>>()
+            .UseOffsetPaging<InterfaceType<IUser>>()
             .UseFiltering<IUser>(x =>
             {
                 x.BindFieldsExplicitly();

@@ -16,6 +16,8 @@ using Geex.Common.Identity.Api.Aggregates.Roles;
 using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 
+using GreenDonut;
+
 using HotChocolate.Types;
 
 using MediatR;
@@ -71,34 +73,26 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             ConfigLazyQuery(x => x.AvatarFile, blob => blob.Id == AvatarFileId, users => blob => users.SelectList(x => x.AvatarFileId).Contains(blob.Id));
         }
 
-        public static User New(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher, string username, string nickname, string phoneNumber, string email, string password)
+        public User(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher, string username, string nickname, string phoneNumber, string email, string password) : this()
         {
-            var result = new User()
-            {
-                Username = username,
-                Email = email,
-                PhoneNumber = phoneNumber,
-                LoginProvider = LoginProviderEnum.Local
-            };
-            userCreationValidator.Check(result);
-            result.Password = passwordHasher.HashPassword(result, password);
-            return result;
+            this.Username = username;
+            this.Email = email;
+            this.PhoneNumber = phoneNumber;
+            this.LoginProvider = LoginProviderEnum.Local;
+            userCreationValidator.Check(this);
+            this.Password = passwordHasher.HashPassword(this, password);
         }
 
-        public static User New(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher, string username, string nickname, LoginProviderEnum loginProvider, string openId, string? phoneNumber = default, string? email = default, string? password = default)
+        public User(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher, string username, string nickname, LoginProviderEnum loginProvider, string openId, string? phoneNumber = default, string? email = default, string? password = default) : this()
         {
-            var result = new User()
-            {
-                Username = username,
-                Nickname = nickname,
-                Email = email ?? username + "@x_org_x.com",
-                PhoneNumber = phoneNumber,
-                LoginProvider = loginProvider,
-                OpenId = openId,
-            };
-            userCreationValidator.Check(result);
-            result.Password = passwordHasher.HashPassword(result, password ?? Guid.NewGuid().ToString("N").Substring(0, 16));
-            return result;
+            this.Username = username;
+            this.Nickname = nickname;
+            this.Email = email ?? username + "@x_org_x.com";
+            this.PhoneNumber = phoneNumber;
+            this.LoginProvider = loginProvider;
+            this.OpenId = openId;
+            userCreationValidator.Check(this);
+            this.Password = passwordHasher.HashPassword(this, password ?? Guid.NewGuid().ToString("N").Substring(0, 16));
         }
 
         public virtual bool CheckPassword(string password)
@@ -106,71 +100,63 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             var passwordHasher = this.ServiceProvider.GetService<IPasswordHasher<IUser>>();
             return passwordHasher!.VerifyHashedPassword(this, Password, password) != PasswordVerificationResult.Failed;
         }
-        public async Task AssignRoles(IEnumerable<IRole> roles)
+        public virtual async Task AssignRoles(IEnumerable<IRole> roles)
         {
             await this.AssignRoles(roles.Select(x => x.Id).ToList());
         }
 
-        public async Task AssignOrgs(List<Org> orgs)
+        public virtual async Task AssignOrgs(List<Org> orgs)
         {
             this.OrgCodes = orgs.Select(x => x.Code).ToList();
             this.AddDomainEvent(new UserOrgChangedEvent(this.Id, orgs.Select(x => x.Code).ToList()));
         }
 
-        public async Task AssignRoles(List<string> roles)
+        public virtual async Task AssignRoles(List<string> roles)
         {
             await this.ServiceProvider.GetService<IMediator>().Send(new UserRoleChangeRequest(this.Id, roles.ToList()));
         }
 
-        public async Task AssignOrgs(List<string> orgs)
+        public virtual async Task AssignOrgs(List<string> orgs)
         {
             this.OrgCodes = orgs.ToList();
             this.AddDomainEvent(new UserOrgChangedEvent(this.Id, orgs.ToList()));
         }
 
-        public User SetPassword(string? password)
+        public virtual User SetPassword(string? password)
         {
             Password = ServiceProvider.GetService<IPasswordHasher<IUser>>().HashPassword(this, password);
             return this;
         }
 
-        public Task AssignRoles(params string[] roles)
+        public virtual Task AssignRoles(params string[] roles)
         {
             return this.AssignRoles(roles.ToList());
         }
 
-        public async Task AddOrg(IOrg entity)
+        public virtual async Task AddOrg(IOrg entity)
         {
             this.OrgCodes.AddIfNotContains(entity.Code);
             this.AddDomainEvent(new UserOrgChangedEvent(this.Id, this.OrgCodes.ToList()));
         }
 
-        public static User NewExternal(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher, string openId, LoginProviderEnum loginProvider, string username, string? phoneNumber = default, string? email = default, string? password = default)
+        public User(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher, string openId, LoginProviderEnum loginProvider, string username, string? phoneNumber = default, string? email = default, string? password = default)
         {
-            var result = new User()
-            {
-                Username = username,
-                OpenId = openId,
-                LoginProvider = loginProvider,
-                PhoneNumber = phoneNumber,
-                Email = email,
-            };
-            userCreationValidator.Check(result);
+            this.Username = username;
+            this.OpenId = openId;
+            this.LoginProvider = loginProvider;
+            this.PhoneNumber = phoneNumber;
+            this.Email = email;
+            userCreationValidator.Check(this);
             if (!password.IsNullOrEmpty())
             {
-                result.Password = passwordHasher.HashPassword(result, password);
+                this.Password = passwordHasher.HashPassword(this, password);
             }
-            return result;
         }
 
         public LoginProviderEnum LoginProvider { get; set; }
 
         public string? OpenId { get; set; }
         public string? TenantCode { get; set; }
-        public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
-        {
-            return ValidationResult.Success;
-        }
 
         public class UserBsonConfig : BsonConfig<User>
         {

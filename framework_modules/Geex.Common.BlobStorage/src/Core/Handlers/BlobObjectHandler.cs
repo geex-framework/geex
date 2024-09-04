@@ -36,7 +36,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             Uow = uow;
         }
 
-        public async Task<IBlobObject> Handle(CreateBlobObjectRequest request, CancellationToken cancellationToken)
+        public virtual async Task<IBlobObject> Handle(CreateBlobObjectRequest request, CancellationToken cancellationToken)
         {
             var stream = new MemoryStream();
             using (var readStream = request.File.OpenReadStream())
@@ -65,7 +65,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             return entity;
         }
 
-        public async Task Handle(DeleteBlobObjectRequest request, CancellationToken cancellationToken)
+        public virtual async Task Handle(DeleteBlobObjectRequest request, CancellationToken cancellationToken)
         {
             if (request.StorageType == BlobStorageType.Db)
             {
@@ -86,16 +86,11 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             throw new NotImplementedException();
         }
 
-        public Task<BlobObject> GetOrNullAsync(string id)
-        {
-            return Task.FromResult(Uow.Query<BlobObject>().First(x => x.Id == id));
-        }
-
         /// <summary>Handles a request</summary>
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<(IBlobObject blob, Stream dataStream)> Handle(DownloadFileRequest request, CancellationToken cancellationToken)
+        public virtual async Task<(IBlobObject blob, Stream dataStream)> Handle(DownloadFileRequest request, CancellationToken cancellationToken)
         {
 
             var dataStream = new MemoryStream();

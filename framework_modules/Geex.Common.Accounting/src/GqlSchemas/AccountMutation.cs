@@ -19,13 +19,13 @@ namespace Geex.Common.Accounting.GqlSchemas
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<bool> ChangePassword(ChangePasswordRequest request)
+        public virtual async Task<bool> ChangePassword(ChangePasswordRequest request)
         {
             await _mediator.Send(request);
             return true;
         }
 
-        public async Task<bool> Register(RegisterUserRequest request)
+        public virtual async Task<bool> Register(RegisterUserRequest request)
         {
             await _mediator.Send(request);
             return true;

@@ -29,7 +29,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<IQueryable<Role>> Handle(QueryRequest<Role> request, CancellationToken cancellationToken)
+        public virtual async Task<IQueryable<Role>> Handle(QueryRequest<Role> request, CancellationToken cancellationToken)
         {
             return Uow.Query<Role>().WhereIf(request.Filter != default, request.Filter);
         }
@@ -38,16 +38,16 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<Role> Handle(CreateRoleRequest request, CancellationToken cancellationToken)
+        public virtual async Task<Role> Handle(CreateRoleRequest request, CancellationToken cancellationToken)
         {
-            var role = Role.Create(request.RoleCode, request.RoleName, request.IsStatic ?? false, request.IsDefault ?? false);
+            var role = new Role(request.RoleCode, request.RoleName, request.IsStatic ?? false, request.IsDefault ?? false);
             Uow.Attach(role);
             await role.SaveAsync(cancellationToken);
             return role;
         }
 
         /// <inheritdoc />
-        public async Task Handle(SetRoleDefaultRequest request, CancellationToken cancellationToken)
+        public virtual async Task Handle(SetRoleDefaultRequest request, CancellationToken cancellationToken)
         {
             var originDefaultRoles = Uow.Query<Role>().Where(x=>x.IsDefault);
             foreach (var originDefaultRole in originDefaultRoles)

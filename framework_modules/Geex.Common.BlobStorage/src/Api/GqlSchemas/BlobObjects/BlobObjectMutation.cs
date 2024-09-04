@@ -21,7 +21,7 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<IBlobObject> CreateBlobObject(
+        public virtual async Task<IBlobObject> CreateBlobObject(
             CreateBlobObjectRequest request)
         {
             var result = await _mediator.Send(request);
@@ -33,7 +33,7 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<bool> DeleteBlobObject(
+        public virtual async Task<bool> DeleteBlobObject(
             DeleteBlobObjectRequest request)
         {
             await _mediator.Send(request);

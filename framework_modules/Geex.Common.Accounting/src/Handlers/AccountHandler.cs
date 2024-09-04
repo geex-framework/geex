@@ -29,7 +29,7 @@ namespace Geex.Common.Accounting.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
+        public virtual async Task Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
         {
             var query = await this._mediator.Send(new QueryRequest<IUser>(x => x.Id == CurrentUser.UserId), cancellationToken);
             var user = query.First();
@@ -43,7 +43,7 @@ namespace Geex.Common.Accounting.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task Handle(RegisterUserRequest request, CancellationToken cancellationToken)
+        public virtual async Task Handle(RegisterUserRequest request, CancellationToken cancellationToken)
         {
             await this._mediator.Send(new CreateUserRequest
             {

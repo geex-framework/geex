@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction.Entities;
 using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Identity.Api.Aggregates.Roles;
@@ -22,8 +23,8 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Roles
         {
             descriptor.AuthorizeWithDefaultName();
             descriptor.Field(x => x.Roles())
-            .UseOffsetPaging<ObjectType<Role>>()
-            .UseFiltering<Role>(x =>
+            .UseOffsetPaging<InterfaceType<IRole>>()
+            .UseFiltering<IRole>(x =>
             {
                 x.BindFieldsExplicitly();
                 x.Field(y => y.Name);
@@ -33,10 +34,10 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Roles
             ;
             base.Configure(descriptor);
         }
-        public async Task<IQueryable<Role>> Roles(
+        public async Task<IQueryable<IRole>> Roles(
             )
         {
-            return await _mediator.Send(new QueryRequest<Role>());
+            return await _mediator.Send(new QueryRequest<IRole>());
         }
     }
 }
