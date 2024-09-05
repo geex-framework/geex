@@ -30,7 +30,7 @@ namespace Geex.Common.Identity.Core.Handlers
         IRequestHandler<AssignRoleRequest>,
         IRequestHandler<AssignOrgRequest>,
         IRequestHandler<CreateUserRequest, IUser>,
-        IRequestHandler<EditUserRequest>,
+        IRequestHandler<EditUserRequest, IUser>,
         IRequestHandler<ResetUserPasswordRequest>,
         INotificationHandler<UserOrgChangedEvent>,
         INotificationHandler<OrgCodeChangedEvent>,
@@ -69,10 +69,10 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public virtual async Task Handle(EditUserRequest request, CancellationToken cancellationToken)
+        public virtual async Task<IUser> Handle(EditUserRequest request, CancellationToken cancellationToken)
         {
             var user = await Uow.Query<User>().OneAsync(request.Id.ToString(), cancellationToken);
-            if (request.Claims.HasValue)
+            if (request.Claims != default)
             {
                 user.Claims = request.Claims;
             }
@@ -107,9 +107,9 @@ namespace Geex.Common.Identity.Core.Handlers
                 user.Username = request.Username;
             }
 
-            await user.AssignRoles(request.RoleIds);
-            await user.AssignOrgs(request.OrgCodes);
-            return;
+            if (request.RoleIds != null) await user.AssignRoles(request.RoleIds);
+            if (request.OrgCodes != null) await user.AssignOrgs(request.OrgCodes);
+            return user;
         }
 
         /// <summary>Handles a request</summary>
