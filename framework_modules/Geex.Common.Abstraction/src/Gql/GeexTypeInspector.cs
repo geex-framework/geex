@@ -44,6 +44,7 @@ namespace Geex.Common.Gql
             {
                 this.KnownTypes[member.DeclaringType] = result;
             }
+
             return result;
         }
 

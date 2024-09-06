@@ -13,17 +13,17 @@
         <PackageReference Include="fasterflect" Version="3.0.0" />
         <PackageReference Include="Flurl.Http" Version="3.2.3" />
         <PackageReference Include="HonkSharp" Version="1.0.3" />
-        <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.0" />
-        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="13.9.0" />
+        <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.12" />
+        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="13.9.12" />
         <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="10.5.5" />
-        <PackageReference Include="HotChocolate.Data" Version="13.9.0" />
-        <PackageReference Include="HotChocolate.Language" Version="13.9.0" />
-        <PackageReference Include="HotChocolate.Stitching" Version="13.9.0" />
-        <PackageReference Include="HotChocolate.Stitching.Redis" Version="13.9.0" />
-        <PackageReference Include="HotChocolate.Subscriptions.InMemory" Version="13.9.0" />
-        <PackageReference Include="HotChocolate.Types.Scalars" Version="13.9.0" />
-        <PackageReference Include="HotChocolate.Types.Scalars.Upload" Version="13.9.0" />
-        <PackageReference Include="HotChocolate.Validation" Version="13.9.0" />
+        <PackageReference Include="HotChocolate.Data" Version="13.9.12" />
+        <PackageReference Include="HotChocolate.Language" Version="13.9.12" />
+        <PackageReference Include="HotChocolate.Stitching" Version="13.9.12" />
+        <PackageReference Include="HotChocolate.Stitching.Redis" Version="13.9.12" />
+        <PackageReference Include="HotChocolate.Subscriptions.InMemory" Version="13.9.12" />
+        <PackageReference Include="HotChocolate.Types.Scalars" Version="13.9.12" />
+        <PackageReference Include="HotChocolate.Types.Scalars.Upload" Version="13.9.12" />
+        <PackageReference Include="HotChocolate.Validation" Version="13.9.12" />
         <PackageReference Include="Humanizer.Core" Version="2.8.26" />
         <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
         <PackageReference Include="MediatR" Version="12.*" />

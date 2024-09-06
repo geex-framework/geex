@@ -39,7 +39,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         public string? Email { get; set; }
         public string Password { get; set; }
         public List<UserClaim> Claims { get; set; }
-        public IQueryable<IOrg> Orgs => DbContext.Query<Org>().Where(x => this.OrgCodes.Contains(x.Code));
+        public IQueryable<IOrg> Orgs => DbContext.Query<IOrg>().Where(x => this.OrgCodes.Contains(x.Code));
         public List<string> OrgCodes { get; set; }
         public List<string> Permissions => DbContext.ServiceProvider.GetService<IMediator>().Send(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
         public void ChangePassword(string originPassword, string newPassword)
@@ -105,24 +105,24 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             await this.AssignRoles(roles.Select(x => x.Id).ToList());
         }
 
-        public virtual async Task AssignOrgs(List<Org> orgs)
+        public virtual async Task AssignOrgs(IEnumerable<IOrg> orgs)
         {
             this.OrgCodes = orgs.Select(x => x.Code).ToList();
             this.AddDomainEvent(new UserOrgChangedEvent(this.Id, orgs.Select(x => x.Code).ToList()));
         }
 
-        public virtual async Task AssignRoles(List<string> roles)
+        public virtual async Task AssignRoles(IEnumerable<string> roles)
         {
             await this.ServiceProvider.GetService<IMediator>().Send(new UserRoleChangeRequest(this.Id, roles.ToList()));
         }
 
-        public virtual async Task AssignOrgs(List<string> orgs)
+        public virtual async Task AssignOrgs(IEnumerable<string> orgs)
         {
             this.OrgCodes = orgs.ToList();
             this.AddDomainEvent(new UserOrgChangedEvent(this.Id, orgs.ToList()));
         }
 
-        public virtual User SetPassword(string? password)
+        public virtual IUser SetPassword(string? password)
         {
             Password = ServiceProvider.GetService<IPasswordHasher<IUser>>().HashPassword(this, password);
             return this;
@@ -157,61 +157,5 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
 
         public string? OpenId { get; set; }
         public string? TenantCode { get; set; }
-
-        public class UserBsonConfig : BsonConfig<User>
-        {
-            protected override void Map(BsonClassMap<User> map, BsonIndexConfig<User> indexConfig)
-            {
-                map.Inherit<IUser>();
-                map.SetIsRootClass(true);
-                map.AutoMap();
-                indexConfig.MapEntityDefaultIndex();
-                indexConfig.MapIndex(x => x.Ascending(y => y.OpenId), options =>
-                {
-                    options.Background = true;
-                    options.Sparse = true;
-                });
-                indexConfig.MapIndex(x => x.Ascending(y => y.Email), options =>
-                {
-                    options.Background = true;
-                });
-                indexConfig.MapIndex(x => x.Ascending(y => y.Username), options =>
-                {
-                    options.Background = true;
-                });
-                indexConfig.MapIndex(x => x.Hashed(y => y.LoginProvider), options =>
-                {
-                    options.Background = true;
-                    options.Sparse = true;
-                });
-                indexConfig.MapIndex(x => x.Ascending(y => y.PhoneNumber), options =>
-                {
-                    options.Background = true;
-                });
-            }
-        }
-        public class UserGqlConfig : GqlConfig.Object<User>
-        {
-            /// <inheritdoc />
-            protected override void Configure(IObjectTypeDescriptor<User> descriptor)
-            {
-                descriptor.Implements<InterfaceType<IUser>>();
-                descriptor.AuthorizeFieldsImplicitly();
-                descriptor.BindFieldsImplicitly();
-                descriptor.ConfigEntity();
-                //descriptor.Field(x => x.UserName);
-                //descriptor.Field(x => x.IsEnable);
-                //descriptor.Field(x => x.Email);
-                //descriptor.Field(x => x.PhoneNumber);
-                //descriptor.Field(x => x.Roles);
-                //descriptor.Field(x => x.Orgs);
-                descriptor.Field(x => x.Claims).UseFiltering<UserClaim>(x =>
-                {
-                    x.Field(y => y.ClaimType);
-                });
-                //descriptor.Ignore(x => x.Claims);
-                //descriptor.Ignore(x => x.AuthorizedPermissions);
-            }
-        }
     }
 }

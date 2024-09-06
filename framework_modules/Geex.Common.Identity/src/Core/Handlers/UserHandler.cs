@@ -146,8 +146,8 @@ namespace Geex.Common.Identity.Core.Handlers
         {
             foreach (var item in request.UserOrgsMap)
             {
-                var user = await Uow.Query<User>().OneAsync(item.UserId, cancellationToken);
-                var orgs = Uow.Query<Org>().Where(x => item.OrgCodes.Contains(x.Code)).ToList();
+                var user = await Uow.Query<IUser>().OneAsync(item.UserId, cancellationToken);
+                var orgs = Uow.Query<IOrg>().Where(x => item.OrgCodes.Contains(x.Code)).ToList();
                 await user.AssignOrgs(orgs);
             }
 

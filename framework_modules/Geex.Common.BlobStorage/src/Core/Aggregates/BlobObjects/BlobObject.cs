@@ -74,8 +74,8 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
             /// <inheritdoc />
             protected override void Configure(IObjectTypeDescriptor<BlobObject> descriptor)
             {
-                descriptor.BindFieldsImplicitly();
                 descriptor.Implements<InterfaceType<IBlobObject>>();
+                descriptor.BindFieldsImplicitly();
                 descriptor.ConfigEntity();
             }
         }
