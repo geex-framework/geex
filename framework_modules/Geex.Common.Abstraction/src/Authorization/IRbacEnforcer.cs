@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+
 using Geex.Common.Authorization;
+
+using NetCasbin.Abstractions;
 
 namespace Geex.Common.Abstraction.Authorization
 {
@@ -16,5 +19,6 @@ namespace Geex.Common.Abstraction.Authorization
         Task<bool> EnforceAsync(string sub, string mod, string act, string obj, string fields = "");
         Task<bool> EnforceAsync(string sub, AppPermission permission);
         bool Enforce(string sub, AppPermission permission);
+        void Reload();
     }
 }

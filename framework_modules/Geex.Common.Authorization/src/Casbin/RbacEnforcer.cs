@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
 using Geex.Common.Abstraction.Authorization;
+
 using Microsoft.Extensions.Logging;
 
 using MoreLinq;
@@ -152,6 +154,12 @@ m = (p.sub == ""*"" || g(r.sub, p.sub)) && (r.mod == p.mod) && (p.obj == ""*"" |
         public List<string> GetImplicitRolesForUser(string sub)
         {
             return this._innerEnforcer.GetImplicitRolesForUser(sub);
+        }
+
+        public void Reload()
+        {
+            this._innerEnforcer.LoadPolicy();
+            this._innerEnforcer.EnforceCache?.Clear();
         }
     }
 }
