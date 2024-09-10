@@ -15,7 +15,7 @@ namespace Geex.Common.Abstraction.Tasking
         static TimeSpan defaultTimeout = TimeSpan.FromSeconds(10);
 
         [Logging]
-        public static async Task<string?> ExecutePowerShell(string workDirectory, string command, string? outputIndicator, TimeSpan? timeout = default)
+        public static async Task<string?> ExecutePowerShell(string workDirectory, string command, string? outputIndicator = default, TimeSpan? timeout = default)
         {
             // 创建一个PowerShell进程
             var processInfo = new ProcessStartInfo
