@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 
 using HotChocolate.Language;
 using HotChocolate.Types;
+
 using MongoDB.Bson;
 
 namespace Geex.Common.Abstraction.Gql.Types;
@@ -32,9 +33,10 @@ public class JsonNodeType : ScalarType<JsonNode>
             case ObjectValueNode _:
             case ListValueNode _:
             case NullValueNode _:
+            case StringValueNode _:
                 return true;
             default:
-                return false;
+                return true;
         }
     }
 
