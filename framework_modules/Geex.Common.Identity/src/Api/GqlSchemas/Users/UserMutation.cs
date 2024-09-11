@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
+using Geex.Common.Identity.Requests;
 using Geex.Common.Requests.Identity;
 using HotChocolate.Types;
 
@@ -40,6 +41,12 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
             return true;
         }
         public virtual async Task<bool> CreateUser(CreateUserRequest request)
+        {
+            await _mediator.Send(request);
+            return true;
+        }
+
+        public virtual async Task<bool> DeleteUser(DeleteUserRequest request)
         {
             await _mediator.Send(request);
             return true;

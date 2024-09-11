@@ -1,19 +1,36 @@
 ﻿using System.Collections.Generic;
+
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
+using Geex.Common.Identity.Core.Aggregates.Users;
+
 using MediatR;
 
 namespace Geex.Common.Requests.Identity
 {
-    public class CreateUserRequest : IRequest<IUser>
+    public interface ICreateUserRequest
     {
-        public CreateUserRequest()
-        {
+        string Username { get; set; }
+        bool IsEnable { get; set; }
+        string? Email { get; set; }
+        List<string>? RoleIds { get; set; }
+        List<string>? OrgCodes { get; set; }
+        string? AvatarFileId { get; set; }
+        List<UserClaim>? Claims { get; set; }
+        string? PhoneNumber { get; set; }
+        string? Password { get; set; }
+        string? Nickname { get; set; }
+        string? OpenId { get; set; }
+        LoginProviderEnum? Provider { get; set; }
+    }
 
-        }
+    public record CreateUserRequest : CreateUserRequest<User>
+    {
 
+    }
+    public record CreateUserRequest<TUser> : IRequest<IUser>, ICreateUserRequest
+    {
         public string Username { get; set; }
-
         public bool IsEnable { get; set; } = true;
         public string? Email { get; set; }
         public List<string>? RoleIds { get; set; } = new List<string>();

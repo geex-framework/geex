@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
@@ -10,10 +11,16 @@ using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using Geex.Common.Identity.Core.Aggregates.Users;
+using Geex.Common.Identity.Requests;
 using Geex.Common.Requests.Identity;
+
+using HotChocolate.Utilities;
+
 using MediatR;
 
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+
 using MongoDB.Entities;
 
 using StackExchange.Redis;
@@ -26,29 +33,30 @@ using Role = Geex.Common.Identity.Api.Aggregates.Roles.Role;
 
 namespace Geex.Common.Identity.Core.Handlers
 {
-    public class UserHandler :
+    public class UserHandler<TUser> :
         IRequestHandler<AssignRoleRequest>,
         IRequestHandler<AssignOrgRequest>,
         IRequestHandler<CreateUserRequest, IUser>,
         IRequestHandler<EditUserRequest, IUser>,
         IRequestHandler<ResetUserPasswordRequest>,
+        IRequestHandler<DeleteUserRequest, bool>,
         INotificationHandler<UserOrgChangedEvent>,
         INotificationHandler<OrgCodeChangedEvent>,
-        ICommonHandler<IUser, User>
+        ICommonHandler<IUser, User>,
+            IRequestHandler<CreateUserRequest<TUser>, IUser>
+        where TUser : User
     {
         private IRedisDatabase _redis;
         public IUnitOfWork Uow { get; }
         public IUserCreationValidator UserCreationValidator { get; }
         public IPasswordHasher<IUser> PasswordHasher { get; }
-
         public UserHandler(IUnitOfWork uow,
-         IUserCreationValidator userCreationValidator,
-            IPasswordHasher<IUser> passwordHasher, IRedisDatabase redis)
+            IRedisDatabase redis, IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher)
         {
             Uow = uow;
+            _redis = redis;
             UserCreationValidator = userCreationValidator;
             PasswordHasher = passwordHasher;
-            _redis = redis;
         }
         /// <summary>Handles a request</summary>
         /// <param name="request">The request</param>
@@ -56,8 +64,8 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public virtual async Task Handle(AssignRoleRequest request, CancellationToken cancellationToken)
         {
-            var users = await Task.FromResult(Uow.Query<User>().Where(x => request.UserIds.Contains(x.Id)).ToList());
-            var roles = await Task.FromResult(Uow.Query<Role>().Where(x => request.Roles.Contains(x.Id)).ToList());
+            var users = await Task.FromResult(Uow.Query<IUser>().Where(x => request.UserIds.Contains(x.Id)).ToList());
+            var roles = await Task.FromResult(Uow.Query<IRole>().Where(x => request.Roles.Contains(x.Id)).ToList());
             foreach (var user in users)
             {
                 await user.AssignRoles(roles);
@@ -71,7 +79,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public virtual async Task<IUser> Handle(EditUserRequest request, CancellationToken cancellationToken)
         {
-            var user = await Uow.Query<User>().OneAsync(request.Id.ToString(), cancellationToken);
+            var user = await Uow.Query<IUser>().OneAsync(request.Id.ToString(), cancellationToken);
             if (request.Claims != default)
             {
                 user.Claims = request.Claims;
@@ -116,26 +124,9 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public virtual async Task<IUser> Handle(CreateUserRequest request, CancellationToken cancellationToken)
+        public async Task<IUser> Handle(CreateUserRequest request, CancellationToken cancellationToken)
         {
-            User user;
-            if (request.OpenId.IsNullOrEmpty())
-            {
-                user = new User(this.UserCreationValidator, this.PasswordHasher, request.Username, request.Username, request.PhoneNumber, request.Email, request.Password);
-            }
-            else
-            {
-                user = new User(this.UserCreationValidator, this.PasswordHasher, request.OpenId, request.Provider, request.Username, request.PhoneNumber, request.Email, request.Password);
-            }
-
-            Uow.Attach(user);
-            user.Nickname = request.Nickname;
-            user.AvatarFileId = request.AvatarFileId;
-            user.IsEnable = request.IsEnable;
-            await user.AssignRoles(request.RoleIds);
-            await user.AssignOrgs(request.OrgCodes);
-            await user.SaveAsync(cancellationToken);
-            return user;
+            return null;
         }
 
         /// <summary>Handles a request</summary>
@@ -150,8 +141,6 @@ namespace Geex.Common.Identity.Core.Handlers
                 var orgs = Uow.Query<IOrg>().Where(x => item.OrgCodes.Contains(x.Code)).ToList();
                 await user.AssignOrgs(orgs);
             }
-
-
             return;
         }
 
@@ -161,7 +150,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public virtual async Task Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
-            var user = Uow.Query<User>().FirstOrDefault(x => request.UserId == x.Id);
+            var user = Uow.Query<IUser>().FirstOrDefault(x => request.UserId == x.Id);
             Check.NotNull(user, nameof(user), "用户不存在.");
             user.SetPassword(request.Password);
             return;
@@ -187,12 +176,32 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns></returns>
         public virtual async Task Handle(OrgCodeChangedEvent notification, CancellationToken cancellationToken)
         {
-            var users = Uow.Query<User>().Where(x => x.OrgCodes.Contains(notification.OldOrgCode)).ToList();
+            var users = Uow.Query<IUser>().Where(x => x.OrgCodes.Contains(notification.OldOrgCode)).ToList();
             foreach (var user in users)
             {
                 // 替换被修改的orgCode
                 user.OrgCodes.ReplaceOne(code => code == notification.OldOrgCode, notification.NewOrgCode);
             }
         }
+
+        /// <inheritdoc />
+        public async Task<bool> Handle(DeleteUserRequest request, CancellationToken cancellationToken)
+        {
+            var user = Uow.Query<IUser>().GetById(request.Id);
+            await user.DeleteAsync();
+            return true;
+        }
+
+        /// <inheritdoc />
+        public virtual async Task<IUser> Handle(CreateUserRequest<TUser> request, CancellationToken cancellationToken)
+        {
+            var user = ActivatorUtilities.CreateInstance<TUser>(new EmptyServiceProvider(), this.UserCreationValidator, this.PasswordHasher, request);
+            Uow.Attach(user);
+            await user.AssignRoles(request.RoleIds);
+            await user.AssignOrgs(request.OrgCodes);
+            await user.SaveAsync(cancellationToken);
+            return user;
+        }
+
     }
 }
