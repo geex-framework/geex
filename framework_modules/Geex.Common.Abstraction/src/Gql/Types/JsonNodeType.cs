@@ -49,26 +49,7 @@ public class JsonNodeType : ScalarType<JsonNode>
             return jsonNode;
         }
 
-        return JsonNode.Parse(literal.Value.ToJson());
-        //switch (literal)
-        //{
-        //    //case StringValueNode stringValueNode:
-        //    //    return (object)stringValueNode.Value;
-        //    //case IntValueNode intValueNode:
-        //    //    return (object)long.Parse(intValueNode.Value, (IFormatProvider)CultureInfo.InvariantCulture);
-        //    //case FloatValueNode floatValueNode:
-        //    //    return (object)Decimal.Parse(floatValueNode.Value, (IFormatProvider)CultureInfo.InvariantCulture);
-        //    //case BooleanValueNode booleanValueNode:
-        //    //    return (object)booleanValueNode.Value;
-        //    //case ListValueNode listValue:
-        //    //    return (object)this._objectValueToDictConverter.Convert(listValue);
-        //    case ObjectValueNode objectValue:
-        //        return (object)this._objectValueToDictConverter.Convert(objectValue);
-        //    case NullValueNode _:
-        //        return (object)null;
-        //    default:
-        //        throw new SerializationException("Scalar_Cannot_ParseLiteral", (IType)this);
-        //}
+        return JsonNode.Parse(literal.ToJson());
     }
 
     public override IValueNode ParseValue(object? value)

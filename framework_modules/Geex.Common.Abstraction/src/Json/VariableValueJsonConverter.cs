@@ -21,8 +21,7 @@ namespace Geex.Common.Abstraction.Json
 
         public override void Write(Utf8JsonWriter writer, IValueNode value, JsonSerializerOptions options)
         {
-            var variableValue = value.Value;
-            switch (variableValue)
+            switch (value.Value)
             {
                 case List<ObjectFieldNode> fieldList:
                     writer.WriteStartObject();
@@ -56,7 +55,27 @@ namespace Geex.Common.Abstraction.Json
                     JsonSerializer.Serialize(writer, valueNode.Value, options);
                     break;
                 default:
-                    JsonSerializer.Serialize(writer, variableValue, options);
+                    if (value.TryGetValueKind(out var valueKind))
+                    {
+                        switch (valueKind)
+                        {
+                            case ValueKind.String:
+                                JsonSerializer.Serialize(writer, value.Value, options);
+                                break;
+                            case ValueKind.Integer:
+                                JsonSerializer.Serialize(writer, int.Parse(value.Value.ToString()), options);
+                                break;
+                            case ValueKind.Float:
+                                JsonSerializer.Serialize(writer, decimal.Parse(value.Value.ToString()), options);
+                                break;
+                            case ValueKind.Boolean:
+                                JsonSerializer.Serialize(writer, bool.Parse(value.Value.ToString()), options);
+                                break;
+                            default:
+                                JsonSerializer.Serialize(writer, value.Value, options);
+                                break;
+                        }
+                    }
                     break;
             }
         }
