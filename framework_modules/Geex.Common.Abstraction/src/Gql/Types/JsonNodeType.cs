@@ -44,11 +44,6 @@ public class JsonNodeType : ScalarType<JsonNode>
     public override object? ParseLiteral(IValueNode literal)
     {
         //return literal.Value;
-        if (literal is StringValueNode stringValueNode)
-        {
-            return JsonNode.Parse(stringValueNode.Value);
-        }
-
         if (literal.Value is JsonNode jsonNode)
         {
             return jsonNode;
