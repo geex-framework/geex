@@ -39,6 +39,11 @@ namespace Geex.Common.Abstraction.Gql
                     return HttpStatusCode.InternalServerError;
                 }
 
+                if (result.Errors.All(x => x.Code == ErrorCodes.Execution.NonNullViolation || x.Code == ErrorCodes.Execution.CannotResolveAbstractType))
+                {
+                    return HttpStatusCode.OK;
+                }
+
                 return baseStatusCode;
 
             }
