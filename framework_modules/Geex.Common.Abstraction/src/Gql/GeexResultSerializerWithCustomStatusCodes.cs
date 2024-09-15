@@ -39,11 +39,6 @@ namespace Geex.Common.Abstraction.Gql
                     return HttpStatusCode.InternalServerError;
                 }
 
-                if (result.Errors.All(x => x.Exception == null))
-                {
-                    return HttpStatusCode.OK;
-                }
-
                 return baseStatusCode;
 
             }
