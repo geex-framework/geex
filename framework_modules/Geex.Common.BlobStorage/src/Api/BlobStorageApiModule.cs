@@ -13,10 +13,6 @@ namespace Geex.Common.BlobStorage.Api
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             var fileSystemStoragePath = this.ModuleOptions.FileSystemStoragePath;
-            if (fileSystemStoragePath.StartsWith('.'))
-            {
-                fileSystemStoragePath = Path.Combine(AppContext.BaseDirectory, fileSystemStoragePath);
-            }
             Directory.CreateDirectory(fileSystemStoragePath);
             base.ConfigureServices(context);
         }

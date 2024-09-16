@@ -11,6 +11,6 @@ namespace Geex.Common.BlobStorage.Api
         /// <summary>
         /// Local system storage path, default is "./_BlobStorageFiles"(relative to entry execution)
         /// </summary>
-        public string FileSystemStoragePath { get; set; } = "./AppData/_BlobStorageFiles";
+        public string FileSystemStoragePath { get; set; } = "./App_Data/BlobStorageFiles";
     }
 }

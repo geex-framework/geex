@@ -87,10 +87,6 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         private string GetFilePath(string md5)
         {
             var fileSystemStoragePath = this._options.FileSystemStoragePath;
-            if (fileSystemStoragePath.StartsWith('.'))
-            {
-                return Path.Combine(AppContext.BaseDirectory, fileSystemStoragePath, md5);
-            }
             return Path.Combine(fileSystemStoragePath, md5);
         }
 
