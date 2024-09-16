@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction.Authorization;
-
 using Microsoft.Extensions.Logging;
 
 using MoreLinq;

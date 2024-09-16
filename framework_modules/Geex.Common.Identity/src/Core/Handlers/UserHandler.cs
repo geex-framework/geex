@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
+using Geex.Common.Abstraction.Events;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
@@ -202,6 +203,5 @@ namespace Geex.Common.Identity.Core.Handlers
             await user.SaveAsync(cancellationToken);
             return user;
         }
-
     }
 }

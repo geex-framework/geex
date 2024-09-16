@@ -37,8 +37,6 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         protected User()
         {
             IsEnable = true;
-            Claims = Enumerable.Empty<UserClaim>().ToList();
-            OrgCodes = Enumerable.Empty<string>().ToList();
             ConfigLazyQuery(x => x.AvatarFile, blob => blob.Id == AvatarFileId, users => blob => users.SelectList(x => x.AvatarFileId).Contains(blob.Id));
         }
 
@@ -85,6 +83,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
 
         public virtual async Task AssignRoles(IEnumerable<string> roles)
         {
+            this.RoleIds = roles.ToList();
             await this.ServiceProvider.GetService<IMediator>().Send(new UserRoleChangeRequest(this.Id, roles.ToList()));
         }
 
@@ -111,7 +110,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             return passwordHasher!.VerifyHashedPassword(this, Password, password) != PasswordVerificationResult.Failed;
         }
 
-        public List<UserClaim> Claims { get; set; }
+        public List<UserClaim> Claims { get; set; } = new List<UserClaim>();
         public string? Email { get; set; }
         public bool IsEnable { get; set; }
 
@@ -119,12 +118,12 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         public string? Nickname { get; set; }
 
         public string? OpenId { get; set; }
-        public List<string> OrgCodes { get; set; }
+        public List<string> OrgCodes { get; set; } = new List<string>();
         public IQueryable<IOrg> Orgs => DbContext.Query<IOrg>().Where(x => this.OrgCodes.Contains(x.Code));
         public List<string> Permissions => DbContext.ServiceProvider.GetService<IMediator>().Send(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
         public string? PhoneNumber { get; set; }
 
-        public List<string> RoleIds => DbContext.ServiceProvider.GetService<IRbacEnforcer>().GetRolesForUser(this.Id);
+        public List<string> RoleIds { get; internal set; } = new List<string>();
 
         public List<string> RoleNames
         {
