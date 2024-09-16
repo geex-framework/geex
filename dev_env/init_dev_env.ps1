@@ -34,7 +34,7 @@ foreach ($port in $ports) {
     if ($process.Name -eq "wslrelay" -or $process.Name -like "*docker*") {
       continue;
     }
-    Write-Output "Port $port is using by other process $($process.Name) (ID: $($connection.OwningProcess)), execution path: $($process.Path), please release the port and retry."  
+    Write-Warning "Port $port is using by other process $($process.Name) (ID: $($connection.OwningProcess)), execution path: $($process.Path), system may not behave as expected.""  
   }
 }
 

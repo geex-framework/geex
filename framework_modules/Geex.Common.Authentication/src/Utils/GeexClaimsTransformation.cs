@@ -27,7 +27,7 @@ namespace Geex.Common.Authentication.Utils
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
         private TokenValidationParameters _validationParams;
 
-        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations,IMediator mediator, IRedisDatabase redis, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
+        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IMediator mediator, IRedisDatabase redis, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
         {
             _transformations = transformations;
             _mediator = mediator;
@@ -63,7 +63,7 @@ namespace Geex.Common.Authentication.Utils
                 return principal;
             }
             //var ownedOrgCodes = DB.Queryable<User>().Select(x => new { x.Id, x.OrgCodes }).First(x => x.Id == principal.FindUserId()).OrgCodes;
-            var ownedOrgCodes = user.OrgCodes;
+            var ownedOrgCodes = user.OrgCodes ?? [];
             foreach (var ownedOrgCode in ownedOrgCodes)
             {
                 claimsIdentity.AppendClaims(new Claim(GeexClaimType.Org, ownedOrgCode, valueType: "array"));
