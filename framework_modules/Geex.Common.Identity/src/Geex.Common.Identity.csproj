@@ -20,6 +20,5 @@
     <Folder Include="Api\GqlSchemas\Orgs\Types\" />
     <Folder Include="Api\GqlSchemas\Roles\Types\" />
     <Folder Include="Api\GqlSchemas\Users\Types\" />
-    <Folder Include="Migrations\" />
   </ItemGroup>
 </Project>
