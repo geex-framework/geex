@@ -14,7 +14,7 @@ namespace Geex.Common.Identity.Migrations
         /// <inheritdoc />
         public override async Task UpgradeAsync(DbContext dbContext)
         {
-            dbContext.DefaultDb.GetCollection<BsonDocument>("User").UpdateMany(dbContext.Session, Builders<BsonDocument>.Filter.Where(x=>x["RoleIds"] == default), Builders<BsonDocument>.Update.Set(x=>x["RoleIds"], new BsonArray()));
+            dbContext.DefaultDb.GetCollection<BsonDocument>("User").UpdateMany(dbContext.Session, Builders<BsonDocument>.Filter.Not(Builders<BsonDocument>.Filter.Exists("RoleIds")), Builders<BsonDocument>.Update.Set(x => x["RoleIds"], new BsonArray()));
         }
     }
 }
