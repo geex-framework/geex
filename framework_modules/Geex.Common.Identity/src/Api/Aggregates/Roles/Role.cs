@@ -51,7 +51,7 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
                 return DbContext.Query<User>().Where(x => userIds.Contains(x.Id));
             }
         }
-        public List<string> Permissions => DbContext.ServiceProvider.GetService<IMediator>().Send(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
+        public List<string> Permissions => DbContext.ServiceProvider.GetService<IUnitOfWork>().Request(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
 
         public string? TenantCode { get; set; }
         public bool IsDefault { get; set; }

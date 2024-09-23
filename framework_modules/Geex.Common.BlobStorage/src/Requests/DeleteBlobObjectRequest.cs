@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.BlobStorage
 {
-    public class DeleteBlobObjectRequest : IRequest
+    public record DeleteBlobObjectRequest : IRequest
     {
         public List<string> Ids { get; set; }
         public BlobStorageType StorageType { get; set; }

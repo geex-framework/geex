@@ -30,6 +30,8 @@ using MongoDB.Driver.Core.Events;
 using MongoDB.Driver.Linq;
 using MongoDB.Entities;
 
+using StackExchange.Redis;
+
 using Volo.Abp.Modularity;
 
 

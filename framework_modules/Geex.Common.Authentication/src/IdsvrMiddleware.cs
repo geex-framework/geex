@@ -102,7 +102,7 @@ namespace Geex.Common.Authentication
             var claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
 
             var claims = claimsPrincipal.Claims;
-            var users = await HttpContext.RequestServices.GetService<IMediator>().Send(new QueryRequest<IUser>());
+            var users = HttpContext.RequestServices.GetService<IUnitOfWork>().Query<IUser>();
             var user = users.FirstOrDefault(x => x.Id == claimsPrincipal.FindUserId());
             if (user != null)
             {

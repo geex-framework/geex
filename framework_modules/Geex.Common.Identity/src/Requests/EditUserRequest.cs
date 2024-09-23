@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Identity
 {
-    public class EditUserRequest : IRequest<IUser>
+    public record EditUserRequest : IRequest<IUser>
     {
         public string Id { get; set; }
         public bool? IsEnable { get; set; }

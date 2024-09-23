@@ -31,10 +31,13 @@ namespace Geex.Common.Abstraction.Storage
             DbContext._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
             DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
         }
+
+        /// <inheritdoc />
+        public IMediator Mediator { get; }
         public GeexDbContext(IServiceProvider serviceProvider = default, string database = default,
             ClientSessionOptions options = null, bool entityTrackingEnabled = true) : base(serviceProvider, database, options, entityTrackingEnabled)
         {
-
+            Mediator = serviceProvider.GetService<IMediator>();
         }
 
         public override T Attach<T>(T entity)

@@ -40,8 +40,8 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
         public long FileSize { get; set; }
         public string? MimeType { get; set; }
         public BlobStorageType StorageType { get; set; }
-        public async Task<Stream> GetFileContent() => (await DbContext.ServiceProvider.GetService<IMediator>()
-            .Send(new DownloadFileRequest(this.Id, StorageType))).dataStream;
+        public async Task<Stream> GetFileContent() => (await DbContext.ServiceProvider.GetService<IUnitOfWork>()
+            .Request(new DownloadFileRequest(this.Id, StorageType))).dataStream;
         public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
         {
             return ValidationResult.Success;

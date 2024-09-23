@@ -1,17 +1,20 @@
 ﻿using System.Threading.Tasks;
+
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Requests.Accounting;
+
 using MediatR;
 
 namespace Geex.Common.Accounting.GqlSchemas
 {
-    public class AccountMutation : MutationExtension<AccountMutation>
+    public sealed class AccountMutation : MutationExtension<AccountMutation>
     {
-        private readonly IMediator _mediator;
+        private readonly IUnitOfWork _uow;
 
-        public AccountMutation(IMediator mediator)
+        public AccountMutation(IUnitOfWork uow)
         {
-            this._mediator = mediator;
+            this._uow = uow;
         }
 
         /// <summary>
@@ -19,15 +22,15 @@ namespace Geex.Common.Accounting.GqlSchemas
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public virtual async Task<bool> ChangePassword(ChangePasswordRequest request)
+        public async Task<bool> ChangePassword(ChangePasswordRequest request)
         {
-            await _mediator.Send(request);
+            await _uow.Request(request);
             return true;
         }
 
-        public virtual async Task<bool> Register(RegisterUserRequest request)
+        public async Task<bool> Register(RegisterUserRequest request)
         {
-            await _mediator.Send(request);
+            await _uow.Request(request);
             return true;
         }
     }

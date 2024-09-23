@@ -27,7 +27,7 @@ namespace MediatX
         {
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(Pipelines.MediatXPipeline<,>));
             services.AddSingleton<IMediatX, MediatX>();
-            services.AddTransient<IMediator, MediatXMediatr>();
+            services.AddSingleton<MediatXMediatr>();
             return services;
         }
 

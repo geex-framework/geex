@@ -13,12 +13,12 @@ namespace Geex.Common.Captcha.Handlers
     public class CaptchaHandler : IRequestHandler<SendSmsCaptchaRequest>, IRequestHandler<SendCaptchaRequest, Domain.Captcha>, IRequestHandler<ValidateCaptchaRequest, bool>
     {
         private IRedisDatabase _cache;
-        private IMediator _mediator;
+        private IUnitOfWork _uow;
 
-        public CaptchaHandler(IRedisDatabase cache, IMediator mediator)
+        public CaptchaHandler(IRedisDatabase cache, IUnitOfWork uow)
         {
             _cache = cache;
-            _mediator = mediator;
+            _uow = uow;
         }
 
         /// <inheritdoc />
@@ -36,7 +36,7 @@ namespace Geex.Common.Captcha.Handlers
                 IRedisCacheClient a;
                 var captcha = new SmsCaptcha();
                 await _cache.SetNamedAsync(captcha, token: cancellationToken);
-                await this._mediator.Send(new SendSmsCaptchaRequest(request.SmsCaptchaPhoneNumber, captcha), cancellationToken);
+                await this._uow.Request(new SendSmsCaptchaRequest(request.SmsCaptchaPhoneNumber, captcha), cancellationToken);
                 return captcha;
             }
 

@@ -26,7 +26,7 @@ namespace MediatX
         /// <typeparam name="TRequest">The type of the notification.</typeparam>
         /// <param name="request">The notification request to send.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public async Task SendRemoteNotification<TRequest>(TRequest request) where TRequest : INotification
+        public async Task SendRemoteNotification<TRequest>(TRequest request) where TRequest : IRemoteNotification
         {
             // todo: here need simulate contexts or distinguish the remote request
             _logger.LogDebug($"Invoking remote handler for: {typeof(TRequest).TypeRouteKey()}");

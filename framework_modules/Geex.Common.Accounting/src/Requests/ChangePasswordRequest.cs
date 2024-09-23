@@ -1,9 +1,10 @@
-﻿using MediatR;
+﻿using Geex.Common.Abstraction.Entities;
+using MediatR;
 
 // ReSharper disable once CheckNamespace
 namespace Geex.Common.Requests.Accounting
 {
-    public class ChangePasswordRequest : IRequest
+    public record ChangePasswordRequest : IRequest<IUser>
     {
         /// <summary>
         /// 原密码

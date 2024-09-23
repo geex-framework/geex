@@ -27,9 +27,9 @@ namespace Geex.Common.BackgroundJob
         /// <inheritdoc />
         public override async Task Run(IServiceProvider serviceProvider, CancellationToken cancellationToken)
         {
-            var dbContext = serviceProvider.GetService<DbContext>();
-            var existedJobState = dbContext.Query<TState>().FirstOrDefault(x => x.JobName == this.GetType().Name);
-            var jobState = existedJobState ?? dbContext.Attach(new TState
+            var uow = serviceProvider.GetService<IUnitOfWork>();
+            var existedJobState = uow.Query<TState>().FirstOrDefault(x => x.JobName == this.GetType().Name);
+            var jobState = existedJobState ?? uow.Attach(new TState
             {
                 JobName = typeof(TImplementation).Name
             });

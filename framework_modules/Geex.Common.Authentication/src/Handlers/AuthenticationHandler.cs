@@ -19,17 +19,17 @@ using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Common.Authentication.Handlers
 {
-    public class AuthenticationHandler : IRequestHandler<AuthenticateRequest, UserToken>,IRequestHandler<FederateAuthenticateRequest, UserToken>, IRequestHandler<CancelAuthenticationRequest, bool>
+    public class AuthenticationHandler : IRequestHandler<AuthenticateRequest, UserToken>, IRequestHandler<FederateAuthenticateRequest, UserToken>, IRequestHandler<CancelAuthenticationRequest, bool>
     {
-        private IMediator _mediator;
+        private IUnitOfWork _uow;
         private GeexJwtSecurityTokenHandler _tokenHandler;
         private UserTokenGenerateOptions _userTokenGenerateOptions;
         private readonly IEnumerable<IExternalLoginProvider> _externalLoginProviders;
         private IRedisDatabase _redis;
 
-        public AuthenticationHandler(IMediator mediator, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis)
+        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis)
         {
-            _mediator = mediator;
+            _uow = uow;
             _tokenHandler = tokenHandler;
             _userTokenGenerateOptions = userTokenGenerateOptions;
             _externalLoginProviders = externalLoginProviders;
@@ -39,7 +39,7 @@ namespace Geex.Common.Authentication.Handlers
         /// <inheritdoc />
         public async Task<UserToken> Handle(AuthenticateRequest request, CancellationToken cancellationToken)
         {
-            var users = await _mediator.Send(new QueryRequest<IUser>(), cancellationToken);
+            var users = _uow.Query<IUser>();
             var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
             if (user == default || !user.CheckPassword(request.Password))
             {
@@ -55,9 +55,9 @@ namespace Geex.Common.Authentication.Handlers
         /// <inheritdoc />
         public async Task<UserToken> Handle(FederateAuthenticateRequest request, CancellationToken cancellationToken)
         {
-                        if (request.LoginProvider == LoginProviderEnum.Local)
+            if (request.LoginProvider == LoginProviderEnum.Local)
             {
-                var userQuery = await _mediator.Send(new QueryRequest<IUser>(), cancellationToken);
+                var userQuery = _uow.Query<IUser>();
                 var sub = _tokenHandler.ReadJwtToken(request.Code).Subject;
                 var user = userQuery.MatchUserIdentifier(sub);
                 var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user, LoginProviderEnum.Local, _userTokenGenerateOptions)));

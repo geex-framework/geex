@@ -16,10 +16,10 @@ namespace MediatX.Pipelines
   /// <typeparam name="TResponse">The type of the response.</typeparam>
   public class MediatXPipeline<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> //where TRequest : notnull
   {
-    private readonly IMediatX mediatx;
+    private readonly MediatXMediatr mediatx;
     private readonly ILogger<MediatX> _logger;
 
-    public MediatXPipeline(IMediatX mediatx, ILogger<MediatX> logger)
+    public MediatXPipeline(MediatXMediatr mediatx, ILogger<MediatX> logger)
     {
       this.mediatx = mediatx;
       _logger = logger;
@@ -49,7 +49,7 @@ namespace MediatX.Pipelines
         if (request is INotification notification)
         {
           _logger.LogTrace("notification triggered: {notification}", notification.ToString());
-          await mediatx.SendRemoteNotification(notification);
+          await mediatx.Publish(notification, cancellationToken);
           return default;
         }
 
@@ -83,7 +83,7 @@ namespace MediatX.Pipelines
 
         if (request is INotification notification)
         {
-          await mediatx.SendRemoteNotification(notification);
+          await mediatx.Publish(notification, cancellationToken);
           return default;
         }
 

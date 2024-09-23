@@ -20,15 +20,13 @@ namespace Geex.Common.MultiTenant.Core.Handlers
         IRequestHandler<EditTenantRequest, ITenant>,
         IRequestHandler<ToggleTenantAvailabilityRequest, bool>
     {
-        private readonly IMediator _mediator;
 
         /// <inheritdoc />
         public IUnitOfWork Uow { get; }
 
-        public TenantHandler(IUnitOfWork uow, IMediator mediator)
+        public TenantHandler(IUnitOfWork uow)
         {
             this.Uow = uow;
-            this._mediator = mediator;
         }
 
         /// <inheritdoc />
@@ -42,7 +40,7 @@ namespace Geex.Common.MultiTenant.Core.Handlers
         /// <inheritdoc />
         public async Task<ITenant> Handle(EditTenantRequest request, CancellationToken cancellationToken)
         {
-            var tenant = (await this._mediator.Send(new QueryRequest<ITenant>(x => x.Code == request.Code), cancellationToken)).FirstOrDefault();
+            var tenant = this.Uow.Query<ITenant>().FirstOrDefault(x => x.Code == request.Code);
             if (tenant == default)
             {
                 throw new BusinessException(GeexExceptionType.NotFound, message: $"租户不存在[{request.Code}]");
@@ -54,7 +52,7 @@ namespace Geex.Common.MultiTenant.Core.Handlers
         /// <inheritdoc />
         public async Task<bool> Handle(ToggleTenantAvailabilityRequest request, CancellationToken cancellationToken)
         {
-            var tenant = (await this._mediator.Send(new QueryRequest<ITenant>(x => x.Code == request.Code), cancellationToken)).FirstOrDefault();
+            var tenant = this.Uow.Query<ITenant>().FirstOrDefault(x => x.Code == request.Code);
             if (tenant == default)
             {
                 throw new BusinessException(GeexExceptionType.NotFound, message: $"租户不存在[{request.Code}]");

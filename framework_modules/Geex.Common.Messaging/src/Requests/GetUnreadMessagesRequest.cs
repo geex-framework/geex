@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Messaging
 {
-    public class GetUnreadMessagesRequest : IRequest<IQueryable<IMessage>>
+    public record GetUnreadMessagesRequest : IRequest<IQueryable<IMessage>>
     {
     }
 }

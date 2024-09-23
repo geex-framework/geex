@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Geex.Common;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
@@ -86,7 +86,7 @@ namespace Geex.Core.Authentication.Migrations
             await user.AssignOrgs(orgs);
             var permissions = AppPermission.List.Select(x => x.Value);
             await dbContext.ServiceProvider.GetService<IRbacEnforcer>().SetPermissionsAsync(adminRole.Id, permissions);
-            await dbContext.ServiceProvider.GetService<IMediator>().Publish(new PermissionChangedEvent(adminRole.Id, permissions.ToArray()));
+            await dbContext.ServiceProvider.GetService<IUnitOfWork>().Notify(new PermissionChangedEvent(adminRole.Id, permissions.ToArray()));
             await dbContext.SaveChanges();
         }
     }

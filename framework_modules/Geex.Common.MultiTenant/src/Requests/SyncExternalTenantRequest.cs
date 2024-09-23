@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.MultiTenant
 {
-    public class SyncExternalTenantRequest : IRequest<ITenant>
+    public record SyncExternalTenantRequest : IRequest<ITenant>
     {
         public SyncExternalTenantRequest(string code)
         {

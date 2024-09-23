@@ -6,7 +6,7 @@ using Geex.Common.Settings.Api.Aggregates.Settings;
 
 namespace Geex.Common.Requests.Settings
 {
-    public class GetSettingsRequest : QueryRequest<ISetting>
+    public record GetSettingsRequest : QueryRequest<ISetting>
     {
         public SettingScopeEnumeration? Scope { get; set; }
         public List<SettingDefinition>? SettingDefinitions { get; set; }

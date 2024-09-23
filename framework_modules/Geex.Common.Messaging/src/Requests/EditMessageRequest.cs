@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Messaging
 {
-    public class EditMessageRequest : IRequest
+    public record EditMessageRequest : IRequest
     {
         public string? Text { get; set; }
         public MessageSeverityType? Severity { get; set; }

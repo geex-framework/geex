@@ -2,7 +2,7 @@
 
 namespace Geex.Common.Requests.Identity
 {
-    public class SetRoleDefaultRequest : IRequest
+    public record SetRoleDefaultRequest : IRequest
     {
         public string RoleId { get; set; }
 

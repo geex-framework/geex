@@ -13,15 +13,15 @@ using MediatR;
 
 namespace Geex.Common.Accounting.Handlers
 {
-    public class AccountHandler : IRequestHandler<ChangePasswordRequest>,
+    public class AccountHandler : IRequestHandler<ChangePasswordRequest, IUser>,
         IRequestHandler<RegisterUserRequest>
 
     {
-        private IMediator _mediator;
+        private IUnitOfWork _uow;
 
-        public AccountHandler(IMediator mediator, ICurrentUser currentUser)
+        public AccountHandler(IUnitOfWork uow, ICurrentUser currentUser)
         {
-            _mediator = mediator;
+            _uow = uow;
             this.CurrentUser = currentUser;
         }
 
@@ -29,12 +29,15 @@ namespace Geex.Common.Accounting.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public virtual async Task Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
+        public virtual async Task<IUser> Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
         {
-            var query = await this._mediator.Send(new QueryRequest<IUser>(x => x.Id == CurrentUser.UserId), cancellationToken);
-            var user = query.First();
+            if (CurrentUser?.UserId == default)
+            {
+                return default;
+            }
+            var user = this._uow.Query<IUser>().GetById(CurrentUser.UserId);
             user.ChangePassword(request.OriginPassword, request.NewPassword);
-            return;
+            return user;
         }
 
 
@@ -45,7 +48,7 @@ namespace Geex.Common.Accounting.Handlers
         /// <returns>Response from the request</returns>
         public virtual async Task Handle(RegisterUserRequest request, CancellationToken cancellationToken)
         {
-            await this._mediator.Send(new CreateUserRequest
+            await this._uow.Request(new CreateUserRequest
             {
                 Username = request.Username,
                 IsEnable = true,

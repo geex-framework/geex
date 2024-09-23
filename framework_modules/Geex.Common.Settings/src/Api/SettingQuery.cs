@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Settings.Abstraction;
 using Geex.Common.Settings.Api.Aggregates.Settings;
@@ -13,34 +14,31 @@ using MediatR;
 
 namespace Geex.Common.Settings.Api
 {
-    public class SettingQuery : QueryExtension<SettingQuery>
+    public sealed class SettingQuery : QueryExtension<SettingQuery>
     {
-        private readonly IMediator _mediator;
-
-        public SettingQuery(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
-
+        /// <inheritdoc />
         protected override void Configure(IObjectTypeDescriptor<SettingQuery> descriptor)
         {
-            descriptor.AuthorizeWithDefaultName();
             descriptor.Field(x => x.Settings(default))
-                .Authorize()
-            .UseOffsetPaging<ObjectType<Setting>>()
-            .UseFiltering<ISetting>(x =>
-            {
-                x.BindFieldsExplicitly();
-                x.Field(y => y.Id);
-                x.Field(y => y.Name).Type<EnumOperationFilterInputType<SettingDefinition>>();
-                x.Field(y => y.Scope).Type<EnumOperationFilterInputType<SettingScopeEnumeration>>();
-                //x.Field(y => y.Name).Type<StringOperationFilterInputType>();
-                //x.Field(y => y.Scope).Type<StringOperationFilterInputType>();
-                x.Field(y => y.ScopedKey);
-            });
-            //descriptor.Field(x=>x.InitSettings());
+                .UseOffsetPaging<ObjectType<Setting>>()
+                .UseFiltering<ISetting>(x =>
+                {
+                    x.BindFieldsExplicitly();
+                    x.Field(y => y.Id);
+                    x.Field(y => y.Name).Type<EnumOperationFilterInputType<SettingDefinition>>();
+                    x.Field(y => y.Scope).Type<EnumOperationFilterInputType<SettingScopeEnumeration>>();
+                    x.Field(y => y.ScopedKey);
+                });
             base.Configure(descriptor);
         }
+
+        private readonly IUnitOfWork _uow;
+
+        public SettingQuery(IUnitOfWork uow)
+        {
+            this._uow = uow;
+        }
+
         /// <summary>
         /// 根据provider获取全量设置
         /// </summary>
@@ -48,7 +46,7 @@ namespace Geex.Common.Settings.Api
         /// <returns></returns>
         public async Task<IQueryable<ISetting>> Settings(GetSettingsRequest request)
         {
-            return await _mediator.Send(request);
+            return await _uow.Request(request);
         }
 
         /// <summary>
@@ -58,7 +56,7 @@ namespace Geex.Common.Settings.Api
         /// <returns></returns>
         public async Task<List<ISetting>> InitSettings()
         {
-            return await _mediator.Send(new GetInitSettingsRequest());
+            return await _uow.Request(new GetInitSettingsRequest());
         }
     }
 }

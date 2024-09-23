@@ -57,7 +57,7 @@ namespace Geex.Common.Abstraction.Gql.Types
                     .Resolve(resolver: async (context, token) =>
                     {
                         return await (submit.Invoke(this,
-                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IMediator>() }) as Task<bool>);
+                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
                     });
                 var approveFieldDescriptor = descriptor.Field("approve" + entityName)
                     .Type<BooleanType>()
@@ -66,7 +66,7 @@ namespace Geex.Common.Abstraction.Gql.Types
                     .Resolve(resolver: async (context, token) =>
                     {
                         return await (approve.Invoke(this,
-                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IMediator>() }) as Task<bool>);
+                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
                     });
                 var unSubmitFieldDescriptor = descriptor.Field("unSubmit" + entityName)
                     .Type<BooleanType>()
@@ -75,7 +75,7 @@ namespace Geex.Common.Abstraction.Gql.Types
                     .Resolve(resolver: async (context, token) =>
                     {
                         return await (unSubmit.Invoke(this,
-                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IMediator>() }) as Task<bool>);
+                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
                     })
                     ;
                 var unApproveFieldDescriptor = descriptor.Field("unApprove" + entityName)
@@ -85,7 +85,7 @@ namespace Geex.Common.Abstraction.Gql.Types
                     .Resolve(resolver: async (context, token) =>
                     {
                         return await (unApprove.Invoke(this,
-                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IMediator>() }) as Task<bool>);
+                            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
                     });
                 base.Configure(descriptor);
             }

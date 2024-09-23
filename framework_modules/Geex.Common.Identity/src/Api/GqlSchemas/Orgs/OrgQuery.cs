@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
@@ -10,15 +11,8 @@ using MediatR;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
 {
-    public class OrgQuery : QueryExtension<OrgQuery>
+    public sealed class OrgQuery : QueryExtension<OrgQuery>
     {
-        private readonly IMediator _mediator;
-
-        public OrgQuery(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
-
         protected override void Configure(IObjectTypeDescriptor<OrgQuery> descriptor)
         {
             descriptor.AuthorizeWithDefaultName();
@@ -36,9 +30,16 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
             ;
             base.Configure(descriptor);
         }
-        public virtual async Task<IQueryable<Org>> Orgs()
+        private readonly IUnitOfWork _uow;
+
+        public OrgQuery(IUnitOfWork uow)
         {
-            var orgs = await _mediator.Send(new QueryRequest<Org>());
+            this._uow = uow;
+        }
+
+        public async Task<IQueryable<IOrg>> Orgs()
+        {
+            var orgs = await _uow.Request(new QueryRequest<IOrg>());
             return orgs.OrderBy(x => x.Code);
         }
     }

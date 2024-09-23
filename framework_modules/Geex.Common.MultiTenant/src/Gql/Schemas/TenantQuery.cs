@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
@@ -12,15 +13,8 @@ using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Common.MultiTenant.Gql.Schemas
 {
-    public class TenantQuery : QueryExtension<TenantQuery>
+    public sealed class TenantQuery : QueryExtension<TenantQuery>
     {
-        private readonly IMediator _mediator;
-
-        public TenantQuery(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
-
         /// <inheritdoc />
         protected override void Configure(IObjectTypeDescriptor<TenantQuery> descriptor)
         {
@@ -31,6 +25,12 @@ namespace Geex.Common.MultiTenant.Gql.Schemas
                 ;
             base.Configure(descriptor);
         }
+        private readonly IUnitOfWork _uow;
+
+        public TenantQuery(IUnitOfWork uow)
+        {
+            this._uow = uow;
+        }
 
         /// <summary>
         /// 列表获取Tenant
@@ -38,7 +38,7 @@ namespace Geex.Common.MultiTenant.Gql.Schemas
         /// <returns></returns>
         public async Task<IQueryable<ITenant>> Tenants()
         {
-            var result = await _mediator.Send(new QueryRequest<ITenant>());
+            var result = await _uow.Request(new QueryRequest<ITenant>());
             return result;
         }
     }

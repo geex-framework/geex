@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Authentication
 {
-    public class FederateAuthenticateRequest : IRequest<UserToken>
+    public record FederateAuthenticateRequest : IRequest<UserToken>
     {
         /// <summary>
         /// 登陆提供方

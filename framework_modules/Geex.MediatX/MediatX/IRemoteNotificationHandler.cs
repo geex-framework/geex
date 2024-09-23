@@ -5,15 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 
 using MediatR;
+using MediatX;
 
 // ReSharper disable once CheckNamespace
-namespace MediatR
+namespace Geex.Common
 {
   public interface IRemoteNotificationHandler
   {
 
   }
-  public interface IRemoteNotificationHandler<TNotification> : IRemoteNotificationHandler, INotificationHandler<TNotification> where TNotification : INotification
+  public interface IRemoteNotificationHandler<TNotification> : IRemoteNotificationHandler, INotificationHandler<TNotification> where TNotification : IRemoteNotification
   {
 
   }

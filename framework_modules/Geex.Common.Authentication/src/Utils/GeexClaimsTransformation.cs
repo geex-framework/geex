@@ -21,16 +21,16 @@ namespace Geex.Common.Authentication.Utils
     public class GeexClaimsTransformation : IClaimsTransformation
     {
         private readonly IEnumerable<ISubClaimsTransformation> _transformations;
-        private readonly IMediator _mediator;
+        private readonly IUnitOfWork _uow;
         private readonly IRedisDatabase _redis;
         private UserTokenGenerateOptions _options;
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
         private TokenValidationParameters _validationParams;
 
-        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IMediator mediator, IRedisDatabase redis, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
+        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IUnitOfWork uow, IRedisDatabase redis, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
         {
             _transformations = transformations;
-            _mediator = mediator;
+            _uow = uow;
             _redis = redis;
             _options = options;
             _tokenHandler = tokenHandler;
@@ -57,7 +57,7 @@ namespace Geex.Common.Authentication.Utils
             //    return principal;
             //}
 
-            var user = (await _mediator.Send(new QueryRequest<IUser>(userId))).FirstOrDefault();
+            var user = _uow.Query<IUser>().GetById(userId);
             if (user == null)
             {
                 return principal;

@@ -1,32 +1,33 @@
 ﻿using System.Threading.Tasks;
+
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Requests.Captcha;
+
 using HotChocolate;
+using HotChocolate.Types;
+
 using MediatR;
+
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Common.Captcha
 {
-    public class CaptchaMutation : MutationExtension<CaptchaMutation>
+    public sealed class CaptchaMutation : MutationExtension<CaptchaMutation>
     {
-        private readonly IMediator _mediator;
-
-        public CaptchaMutation(IMediator mediator)
+        protected override void Configure(IObjectTypeDescriptor<CaptchaMutation> descriptor)
         {
-            this._mediator = mediator;
+            base.Configure(descriptor);
+        }
+        private readonly IUnitOfWork _uow;
+
+        public CaptchaMutation(IUnitOfWork uow)
+        {
+            this._uow = uow;
         }
 
-        public async Task<Domain.Captcha> GenerateCaptcha(
-            SendCaptchaRequest request)
-        {
-            return await _mediator.Send(request);
-        }
+        public async Task<Domain.Captcha> GenerateCaptcha(SendCaptchaRequest request) => await _uow.Request(request);
 
-        public async Task<bool> ValidateCaptcha(
-            [Service] IRedisDatabase cache,
-            ValidateCaptchaRequest request)
-        {
-            return await _mediator.Send(request);
-        }
+        public async Task<bool> ValidateCaptcha(ValidateCaptchaRequest request) => await _uow.Request(request);
     }
 }

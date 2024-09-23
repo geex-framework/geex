@@ -13,7 +13,7 @@ using MongoDB.Entities;
 // ReSharper disable once CheckNamespace
 namespace Geex.Common.Requests
 {
-    public class DeleteRequest<T> : IRequest<long> where T : IEntityBase
+    public record DeleteRequest<T> : IRequest<long> where T : IEntityBase
     {
         public DeleteRequest()
         {

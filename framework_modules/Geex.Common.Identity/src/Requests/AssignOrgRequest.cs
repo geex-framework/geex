@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Identity
 {
-    public record AssignOrgRequest : IRequest
+    public record AssignOrgRequest : IRequest<bool>
     {
         public List<UserOrgMapItem> UserOrgsMap { get; set; }
     }

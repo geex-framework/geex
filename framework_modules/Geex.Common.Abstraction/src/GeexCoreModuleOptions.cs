@@ -9,7 +9,7 @@ namespace Geex.Common.Abstraction
         /// <summary>
         /// 后端host基地址
         /// </summary>
-        public string Host { get; set; } = "https://x_proj_x.api.dev.x_org_x.com";
+        public string Host { get; set; } = "https://x_proj_x.api.dev.geexorggeex.com";
         public string AppName { get; set; } = "x_proj_x";
         public RedisConfiguration? Redis { get; set; }
         /// <summary>

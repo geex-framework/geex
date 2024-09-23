@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Requests;
 
@@ -11,14 +12,8 @@ using MediatR;
 
 namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
 {
-    public class BlobObjectQuery : QueryExtension<BlobObjectQuery>
+    public sealed class BlobObjectQuery : QueryExtension<BlobObjectQuery>
     {
-        private readonly IMediator _mediator;
-
-        public BlobObjectQuery(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
 
         protected override void Configure(IObjectTypeDescriptor<BlobObjectQuery> descriptor)
         {
@@ -37,16 +32,22 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
             ;
             base.Configure(descriptor);
         }
+        private readonly IUnitOfWork _uow;
+
+        public BlobObjectQuery(IUnitOfWork uow)
+        {
+            this._uow = uow;
+        }
+
 
         /// <summary>
         /// 列表获取BlobObject
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        public virtual async Task<IQueryable<IBlobObject>> BlobObjects(
-            )
+        public async Task<IQueryable<IBlobObject>> BlobObjects()
         {
-            var result = await _mediator.Send(new QueryRequest<IBlobObject>());
+            var result = await _uow.Request(new QueryRequest<IBlobObject>());
             return result;
         }
 

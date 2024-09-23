@@ -45,7 +45,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         {
             this.Username = request.Username;
             this.OpenId = request.OpenId;
-            this.Email = request.Email ?? request.Username + "@x_org_x.com";
+            this.Email = request.Email ?? request.Username + "@geexorggeex.com";
             this.PhoneNumber = request.PhoneNumber;
             this.LoginProvider = request.Provider ?? LoginProviderEnum.Local;
             this.Nickname = request.Nickname;
@@ -84,7 +84,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         public virtual async Task AssignRoles(IEnumerable<string> roles)
         {
             this.RoleIds = roles.ToList();
-            await this.ServiceProvider.GetService<IMediator>().Send(new UserRoleChangeRequest(this.Id, roles.ToList()));
+            await this.ServiceProvider.GetService<IUnitOfWork>().Request(new UserRoleChangeRequest(this.Id, roles.ToList()));
         }
 
         public virtual Task AssignRoles(params string[] roles)
@@ -120,7 +120,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         public string? OpenId { get; set; }
         public List<string> OrgCodes { get; set; } = new List<string>();
         public IQueryable<IOrg> Orgs => DbContext.Query<IOrg>().Where(x => this.OrgCodes.Contains(x.Code));
-        public List<string> Permissions => DbContext.ServiceProvider.GetService<IMediator>().Send(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
+        public List<string> Permissions => DbContext.ServiceProvider.GetService<IUnitOfWork>().Request(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
         public string? PhoneNumber { get; set; }
 
         public List<string> RoleIds { get; internal set; } = new List<string>();

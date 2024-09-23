@@ -17,12 +17,12 @@ namespace Geex.Common.Authorization.Handlers
         IRequestHandler<GetSubjectPermissionsRequest, IEnumerable<string>>,
         IRequestHandler<AuthorizeRequest>
     {
-        private IMediator _mediator;
+        private IUnitOfWork _uow;
 
-        public AuthorizationHandler(IRbacEnforcer enforcer, IMediator mediator)
+        public AuthorizationHandler(IRbacEnforcer enforcer, IUnitOfWork uow)
         {
             _enforcer = enforcer;
-            _mediator = mediator;
+            _uow = uow;
         }
 
         private IRbacEnforcer _enforcer { get; init; }
@@ -49,7 +49,7 @@ namespace Geex.Common.Authorization.Handlers
         {
             var permissions = request.AllowedPermissions.Select(x => x.Value);
             await _enforcer.SetPermissionsAsync(request.Target, permissions);
-            await _mediator.Publish(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
+            await _uow.Notify(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
             return;
         }
     }

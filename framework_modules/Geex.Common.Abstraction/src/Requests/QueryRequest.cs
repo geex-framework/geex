@@ -8,7 +8,7 @@ using MongoDB.Entities;
 // ReSharper disable once CheckNamespace
 namespace Geex.Common.Requests
 {
-    public class QueryRequest<T> : IRequest<IQueryable<T>> where T : IEntityBase
+    public record QueryRequest<T> : IRequest<IQueryable<T>> where T : IEntityBase
     {
         public QueryRequest()
         {

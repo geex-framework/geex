@@ -5,22 +5,22 @@ using Geex.Common.Requests.Settings;
 using HotChocolate.Types;
 
 using MediatR;
+using Geex.Common.Abstraction;
 
 namespace Geex.Common.Settings.Api
 {
-    public class SettingMutation : MutationExtension<SettingMutation>
+    public sealed class SettingMutation : MutationExtension<SettingMutation>
     {
-        private readonly IMediator _mediator;
-
-        public SettingMutation(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
-
         protected override void Configure(IObjectTypeDescriptor<SettingMutation> descriptor)
         {
             descriptor.AuthorizeWithDefaultName();
             base.Configure(descriptor);
+        }
+        private readonly IUnitOfWork _uow;
+
+        public SettingMutation(IUnitOfWork uow)
+        {
+            this._uow = uow;
         }
 
         /// <summary>
@@ -28,9 +28,6 @@ namespace Geex.Common.Settings.Api
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<ISetting> EditSetting(EditSettingRequest request)
-        {
-            return await _mediator.Send(request);
-        }
+        public async Task<ISetting> EditSetting(EditSettingRequest request) => await _uow.Request(request);
     }
 }

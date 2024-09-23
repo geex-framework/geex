@@ -10,28 +10,17 @@ using MediatR;
 
 using StackExchange.Redis.Extensions.Core.Abstractions;
 using Geex.Common.Requests.MultiTenant;
+using Geex.Common.Abstraction;
 
 namespace Geex.Common.MultiTenant.Gql.Schemas
 {
-    public class TenantMutation : MutationExtension<TenantMutation>
+    public sealed class TenantMutation : MutationExtension<TenantMutation>
     {
-        private readonly IMediator _mediator;
-        private readonly IRedisDatabase _redisDatabase;
-        private readonly ICurrentTenant _currentTenant;
-        private readonly IRbacEnforcer _enforcer;
+        private readonly IUnitOfWork _uow;
 
-        public TenantMutation(IMediator mediator, IRedisDatabase redisDatabase, ICurrentTenant currentTenant, IRbacEnforcer enforcer)
+        public TenantMutation(IUnitOfWork uow)
         {
-            this._mediator = mediator;
-            _redisDatabase = redisDatabase;
-            _currentTenant = currentTenant;
-            _enforcer = enforcer;
-        }
-
-        /// <inheritdoc />
-        protected override void Configure(IObjectTypeDescriptor<TenantMutation> descriptor)
-        {
-            base.Configure(descriptor);
+            this._uow = uow;
         }
 
         /// <summary>
@@ -41,7 +30,7 @@ namespace Geex.Common.MultiTenant.Gql.Schemas
         /// <returns></returns>
         public async Task<ITenant> CreateTenant(CreateTenantRequest request)
         {
-            var result = await _mediator.Send(request);
+            var result = await _uow.Request(request);
             return result;
         }
 
@@ -50,23 +39,13 @@ namespace Geex.Common.MultiTenant.Gql.Schemas
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<bool> EditTenant(
-            EditTenantRequest request)
-        {
-            var result = await _mediator.Send(request);
-            return true;
-        }
+        public async Task<ITenant> EditTenant(EditTenantRequest request) => await _uow.Request(request);
 
         /// <summary>
         /// 切换Tenant可用状态
         /// </summary>
         /// <returns>当前租户的可用性</returns>
-        public async Task<bool> ToggleTenantAvailability(
-            ToggleTenantAvailabilityRequest request)
-        {
-            var result = await _mediator.Send(request);
-            return true;
-        }
+        public async Task<bool> ToggleTenantAvailability(ToggleTenantAvailabilityRequest request) => await _uow.Request(request);
 
         /// <summary>
         /// 校验Tenant可用性
@@ -74,10 +53,10 @@ namespace Geex.Common.MultiTenant.Gql.Schemas
         /// <returns></returns>
         public async Task<ITenant?> CheckTenant(string code)
         {
-            var result = (await _mediator.Send(new QueryRequest<ITenant>(x => x.Code == code))).FirstOrDefault();
+            var result = (await _uow.Request(new QueryRequest<ITenant>(x => x.Code == code))).FirstOrDefault();
             if (result is not { ExternalInfo: null })
             {
-                result = await _mediator.Send(new SyncExternalTenantRequest(code));
+                result = await _uow.Request(new SyncExternalTenantRequest(code));
             }
             return result;
         }

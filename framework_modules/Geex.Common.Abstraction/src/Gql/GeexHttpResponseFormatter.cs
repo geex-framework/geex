@@ -12,11 +12,11 @@ using HotChocolate.Execution;
 
 namespace Geex.Common.Abstraction.Gql
 {
-    public class GeexResultSerializerWithCustomStatusCodes : DefaultHttpResponseFormatter
+    public class GeexHttpResponseFormatter : DefaultHttpResponseFormatter
     {
         private readonly ICurrentUser _currentUser;
 
-        public GeexResultSerializerWithCustomStatusCodes(ICurrentUser currentUser)
+        public GeexHttpResponseFormatter(ICurrentUser currentUser)
         {
             _currentUser = currentUser;
         }
@@ -34,14 +34,14 @@ namespace Geex.Common.Abstraction.Gql
                     return userId.IsNullOrEmpty() ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
                 }
 
-                if (result.Errors.Any(e => e.Exception is BusinessException business && business.ExceptionCode == GeexExceptionType.OnPurpose))
-                {
-                    return HttpStatusCode.InternalServerError;
-                }
-
                 if (result.Errors.All(x => x.Code == ErrorCodes.Execution.NonNullViolation || x.Code == ErrorCodes.Execution.CannotResolveAbstractType))
                 {
                     return HttpStatusCode.OK;
+                }
+
+                if (result.Errors.Any(e => e.Exception != default))
+                {
+                    return HttpStatusCode.InternalServerError;
                 }
 
                 return baseStatusCode;

@@ -20,7 +20,6 @@ namespace Geex.Common.Authentication.Utils
 {
     internal class LocalAuthHandler : JwtBearerHandler, IAuthenticationHandler
     {
-        private readonly IMediator _mediator;
         private GeexJwtSecurityTokenHandler _tokenHandler;
         private UserTokenGenerateOptions _userTokenGenerateOptions;
 
@@ -29,10 +28,9 @@ namespace Geex.Common.Authentication.Utils
 
         /// <inheritdoc />
         public LocalAuthHandler([NotNull][ItemNotNull] IOptionsMonitor<JwtBearerOptions> options,
-            [NotNull] ILoggerFactory logger, [NotNull] UrlEncoder encoder, [NotNull] ISystemClock clock, IMediator mediator, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions) : base(options,
+            [NotNull] ILoggerFactory logger, [NotNull] UrlEncoder encoder, [NotNull] ISystemClock clock, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions) : base(options,
             logger, encoder, clock)
         {
-            _mediator = mediator;
             _tokenHandler = tokenHandler;
             _userTokenGenerateOptions = userTokenGenerateOptions;
         }
@@ -41,7 +39,7 @@ namespace Geex.Common.Authentication.Utils
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var request = Context.GetOpenIddictServerRequest();
-            var accessToken = request != default ? request.AccessToken : Context.Request.Headers.Authorization.ToString().Split(' ',StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(1);
+            var accessToken = request != default ? request.AccessToken : Context.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(1);
 
             if (accessToken.IsNullOrEmpty())
             {

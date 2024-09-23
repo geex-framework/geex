@@ -20,26 +20,26 @@ namespace Geex.Common.Abstraction.Approbation
         Task<bool> IHasApproveMutation.UnSubmit(string[] ids, string? remark) => this.UnSubmit(ids, remark);
         Task<bool> IHasApproveMutation.UnApprove(string[] ids, string? remark) => this.UnApprove(ids, remark);
 
-        async Task<bool> Submit(string[] ids, string? remark, [Service] IMediator mediator = default)
+        async Task<bool> Submit(string[] ids, string? remark, [Service] IUnitOfWork mediator = default)
         {
-            await mediator.Send(new SubmitRequest<T>(remark, ids));
+            await mediator.Request(new SubmitRequest<T>(remark, ids));
             return true;
         }
 
-        async Task<bool> Approve(string[] ids, string? remark, [Service] IMediator mediator = default)
+        async Task<bool> Approve(string[] ids, string? remark, [Service] IUnitOfWork mediator = default)
         {
-            await mediator.Send(new ApproveRequest<T>(remark, ids));
+            await mediator.Request(new ApproveRequest<T>(remark, ids));
             return true;
         }
-        async Task<bool> UnSubmit(string[] ids, string? remark, [Service] IMediator mediator = default)
+        async Task<bool> UnSubmit(string[] ids, string? remark, [Service] IUnitOfWork mediator = default)
         {
-            await mediator.Send(new UnSubmitRequest<T>(remark, ids));
+            await mediator.Request(new UnSubmitRequest<T>(remark, ids));
             return true;
         }
 
-        async Task<bool> UnApprove(string[] ids, string? remark, [Service] IMediator mediator = default)
+        async Task<bool> UnApprove(string[] ids, string? remark, [Service] IUnitOfWork mediator = default)
         {
-            await mediator.Send(new UnApproveRequest<T>(remark, ids));
+            await mediator.Request(new UnApproveRequest<T>(remark, ids));
             return true;
         }
     }

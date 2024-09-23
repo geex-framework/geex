@@ -1,4 +1,6 @@
-﻿using HotChocolate.Types;
+﻿using Geex.Common.Abstraction.Gql.Types;
+
+using HotChocolate.Types;
 
 namespace Geex.Common.Abstraction
 {

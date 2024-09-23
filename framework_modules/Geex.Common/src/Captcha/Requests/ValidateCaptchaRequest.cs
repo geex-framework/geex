@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Captcha;
 
-public class ValidateCaptchaRequest : IRequest<bool>
+public record ValidateCaptchaRequest : IRequest<bool>
 {
     public string CaptchaKey { get; set; }
     public CaptchaProvider CaptchaProvider { get; set; }

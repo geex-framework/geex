@@ -1,8 +1,10 @@
-﻿using MediatR;
+﻿using Geex.Common.Abstraction.Entities;
+
+using MediatR;
 
 namespace Geex.Common.Requests.Identity
 {
-    public record ResetUserPasswordRequest : IRequest
+    public record ResetUserPasswordRequest : IRequest<IUser>
     {
         /// <summary>
         /// 用户ID

@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Geex.Common.BlobStorage.Api.Abstractions
 {
-    public class DownloadFileRequest : IRequest<(IBlobObject blob, Stream dataStream)>
+    public record DownloadFileRequest : IRequest<(IBlobObject blob, Stream dataStream)>
     {
         public DownloadFileRequest(string blobId, BlobStorageType storageType)
         {

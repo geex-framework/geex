@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Identity
 {
-    public class CreateOrgRequest : IRequest<Org>
+    public record CreateOrgRequest : IRequest<IOrg>
     {
         public string Name { get; set; }
         public string Code { get; set; }

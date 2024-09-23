@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
@@ -10,14 +11,8 @@ using MediatR;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Roles
 {
-    public class RoleQuery : QueryExtension<RoleQuery>
+    public sealed class RoleQuery : QueryExtension<RoleQuery>
     {
-        private readonly IMediator _mediator;
-
-        public RoleQuery(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
 
         protected override void Configure(IObjectTypeDescriptor<RoleQuery> descriptor)
         {
@@ -34,10 +29,16 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Roles
             ;
             base.Configure(descriptor);
         }
+        private readonly IUnitOfWork _uow;
+
+        public RoleQuery(IUnitOfWork uow)
+        {
+            this._uow = uow;
+        }
         public async Task<IQueryable<IRole>> Roles(
             )
         {
-            return await _mediator.Send(new QueryRequest<IRole>());
+            return await _uow.Request(new QueryRequest<IRole>());
         }
     }
 }

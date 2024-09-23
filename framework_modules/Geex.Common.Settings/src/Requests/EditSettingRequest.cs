@@ -5,7 +5,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Settings
 {
-    public class EditSettingRequest : IRequest<ISetting>
+    public record EditSettingRequest : IRequest<ISetting>
     {
         public SettingDefinition? Name { get; set; }
         public JsonNode? Value { get; set; }

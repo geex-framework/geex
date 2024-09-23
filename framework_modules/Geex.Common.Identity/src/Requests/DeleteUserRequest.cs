@@ -8,7 +8,7 @@ using MediatR;
 
 namespace Geex.Common.Identity.Requests
 {
-    public class DeleteUserRequest : IRequest<bool>
+    public record DeleteUserRequest : IRequest<bool>
     {
         public string Id { get; set; }
     }

@@ -2,7 +2,7 @@
 
 namespace Geex.Common.Requests.Authentication
 {
-    public class CancelAuthenticationRequest : IRequest<bool>
+    public record CancelAuthenticationRequest : IRequest<bool>
     {
         public string? UserId { get; set; }
 

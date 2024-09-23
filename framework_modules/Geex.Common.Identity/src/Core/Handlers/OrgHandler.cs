@@ -27,12 +27,12 @@ using MongoDB.Entities;
 namespace Geex.Common.Identity.Core.Handlers
 {
     public class OrgHandler :
-        IRequestHandler<QueryRequest<Org>, IQueryable<Org>>,
-        IRequestHandler<CreateOrgRequest, Org>,
+        IRequestHandler<QueryRequest<IOrg>, IQueryable<IOrg>>,
+        IRequestHandler<CreateOrgRequest, IOrg>,
         IRequestHandler<FixUserOrgRequest, bool>,
         INotificationHandler<OrgCodeChangedEvent>,
-        INotificationHandler<EntityCreatedNotification<Org>>,
-        INotificationHandler<EntityDeletedNotification<Org>>
+        INotificationHandler<EntityCreatedNotification<IOrg>>,
+        INotificationHandler<EntityDeletedNotification<IOrg>>
     {
         private readonly ITopicEventSender _topicEventSender;
         public IUnitOfWork DbContext { get; }
@@ -47,16 +47,16 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public virtual async Task<IQueryable<Org>> Handle(QueryRequest<Org> request, CancellationToken cancellationToken)
+        public virtual async Task<IQueryable<IOrg>> Handle(QueryRequest<IOrg> request, CancellationToken cancellationToken)
         {
-            return DbContext.Query<Org>().WhereIf(request.Filter != default, request.Filter);
+            return DbContext.Query<IOrg>().WhereIf(request.Filter != default, request.Filter);
         }
 
         /// <summary>Handles a request</summary>
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public virtual async Task<Org> Handle(CreateOrgRequest request, CancellationToken cancellationToken)
+        public virtual async Task<IOrg> Handle(CreateOrgRequest request, CancellationToken cancellationToken)
         {
             var entity = new Org(request.Code, request.Name, request.OrgType);
             DbContext.Attach(entity);
@@ -95,7 +95,7 @@ namespace Geex.Common.Identity.Core.Handlers
                         continue;
                     }
 
-                    var entity = DbContext.Query<Org>()
+                    var entity = DbContext.Query<IOrg>()
                         .FirstOrDefault(x => x.TenantCode == user.TenantCode && x.Name == "集团总部");
                     if (entity is null)
                     {
@@ -128,13 +128,13 @@ namespace Geex.Common.Identity.Core.Handlers
         }
 
         /// <inheritdoc />
-        public virtual async Task Handle(EntityCreatedNotification<Org> notification, CancellationToken cancellationToken)
+        public virtual async Task Handle(EntityCreatedNotification<IOrg> notification, CancellationToken cancellationToken)
         {
             await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
         }
 
         /// <inheritdoc />
-        public virtual async Task Handle(EntityDeletedNotification<Org> notification, CancellationToken cancellationToken)
+        public virtual async Task Handle(EntityDeletedNotification<IOrg> notification, CancellationToken cancellationToken)
         {
             await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
         }

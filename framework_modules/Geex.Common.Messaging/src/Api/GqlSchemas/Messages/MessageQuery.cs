@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Geex.Common.Abstraction;
 using Geex.Common.Requests;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
@@ -10,15 +11,8 @@ using MediatR;
 
 namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
 {
-    public class MessageQuery : QueryExtension<MessageQuery>
+    public sealed class MessageQuery : QueryExtension<MessageQuery>
     {
-        private readonly IMediator _mediator;
-
-        public MessageQuery(IMediator mediator)
-        {
-            this._mediator = mediator;
-        }
-
         protected override void Configure(IObjectTypeDescriptor<MessageQuery> descriptor)
         {
             descriptor.Field(x => x.Messages())
@@ -26,10 +20,16 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
             .UseFiltering<IMessage>(x =>
             {
                 x.Field(y => y.MessageType);
-                x.Field(y=>y.Id);
+                x.Field(y => y.Id);
             })
             ;
             base.Configure(descriptor);
+        }
+        private readonly IUnitOfWork _uow;
+
+        public MessageQuery(IUnitOfWork uow)
+        {
+            this._uow = uow;
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         /// <returns></returns>
         public async Task<IQueryable<IMessage>> Messages()
         {
-            var result = await this._mediator.Send(new QueryRequest<IMessage>());
+            var result = await this._uow.Request(new QueryRequest<IMessage>());
             return result;
         }
 
@@ -50,7 +50,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         /// <returns></returns>
         public async Task<IQueryable<IMessage>> UnreadMessages()
         {
-            var result = await _mediator.Send(new GetUnreadMessagesRequest());
+            var result = await _uow.Request(new GetUnreadMessagesRequest());
             return result;
         }
     }

@@ -1,19 +1,24 @@
 using System.Threading.Tasks;
+
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Gql.Types;
 
 using Geex.Common.Requests.BlobStorage;
+
+using HotChocolate.Types;
+
 using MediatR;
 
 namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
 {
-    public class BlobObjectMutation : MutationExtension<BlobObjectMutation>
+    public sealed class BlobObjectMutation : MutationExtension<BlobObjectMutation>
     {
-        private readonly IMediator _mediator;
+        private readonly IUnitOfWork _uow;
 
-        public BlobObjectMutation(IMediator mediator)
+        public BlobObjectMutation(IUnitOfWork uow)
         {
-            this._mediator = mediator;
+            this._uow = uow;
         }
 
         /// <summary>
@@ -21,22 +26,17 @@ namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public virtual async Task<IBlobObject> CreateBlobObject(
-            CreateBlobObjectRequest request)
-        {
-            var result = await _mediator.Send(request);
-            return result;
-        }
+        public async Task<IBlobObject> CreateBlobObject(CreateBlobObjectRequest request) => await _uow.Request(request);
 
         /// <summary>
         /// 删除BlobObject
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public virtual async Task<bool> DeleteBlobObject(
+        public async Task<bool> DeleteBlobObject(
             DeleteBlobObjectRequest request)
         {
-            await _mediator.Send(request);
+            await _uow.Request(request);
             return true;
         }
     }

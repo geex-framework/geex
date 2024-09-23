@@ -1,18 +1,23 @@
 using System.Threading.Tasks;
+
+using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
 using Geex.Common.Requests.Messaging;
+
+using HotChocolate.Types;
+
 using MediatR;
 
 namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
 {
-    public class MessageMutation : MutationExtension<MessageMutation>
+    public sealed class MessageMutation : MutationExtension<MessageMutation>
     {
-        private readonly IMediator _mediator;
+        private readonly IUnitOfWork _uow;
 
-        public MessageMutation(IMediator mediator)
+        public MessageMutation(IUnitOfWork uow)
         {
-            this._mediator = mediator;
+            this._uow = uow;
         }
 
         /// <summary>
@@ -23,7 +28,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         public async Task<bool> MarkMessagesRead(
             MarkMessagesReadRequest request)
         {
-            await this._mediator.Send(request);
+            await this._uow.Request(request);
             return true;
         }
         /// <summary>
@@ -34,7 +39,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         public async Task<bool> DeleteMessageDistributions(
             DeleteMessageDistributionsRequest request)
         {
-            await _mediator.Send(request);
+            await _uow.Request(request);
             return true;
         }
         /// <summary>
@@ -45,7 +50,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         public async Task<bool> SendMessage(
             SendNotificationMessageRequest request)
         {
-            await _mediator.Send(request);
+            await _uow.Request(request);
             return true;
         }
 
@@ -54,12 +59,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<IMessage> CreateMessage(
-            CreateMessageRequest request)
-        {
-            var result = await _mediator.Send(request);
-            return result;
-        }
+        public async Task<IMessage> CreateMessage(CreateMessageRequest request) => await _uow.Request(request);
 
         /// <summary>
         /// 编辑消息
@@ -69,7 +69,7 @@ namespace Geex.Common.Messaging.Api.GqlSchemas.Messages
         public async Task<bool> EditMessage(
             EditMessageRequest request)
         {
-            await _mediator.Send(request);
+            await _uow.Request(request);
             return true;
         }
 

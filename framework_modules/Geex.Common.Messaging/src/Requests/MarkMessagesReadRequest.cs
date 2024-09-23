@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Messaging
 {
-    public class MarkMessagesReadRequest : IRequest
+    public record MarkMessagesReadRequest : IRequest
     {
         public List<string> MessageIds { get; set; }
         public string UserId { get; set; }

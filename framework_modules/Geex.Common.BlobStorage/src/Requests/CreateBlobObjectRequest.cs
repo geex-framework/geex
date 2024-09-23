@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.BlobStorage
 {
-    public class CreateBlobObjectRequest : IRequest<IBlobObject>
+    public record CreateBlobObjectRequest : IRequest<IBlobObject>
     {
         public IFile File { get; set; }
         public BlobStorageType StorageType { get; set; }

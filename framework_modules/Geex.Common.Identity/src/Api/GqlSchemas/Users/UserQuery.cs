@@ -13,14 +13,14 @@ using MediatR;
 
 namespace Geex.Common.Identity.Api.GqlSchemas.Users
 {
-    public class UserQuery : QueryExtension<UserQuery>
+    public sealed class UserQuery : QueryExtension<UserQuery>
     {
-        private readonly IMediator _mediator;
+        private readonly IUnitOfWork _uow;
         private readonly ICurrentUser _currentUser;
 
-        public UserQuery(IMediator mediator, ICurrentUser currentUser)
+        public UserQuery(IUnitOfWork uow, ICurrentUser currentUser)
         {
-            this._mediator = mediator;
+            this._uow = uow;
             this._currentUser = currentUser;
         }
 
@@ -36,6 +36,7 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
                 x.Field(y => y.Nickname);
                 x.Field(y => y.IsEnable);
                 x.Field(y => y.PhoneNumber);
+                x.Field(y => y.CreatedOn);
                 x.Field(y => y.OrgCodes);
                 x.Field(y => y.RoleIds);
                 x.Field(y => y.Id);
@@ -55,17 +56,13 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Users
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        public virtual async Task<IQueryable<IUser>> Users(
-            )
-        {
-            var result = await _mediator.Send(new QueryRequest<IUser>());
-            return result;
-        }
+        public async Task<IQueryable<IUser>> Users() => _uow.Query<IUser>();
 
-        public async Task<IUser> CurrentUser()
+        public async Task<IUser?> CurrentUser()
         {
             var userId = _currentUser.UserId;
-            var user = (await _mediator.Send(new QueryRequest<IUser>(x => x.Id == userId))).FirstOrDefault();
+            if (userId == null) return default;
+            var user = _uow.Query<IUser>().GetById(userId);
             return user;
         }
     }

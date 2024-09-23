@@ -34,18 +34,16 @@ using Role = Geex.Common.Identity.Api.Aggregates.Roles.Role;
 
 namespace Geex.Common.Identity.Core.Handlers
 {
-    public class UserHandler<TUser> :
-        IRequestHandler<AssignRoleRequest>,
-        IRequestHandler<AssignOrgRequest>,
-        IRequestHandler<CreateUserRequest, IUser>,
+    public class UserHandler :
+        IRequestHandler<AssignRoleRequest, bool>,
+        IRequestHandler<AssignOrgRequest, bool>,
         IRequestHandler<EditUserRequest, IUser>,
-        IRequestHandler<ResetUserPasswordRequest>,
+        IRequestHandler<ResetUserPasswordRequest, IUser>,
         IRequestHandler<DeleteUserRequest, bool>,
         INotificationHandler<UserOrgChangedEvent>,
         INotificationHandler<OrgCodeChangedEvent>,
         ICommonHandler<IUser, User>,
-            IRequestHandler<CreateUserRequest<TUser>, IUser>
-        where TUser : User
+            IRequestHandler<CreateUserRequest, IUser>
     {
         private IRedisDatabase _redis;
         public IUnitOfWork Uow { get; }
@@ -63,7 +61,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public virtual async Task Handle(AssignRoleRequest request, CancellationToken cancellationToken)
+        public virtual async Task<bool> Handle(AssignRoleRequest request, CancellationToken cancellationToken)
         {
             var users = await Task.FromResult(Uow.Query<IUser>().Where(x => request.UserIds.Contains(x.Id)).ToList());
             var roles = await Task.FromResult(Uow.Query<IRole>().Where(x => request.Roles.Contains(x.Id)).ToList());
@@ -71,7 +69,7 @@ namespace Geex.Common.Identity.Core.Handlers
             {
                 await user.AssignRoles(roles);
             }
-            return;
+            return true;
         }
 
         /// <summary>Handles a request</summary>
@@ -125,16 +123,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public async Task<IUser> Handle(CreateUserRequest request, CancellationToken cancellationToken)
-        {
-            return null;
-        }
-
-        /// <summary>Handles a request</summary>
-        /// <param name="request">The request</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Response from the request</returns>
-        public virtual async Task Handle(AssignOrgRequest request, CancellationToken cancellationToken)
+        public virtual async Task<bool> Handle(AssignOrgRequest request, CancellationToken cancellationToken)
         {
             foreach (var item in request.UserOrgsMap)
             {
@@ -142,19 +131,19 @@ namespace Geex.Common.Identity.Core.Handlers
                 var orgs = Uow.Query<IOrg>().Where(x => item.OrgCodes.Contains(x.Code)).ToList();
                 await user.AssignOrgs(orgs);
             }
-            return;
+            return true;
         }
 
         /// <summary>Handles a request</summary>
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public virtual async Task Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
+        public virtual async Task<IUser> Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
             var user = Uow.Query<IUser>().FirstOrDefault(x => request.UserId == x.Id);
             Check.NotNull(user, nameof(user), "用户不存在.");
             user.SetPassword(request.Password);
-            return;
+            return user;
         }
         /// <summary>
         /// 用户组织架构更新后, 需要更新用户claim
@@ -194,9 +183,9 @@ namespace Geex.Common.Identity.Core.Handlers
         }
 
         /// <inheritdoc />
-        public virtual async Task<IUser> Handle(CreateUserRequest<TUser> request, CancellationToken cancellationToken)
+        public virtual async Task<IUser> Handle(CreateUserRequest request, CancellationToken cancellationToken)
         {
-            var user = ActivatorUtilities.CreateInstance<TUser>(new EmptyServiceProvider(), this.UserCreationValidator, this.PasswordHasher, request);
+            var user = new User(this.UserCreationValidator, this.PasswordHasher, request);
             Uow.Attach(user);
             await user.AssignRoles(request.RoleIds);
             await user.AssignOrgs(request.OrgCodes);

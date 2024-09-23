@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Geex.Common.Requests.Settings
 {
-    public class GetInitSettingsRequest : IRequest<List<ISetting>>
+    public record GetInitSettingsRequest : IRequest<List<ISetting>>
     {
 
     }

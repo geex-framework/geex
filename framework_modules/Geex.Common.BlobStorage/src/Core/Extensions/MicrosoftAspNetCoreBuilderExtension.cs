@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Geex.Common;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.BlobStorage.Api;
 using Geex.Common.BlobStorage.Api.Abstractions;
@@ -19,7 +20,7 @@ namespace Microsoft.AspNetCore.Builder
                 var response = context.Response;
                 if (context.Request.Query.TryGetValue("storageType", out var storageType) && context.Request.Query.TryGetValue("fileId", out var fileId))
                 {
-                    var (blobObject, stream) = await context.RequestServices.GetService<IMediator>().Send(new DownloadFileRequest(fileId, BlobStorageType.FromValue(storageType)));
+                    var (blobObject, stream) = await context.RequestServices.GetService<IUnitOfWork>().Request(new DownloadFileRequest(fileId, BlobStorageType.FromValue(storageType)));
                     response.ContentType = blobObject.MimeType;
                     response.Headers.ContentDisposition = $"Attachment;FileName*=utf-8''{blobObject.FileName.UrlEncode()}";
                     await stream.CopyToAsync(response.Body);

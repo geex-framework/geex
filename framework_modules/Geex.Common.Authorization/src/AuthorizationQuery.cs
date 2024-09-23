@@ -13,7 +13,7 @@ using MediatR;
 
 namespace Geex.Common.Authorization
 {
-    public class AuthorizationQuery : QueryExtension<AuthorizationQuery>
+    public sealed class AuthorizationQuery : QueryExtension<AuthorizationQuery>
     {
         private readonly ICurrentUser _currentUser;
         private readonly IMediator _mediator;

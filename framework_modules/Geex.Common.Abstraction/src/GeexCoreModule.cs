@@ -92,7 +92,7 @@ namespace Geex.Common
                 context.Services.AddStackExchangeRedisExtensions();
             }
             context.Services.AddSingleton(schemaBuilder);
-            context.Services.AddHttpResultSerializer(x => new GeexResultSerializerWithCustomStatusCodes(x.GetService<ICurrentUser>()));
+            context.Services.AddHttpResultSerializer(x => new GeexHttpResponseFormatter(x.GetService<ICurrentUser>()));
             IReadOnlySchemaOptions capturedSchemaOptions = default;
             schemaBuilder.AddConvention<ITypeInspector>(typeof(GeexTypeInspector))
                 .TrimTypes(false)
@@ -106,6 +106,10 @@ namespace Geex.Common
                     opt.EnableTrueNullability = true;
                     opt.EnableOneOf = true;
                     capturedSchemaOptions = opt;
+                })
+                .AddInputParser(o =>
+                {
+                    o.IgnoreAdditionalInputFields = true;
                 })
                 .AddConvention<INamingConventions>(sp => new GeexNamingConventions(new XmlDocumentationProvider(new XmlDocumentationFileResolver(capturedSchemaOptions.ResolveXmlDocumentationFileName), sp.GetApplicationService<ObjectPool<StringBuilder>>())))
                 .TryAddTypeInterceptor<GeexTypeInterceptor>()
@@ -123,7 +127,7 @@ namespace Geex.Common
                 {
                     DefaultPageSize = 10,
                     IncludeTotalCount = true,
-                    MaxPageSize = moduleOptions.MaxPageSize
+                    MaxPageSize = moduleOptions.MaxPageSize,
                 })
                 .AddErrorFilter<LoggingErrorFilter>(_ =>
                     new LoggingErrorFilter(_.GetService<ILoggerFactory>()))
