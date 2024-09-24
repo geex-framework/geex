@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Common.Abstraction.Migrations;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -22,10 +24,13 @@ namespace Geex.Common.Authentication.Migrations
 {
     public class _638194860579784283_initOpenIddict : DbMigration
     {
-        public override async Task UpgradeAsync(DbContext dbContext)
+        /// <inheritdoc />
+        public override long Number => long.Parse(this.GetType().Name.Split('_')[1]);
+
+        public override async Task UpgradeAsync(IUnitOfWork uow)
         {
-            var database = dbContext.DefaultDb;
-            var options = dbContext.ServiceProvider.GetRequiredService<IOptionsMonitor<OpenIddictMongoDbOptions>>().CurrentValue;
+            var database = uow.DbContext.DefaultDb;
+            var options = uow.ServiceProvider.GetRequiredService<IOptionsMonitor<OpenIddictMongoDbOptions>>().CurrentValue;
             var applications = database.GetCollection<OpenIddictMongoDbApplication>(options.ApplicationsCollectionName);
 
             await applications.Indexes.CreateManyAsync(new[]

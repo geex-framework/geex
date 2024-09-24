@@ -1,7 +1,8 @@
 ﻿using System.Threading.Tasks;
+using MongoDB.Entities;
 using Volo.Abp.DependencyInjection;
 
-namespace MongoDB.Entities
+namespace Geex.Common.Abstraction.Migrations
 {
     /// <summary>
     /// The contract for writing user data migration classes
@@ -9,6 +10,7 @@ namespace MongoDB.Entities
     [ExposeServices(typeof(DbMigration))]
     public abstract class DbMigration : ITransientDependency
     {
-        public abstract Task UpgradeAsync(DbContext dbContext);
+        public abstract long Number { get; }
+        public abstract Task UpgradeAsync(IUnitOfWork dbContext);
     }
 }

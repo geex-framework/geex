@@ -571,10 +571,6 @@ namespace MongoDB.Entities
             {
                 await this.PreSaveChanges();
             }
-            if (!Session.IsInTransaction)
-            {
-                Session.StartTransaction();
-            }
             var savedIds = new List<string>();
             foreach (var (type, keyedEntities) in this.Local.TypedCacheDictionary)
             {
@@ -596,20 +592,39 @@ namespace MongoDB.Entities
                 // 如果本地有值变更
                 if (toSavedEntities.Any())
                 {
-                    savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
-                    var list = (castMethod.MakeGenericMethod(type).Invoke(null, new object[] { toSavedEntities }));
-                    var saveTask = saveMethod.MakeGenericMethod(type)
-                        .Invoke(null, new object[] { list, this.Session, cancellation });
-                    if (saveTask is Task task)
+                    const int maxRetries = 3;
+                    for (int attempt = 0; attempt < maxRetries; attempt++)
                     {
-                        await task;
+                        try
+                        {
+                            savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
+                            var list = (castMethod.MakeGenericMethod(type).Invoke(null, new object[] { toSavedEntities }));
+                            if (!Session.IsInTransaction)
+                            {
+                                Session.StartTransaction();
+                            }
+                            var saveTask = saveMethod.MakeGenericMethod(type)
+                                .Invoke(null, new object[] { list, this.Session, cancellation });
+                            if (saveTask is Task task)
+                            {
+                                await task.ConfigureAwait(false);
+                            }
+                            await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
+                            break; // 如果成功，跳出循环
+                        }
+                        catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))
+                        {
+                            if (attempt == maxRetries - 1)
+                                throw; // 如果是最后一次尝试，则抛出异常
+
+                            await Task.Delay(TimeSpan.FromSeconds(0.5 * (attempt + 1)), cancellation); // 指数退避
+                        }
                     }
                 }
             }
 
             this.Local.TypedCacheDictionary.Clear();
             this.OriginLocal.TypedCacheDictionary.Clear();
-            await Session.CommitTransactionAsync(cancellation);
             if (this.PostSaveChanges != default)
             {
                 await this.PostSaveChanges();
@@ -667,71 +682,6 @@ namespace MongoDB.Entities
         }
 
         #endregion
-
-        public async Task MigrateAsync()
-        {
-            var migrations = this.ServiceProvider.GetServices<DbMigration>().ToList();
-            await this.MigrateAsync(migrations);
-        }
-
-        public async Task MigrateAsync(IEnumerable<DbMigration> migrations)
-        {
-            var currentMigrationName = "[unknown]";
-            try
-            {
-                var migrationTypes = migrations.Select(x => (type: x.GetType(), instance: x));
-                //迁移时禁用所有filter
-                using var _ = this.DisableAllDataFilters();
-                var lastMigNum = (
-                        await this.Find<Migration, long>()
-                            .Sort(m => m.Number, FindSortType.Descending)
-                            .Limit(1)
-                            .Project(m => m.Number)
-                            .ExecuteAsync()
-                            .ConfigureAwait(false))
-                    .SingleOrDefault();
-
-                var sortedMigrations = new SortedDictionary<long, DbMigration>();
-
-                foreach (var t in migrationTypes)
-                {
-                    var success = long.TryParse(t.type.Name.Split('_')[1], out long migNum);
-
-                    if (!success)
-                        throw new InvalidOperationException("Failed to parse migration number from the class name. Make sure to name the migration classes like: _20210623103815_some_migration_name.cs");
-
-                    if (migNum > lastMigNum)
-                        sortedMigrations.Add(migNum, t.instance);
-                }
-
-                var sw = new Stopwatch();
-                foreach (var migration in sortedMigrations)
-                {
-                    // 默认的Session超时太短, 给Migration更多的超时时间
-                    var migrationName = migration.Value.GetType().Name;
-                    currentMigrationName = migrationName;
-                    this.session.StartTransaction(DefaultSessionOptions.DefaultTransactionOptions);
-                    sw.Start();
-                    await migration.Value.UpgradeAsync(this);
-                    var mig = new Migration
-                    {
-                        Number = migration.Key,
-                        Name = migrationName,
-                        TimeTakenSeconds = sw.Elapsed.TotalSeconds
-                    };
-                    this.Attach(mig);
-                    var result = await mig.SaveAsync();
-                    await SaveChanges();
-                    sw.Stop();
-                    sw.Reset();
-                    this.session.CommitTransaction();
-                }
-            }
-            catch (Exception e)
-            {
-                throw new Exception($"Migration failed, failed migration: {currentMigrationName}", e);
-            }
-        }
 
         public static ClientSessionOptions DefaultSessionOptions = new ClientSessionOptions
         {

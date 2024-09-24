@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Claims;
@@ -7,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Common.Abstraction.Migrations;
 using Geex.Common.Notifications;
 using Geex.MongoDB.Entities.Utilities;
 
@@ -86,7 +88,6 @@ namespace Geex.Common.Abstraction.Storage
         /// <inheritdoc />
         public override async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
         {
-            var mediator = ServiceProvider.GetService<IMediator>();
             var logger = ServiceProvider.GetService<ILogger<GeexDbContext>>();
 
             var entities = Local.TypedCacheDictionary.Values.SelectMany(y => y.Values).OfType<IEntity>();
@@ -101,7 +102,7 @@ namespace Geex.Common.Abstraction.Storage
                 {
                     try
                     {
-                        await mediator?.Publish(@event, cancellation);
+                        await this.Mediator?.Publish(@event, cancellation);
                     }
                     catch (Exception ex)
                     {
@@ -197,6 +198,47 @@ namespace Geex.Common.Abstraction.Storage
         public IQueryable<T> Query<T>() where T : IEntityBase
         {
             return base.Query<T>();
+        }
+
+        //protected internal virtual async Task MigrateAsync(DbMigration migration)
+        //{
+        //    var sw = new Stopwatch();
+        //    // 默认的Session超时太短, 给Migration更多的超时时间
+        //    var migrationName = migration.GetType().Name;
+        //    var mig = new Migration
+        //    {
+        //        Number = migration.Number,
+        //        Name = migrationName,
+        //        TimeTakenSeconds = sw.Elapsed.TotalSeconds
+        //    };
+        //    sw.Start();
+        //    this.session.StartTransaction(DefaultSessionOptions.DefaultTransactionOptions);
+        //    await migration.UpgradeAsync(this).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
+        //    this.Attach(mig);
+        //    await SaveChanges();
+        //    await this.session.CommitTransactionAsync();
+        //    sw.Stop();
+        //    sw.Reset();
+        //}
+
+        protected internal virtual async Task MigrateAsync(DbMigration migration)
+        {
+            var sw = new Stopwatch();
+            // 默认的Session超时太短, 给Migration更多的超时时间
+            var migrationName = migration.GetType().Name;
+
+            sw.Start();
+            await migration.UpgradeAsync(this);
+            sw.Stop();
+            await SaveChanges();
+            var mig = new Migration
+            {
+                Number = migration.Number,
+                Name = migrationName,
+                TimeTakenSeconds = sw.Elapsed.TotalSeconds
+            };
+            this.Attach(mig);
+            await SaveChanges();
         }
     }
 }

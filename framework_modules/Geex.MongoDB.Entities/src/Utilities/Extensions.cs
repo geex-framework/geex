@@ -21,7 +21,6 @@ namespace MongoDB.Entities
         {
             public T Data { get; set; }
         }
-        internal static T As<T>(this object obj) where T : class => (T)obj;
 
         private static T Duplicate<T>(this T source)
         {

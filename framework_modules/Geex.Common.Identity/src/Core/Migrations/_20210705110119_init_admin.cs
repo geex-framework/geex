@@ -7,6 +7,7 @@ using Geex.Common;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Abstraction.Entities;
+using Geex.Common.Abstraction.Migrations;
 using Geex.Common.Authorization;
 using Geex.Common.Authorization.Events;
 using Geex.Common.Identity.Api.Aggregates.Roles;
@@ -28,9 +29,12 @@ namespace Geex.Core.Authentication.Migrations
 {
     public class _20210705110119_init_admin : DbMigration
     {
-        public override async Task UpgradeAsync(DbContext dbContext)
+        /// <inheritdoc />
+        public override long Number => long.Parse(this.GetType().Name.Split('_')[1]);
+
+        public override async Task  UpgradeAsync(IUnitOfWork uow)
         {
-            var superAdmin = new User(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
+            var superAdmin = new User(uow.ServiceProvider.GetService<IUserCreationValidator>(), uow.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
             {
                 Username = "superAdmin",
                 Nickname = "superAdmin",
@@ -38,7 +42,7 @@ namespace Geex.Core.Authentication.Migrations
                 Email = "superAdmin@geex.com",
                 Password = "superAdmin"
             });
-            dbContext.Attach(superAdmin);
+            uow.Attach(superAdmin);
             superAdmin.Id = "000000000000000000000001";
             var adminRole = new Role("admin")
             {
@@ -54,15 +58,15 @@ namespace Geex.Core.Authentication.Migrations
                 adminRole,
                 userRole
             };
-            dbContext.Attach(roles);
+            uow.Attach(roles);
 
             var orgs = new List<Org>()
             {
                 new Org("geex","geex", OrgTypeEnum.Default )
             };
-            dbContext.Attach(orgs);
+            uow.Attach(orgs);
 
-            var admin = new User(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
+            var admin = new User(uow.ServiceProvider.GetService<IUserCreationValidator>(), uow.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
             {
                 Username = "admin",
                 Nickname = "admin",
@@ -70,10 +74,10 @@ namespace Geex.Core.Authentication.Migrations
                 Email = "admin@geex.com",
                 Password = "admin"
             });
-            dbContext.Attach(admin);
+            uow.Attach(admin);
             await admin.AssignOrgs(orgs);
             await admin.AssignRoles(adminRole.Id);
-            var user = new User(dbContext.ServiceProvider.GetService<IUserCreationValidator>(), dbContext.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
+            var user = new User(uow.ServiceProvider.GetService<IUserCreationValidator>(), uow.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
             {
                 Username = "user",
                 Nickname = "user",
@@ -81,13 +85,12 @@ namespace Geex.Core.Authentication.Migrations
                 Email = "user@geex.com",
                 Password = "user"
             });
-            dbContext.Attach(user);
+            uow.Attach(user);
             await user.AssignRoles(userRole.Id);
             await user.AssignOrgs(orgs);
             var permissions = AppPermission.List.Select(x => x.Value);
-            await dbContext.ServiceProvider.GetService<IRbacEnforcer>().SetPermissionsAsync(adminRole.Id, permissions);
-            await dbContext.ServiceProvider.GetService<IUnitOfWork>().Notify(new PermissionChangedEvent(adminRole.Id, permissions.ToArray()));
-            await dbContext.SaveChanges();
+            await uow.ServiceProvider.GetService<IRbacEnforcer>().SetPermissionsAsync(adminRole.Id, permissions);
+            await uow.ServiceProvider.GetService<IUnitOfWork>().Notify(new PermissionChangedEvent(adminRole.Id, permissions.ToArray()));
         }
     }
 }

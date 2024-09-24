@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.Migrations;
 using Geex.Common.Abstraction.Storage;
 
 using HotChocolate.AspNetCore;
@@ -19,6 +20,8 @@ using Microsoft.AspNetCore.WebSockets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+
+using MongoDB.Entities;
 
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -148,18 +151,11 @@ namespace Geex.Common.Abstractions
             var app = context.GetApplicationBuilder();
             //var _env = context.GetEnvironment();
             //var _configuration = context.GetConfiguration();
-            var coreModuleOptions = context.ServiceProvider.GetService<GeexCoreModuleOptions>();
-
             app.UseVoyager("/graphql", "/voyager");
-
-            if (coreModuleOptions.AutoMigration)
-            {
-                new GeexDbContext(context.ServiceProvider).MigrateAsync().Wait();
-            }
         }
 
         /// <inheritdoc />
-        public override Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
         {
             var coreModuleOptions = context.ServiceProvider.GetService<GeexCoreModuleOptions>();
             var app = context.GetApplicationBuilder();
@@ -177,7 +173,24 @@ namespace Geex.Common.Abstractions
                     }
                 });
             });
-            return base.OnPostApplicationInitializationAsync(context);
+            await base.OnPostApplicationInitializationAsync(context);
+            if (coreModuleOptions.AutoMigration)
+            {
+                var migrations = context.ServiceProvider.GetServices<DbMigration>();
+                var appliedMigrations = await DB.Find<Migration>().Project(x => x.Number).ExecuteAsync();
+
+                var sortedMigrations = migrations.OrderBy(x => x.Number);
+
+                foreach (var migration in sortedMigrations)
+                {
+                    if (!appliedMigrations.Contains(migration.Number))
+                    {
+                        using var scope = context.ServiceProvider.CreateScope();
+                        var dbContext = scope.ServiceProvider.GetRequiredService<IUnitOfWork>().As<GeexDbContext>();
+                        await dbContext.MigrateAsync(migration);
+                    }
+                }
+            }
         }
     }
 }

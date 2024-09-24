@@ -1,4 +1,6 @@
-﻿namespace MongoDB.Entities
+﻿using MongoDB.Entities;
+
+namespace Geex.Common.Abstraction.Migrations
 {
     /// <summary>
     /// Represents a migration history item in the database

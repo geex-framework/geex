@@ -10,7 +10,7 @@ namespace Geex.Common.BlobStorage.Core.Migrations
 {
     //public class _time_init : IMigration
     //{
-    //    public override async Task UpgradeAsync(DbContext dbContext)
+    //    public override async Task  UpgradeAsync(IUnitOfWork uow)
     //    {
     //        var BlobObjectEntity = new BlobObject()
     //        {
