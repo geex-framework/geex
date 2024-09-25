@@ -4,8 +4,13 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
+using System.IO.Pipelines;
+using System.Security.Cryptography;
+using SharpCompress.Compressors.Xz;
+using MongoDB.Bson;
 
 [assembly: InternalsVisibleTo("MongoDB.Entities.Tests")]
 namespace MongoDB.Entities
@@ -106,6 +111,52 @@ namespace MongoDB.Entities
             return DownloadAsync(stream, batchSize, new CancellationTokenSource(timeOutSeconds * 1000).Token);
         }
 
+
+        public async Task<Stream> DownloadAsStreamAsync(int batchSize = 1, CancellationToken cancellation = default)
+        {
+            parent.ThrowIfUnsaved();
+            if (!parent.UploadSuccessful) throw new InvalidOperationException("Data for this file hasn't been uploaded successfully (yet)!");
+
+            var filter = Builders<FileChunk>.Filter.Eq(c => c.FileId, parent.Id);
+            var options = new FindOptions<FileChunk, byte[]>
+            {
+                BatchSize = batchSize,
+                Sort = Builders<FileChunk>.Sort.Ascending(c => c.Id),
+                Projection = Builders<FileChunk>.Projection.Expression(c => c.Data)
+            };
+
+            var findTask =
+                ((IEntityBase)parent).DbContext?.session == null
+                ? chunkCollection.FindAsync(filter, options, cancellation)
+                : chunkCollection.FindAsync(((IEntityBase)parent).DbContext?.Session, filter, options, cancellation);
+
+            var pipe = new Pipe(); // 使用 Pipe 来实现高效的流式传输
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var cursor = await findTask.ConfigureAwait(false);
+                    var writer = pipe.Writer;
+
+                    while (await cursor.MoveNextAsync(cancellation).ConfigureAwait(false))
+                    {
+                        foreach (var chunk in cursor.Current)
+                        {
+                            await writer.WriteAsync(chunk, cancellation).ConfigureAwait(false); // 将数据块写入 Pipe
+                        }
+                    }
+
+                    await writer.CompleteAsync(); // 完成写入
+                }
+                catch (Exception ex)
+                {
+                    await pipe.Writer.CompleteAsync(ex); // 如果发生错误，传递异常
+                }
+            }, cancellation);
+
+            return pipe.Reader.AsStream(); // 返回可读的 Stream
+        }
+
         /// <summary>
         /// Download binary data for this file entity from mongodb in chunks into a given stream.
         /// </summary>
@@ -187,8 +238,9 @@ namespace MongoDB.Entities
         /// <param name="stream">The input stream to read the data from</param>
         /// <param name="chunkSizeKB">The 'average' size of one chunk in KiloBytes</param>
         /// <param name="cancellation">An optional cancellation token.</param>
-
-        public async Task UploadAsync(Stream stream, int chunkSizeKB = 256, CancellationToken cancellation = default)
+        /// <param name="md5Hasher"></param>
+        public async Task UploadAsync(Stream stream, int chunkSizeKB = 256,
+            CancellationToken cancellation = default, MD5 md5Hasher = null)
         {
             parent.ThrowIfUnsaved();
             if (chunkSizeKB < 128 || chunkSizeKB > 4096) throw new ArgumentException("Please specify a chunk size from 128KB to 4096KB");
@@ -207,6 +259,7 @@ namespace MongoDB.Entities
 
                 while ((readCount = await stream.ReadAsync(buffer, 0, buffer.Length, cancellation).ConfigureAwait(false)) > 0)
                 {
+                    if (md5Hasher != null) md5Hasher.TransformBlock(buffer, 0, readCount, null, 0);
                     await FlushToDBAsync(((IEntityBase)parent).DbContext, isLastChunk: false, cancellation).ConfigureAwait(false);
                 }
 
