@@ -4,6 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="appsettings.json" />
@@ -38,6 +39,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
     <ProjectReference Include="..\Geex.Common.Accounting\src\Geex.Common.Accounting.csproj" />
+    <ProjectReference Include="..\Geex.Common.AuditLogs\src\Geex.Common.AuditLogs.csproj" />
     <ProjectReference Include="..\Geex.Common.Authentication\src\Geex.Common.Authentication.csproj" />
     <ProjectReference Include="..\Geex.Common.Authorization\src\Geex.Common.Authorization.csproj" />
     <ProjectReference Include="..\Geex.Common.BackgroundJob\src\Geex.Common.BackgroundJob.csproj" />

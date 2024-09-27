@@ -240,5 +240,18 @@ namespace Geex.Common.Abstraction.Storage
             this.Attach(mig);
             await SaveChanges();
         }
+
+        public T Create<T>()
+        {
+
+            return ActivatorUtilities.CreateInstance<T>(ServiceProvider);
+        }
+    }
+    public static class ActivatorUtilitiesExtensions
+    {
+        public static T CreateInstance<T>(this IServiceProvider serviceProvider, params object[] parameters)
+        {
+            return ActivatorUtilities.CreateInstance<T>(serviceProvider, parameters);
+        }
     }
 }

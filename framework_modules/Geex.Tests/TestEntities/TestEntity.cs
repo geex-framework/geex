@@ -1,8 +1,9 @@
-﻿using MongoDB.Entities;
+﻿using Geex.Common.Abstraction.Storage;
+using MongoDB.Entities;
 
 namespace Geex.Tests.TestEntities
 {
-    public class TestEntity : EntityBase<TestEntity>, ITestEntity
+    public class TestEntity : Entity<TestEntity>, ITestEntity
     {
         public string Name { get; set; }
         public int Value { get; set; }
