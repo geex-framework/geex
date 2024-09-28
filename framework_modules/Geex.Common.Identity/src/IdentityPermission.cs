@@ -7,7 +7,7 @@ namespace Geex.Common.Identity
     public class IdentityPermission : AppPermission<IdentityPermission>
     {
 
-        public IdentityPermission(string value) : base($"{typeof(IdentityPermission).DomainName()}_{value}")
+        public IdentityPermission(string value) : base($"identity_{value}")
         {
         }
         public class UserPermission : IdentityPermission
@@ -32,7 +32,6 @@ namespace Geex.Common.Identity
         }
         public class OrgPermission : IdentityPermission
         {
-            public static OrgPermission Query { get; } = new("query_orgs");
             public static OrgPermission Create { get; } = new("mutation_createOrg");
             public static OrgPermission Edit { get; } = new("mutation_editOrg");
 

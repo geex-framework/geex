@@ -15,6 +15,7 @@ using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstraction.Gql.Types.Scalars;
 using Geex.Common.Abstraction.Storage;
+using Geex.Common.Abstractions;
 using Geex.Common.Authorization;
 using Geex.Common.Gql.Types;
 
@@ -161,7 +162,9 @@ namespace HotChocolate.Types
             //获取是哪个类来调用的
             var caller = trace.GetFrame(1).GetMethod();
             var callerDeclaringType = caller.DeclaringType;
-            var moduleName = callerDeclaringType.Namespace.Split(".").ToList().Where(x => !x.IsIn("Gql", "Api", "Core", "Tests")).Last().ToCamelCase();
+            var prefixMatchModules = GeexModule.Modules.Where(x=> callerDeclaringType.Namespace.Contains(x.Namespace));
+            var module = prefixMatchModules.OrderByDescending(x=>x.Name.Length).FirstOrDefault();
+            var moduleName = module.Namespace.Split(".").ToList().Where(x => !x.IsIn("Gql", "Api", "Core", "Tests")).Last().ToCamelCase();
             var className = callerDeclaringType.Name;
             var prefix = "";
             var logger = (@this as IHasDescriptorContext)!.Context.Services.GetService<ILogger<IObjectTypeDescriptor<T>>>();

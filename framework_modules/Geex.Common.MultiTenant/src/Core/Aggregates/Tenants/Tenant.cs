@@ -15,7 +15,6 @@ namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
     public class Tenant : Entity<Tenant>, ITenant
     {
         public string Code { get; set; }
-
         /// <inheritdoc />
         public string Name { get; set; }
         public bool IsEnabled { get; set; }
@@ -27,7 +26,7 @@ namespace Geex.Common.MultiTenant.Core.Aggregates.Tenants
                 Code = code,
                 Name = name,
                 IsEnabled = true,
-                ExternalInfo = externalInfo ?? JsonNode.Parse("{}")
+                ExternalInfo = externalInfo
             };
         }
 

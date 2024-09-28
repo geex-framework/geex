@@ -100,6 +100,7 @@ namespace Geex.Common.Abstractions
         public IRequestExecutorBuilder SchemaBuilder => this.ServiceConfigurationContext.Services.GetSingletonInstance<IRequestExecutorBuilder>();
         public static HashSet<Assembly> KnownModuleAssembly { get; } = new HashSet<Assembly>();
         public static HashSet<Type> RootTypes { get; } = new HashSet<Type>();
+        public static HashSet<Type> Modules { get; } = new HashSet<Type>();
         public static HashSet<Type> ClassEnumTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> DirectiveTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> ObjectTypes { get; } = new HashSet<Type>();

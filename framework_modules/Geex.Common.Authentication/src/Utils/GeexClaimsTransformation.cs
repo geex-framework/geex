@@ -69,6 +69,11 @@ namespace Geex.Common.Authentication.Utils
                 claimsIdentity.AppendClaims(new Claim(GeexClaimType.Org, ownedOrgCode, valueType: "array"));
             }
 
+            foreach (var role in user.RoleIds ?? [])
+            {
+                claimsIdentity.AppendClaims(new Claim(GeexClaimType.Role, role, valueType: "array"));
+            }
+
             foreach (var transformation in this._transformations)
             {
                 var claimsPrincipal = await transformation.TransformAsync(user, principal);

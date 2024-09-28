@@ -132,6 +132,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IRequestExecutorBuilder AddModuleTypes(this IRequestExecutorBuilder schemaBuilder, Type gqlModuleType)
         {
+            GeexModule.Modules.AddIfNotContains(gqlModuleType);
             if (GeexModule.KnownModuleAssembly.AddIfNotContains(gqlModuleType.Assembly))
             {
                 var moduleName = gqlModuleType.Name;
