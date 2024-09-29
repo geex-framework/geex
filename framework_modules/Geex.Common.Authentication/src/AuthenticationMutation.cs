@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Gql.Types;
+using Geex.Common.AuditLogs;
 using Geex.Common.Authentication.Domain;
 using Geex.Common.Requests.Authentication;
 
 using HotChocolate;
+using HotChocolate.Types;
 
 using MediatR;
 
@@ -18,6 +20,12 @@ namespace Geex.Common.Authentication
 {
     public sealed class AuthenticationMutation : MutationExtension<AuthenticationMutation>
     {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<AuthenticationMutation> descriptor)
+        {
+            base.Configure(descriptor);
+            descriptor.Field(x => x.Authenticate(default)).Audit();
+        }
 
         private readonly IUnitOfWork _uow;
 

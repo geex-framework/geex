@@ -120,22 +120,22 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                 {
                     // Ensure directory exists
                     Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-                    await using var fileStream = new FileStream(
-                        filePath,
-                        FileMode.Create,
-                        FileAccess.Write,
-                        FileShare.None,
-                        buffer.Length,
-                        useAsync: true
-                    );
-
-                    // Write to file and compute MD5
-                    await ProcessStreamAsync(readStream, buffer, md5Hasher,
-                        async (chunk, length) =>
-                        {
-                            await fileStream.WriteAsync(chunk.AsMemory(0, length), cancellationToken);
-                        }, cancellationToken);
                 }
+                await using var fileStream = new FileStream(
+                       filePath,
+                       FileMode.Create,
+                       FileAccess.Write,
+                       FileShare.None,
+                       buffer.Length,
+                       useAsync: true
+                   );
+
+                // Write to file and compute MD5
+                await ProcessStreamAsync(readStream, buffer, md5Hasher,
+                    async (chunk, length) =>
+                    {
+                        await fileStream.WriteAsync(chunk.AsMemory(0, length), cancellationToken);
+                    }, cancellationToken);
             }
             else
             {

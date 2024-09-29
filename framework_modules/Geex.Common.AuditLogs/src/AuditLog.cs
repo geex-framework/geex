@@ -22,5 +22,6 @@ namespace Geex.Common.AuditLogs
         /// <inheritdoc />
         public string? TenantCode { get; set; }
 
+        public string? ClientIp { get; set; }
     }
 }

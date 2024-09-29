@@ -39,6 +39,7 @@ namespace Geex.Common.AuditLogs
                     var operationName = context.Operation.Name;
                     var operation = context.Operation.Document.ToString();
                     var variables = context.Variables.ToJson();
+                    var clientIp = context.Service<IHttpContextAccessor>()?.HttpContext?.Connection.RemoteIpAddress?.ToString();
                     var mainTask = next.Invoke(context).AsTask();
                     await mainTask.ContinueWith(async task =>
                     {
@@ -52,6 +53,7 @@ namespace Geex.Common.AuditLogs
                                 OperatorId = user.UserId,
                                 Operation = operation,
                                 Variables = JsonNode.Parse(variables),
+                                ClientIp = clientIp,
                             };
                             if (task.IsFaulted)
                             {

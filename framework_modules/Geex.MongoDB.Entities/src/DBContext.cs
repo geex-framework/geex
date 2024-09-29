@@ -654,7 +654,11 @@ namespace MongoDB.Entities
             MaxStructDepth = 5,
             Caching = true,
             AutoClearCache = false,
-            IgnoreLogicGetters = true
+            IgnoreLogicGetters = true,
+            MembersToIgnore = new List<string>()
+            {
+                nameof(IModifiedOn.ModifiedOn)
+            }
         });
 
         protected virtual void Dispose(bool disposing)

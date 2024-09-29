@@ -9,6 +9,7 @@ using HotChocolate.Types.Descriptors.Definitions;
 using HotChocolate.Types;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
+using System.Reflection;
 using Geex.Common.Abstraction.Approbation;
 using Geex.Common.Abstraction.Gql.Types;
 
@@ -18,6 +19,7 @@ namespace Geex.Common.AuditLogs
     {
         public static IObjectTypeDescriptor<T> AuditFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : class
         {
+            //var methods = typeof(T).GetMethods(BindingFlags.DeclaredOnly|BindingFlags.Public);
             var propertyList = descriptor.GetFields();
             foreach (var item in propertyList)
             {

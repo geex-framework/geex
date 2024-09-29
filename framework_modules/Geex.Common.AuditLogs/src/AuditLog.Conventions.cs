@@ -15,6 +15,7 @@ public partial class AuditLog
             indexConfig.MapEntityDefaultIndex();
             indexConfig.MapIndex(x => x.Descending(o => o.OperatorId));
             indexConfig.MapIndex(x => x.Hashed(o => o.IsSuccess));
+            indexConfig.MapIndex(x => x.Hashed(o => o.ClientIp));
             indexConfig.MapIndex(x => x.Hashed(o => o.OperationType));
             indexConfig.MapIndex(x => x.Hashed(o => o.OperationName));
         }
