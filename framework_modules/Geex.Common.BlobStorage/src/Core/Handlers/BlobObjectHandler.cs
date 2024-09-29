@@ -46,11 +46,11 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             await using var readStream = request.File.OpenReadStream();
 
             // Determine buffer size based on file size
-            var fileLength = request.File.Length;
+            var fileLength = request.File.Length ?? readStream.Length;
 
             var bufferSize = fileLength switch
             {
-                < 1048576L => 81920,
+                < 1048576L => 262144,
                 < 10485760L => 1048576,
                 < 104857600L => 2097152,
                 >= 104857600L => 4194304,
@@ -62,12 +62,26 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             using var md5Hasher = MD5.Create();
 
             // Initialize blob object
+            var fileContentType = request.File.ContentType;
+            if (fileContentType == null)
+            {
+                fileContentType = request.File.Name switch
+                {
+                    null => readStream switch
+                    {
+                        FileStream fileStream => MimeTypes.GetMimeType(fileStream.Name),
+                        _ => fileContentType
+                    },
+                    _ => MimeTypes.GetMimeType(request.File.Name)
+                };
+            }
+
             var entity = new BlobObject(
                 request.File.Name,
                 null,
                 request.StorageType,
-                request.File.ContentType ?? MimeTypes.GetMimeType(request.File.Name),
-                fileLength.Value
+                fileContentType,
+                fileLength
             );
             entity = Uow.Attach(entity);
 
