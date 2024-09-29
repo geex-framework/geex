@@ -8,8 +8,11 @@ using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
 using Geex.Common.Abstractions;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using MongoDB.Entities;
+
 using StackExchange.Redis.Extensions.Core.Abstractions;
 using StackExchange.Redis.Extensions.Core.Implementations;
 using StackExchange.Redis.Extensions.System.Text.Json;
@@ -120,6 +123,7 @@ namespace StackExchange.Redis.Extensions.Core
             this IRedisDatabase service,
           T obj,
             string? @namespace = default,
+            string? keyOverride = default,
             TimeSpan? expireIn = default,
           CancellationToken token = default(CancellationToken)) where T : class
         {
@@ -130,9 +134,9 @@ namespace StackExchange.Redis.Extensions.Core
             }
             if (expireIn.HasValue)
             {
-                return await service.AddAsync<T>($"{prefix}:{obj.GetUniqueId()}", obj, expireIn.Value);
+                return await service.AddAsync<T>($"{prefix}:{keyOverride ?? obj.GetUniqueId()}", obj, expireIn.Value);
             }
-            return await service.AddAsync<T>($"{prefix}:{obj.GetUniqueId()}", obj);
+            return await service.AddAsync<T>($"{prefix}:{keyOverride ?? obj.GetUniqueId()}", obj);
         }
     }
 }
