@@ -102,29 +102,41 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                             // Write chunk to dbFile.Data
 
                         }, cancellationToken);
+                    // Finalize MD5 hash computation
+                    md5Hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                    request.Md5 = BitConverter.ToString(md5Hasher.Hash).Replace("-", "").ToLowerInvariant();
+                    entity.Md5 = request.Md5;
                 }
             }
             else if (request.StorageType == BlobStorageType.Cache)
             {
-                if (fileLength <= 512 * 1024 * 1024) // Cache only files <= 512 GB
+                var existed = await _redis.GetNamedAsync<BlobObject>(entity.GetUniqueId());
+                if (existed == default)
                 {
-                    var memoryStream = new MemoryStream();
+                    if (fileLength <= 512 * 1024 * 1024) // Cache only files <= 512 GB
+                    {
+                        var memoryStream = new MemoryStream();
 
-                    // Write to memory stream and compute MD5
-                    await ProcessStreamAsync(readStream, buffer, md5Hasher,
-                        async (chunk, length) =>
-                        {
-                            await memoryStream.WriteAsync(chunk.AsMemory(0, length), cancellationToken);
-                        }, cancellationToken);
+                        // Write to memory stream and compute MD5
+                        await ProcessStreamAsync(readStream, buffer, md5Hasher,
+                            async (chunk, length) =>
+                            {
+                                await memoryStream.WriteAsync(chunk.AsMemory(0, length), cancellationToken);
+                            }, cancellationToken);
 
-                    // Set cache
-                    _memCache.Set(entity.Md5, memoryStream, TimeSpan.FromMinutes(5));
-                    await _redis.SetNamedAsync(entity, expireIn: TimeSpan.FromMinutes(5), token: cancellationToken);
+                        // Set cache
+                        _memCache.Set(entity.Md5, memoryStream, TimeSpan.FromMinutes(5));
+                        // Finalize MD5 hash computation
+                        md5Hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                        request.Md5 = BitConverter.ToString(md5Hasher.Hash).Replace("-", "").ToLowerInvariant();
+                        entity.Md5 = request.Md5;
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("over sized file for cache!");
+                    }
                 }
-                else
-                {
-                    throw new InvalidOperationException("over sized file for cache!");
-                }
+                await _redis.SetNamedAsync(entity, expireIn: TimeSpan.FromMinutes(5), token: cancellationToken);
             }
             else if (request.StorageType == BlobStorageType.FileSystem)
             {
@@ -132,10 +144,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                 var filePath = GetFilePath(request.Md5);
                 if (!File.Exists(filePath))
                 {
-                    // Ensure directory exists
-                    Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-                }
-                await using var fileStream = new FileStream(
+                    await using var fileStream = new FileStream(
                        filePath,
                        FileMode.Create,
                        FileAccess.Write,
@@ -144,22 +153,22 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                        useAsync: true
                    );
 
-                // Write to file and compute MD5
-                await ProcessStreamAsync(readStream, buffer, md5Hasher,
-                    async (chunk, length) =>
-                    {
-                        await fileStream.WriteAsync(chunk.AsMemory(0, length), cancellationToken);
-                    }, cancellationToken);
+                    // Write to file and compute MD5
+                    await ProcessStreamAsync(readStream, buffer, md5Hasher,
+                        async (chunk, length) =>
+                        {
+                            await fileStream.WriteAsync(chunk.AsMemory(0, length), cancellationToken);
+                        }, cancellationToken);
+                    // Finalize MD5 hash computation
+                    md5Hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                    request.Md5 = BitConverter.ToString(md5Hasher.Hash).Replace("-", "").ToLowerInvariant();
+                    entity.Md5 = request.Md5;
+                }
             }
             else
             {
                 throw new NotImplementedException();
             }
-
-            // Finalize MD5 hash computation
-            md5Hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            request.Md5 = BitConverter.ToString(md5Hasher.Hash).Replace("-", "").ToLowerInvariant();
-            entity.Md5 = request.Md5;
 
             return entity;
         }

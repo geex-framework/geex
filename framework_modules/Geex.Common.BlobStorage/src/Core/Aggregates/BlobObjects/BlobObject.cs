@@ -58,14 +58,6 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
                 {
                     options.Background = true;
                 });
-                indexConfig.MapIndex(x => x.Hashed(y => y.StorageType), options =>
-                {
-                    options.Background = true;
-                });
-                indexConfig.MapIndex(x => x.Hashed(y => y.MimeType), options =>
-                {
-                    options.Background = true;
-                });
             }
         }
         public class BlobObjectGqlConfig : GqlConfig.Object<BlobObject>
