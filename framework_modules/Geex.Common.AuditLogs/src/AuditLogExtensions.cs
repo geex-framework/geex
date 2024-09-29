@@ -19,13 +19,18 @@ namespace Geex.Common.AuditLogs
     {
         public static IObjectTypeDescriptor<T> AuditFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : class
         {
-            //var methods = typeof(T).GetMethods(BindingFlags.DeclaredOnly|BindingFlags.Public);
-            var propertyList = descriptor.GetFields();
-            foreach (var item in propertyList)
+            var rootExtensionType = typeof(T);
+            if (rootExtensionType.IsAssignableTo<MutationExtension<T>>() || rootExtensionType.IsAssignableTo<QueryExtension<T>>() || rootExtensionType.IsAssignableTo<SubscriptionExtension<T>>())
             {
-                item.Audit();
+                var methods = rootExtensionType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).AsEnumerable();
+                methods = methods.Where(x => x is { IsSpecialName: false });
+                foreach (var methodInfo in methods)
+                {
+                    descriptor.Field(methodInfo).Audit();
+                }
+                return descriptor;
             }
-            return descriptor;
+            throw new InvalidOperationException("Only root type fields can be audited.");
         }
 
         public static IObjectFieldDescriptor Audit(this IObjectFieldDescriptor fieldDescriptor)

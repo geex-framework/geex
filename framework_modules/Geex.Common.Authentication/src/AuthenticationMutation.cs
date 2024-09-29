@@ -24,7 +24,7 @@ namespace Geex.Common.Authentication
         protected override void Configure(IObjectTypeDescriptor<AuthenticationMutation> descriptor)
         {
             base.Configure(descriptor);
-            descriptor.Field(x => x.Authenticate(default)).Audit();
+            descriptor.Field(x=>x.Authenticate(default)).Audit();
         }
 
         private readonly IUnitOfWork _uow;
