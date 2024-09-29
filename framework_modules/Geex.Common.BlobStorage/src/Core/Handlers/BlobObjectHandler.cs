@@ -165,7 +165,8 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                 }
 
                 // 直接返回文件的 FileStream，不再使用 MemoryStream 缓存文件内容
-                dataStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+                var bufferSize = GetBufferSize(blob.FileSize);
+                dataStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, useAsync: true);
                 return (blob, dataStream);
             }
             throw new NotImplementedException();
@@ -176,10 +177,13 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         {
             return fileLength switch
             {
-                < 2097152L => 262144,
-                < 8388608L => 1048576,
-                < 16777216L => 2097152,
-                _ => 4194304,
+                < 1048576L => 262144,        // 文件 < 1MB, 使用 256KB 缓冲区
+                < 10485760L => 524288,        // 文件 < 10MB, 使用 512KB 缓冲区
+                < 52428800L => 2097152,      // 文件 < 50MB, 使用 2MB 缓冲区
+                < 104857600L => 4194304,     // 文件 < 100MB, 使用 4MB 缓冲区
+                < 209715200L => 8388608,     // 文件 < 200MB, 使用 8MB 缓冲区
+                < 524288000L => 16777216,     // 文件 < 500MB, 使用 16MB 缓冲区
+                _ => 33554432,               // 文件 >= 500MB, 使用 32MB 缓冲区
             };
         }
 
@@ -307,7 +311,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
 
             using var md5Hasher = MD5.Create();
 
-            await using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, true);
+            await using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize, FileOptions.SequentialScan);
 
             var md5Hash = await ProcessStreamAsync(readStream, bufferSize, md5Hasher, async (chunk, length) =>
             {

@@ -243,7 +243,7 @@ namespace MongoDB.Entities
             CancellationToken cancellation = default, MD5 md5Hasher = null)
         {
             parent.ThrowIfUnsaved();
-            if (chunkSizeKB < 128 || chunkSizeKB > 4096) throw new ArgumentException("Please specify a chunk size from 128KB to 4096KB");
+            if (chunkSizeKB < 128 || chunkSizeKB > 32768) throw new ArgumentException("Please specify a chunk size from 128KB to 16MB");
             if (!stream.CanRead) throw new NotSupportedException("The supplied stream is not readable!");
             await CleanUpAsync(((IEntityBase)parent).DbContext).ConfigureAwait(false);
 
