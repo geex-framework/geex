@@ -7,8 +7,8 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="OpenIddict.AspNetCore" Version="4.3.0" />
-    <PackageReference Include="OpenIddict.MongoDb" Version="4.3.0" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
+    <PackageReference Include="OpenIddict.MongoDb" Version="5.8.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
     <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
     <ProjectReference Include="..\..\Geex.Common.AuditLogs\src\Geex.Common.AuditLogs.csproj" />
