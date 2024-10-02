@@ -18,9 +18,9 @@ namespace Microsoft.AspNetCore.Builder
             endpoints.Map(endpoints.ServiceProvider.GetService<BlobStorageModuleOptions>().FileDownloadPath, async (context) =>
             {
                 var response = context.Response;
-                if (context.Request.Query.TryGetValue("storageType", out var storageType) && context.Request.Query.TryGetValue("fileId", out var fileId))
+                if (context.Request.Query.TryGetValue("fileId", out var fileId))
                 {
-                    var (blobObject, stream) = await context.RequestServices.GetService<IUnitOfWork>().Request(new DownloadFileRequest(fileId, BlobStorageType.FromValue(storageType)));
+                    var (blobObject, stream) = await context.RequestServices.GetService<IUnitOfWork>().Request(new DownloadFileRequest(fileId));
                     response.ContentType = blobObject.MimeType;
                     response.Headers.ContentDisposition = $"Attachment;FileName*=utf-8''{blobObject.FileName.UrlEncode()}";
                     await stream.CopyToAsync(response.Body);

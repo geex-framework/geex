@@ -23,6 +23,8 @@ using HotChocolate.Types;
 using MongoDB.Bson;
 using SharpCompress.Common;
 using Microsoft.AspNetCore.Http;
+using Geex.Common.Abstraction.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Geex.Common.BlobStorage.Core.Handlers
 {
@@ -32,15 +34,18 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         IRequestHandler<DeleteBlobObjectRequest>,
         IRequestHandler<DownloadFileRequest, (IBlobObject blob, Stream dataStream)>
     {
+        const long sizeLimit = 200 * 1024 * 1024; // 100MB
         private readonly IMemoryCache _memCache;
         private readonly BlobStorageModuleOptions _options;
+        private readonly ILogger<BlobObjectHandler> _logger;
         private readonly IRedisDatabase _redis;
 
-        public BlobObjectHandler(IUnitOfWork uow, IMemoryCache memCache, IRedisDatabase redis, BlobStorageModuleOptions options)
+        public BlobObjectHandler(IUnitOfWork uow, IMemoryCache memCache, IRedisDatabase redis, BlobStorageModuleOptions options, ILogger<BlobObjectHandler> logger)
         {
             _memCache = memCache;
             _redis = redis;
             _options = options;
+            _logger = logger;
             Uow = uow;
         }
 
@@ -53,7 +58,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
 
             // 确定缓冲区大小
             var fileSize = request.File.Length ?? readStream.Length;
-            var fileName = readStream is FileStream fs ? fs.Name : request.File.Name;
+            var fileName = readStream is FileStream fs ? Path.GetFileName(fs.Name) : request.File.Name;
             var bufferSize = GetBufferSize(fileSize);
 
             // 确定文件内容类型
@@ -117,9 +122,9 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         public virtual async Task<(IBlobObject blob, Stream dataStream)> Handle(DownloadFileRequest request, CancellationToken cancellationToken)
         {
             Stream dataStream;
-            if (request.StorageType == BlobStorageType.Db)
+            var blob = await Task.FromResult(Uow.Query<BlobObject>().First(x => x.Id == request.BlobId));
+            if (blob.StorageType == BlobStorageType.Db)
             {
-                var blob = await Task.FromResult(Uow.Query<BlobObject>().First(x => x.Id == request.BlobId));
                 if (blob.Md5.IsNullOrEmpty())
                 {
                     await RemoveInvalidBlob(cancellationToken, blob);
@@ -134,25 +139,19 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                 dataStream = await dbFile.Data.DownloadAsStreamAsync(10, cancellationToken);
                 return (blob, dataStream);
             }
-            else if (request.StorageType == BlobStorageType.Cache)
+            else if (blob.StorageType == BlobStorageType.Cache)
             {
-                var blob = await _redis.GetNamedAsync<BlobObject>(request.BlobId);
-
                 // 从缓存中直接获取 Stream，避免内存复制
-                var cachedStream = _memCache.Get<Stream>(blob.Md5);
-                if (cachedStream != null)
+                var tempFilePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), blob.Id));
+                if (!File.Exists(tempFilePath))
                 {
-                    return (blob, cachedStream);
+                    throw new FileNotFoundException("Cached files only available within 5 minutes.");
                 }
-                else
-                {
-                    // 缓存中没有对应数据时的处理逻辑
-                    throw new FileNotFoundException("File not found in cache.");
-                }
+                var cachedStream = File.OpenRead(tempFilePath);
+                return (blob, cachedStream);
             }
-            else if (request.StorageType == BlobStorageType.FileSystem)
+            else if (blob.StorageType == BlobStorageType.FileSystem)
             {
-                var blob = await Task.FromResult(Uow.Query<BlobObject>().First(x => x.Id == request.BlobId));
                 if (blob.Md5.IsNullOrEmpty())
                 {
                     await RemoveInvalidBlob(cancellationToken, blob);
@@ -215,28 +214,47 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         {
             if (!md5.IsNullOrEmpty())
             {
-                var existed = await _redis.GetNamedAsync<BlobObject>(md5);
+                var existed = Uow.Query<BlobObject>().FirstOrDefault(x => x.Md5 == md5 && x.StorageType == BlobStorageType.Cache);
                 if (existed != null)
                 {
                     return existed;
                 }
             }
-            var entity = new BlobObject(fileName, null, BlobStorageType.Cache, fileContentType, fileSize);
-            if (fileSize > 512 * 1024 * 1024)
-                throw new InvalidOperationException("文件大小超过缓存限制！");
+            var entity = Uow.Attach(new BlobObject(fileName, null, BlobStorageType.Cache, fileContentType, fileSize)
+            {
+                ExpireAt = DateTimeOffset.Now.AddMinutes(5)
+            });
+            if (fileSize > sizeLimit)
+                throw new InvalidOperationException($"缓存文件大小不得超过[{sizeLimit}]！");
 
-            using var memoryStream = new MemoryStream();
+            var tempFilePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), entity.Id));
+            await using var fileStream = File.Create(tempFilePath);
             using var md5Hasher = MD5.Create();
 
             var md5Hash = await ProcessStreamAsync(readStream, bufferSize, md5Hasher, async (chunk, length) =>
             {
-                await memoryStream.WriteAsync(chunk.AsMemory(0, length), cancellationToken);
+                await fileStream.WriteAsync(chunk.AsMemory(0, length), cancellationToken);
             }, cancellationToken);
 
             entity.Md5 = md5Hash;
             // 设置缓存
-            _memCache.Set(entity.Md5, memoryStream.ToArray(), TimeSpan.FromMinutes(5));
-            await _redis.SetNamedAsync(entity, keyOverride: entity.Md5, expireIn: TimeSpan.FromMinutes(5), token: cancellationToken);
+            Timer _deleteTimer = default;
+            _deleteTimer = new Timer(state =>
+            {
+                try
+                {
+                    if (File.Exists(tempFilePath))
+                    {
+                        File.Delete(tempFilePath);
+                        _deleteTimer?.Dispose(); // 删除成功后清理定时器
+                    }
+                }
+                catch (IOException) // 如果文件正在被使用，删除会失败，捕获异常
+                {
+                    this._logger.LogWarning("File is in use, retrying in 1 minute.");
+                    _deleteTimer?.Change(TimeSpan.FromMinutes(1), Timeout.InfiniteTimeSpan); // 重试1分钟后删除
+                }
+            }, null, TimeSpan.FromMinutes(5), Timeout.InfiniteTimeSpan);
             return entity;
         }
 

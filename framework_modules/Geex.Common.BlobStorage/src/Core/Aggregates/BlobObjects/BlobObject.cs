@@ -36,12 +36,14 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
         public string? FileName { get; set; }
         public string? Md5 { get; set; }
         public string? Url =>
-            $"{DbContext.ServiceProvider.GetService<GeexCoreModuleOptions>().Host.Trim('/')}/{DbContext.ServiceProvider.GetService<BlobStorageModuleOptions>().FileDownloadPath.Trim('/')}?fileId={this.Id}&storageType={this.StorageType}";
+            $"{ServiceProvider.GetService<GeexCoreModuleOptions>().Host.Trim('/')}/{ServiceProvider.GetService<BlobStorageModuleOptions>().FileDownloadPath.Trim('/')}?fileId={this.Id}";
         public long FileSize { get; set; }
         public string? MimeType { get; set; }
         public BlobStorageType StorageType { get; set; }
-        public async Task<Stream> GetFileContent() => (await DbContext.ServiceProvider.GetService<IUnitOfWork>()
-            .Request(new DownloadFileRequest(this.Id, StorageType))).dataStream;
+        public DateTimeOffset? ExpireAt { get; set; }
+
+        public async Task<Stream> GetFileContent() => (await ServiceProvider.GetService<IUnitOfWork>()
+            .Request(new DownloadFileRequest(this.Id))).dataStream;
         public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
         {
             return ValidationResult.Success;
@@ -58,8 +60,14 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
                 {
                     options.Background = true;
                 });
+                indexConfig.MapIndex(x=> x.Ascending(y=>y.ExpireAt), options =>
+                {
+                    options.ExpireAfter = TimeSpan.FromSeconds(0);
+                });
             }
         }
+
+
         public class BlobObjectGqlConfig : GqlConfig.Object<BlobObject>
         {
 

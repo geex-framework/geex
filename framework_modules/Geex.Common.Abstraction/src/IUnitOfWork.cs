@@ -67,6 +67,7 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     public event Func<Task>? PreSaveChanges;
     public event Func<Task>? PostSaveChanges;
     T Attach<T>(T entity) where T : IEntityBase;
+    T AttachNoTracking<T>(T entity) where T : IEntityBase;
     IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase;
 
     /// <inheritdoc />

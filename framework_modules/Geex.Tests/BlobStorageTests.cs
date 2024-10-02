@@ -35,7 +35,7 @@ namespace Geex.Tests
             await uow.SaveChanges();
             // Assert
             using var service1 = service.CreateScope();
-            var file = await service1.ServiceProvider.GetService<IMediator>().Send(new DownloadFileRequest(blob.Id, BlobStorageType.Db));
+            var file = await service1.ServiceProvider.GetService<IMediator>().Send(new DownloadFileRequest(blob.Id));
             file.dataStream.Length.ShouldBe(data.Length);
             file.blob.FileSize.ShouldBe(data.Length);
         }
