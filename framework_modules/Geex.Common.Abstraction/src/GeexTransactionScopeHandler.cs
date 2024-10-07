@@ -17,7 +17,7 @@ namespace Geex.Common
       return new GeexTransactionScope(context, new TransactionScope(TransactionScopeOption.Required, new TransactionOptions()
       {
         IsolationLevel = IsolationLevel.ReadCommitted,
-        Timeout = TimeSpan.FromSeconds(30)
+        Timeout = TimeSpan.FromSeconds(600)
       }, TransactionScopeAsyncFlowOption.Enabled));
     }
   }
