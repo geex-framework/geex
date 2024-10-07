@@ -34,7 +34,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         IRequestHandler<DeleteBlobObjectRequest>,
         IRequestHandler<DownloadFileRequest, (IBlobObject blob, Stream dataStream)>
     {
-        const long sizeLimit = 200 * 1024 * 1024; // 100MB
+        const long sizeLimit = 2048L * 1024 * 1024; // 2GB
         private readonly IMemoryCache _memCache;
         private readonly BlobStorageModuleOptions _options;
         private readonly ILogger<BlobObjectHandler> _logger;
