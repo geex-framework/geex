@@ -1,6 +1,8 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
+
 using Geex.Common.Abstraction;
+
 using MongoDB.Entities;
 
 // ReSharper disable once CheckNamespace
@@ -115,13 +117,13 @@ namespace System.Linq
                 return exp;
             }
             expression = expression.Update(ProcessUncomputableExpressions(expression.Body, expression.Body.NodeType), expression.Parameters);
-            var data = source.Where<TEntityType>(expression).ToList().AsQueryable();
             if (postExpression != default)
             {
+                var data = source.Where<TEntityType>(expression).ToList().AsQueryable();
                 data = data.Where<TEntityType>(postExpression);
+                return data;
             }
-
-            return data;
+            return source.Where<TEntityType>(expression);
         }
 
         public static T? GetById<T>(this IQueryable<T> query, string id) where T : IEntityBase
