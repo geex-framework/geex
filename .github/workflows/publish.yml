@@ -104,4 +104,4 @@ jobs:
           dotnet pack ./framework_modules/Geex.MediatX/MediatX.RabbitMQ/MediatX.RabbitMQ.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
 
       - name: Publish to NuGet
-        run: dotnet nuget push ./nupkg/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json
+        run: dotnet nuget push ./nupkg/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
