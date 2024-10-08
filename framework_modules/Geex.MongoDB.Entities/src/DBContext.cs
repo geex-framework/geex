@@ -694,7 +694,7 @@ namespace MongoDB.Entities
                             readPreference: ReadPreference.Primary,
                             readConcern: ReadConcern.Local,
                             writeConcern: WriteConcern.Acknowledged,
-                            maxCommitTime: new Optional<TimeSpan?>(TimeSpan.FromSeconds(300))),
+                            maxCommitTime: new Optional<TimeSpan?>(TimeSpan.FromSeconds(600))),
         };
 
         public void InsertOne<T>(T entity,

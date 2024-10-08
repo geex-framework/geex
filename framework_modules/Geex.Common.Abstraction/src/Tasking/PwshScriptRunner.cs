@@ -14,7 +14,7 @@ namespace Geex.Common.Abstraction.Tasking
 {
     public class PwshScriptRunner
     {
-        static TimeSpan defaultTimeout = TimeSpan.FromSeconds(30);
+        static TimeSpan defaultTimeout = TimeSpan.FromSeconds(600);
 
         [Logging]
         public static async Task<string?> Execute(string workDirectory, string command, string? outputMatchRegex = default, TimeSpan? timeout = default)

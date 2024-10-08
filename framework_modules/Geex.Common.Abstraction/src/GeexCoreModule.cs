@@ -121,7 +121,7 @@ namespace Geex.Common
                 .ModifyRequestOptions(options =>
                {
                    options.IncludeExceptionDetails = moduleOptions.IncludeExceptionDetails;
-                   options.ExecutionTimeout = TimeSpan.FromSeconds(300);
+                   options.ExecutionTimeout = TimeSpan.FromSeconds(600);
                })
                 .SetPagingOptions(new PagingOptions()
                 {
