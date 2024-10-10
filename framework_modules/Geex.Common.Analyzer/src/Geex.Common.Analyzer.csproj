@@ -1,22 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>preview</LangVersion>
-    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsPackable>true</IsPackable> <!-- 确保项目是可打包的 -->
-    <IncludeBuildOutput>false</IncludeBuildOutput> <!-- 不自动包含生成的程序集 -->
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>preview</LangVersion>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IsPackable>true</IsPackable>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0"/>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.10.0"/>
+    </ItemGroup>
 
-  <!-- 将生成的程序集作为 Analyzer 包含 -->
-  <ItemGroup>
-    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs"/>
-    <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="analyzers/dotnet/cs"/>
-  </ItemGroup>
+    <!-- 在项目引用时，将输出程序集作为分析器包含 -->
+    <Target Name="AddAnalyzer" AfterTargets="Build">
+        <ItemGroup>
+            <Analyzer Include="$(TargetPath)" Condition="'$(BuildingProject)' != 'true'"/>
+        </ItemGroup>
+    </Target>
+
+    <!-- 将生成的程序集作为分析器包含到 NuGet 包中 -->
+    <ItemGroup>
+        <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs"/>
+        <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="analyzers/dotnet/cs"/>
+    </ItemGroup>
 
 </Project>
