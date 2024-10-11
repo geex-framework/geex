@@ -300,12 +300,18 @@ namespace MongoDB.Entities
         /// <typeparam name="T">The type of entity</typeparam>
         public virtual IQueryable<T> Query<T>(AggregateOptions options = null) where T : IEntityBase
         {
+            var entityType = typeof(T).GetRootBsonClassMap().ClassType;
             if (typeof(T).IsInterface)
             {
-                return (IQueryable<T>)this.Query(typeof(T).GetRootBsonClassMap().ClassType);
+                return (IQueryable<T>)this.Query(entityType);
             }
 
-            return this.Query(typeof(T).GetRootBsonClassMap().ClassType).OfType<T>();
+            var query = this.Query(entityType);
+            if (entityType != typeof(T))
+            {
+                query = query.OfType<T>();
+            }
+            return (IQueryable<T>)query;
         }
 
         /// <summary>

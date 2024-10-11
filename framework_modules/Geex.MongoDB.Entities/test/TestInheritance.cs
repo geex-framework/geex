@@ -219,8 +219,7 @@ namespace MongoDB.Entities.Tests
         public async Task deleted_entity_should_be_filtered()
         {
             var dbContext = new DbContext();
-            await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
-            await dbContext.SaveChanges();
+            await dbContext.DeleteAsync<InheritanceEntity>();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new InheritanceEntityChild()
@@ -228,7 +227,6 @@ namespace MongoDB.Entities.Tests
                 Name = "test"
             };
             dbContext.Attach(testEntity);
-            await testEntity.SaveAsync();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();

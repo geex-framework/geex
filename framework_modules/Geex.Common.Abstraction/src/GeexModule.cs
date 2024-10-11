@@ -188,6 +188,7 @@ namespace Geex.Common.Abstractions
                     {
                         using var scope = context.ServiceProvider.CreateScope();
                         var dbContext = scope.ServiceProvider.GetRequiredService<IUnitOfWork>().As<GeexDbContext>();
+                        using var _ = dbContext.DisableAllDataFilters();
                         await dbContext.MigrateAsync(migration);
                     }
                 }

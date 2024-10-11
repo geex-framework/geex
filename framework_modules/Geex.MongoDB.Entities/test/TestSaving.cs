@@ -220,7 +220,7 @@ namespace MongoDB.Entities.Tests
             Assert.AreEqual("updated author name", res.Name);
             Assert.AreEqual(123, res.Age);
             Assert.AreEqual(default, res.Age2);
-            Assert.AreNotEqual(DateTime.MinValue, res.Birthday);
+            Assert.AreNotEqual(DateTime.MinValue, res.Birthday.DateTime);
             Assert.AreEqual("initial fullname", res.FullName);
             //Assert.AreEqual(author.BestSeller.Id, res.BestSeller.Id);
         }

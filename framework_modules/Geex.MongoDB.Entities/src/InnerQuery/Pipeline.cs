@@ -33,6 +33,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using MongoDB.Entities.Utilities;
+using ExpressionType = System.Linq.Expressions.ExpressionType;
 
 //using Newtonsoft.Json;
 

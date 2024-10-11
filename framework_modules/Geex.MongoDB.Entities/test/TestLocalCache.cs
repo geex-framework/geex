@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Entities.Tests.Models;
@@ -73,7 +74,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task cache_not_modified_should_not_be_saved()
         {
-            await DB.DeleteAsync<TestEntity>(x=>true);
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
             var testEntity = new TestEntity()
             {
@@ -95,7 +96,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task multiple_query_should_share_instance_after_edit_except_find()
         {
-           var dbContext = new DbContext();
+            var dbContext = new DbContext();
             await dbContext.Query<TestEntity>().ToList().DeleteAsync();
             await dbContext.SaveChanges();
             dbContext.Dispose();
@@ -136,7 +137,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
-             result.Name.ShouldBe("test");
+            result.Name.ShouldBe("test");
             result.Name = "test1";
             result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.Name.ShouldBe("test1");
@@ -162,6 +163,9 @@ namespace MongoDB.Entities.Tests
         public async Task delete_should_remove_cache()
         {
             var dbContext = new DbContext();
+            //await dbContext.DeleteAsync<TestEntity>();
+            //dbContext.Dispose();
+            //dbContext = new DbContext();
             dbContext.Local[typeof(TestEntity)].Clear();
             var testEntity = new TestEntity()
             {
@@ -170,12 +174,14 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
             await dbContext.SaveChanges();
+            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var result = dbContext.Query<TestEntity>().FirstOrDefault();
-            dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
-            await result.DeleteAsync();
             dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
+            dbContext.Local[typeof(TestEntity)].Count.ShouldBe(1);
+            await result.DeleteAsync();
+            dbContext.Local[typeof(TestEntity)].Count.ShouldBe(0);
             dbContext.Dispose();
         }
 
@@ -211,8 +217,7 @@ namespace MongoDB.Entities.Tests
         public async Task deleted_entity_should_be_filtered()
         {
             var dbContext = new DbContext();
-            await dbContext.Query<TestEntity>().ToList().DeleteAsync();
-            await dbContext.SaveChanges();
+            await dbContext.DeleteAsync<TestEntity>();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new TestEntity()

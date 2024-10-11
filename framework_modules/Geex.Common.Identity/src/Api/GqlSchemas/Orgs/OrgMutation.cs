@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
@@ -28,6 +29,11 @@ namespace Geex.Common.Identity.Api.GqlSchemas.Orgs
         }
 
         public async Task<IOrg> CreateOrg(CreateOrgRequest request) => await _uow.Request(request);
+        public async Task<bool> DeleteOrg(string id)
+        {
+            var delete = await _uow.Query<Org>().FirstOrDefault(x => x.Id == id)?.DeleteAsync();
+            return delete > 0;
+        }
 
         public async Task<bool> FixUserOrg() => await _uow.Request(new FixUserOrgRequest());
     }

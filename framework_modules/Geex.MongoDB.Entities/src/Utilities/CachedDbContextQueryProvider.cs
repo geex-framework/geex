@@ -7,7 +7,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 
 using FastExpressionCompiler;
+
 using Geex.MongoDB.Entities.Utilities;
+
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Interceptors;
 
@@ -93,6 +95,7 @@ namespace MongoDB.Entities.Utilities
 
         public TResult Execute<TResult>(Expression expression)
         {
+            expression = new StandardizeQueryExpressionVisitor().Visit(expression);
             //expression = ExpressionOptimizer.Visit(expression);
             //var sw = Stopwatch.StartNew();
             var sourceType = typeof(T);
@@ -129,20 +132,28 @@ namespace MongoDB.Entities.Utilities
                             deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
                         }
 
-                        var ts = this.CreateQuery<T>(visitor.PreSelectExpression);
-                        var dbEntities = ts
+                        IQueryable<T> entities;
+                        if (!localEntities.Any() || !deletedEntities.Any())
+                        {
+                            var dbQuery = this.CreateQuery<T>(visitor.PreExecuteExpression);
+                            var dbEntities = dbQuery
                             //.Where(x => !localIds.Contains(x.Id))
                             .ToList();
 
-                        if (dbEntities.Any())
-                        {
-                            dbEntities = this.DbContext.Attach(dbEntities);
-                        }
+                            if (dbEntities.Any())
+                            {
+                                dbEntities = this.DbContext.Attach(dbEntities);
+                            }
 
-                        var entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
-                        var resultQueryExpression =
-                            visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
-                        entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
+                            entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
+                            var resultQueryExpression =
+                                visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
+                            entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
+                        }
+                        else
+                        {
+                            entities = this.CreateQuery<T>(visitor.PreSelectExpression).ToList().AsQueryable();
+                        }
 
                         BatchLoadLazyQueries(entities, this.BatchLoadConfig);
 
@@ -187,7 +198,7 @@ namespace MongoDB.Entities.Utilities
             {
                 //if (sw.ElapsedMilliseconds > 200)
                 //{
-                    //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} takes long, query: {expression}");
+                //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} takes long, query: {expression}");
                 //}
             }
         }

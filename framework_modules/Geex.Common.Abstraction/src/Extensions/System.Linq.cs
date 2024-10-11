@@ -37,11 +37,11 @@ namespace System.Linq
         public static IQueryable<TEntityType> WhereWithPostFilter<TEntityType>(this IQueryable<TEntityType> source, Expression<Func<TEntityType, bool>> expression)
         {
             var postExpression = default(Expression<Func<TEntityType, bool>>);
-            Expression ProcessUncomputableExpressions(Expression exp, ExpressionType mergeType)
+            Expression ProcessUncomputableExpressions(Expression exp, Expressions.ExpressionType mergeType)
             {
                 switch (exp.NodeType)
                 {
-                    case ExpressionType.AndAlso:
+                    case Expressions.ExpressionType.AndAlso:
                         {
                             var binary = exp as BinaryExpression;
                             var left = binary.Left;
@@ -52,7 +52,7 @@ namespace System.Linq
                             exp = binary.Update(left, binary.Conversion, right);
                             break;
                         }
-                    case ExpressionType.OrElse:
+                    case Expressions.ExpressionType.OrElse:
                         {
                             var binary = exp as BinaryExpression;
                             var left = binary.Left;
@@ -63,7 +63,7 @@ namespace System.Linq
                             exp = binary.Update(left, binary.Conversion, right);
                             break;
                         }
-                    case ExpressionType.Call:
+                    case Expressions.ExpressionType.Call:
                         {
                             var methodCallExp = exp as MethodCallExpression;
                             // bug:这里只处理了实例方法调用, 可能需要处理扩展方法
@@ -79,7 +79,7 @@ namespace System.Linq
 
                             switch (mergeType)
                             {
-                                case ExpressionType.OrElse:
+                                case Expressions.ExpressionType.OrElse:
                                     postExpression = Expression.Lambda<Func<TEntityType, bool>>(postExpression == default ? exp : Expression.OrElse(postExpression.Body, exp), expression.Parameters);
                                     exp = Expression.Constant(true);
                                     return exp;
@@ -103,7 +103,7 @@ namespace System.Linq
                             // 如果是postfilter属性
                             switch (mergeType)
                             {
-                                case ExpressionType.OrElse:
+                                case Expressions.ExpressionType.OrElse:
                                     postExpression = Expression.Lambda<Func<TEntityType, bool>>(postExpression == default ? exp : Expression.OrElse(postExpression.Body, exp), expression.Parameters);
                                     exp = Expression.Constant(true);
                                     return exp;

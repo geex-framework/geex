@@ -2,10 +2,11 @@
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Enumerations;
+using Geex.Common.Abstraction.ClientNotification;
 using Geex.Common.Notifications;
 using Geex.Common.Requests;
 using Geex.Common.Abstractions;
@@ -13,9 +14,7 @@ using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using Geex.Common.Identity.Core.Aggregates.Users;
 using Geex.Common.Requests.Identity;
-using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
 using Geex.Common.Messaging.Api.GqlSchemas.Messages;
-using Geex.Common.Messaging.Core.Aggregates.FrontendCalls;
 
 using HotChocolate.Subscriptions;
 
@@ -35,12 +34,12 @@ namespace Geex.Common.Identity.Core.Handlers
         INotificationHandler<EntityDeletedNotification<IOrg>>
     {
         private readonly ITopicEventSender _topicEventSender;
-        public IUnitOfWork DbContext { get; }
+        public IUnitOfWork Uow { get; }
 
-        public OrgHandler(IUnitOfWork dbContext, ITopicEventSender topicEventSender)
+        public OrgHandler(IUnitOfWork uow, ITopicEventSender topicEventSender)
         {
             _topicEventSender = topicEventSender;
-            DbContext = dbContext;
+            Uow = uow;
         }
 
         /// <summary>Handles a request</summary>
@@ -49,7 +48,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public virtual async Task<IQueryable<IOrg>> Handle(QueryRequest<IOrg> request, CancellationToken cancellationToken)
         {
-            return DbContext.Query<IOrg>().WhereIf(request.Filter != default, request.Filter);
+            return Uow.Query<IOrg>().WhereIf(request.Filter != default, request.Filter);
         }
 
         /// <summary>Handles a request</summary>
@@ -59,17 +58,17 @@ namespace Geex.Common.Identity.Core.Handlers
         public virtual async Task<IOrg> Handle(CreateOrgRequest request, CancellationToken cancellationToken)
         {
             var entity = new Org(request.Code, request.Name, request.OrgType);
-            DbContext.Attach(entity);
+            Uow.Attach(entity);
             var userId = request.CreateUserId;
             // 区域创建者自动拥有Org权限
             if (!userId.IsNullOrEmpty())
             {
-                var user = await DbContext.Query<User>().OneAsync(userId, cancellationToken: cancellationToken);
+                var user = await Uow.Query<User>().OneAsync(userId, cancellationToken: cancellationToken);
                 await user.AddOrg(entity);
             }
 
             // 拥有上级Org权限的用户自动获得新增子Org的权限
-            var upperUsers = DbContext.Query<User>().Where(x => x.OrgCodes.Contains(entity.ParentOrgCode)).ToList();
+            var upperUsers = Uow.Query<User>().Where(x => x.OrgCodes.Contains(entity.ParentOrgCode)).ToList();
             foreach (var upperUser in upperUsers)
             {
                 await upperUser.AddOrg(entity);
@@ -86,8 +85,8 @@ namespace Geex.Common.Identity.Core.Handlers
         {
             try
             {
-                using var _ = (DbContext as DbContext).DisableAllDataFilters();
-                var userList = DbContext.Query<User>().ToList();
+                using var _ = (Uow as DbContext).DisableAllDataFilters();
+                var userList = Uow.Query<User>().ToList();
                 foreach (var user in userList.Where(x => !x.OrgCodes.Any()))
                 {
                     if (user.TenantCode.IsNullOrWhiteSpace())
@@ -95,7 +94,7 @@ namespace Geex.Common.Identity.Core.Handlers
                         continue;
                     }
 
-                    var entity = DbContext.Query<IOrg>()
+                    var entity = Uow.Query<IOrg>()
                         .FirstOrDefault(x => x.TenantCode == user.TenantCode && x.Name == "集团总部");
                     if (entity is null)
                     {
@@ -103,11 +102,11 @@ namespace Geex.Common.Identity.Core.Handlers
                         {
                             TenantCode = user.TenantCode
                         };
-                        DbContext.Attach(entity);
+                        Uow.Attach(entity);
                     }
                     await user.AddOrg(entity);
                     // 拥有上级Org权限的用户自动获得新增子Org的权限
-                    var upperUsers = DbContext.Query<User>().Where(x => x.OrgCodes.Contains(entity.ParentOrgCode)).ToList();
+                    var upperUsers = Uow.Query<User>().Where(x => x.OrgCodes.Contains(entity.ParentOrgCode)).ToList();
                     foreach (var upperUser in upperUsers)
                     {
                         await upperUser.AddOrg(entity);
@@ -124,25 +123,24 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <inheritdoc />
         public virtual async Task Handle(OrgCodeChangedEvent notification, CancellationToken cancellationToken)
         {
-            await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
+            await this.NotifyCacheDataChange(DataChangeType.Org);
         }
 
         /// <inheritdoc />
         public virtual async Task Handle(EntityCreatedNotification<IOrg> notification, CancellationToken cancellationToken)
         {
-            await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
+            await this.NotifyCacheDataChange(DataChangeType.Org);
         }
 
         /// <inheritdoc />
         public virtual async Task Handle(EntityDeletedNotification<IOrg> notification, CancellationToken cancellationToken)
         {
-            await this.NotifyCacheDataChange(ChangeDetectDataType.Org);
+            await this.NotifyCacheDataChange(DataChangeType.Org);
         }
 
-        private async Task NotifyCacheDataChange(ChangeDetectDataType type)
+        private async Task NotifyCacheDataChange(DataChangeType type)
         {
-            // bug:这里的type无法正常序列化为枚举, 暂时toString
-            await this._topicEventSender.SendAsync<IFrontendCall>(nameof(MessageSubscription.OnBroadcast), new FrontendCall(FrontendCallType.DataChange, JsonSerializer.SerializeToNode(new { Type = type.ToString() })));
+            await Uow.ClientNotify(new DataChangeClientNotify(type));
         }
     }
 }

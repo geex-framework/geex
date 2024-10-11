@@ -34,7 +34,8 @@ namespace MongoDB.Entities.Utilities
         {
             this.TypedProvider = provider.As<CachedDbContextQueryProvider<T>>();
             this.InnerProvider = TypedProvider.InnerProvider;
-            this.Expression = expression;
+            var visitor = new StandardizeQueryExpressionVisitor();
+            this.Expression = visitor.Visit(expression);
             this._dbContext = TypedProvider.DbContext;
         }
 
@@ -129,23 +130,30 @@ namespace MongoDB.Entities.Utilities
                     {
                         deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
                     }
-
-                    var dbQuery = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression);
-                    if (localIds.Any())
+                    IQueryable<T> entities;
+                    if (!localEntities.Any() || !deletedEntities.Any())
                     {
-                        dbQuery = dbQuery.Where(x => !localIds.Contains(x.Id));
-                    }
+                        var dbQuery = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression);
+                        if (localIds.Any())
+                        {
+                            dbQuery = dbQuery.Where(x => !localIds.Contains(x.Id));
+                        }
 
-                    var dbEntities = dbQuery.ToList();
-                    if (dbEntities.Any())
+                        var dbEntities = dbQuery.ToList();
+                        if (dbEntities.Any())
+                        {
+                            dbEntities = this._dbContext.Attach(dbEntities);
+                        }
+
+                        entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
+                        var resultQueryExpression =
+                            visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
+                        entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
+                    }
+                    else
                     {
-                        dbEntities = this._dbContext.Attach(dbEntities);
+                        entities = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression).ToList().AsQueryable();
                     }
-
-                    var entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
-                    var resultQueryExpression =
-                        visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
-                    entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
 
                     BatchLoadLazyQueries(entities, this.TypedProvider.BatchLoadConfig);
 

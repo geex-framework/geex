@@ -5,9 +5,15 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Common.Abstraction.ClientNotification;
 using Geex.Common.Abstraction.Storage;
+using Geex.Common.ClientNotification;
+
+using HotChocolate.Subscriptions;
 
 using MediatR;
+
+using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Entities;
 
@@ -69,6 +75,19 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     T Attach<T>(T entity) where T : IEntityBase;
     T AttachNoTracking<T>(T entity) where T : IEntityBase;
     IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase;
+
+    async Task ClientNotify<T>(T clientNotify, params string[] userIds) where T : ClientNotify
+    {
+        var topicEventSender = this.ServiceProvider.GetService<ITopicEventSender>();
+        if (!userIds.IsNullOrEmpty())
+        {
+            await Task.WhenAll(userIds.Select(userId => topicEventSender.SendAsync($"{nameof(ClientNotifySubscription.OnPrivateNotify)}:{userId}", clientNotify).AsTask()));
+        }
+        else
+        {
+            await topicEventSender.SendAsync(nameof(ClientNotifySubscription.OnPublicNotify), clientNotify);
+        }
+    }
 
     /// <inheritdoc />
     Task<List<string>> SaveChanges(CancellationToken cancellation = default);

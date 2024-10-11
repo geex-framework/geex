@@ -26,6 +26,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using FastExpressionCompiler;
+using ExpressionType = System.Linq.Expressions.ExpressionType;
 
 namespace MongoDB.Entities.InnerQuery
 {

@@ -286,9 +286,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             // 使用 MD5 哈希算法
             using var md5Hasher = MD5.Create();
             // 上传数据并计算 MD5
-            await dbFile.Data.UploadAsync(readStream, bufferSize / 1024, cancellationToken, md5Hasher);
-            // 完成 MD5 计算
-            md5Hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            await dbFile.Data.UploadAsync(readStream, cancellationToken, md5Hasher);
             var md5Hash = BitConverter.ToString(md5Hasher.Hash).Replace("-", "").ToLowerInvariant();
             entity.Md5 = md5Hash;
             dbFile.Md5 = md5Hash;

@@ -25,7 +25,7 @@ namespace MongoDB.Entities.Tests
             //https://placekitten.com/g/4000/4000 - 1097221
             //https://djnitehawk.com/test/test.bmp - 69455612
             using var stream = await new System.Net.Http.HttpClient().GetStreamAsync("https://djnitehawk.com/test/test.bmp").ConfigureAwait(false);
-            await img.Data.UploadWithTimeoutAsync(stream, 30, 128).ConfigureAwait(false);
+            await img.Data.UploadWithTimeoutAsync(stream, 30).ConfigureAwait(false);
 
             var count = await DB.DefaultDb.GetCollection<FileChunk>(DB.CollectionName<FileChunk>()).AsQueryable()
                           .Where(c => c.FileId == img.Id)
@@ -60,7 +60,7 @@ namespace MongoDB.Entities.Tests
             await img.SaveAsync().ConfigureAwait(false);
 
             using var stream = File.OpenRead("Models/test.jpg");
-            await img.Data.UploadAsync(stream, 4096).ConfigureAwait(false);
+            await img.Data.UploadAsync(stream).ConfigureAwait(false);
 
             var count = await DB.DefaultDb.GetCollection<FileChunk>(DB.CollectionName<FileChunk>()).AsQueryable()
                           .Where(c => c.FileId == img.Id)

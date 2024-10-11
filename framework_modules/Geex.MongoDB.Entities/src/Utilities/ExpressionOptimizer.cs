@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using ExpressionType = System.Linq.Expressions.ExpressionType;
 
 // This is just a light-weight expression optimizer.
 // It won't do any heavy stuff...

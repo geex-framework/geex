@@ -3,14 +3,45 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+
 using MongoDB.Bson.Serialization;
+
 using ExpressionVisitor = System.Linq.Expressions.ExpressionVisitor;
 
 namespace MongoDB.Entities.Utilities
 {
+    static class Q
+    {
+        internal const string Where = nameof(Queryable.Where);
 
+        internal const string Select = nameof(Queryable.Select);
+        internal const string SelectMany = nameof(Queryable.SelectMany);
+
+        internal const string Count = nameof(Queryable.Count);
+        internal const string LongCount = nameof(Queryable.LongCount);
+        internal const string Any = nameof(Queryable.Any);
+
+        internal const string First = nameof(Queryable.First);
+        internal const string FirstOrDefault = nameof(Queryable.FirstOrDefault);
+        internal const string Single = nameof(Queryable.Single);
+        internal const string SingleOrDefault = nameof(Queryable.SingleOrDefault);
+
+        internal const string Sum = nameof(Queryable.Sum);
+        internal const string Min = nameof(Queryable.Min);
+        internal const string MinBy = nameof(Queryable.MinBy);
+        internal const string Average = nameof(Queryable.Average);
+        internal const string Max = nameof(Queryable.Max);
+        internal const string MaxBy = nameof(Queryable.MaxBy);
+
+        internal const string Skip = nameof(Queryable.Skip);
+        internal const string Take = nameof(Queryable.Take);
+
+        internal const string Distinct = nameof(Queryable.Distinct);
+        internal const string DistinctBy = nameof(Queryable.DistinctBy);
+    }
     internal class QueryPartsExpressionVisitor<TEntity, TResult> : ExpressionVisitor
     {
+
         #region static query methods
 
         private static MethodInfo _queryableWhereMethod;
@@ -84,7 +115,7 @@ namespace MongoDB.Entities.Utilities
             }
         }
         private static MethodInfo _queryableSingleOrDefaultMethod;
-        private int selectIndex;
+        private int selectIndex = -1;
 
         private static MethodInfo QueryableSingleOrDefaultMethod
         {
@@ -110,6 +141,7 @@ namespace MongoDB.Entities.Utilities
 
         public Expression PreSelectExpression { get; set; }
         public Expression PostSelectExpression { get; set; }
+        public Expression PreExecuteExpression { get; set; }
         public MethodCallExpression ExecuteExpression { get; set; }
         //public Expression ExecuteFilterExpression { get; set; }
         /// <inheritdoc />
@@ -180,33 +212,37 @@ namespace MongoDB.Entities.Utilities
                 stages = new List<Expression>() { node };
             }
 
-            this.selectIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is nameof(Queryable.Select) or nameof(Queryable.SelectMany) or nameof(Queryable.Skip) or nameof(Queryable.Take));
-
-            this.ValidateStages(stages);
             var lastStage = stages.LastOrDefault();
-            if (lastStage is MethodCallExpression mce1 && mce1.Method.Name is nameof(Queryable.Count) or nameof(Queryable.LongCount) or nameof(Queryable.Any) or nameof(Queryable.Sum) or nameof(Queryable.First) or nameof(Queryable.FirstOrDefault)
-                            or nameof(Queryable.Single) or nameof(Queryable.SingleOrDefault))
+            if (lastStage is MethodCallExpression mce2 && mce2.Method.Name is Q.Count or Q.LongCount or Q.Any or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault)
             {
-                if (mce1.Method.Name is nameof(Queryable.First) or nameof(Queryable.FirstOrDefault)
-                            or nameof(Queryable.Single) or nameof(Queryable.SingleOrDefault))
+                // 将执行过滤参数转为Where过滤参数 .First(x=>true) => .Where(x=>true).First()
+                var lastStageFilter = mce2.Arguments.ElementAtOrDefault(1);
+                if (lastStageFilter is UnaryExpression unary && unary?.Operand is LambdaExpression lambda &&
+                    lambda.Parameters.Any(x => x.Type.IsAssignableFrom(ItemType)))
                 {
-                    // 将执行过滤参数转为Where过滤参数 .First(x=>true) => .Where(x=>true).First()
-                    var lastStageFilter = mce1.Arguments.ElementAtOrDefault(1);
-                    if (lastStageFilter is UnaryExpression unary && unary?.Operand is LambdaExpression lambda && lambda.Parameters.Any(x => x.Type.IsAssignableFrom(ItemType)))
+                    lastStageFilter = Expression.Call(QueryableWhereMethod.MakeGenericMethod(ItemType),
+                        mce2.Arguments[0], lambda.CastParamType(this.ItemType));
+                    mce2 = mce2.Method.Name switch
                     {
-                        lastStageFilter = Expression.Call(QueryableWhereMethod.MakeGenericMethod(ItemType), mce1.Arguments[0], lambda.CastParamType(this.ItemType));
-                        mce1 = mce1.Method.Name switch
-                        {
-                            nameof(Queryable.First) => Expression.Call(QueryableFirstMethod.MakeGenericMethod(ItemType), mce1.Arguments[0]),
-                            nameof(Queryable.FirstOrDefault) => Expression.Call(QueryableFirstOrDefaultMethod.MakeGenericMethod(ItemType), mce1.Arguments[0]),
-                            nameof(Queryable.Single) => Expression.Call(QueryableSingleMethod.MakeGenericMethod(ItemType), mce1.Arguments[0]),
-                            nameof(Queryable.SingleOrDefault) => Expression.Call(QueryableSingleOrDefaultMethod.MakeGenericMethod(ItemType), mce1.Arguments[0]),
-                            _ => throw new ArgumentOutOfRangeException()
-                        };
-                        stages = stages.SkipLast(1).Concat(new[] { lastStageFilter, mce1 }).ToList();
-                    }
+                        Q.First => Expression.Call(QueryableFirstMethod.MakeGenericMethod(ItemType),
+                            mce2.Arguments[0]),
+                        Q.FirstOrDefault => Expression.Call(
+                            QueryableFirstOrDefaultMethod.MakeGenericMethod(ItemType), mce2.Arguments[0]),
+                        Q.Single => Expression.Call(QueryableSingleMethod.MakeGenericMethod(ItemType),
+                            mce2.Arguments[0]),
+                        Q.SingleOrDefault => Expression.Call(
+                            QueryableSingleOrDefaultMethod.MakeGenericMethod(ItemType), mce2.Arguments[0]),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                    stages = stages.SkipLast(1).Concat(new[] { lastStageFilter, mce2 }).ToList();
                 }
 
+                this.selectIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is Q.Select or Q.SelectMany or Q.Skip or Q.Take);
+            }
+
+            this.ValidateStages(stages);
+            if (lastStage is MethodCallExpression mce1 && mce1.Method.Name is Q.Count or Q.LongCount or Q.Any or Q.Sum or Q.Min or Q.MinBy or Q.Average or Q.Max or Q.MaxBy or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault)
+            {
                 if (selectIndex == -1)
                 {
                     PreSelectExpression = stages.ElementAtOrDefault(stages.Count - 2);
@@ -219,6 +255,7 @@ namespace MongoDB.Entities.Utilities
                         PostSelectExpression = stages.ElementAtOrDefault(stages.Count - 2);
                     }
                 }
+                PreExecuteExpression = stages.ElementAtOrDefault(stages.Count - 2);
                 ExecuteExpression = mce1;
             }
             else
@@ -240,6 +277,7 @@ namespace MongoDB.Entities.Utilities
 
             return node;
         }
+
 
         private void ValidateStages(List<Expression> stages)
         {

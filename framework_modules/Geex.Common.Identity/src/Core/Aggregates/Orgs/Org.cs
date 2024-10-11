@@ -103,8 +103,14 @@ public class Org : Entity<Org>, ITenantFilteredEntity, IOrg
         var subOrgs = DirectSubOrgs.ToList();
         foreach (var subOrg in subOrgs) subOrg.SetCode(subOrg.Code.Replace(Code, newOrgCode));
 
-        AddDomainEvent(new OrgCodeChangedEvent(originCode, newOrgCode));
     }
+
+    /// <inheritdoc />
+    public override Task<long> DeleteAsync()
+    {
+        return base.DeleteAsync();
+    }
+
     public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
     {
         return ValidationResult.Success;

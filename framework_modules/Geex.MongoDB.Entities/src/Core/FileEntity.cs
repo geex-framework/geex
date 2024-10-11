@@ -76,6 +76,7 @@ namespace MongoDB.Entities
         private int chunkSize, readCount;
         private byte[] buffer;
         private List<byte> dataChunk;
+        private MD5? md5Hasher;
 
         public DataStreamer(FileEntity parent)
         {
@@ -226,9 +227,9 @@ namespace MongoDB.Entities
         /// <param name="timeOutSeconds">The maximum number of seconds allowed for the operation to complete</param>
         /// <param name="chunkSizeKB">The 'average' size of one chunk in KiloBytes</param>
 
-        public Task UploadWithTimeoutAsync(Stream stream, int timeOutSeconds, int chunkSizeKB = 256)
+        public Task UploadWithTimeoutAsync(Stream stream, int timeOutSeconds)
         {
-            return UploadAsync(stream, chunkSizeKB, new CancellationTokenSource(timeOutSeconds * 1000).Token);
+            return UploadAsync(stream, new CancellationTokenSource(timeOutSeconds * 1000).Token);
         }
 
         /// <summary>
@@ -239,16 +240,15 @@ namespace MongoDB.Entities
         /// <param name="chunkSizeKB">The 'average' size of one chunk in KiloBytes</param>
         /// <param name="cancellation">An optional cancellation token.</param>
         /// <param name="md5Hasher"></param>
-        public async Task UploadAsync(Stream stream, int chunkSizeKB = 256,
-            CancellationToken cancellation = default, MD5 md5Hasher = null)
+        public async Task UploadAsync(Stream stream, CancellationToken cancellation = default, MD5 md5Hasher = null)
         {
+            this.md5Hasher = md5Hasher;
             parent.ThrowIfUnsaved();
-            if (chunkSizeKB < 128 || chunkSizeKB > 32768) throw new ArgumentException("Please specify a chunk size from 128KB to 16MB");
             if (!stream.CanRead) throw new NotSupportedException("The supplied stream is not readable!");
             await CleanUpAsync(((IEntityBase)parent).DbContext).ConfigureAwait(false);
 
             doc = new FileChunk { FileId = parent.Id, CreatedOn = DateTimeOffset.Now };
-            chunkSize = chunkSizeKB * 1024;
+            chunkSize = 1638400;
             dataChunk = new List<byte>(chunkSize);
             buffer = new byte[64 * 1024]; // 64kb read buffer
             readCount = 0;
@@ -259,7 +259,6 @@ namespace MongoDB.Entities
 
                 while ((readCount = await stream.ReadAsync(buffer, 0, buffer.Length, cancellation).ConfigureAwait(false)) > 0)
                 {
-                    if (md5Hasher != null) md5Hasher.TransformBlock(buffer, 0, readCount, null, 0);
                     await FlushToDBAsync(((IEntityBase)parent).DbContext, isLastChunk: false, cancellation).ConfigureAwait(false);
                 }
 
@@ -307,8 +306,18 @@ namespace MongoDB.Entities
 
             if (dataChunk.Count >= chunkSize || isLastChunk)
             {
+                var data = dataChunk.ToArray();
+                if (isLastChunk)
+                {
+                    md5Hasher?.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                }
+                else
+                {
+                    md5Hasher?.TransformBlock(data, 0, data.Length, null, 0);
+                }
+
                 doc.Id = doc.GenerateNewId().ToString();
-                doc.Data = dataChunk.ToArray();
+                doc.Data = data;
                 dataChunk.Clear();
                 parent.ChunkCount++;
                 return dbContext?.Session == null

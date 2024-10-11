@@ -30,6 +30,7 @@ using Microsoft.Extensions.Logging;
 
 using MongoDB.Bson;
 using MongoDB.Entities;
+using ExpressionType = System.Linq.Expressions.ExpressionType;
 
 // ReSharper disable once CheckNamespace
 namespace HotChocolate.Types
@@ -162,9 +163,9 @@ namespace HotChocolate.Types
             //获取是哪个类来调用的
             var caller = trace.GetFrame(1).GetMethod();
             var callerDeclaringType = caller.DeclaringType;
-            var prefixMatchModules = GeexModule.Modules.Where(x => callerDeclaringType.Namespace.Contains(x.Namespace));
+            var prefixMatchModules = GeexModule.Modules.Where(x => callerDeclaringType.Namespace.Contains(x.Namespace.RemovePostFix("Gql", "Api", "Core", "Tests"), StringComparison.InvariantCultureIgnoreCase));
             var module = prefixMatchModules.OrderByDescending(x => x.Name.Length).FirstOrDefault();
-            var moduleName = module.Namespace.Split(".").ToList().Where(x => !x.IsIn("Gql", "Api", "Core", "Tests")).Last().ToCamelCase();
+            var moduleName = module.Namespace.Split(".").ToList().Last(x => !x.IsIn("Gql", "Api", "Core", "Tests")).ToCamelCase();
             var className = callerDeclaringType.Name;
             var prefix = "";
             var logger = (@this as IHasDescriptorContext)!.Context.Services.GetService<ILogger<IObjectTypeDescriptor<T>>>();

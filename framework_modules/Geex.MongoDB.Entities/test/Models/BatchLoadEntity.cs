@@ -10,8 +10,8 @@ public class BatchLoadEntity : EntityBase<BatchLoadEntity>
 {
     public BatchLoadEntity()
     {
-        this.ConfigLazyQuery(x => x.Children, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
-        this.ConfigLazyQuery(x => x.FirstChild, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
+        this.ConfigLazyQuery(x => x.Children, x => x.ParentId == ThisId, children => parent => children.Select(y => y.ThisId).ToList().Contains(parent.ParentId));
+        this.ConfigLazyQuery(x => x.FirstChild, x => x.ParentId == ThisId, children => parent => children.Select(y => y.ThisId).ToList().Contains(parent.ParentId));
     }
 
     public BatchLoadEntity(string thisId) : this()

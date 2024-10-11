@@ -8,12 +8,10 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Enumerations;
+using Geex.Common.Abstraction.ClientNotification;
 using Geex.Common.Abstractions;
-using Geex.Common.Messaging.Api.Aggregates.FrontendCalls;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
 using Geex.Common.Messaging.Api.GqlSchemas.Messages;
-using Geex.Common.Messaging.Core.Aggregates.FrontendCalls;
 using Geex.Common.Messaging.Core.Aggregates.Messages;
 using Geex.Common.Requests.Messaging;
 using HotChocolate.Subscriptions;
@@ -69,12 +67,7 @@ namespace Geex.Common.Messaging.Core.Handlers
             var message = Uow.Query<Message>().First(x => x.Id == request.MessageId);
             await message.DistributeAsync(request.ToUserIds.ToArray());
 
-            foreach (var toUserId in request.ToUserIds)
-            {
-                await Sender.Value.SendAsync<IFrontendCall>($"{nameof(MessageSubscription.OnFrontendCall)}:{toUserId}", new FrontendCall(FrontendCallType.NewMessage, JsonSerializer.SerializeToNode(new { message.Content, message.FromUserId, message.MessageType, message.Severity })), cancellationToken);
-            }
-
-            return;
+            await Uow.ClientNotify(new NewMessageClientNotify(message), request.ToUserIds.ToArray());
         }
 
         public async Task<IMessage> Handle(CreateMessageRequest request, CancellationToken cancellationToken)

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Shouldly;
@@ -26,8 +27,8 @@ namespace MongoDB.Entities.Tests
             await dbContext.SaveChanges();
             testEntity.Value.ShouldBe(3);
             dbContext = new DbContext();
-            testEntity = await dbContext.Find<InterceptedAndFiltered>().Match(x => x.Id == testEntity.Id).ExecuteFirstAsync();
-            testEntity.Value.ShouldBe(3);
+            testEntity = dbContext.Query<InterceptedAndFiltered>().FirstOrDefault(x => x.Id == testEntity.Id);
+            testEntity.Value.ShouldBe(4);
         }
 
         [TestMethod]
@@ -47,8 +48,8 @@ namespace MongoDB.Entities.Tests
             await dbContext.SaveChanges();
             testEntity.Value.ShouldBe(2);
             dbContext = new DbContext();
-            testEntity = await dbContext.Find<InterceptedAndFiltered>().Match(x => x.Id == testEntity.Id).ExecuteFirstAsync();
-            testEntity.Value.ShouldBe(2);
+            testEntity = dbContext.Query<InterceptedAndFiltered>().FirstOrDefault(x => x.Id == testEntity.Id);
+            testEntity.Value.ShouldBe(3);
         }
     }
 }
