@@ -23,9 +23,9 @@ namespace Geex.Common.ClientNotification
         /// <param name="claimsPrincipal"></param>
         /// <returns></returns>
         [SubscribeAndResolve]
-        public ValueTask<ISourceStream<IClientNotify>> OnPrivateNotify([Service] ITopicEventReceiver receiver, [Service] ICurrentUser claimsPrincipal)
+        public ValueTask<ISourceStream<ClientNotify>> OnPrivateNotify([Service] ITopicEventReceiver receiver, [Service] ICurrentUser claimsPrincipal)
         {
-            return receiver.SubscribeAsync<IClientNotify>($"{nameof(OnPrivateNotify)}:{claimsPrincipal.UserId}");
+            return receiver.SubscribeAsync<ClientNotify>($"{nameof(OnPrivateNotify)}:{claimsPrincipal.UserId}");
         }
 
         /// <summary>
@@ -34,9 +34,9 @@ namespace Geex.Common.ClientNotification
         /// <param name="receiver"></param>
         /// <returns></returns>
         [SubscribeAndResolve]
-        public ValueTask<ISourceStream<IClientNotify>> OnPublicNotify([Service] ITopicEventReceiver receiver)
+        public ValueTask<ISourceStream<ClientNotify>> OnPublicNotify([Service] ITopicEventReceiver receiver)
         {
-            return receiver.SubscribeAsync<IClientNotify>(nameof(OnPublicNotify));
+            return receiver.SubscribeAsync<ClientNotify>(nameof(OnPublicNotify));
         }
 
         /// <summary>

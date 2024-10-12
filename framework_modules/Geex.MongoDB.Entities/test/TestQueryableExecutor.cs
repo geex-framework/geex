@@ -227,7 +227,6 @@ namespace MongoDB.Entities.Tests
         {
 
             var dbContext = new DbContext();
-            dbContext = new DbContext();
             dbContext.Attach(new List<TestEntity>()
                 {
                     new TestEntity()
@@ -238,6 +237,10 @@ namespace MongoDB.Entities.Tests
                         Data = new []{1,2}
                     }
                 });
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Name).First().ShouldBe("a1");
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).ToList().Select(x => x.Name).First().ShouldBe("a1");
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Name).First().ShouldBe("a1");
@@ -248,22 +251,113 @@ namespace MongoDB.Entities.Tests
             dbContext.Query<TestEntity>().Select(x => x.Name).Count().ShouldBe(5);
             dbContext.Query<TestEntity>().Select(x => x.Name).ToList().Count().ShouldBe(5);
 
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name }).First().Name.ShouldBe("a1");
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name }).ToList().Select(x => x.Name).First().ShouldBe("a1");
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name }).First().SelectName.ShouldBe("a1");
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name }).ToList().Select(x => x.SelectName).First().ShouldBe("a1");
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Name, x.Value, x.Enum)).First().SelectEnum.ShouldBe(TestEntityEnum.Value1);
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectEnum).First().ShouldBe(TestEntityEnum.Value1);
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).ToList().Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
 
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name }).First().Name.ShouldBe("local1");
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name }).ToList().Select(x => x.Name).First().ShouldBe("local1");
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name }).First().SelectName.ShouldBe("local1");
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name }).First().SelectName.ShouldBe("local1");
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Name, x.Value, x.Enum)).First().SelectEnum.ShouldBe(TestEntityEnum.Value1);
-            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectEnum).First().ShouldBe(TestEntityEnum.Value1);
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).ToList().Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Select(x => x.Name).Count().ShouldBe(5);
+            dbContext.Query<TestEntity>().Select(x => x.Name).ToList().Count().ShouldBe(5);
 
-            dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name }).Count().ShouldBe(5);
-            dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name }).ToList().Count().ShouldBe(5);
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name, x.Id }).First().Name.ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name, x.Id }).First().Id.ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name, x.Id }).ToList().Select(x => x.Name).First().ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name, x.Id }).ToList().Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, x.Id }).First().SelectName.ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, SelectId = x.Id }).First().SelectId.ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, x.Id }).ToList().Select(x => x.SelectName).First().ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, SelectId = x.Id }).ToList().Select(x => x.SelectId).First().ShouldNotBeNullOrEmpty();
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).First().SelectEnum.ShouldBe(TestEntityEnum.Value1);
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).First().SelectId.ShouldNotBeNullOrEmpty();
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectEnum).First().ShouldBe(TestEntityEnum.Value1);
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectId).First().ShouldNotBeNullOrEmpty();
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name, x.Id }).First().Name.ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name, x.Id }).First().Id.ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name, x.Id }).ToList().Select(x => x.Name).First().ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name, x.Id }).ToList().Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, x.Id }).First().SelectName.ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, SelectId = x.Id }).First().SelectId.ShouldNotBeNullOrEmpty();
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).First().SelectEnum.ShouldBe(TestEntityEnum.Value1);
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).First().SelectId.ShouldNotBeNullOrEmpty();
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectEnum).First().ShouldBe(TestEntityEnum.Value1);
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectId).First().ShouldNotBeNullOrEmpty();
+
+            dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name, x.Id }).Count().ShouldBe(5);
+            dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name, x.Id }).ToList().Count().ShouldBe(5);
+            //dbContext.Queryable<TestEntity>().SelectMany(x=>x.Data).Sum().ShouldBe(3);
+            dbContext.Query<TestEntity>().Select(x => x.Data).ToList().SelectMany(x => (x ?? Array.Empty<int>()).ToList()).Sum().ShouldBe(3);
+        }
+
+        [TestMethod]
+        public async Task select_should_work_with_no_tracking()
+        {
+
+            var dbContext = new DbContext();
+            dbContext.Attach(new List<TestEntity>()
+                {
+                    new TestEntity()
+                    {
+                        Name = "local1",
+                        Value = 5,
+                        Enum = TestEntityEnum.Value1,
+                        Data = new []{1,2}
+                    }
+                });
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext(entityTrackingEnabled:false);
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Name).First().ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).ToList().Select(x => x.Name).First().ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Name).First().ShouldBe("a1");
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => x.Name).First().ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).ToList().Select(x => x.Name).First().ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => x.Name).First().ShouldBe("local1");
+            dbContext.Query<TestEntity>().Select(x => x.Name).Count().ShouldBe(5);
+            dbContext.Query<TestEntity>().Select(x => x.Name).ToList().Count().ShouldBe(5);
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).ToList().Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).ToList().Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Select(x => x.Name).Count().ShouldBe(5);
+            dbContext.Query<TestEntity>().Select(x => x.Name).ToList().Count().ShouldBe(5);
+
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name, x.Id }).First().Name.ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name, x.Id }).First().Id.ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name, x.Id }).ToList().Select(x => x.Name).First().ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { x.Value, x.Name, x.Id }).ToList().Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, x.Id }).First().SelectName.ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, SelectId = x.Id }).First().SelectId.ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, x.Id }).ToList().Select(x => x.SelectName).First().ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, SelectId = x.Id }).ToList().Select(x => x.SelectId).First().ShouldNotBeNullOrEmpty();
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).First().SelectEnum.ShouldBe(TestEntityEnum.Value1);
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).First().SelectId.ShouldNotBeNullOrEmpty();
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectEnum).First().ShouldBe(TestEntityEnum.Value1);
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectId).First().ShouldNotBeNullOrEmpty();
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name, x.Id }).First().Name.ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name, x.Id }).First().Id.ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name, x.Id }).ToList().Select(x => x.Name).First().ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { x.Value, x.Name, x.Id }).ToList().Select(x => x.Id).First().ShouldNotBeNullOrEmpty();
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, x.Id }).First().SelectName.ShouldBe("local1");
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new { SelectValue = x.Value, SelectName = x.Name, SelectId = x.Id }).First().SelectId.ShouldNotBeNullOrEmpty();
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).First().SelectEnum.ShouldBe(TestEntityEnum.Value1);
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).First().SelectId.ShouldNotBeNullOrEmpty();
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectEnum).First().ShouldBe(TestEntityEnum.Value1);
+            //dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)).ToList().Select(x => x.SelectId).First().ShouldNotBeNullOrEmpty();
+
+            dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name, x.Id }).Count().ShouldBe(5);
+            dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name, x.Id }).ToList().Count().ShouldBe(5);
             //dbContext.Queryable<TestEntity>().SelectMany(x=>x.Data).Sum().ShouldBe(3);
             dbContext.Query<TestEntity>().Select(x => x.Data).ToList().SelectMany(x => (x ?? Array.Empty<int>()).ToList()).Sum().ShouldBe(3);
         }

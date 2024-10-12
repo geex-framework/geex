@@ -1615,7 +1615,7 @@ namespace MongoDB.Entities.InnerQuery
                         .ToList();
 
                     // Remove the unnecessary _id field
-                    if (fieldNames.All(c => c.Name != "_id"))
+                    if (fieldNames.All(c => c.Name != "_id" && c.Name != "Id"))
                         fieldNames.Add(new BsonElement("_id", new BsonInt32(0)));
 
                     // Perform the projection on multiple fields
@@ -1626,8 +1626,8 @@ namespace MongoDB.Entities.InnerQuery
                 }
                 else
                 {
+                    throw new NotSupportedException("Named class construct is not supported, please use anonymous type instead.");
                     var newExp = (NewExpression)lambdaExp.Body;
-
                     // Get the mongo field names for each property in the new {...}
                     var fieldNames = newExp.Arguments.Select(x =>
                         {
@@ -1666,7 +1666,7 @@ namespace MongoDB.Entities.InnerQuery
                         .ToList();
 
                     // Remove the unnecessary _id field
-                    if (fieldNames.All(c => c.Name != "_id"))
+                    if (fieldNames.All(c => c.Name != "_id" && c.Name != "Id"))
                         fieldNames.Add(new BsonElement("_id", new BsonInt32(0)));
 
                     // Perform the projection on multiple fields

@@ -25,7 +25,7 @@ namespace Geex.Common.Abstraction.ClientNotification
             /// <inheritdoc />
             protected override void Configure(IObjectTypeDescriptor<DataChangeClientNotify> descriptor)
             {
-                descriptor.Implements<InterfaceType<IClientNotify>>();
+                descriptor.Implements<ClientNotifyGqlConfig>();
                 base.Configure(descriptor);
             }
         }

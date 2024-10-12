@@ -8,27 +8,19 @@ using HotChocolate.Types;
 
 namespace Geex.Common.Abstraction.ClientNotification
 {
-    public abstract class ClientNotify : IClientNotify
+    public abstract class ClientNotify
     {
         protected ClientNotify()
         {
         }
-        public DateTimeOffset CreatedOn { get; protected set; } = DateTimeOffset.Now;
-
-        public class ClientNotifyGqlConfig : GqlConfig.Interface<IClientNotify>
+        public class ClientNotifyGqlConfig : GqlConfig.Interface<ClientNotify>
         {
             /// <inheritdoc />
-            protected override void Configure(IInterfaceTypeDescriptor<IClientNotify> descriptor)
+            protected override void Configure(IInterfaceTypeDescriptor<ClientNotify> descriptor)
             {
                 base.Configure(descriptor);
             }
         }
-
-
-    }
-
-    public interface IClientNotify
-    {
-        public DateTimeOffset CreatedOn { get; }
+        public DateTimeOffset CreatedOn { get; protected set; } = DateTimeOffset.Now;
     }
 }

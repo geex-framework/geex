@@ -26,7 +26,7 @@ namespace Geex.Common.Messaging.Core.Aggregates.Messages
             /// <inheritdoc />
             protected override void Configure(IObjectTypeDescriptor<NewMessageClientNotify> descriptor)
             {
-                descriptor.Implements<InterfaceType<IClientNotify>>();
+                descriptor.Implements<ClientNotifyGqlConfig>();
                 base.Configure(descriptor);
             }
         }

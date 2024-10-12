@@ -85,7 +85,7 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
         }
         else
         {
-            await topicEventSender.SendAsync(nameof(ClientNotifySubscription.OnPublicNotify), clientNotify);
+            await topicEventSender.SendAsync(nameof(ClientNotifySubscription.OnPublicNotify), clientNotify as ClientNotify);
         }
     }
 

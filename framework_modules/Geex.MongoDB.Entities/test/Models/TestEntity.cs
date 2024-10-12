@@ -1,8 +1,9 @@
 ﻿using System;
+using Geex.Common.Abstraction.Storage;
 
 namespace MongoDB.Entities.Tests.Models
 {
-    public class TestEntity : EntityBase<TestEntity>, ITestEntity
+    public class TestEntity : Entity<TestEntity>, ITestEntity
     {
         public string Name { get; set; }
         public int Value { get; set; }
@@ -20,19 +21,22 @@ namespace MongoDB.Entities.Tests.Models
 
     public record TestEntitySelectSubset
     {
-        public TestEntitySelectSubset(string SelectName, int SelectValue, TestEntityEnum SelectEnum)
+        public TestEntitySelectSubset(string SelectId,string SelectName, int SelectValue, TestEntityEnum SelectEnum)
         {
+            this.SelectId = SelectId;
             this.SelectName = SelectName;
             this.SelectValue = SelectValue;
             this.SelectEnum = SelectEnum;
         }
 
+        public string SelectId { get; }
         public string SelectName { get; init; }
         public int SelectValue { get; init; }
         public TestEntityEnum SelectEnum { get; init; }
 
-        public void Deconstruct(out string SelectName, out int SelectValue, out TestEntityEnum SelectEnum)
+        public void Deconstruct(out string SelectId,out string SelectName, out int SelectValue, out TestEntityEnum SelectEnum)
         {
+            SelectId = this.SelectId;
             SelectName = this.SelectName;
             SelectValue = this.SelectValue;
             SelectEnum = this.SelectEnum;
