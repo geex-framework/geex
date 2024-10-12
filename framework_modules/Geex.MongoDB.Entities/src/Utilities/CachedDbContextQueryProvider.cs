@@ -133,9 +133,9 @@ namespace MongoDB.Entities.Utilities
                         }
 
                         IQueryable<T> entities;
-                        if (!localEntities.Any() || !deletedEntities.Any())
+                        if (localEntities.Any() || deletedEntities.Any())
                         {
-                            var dbQuery = this.CreateQuery<T>(visitor.PreExecuteExpression);
+                            var dbQuery = this.CreateQuery<T>(visitor.PreSelectExpression);
                             var dbEntities = dbQuery
                             //.Where(x => !localIds.Contains(x.Id))
                             .ToList();
@@ -153,6 +153,7 @@ namespace MongoDB.Entities.Utilities
                         else
                         {
                             entities = this.CreateQuery<T>(visitor.PreSelectExpression).ToList().AsQueryable();
+                            this.DbContext.Attach(entities);
                         }
 
                         BatchLoadLazyQueries(entities, this.BatchLoadConfig);
@@ -160,16 +161,24 @@ namespace MongoDB.Entities.Utilities
                         TResult result;
                         if (visitor.PostSelectExpression != default)
                         {
-                            var postSelectExpression =
-                                visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.SelectSource);
-                            var results = entities.Provider.CreateQuery<TResult>(postSelectExpression);
-                            if (visitor.ExecuteExpression != default)
+                            if (!typeof(TResult).IsAssignableTo<T>())
                             {
-                                result = results.Provider.Execute<TResult>(
-                                    visitor.ExecuteExpression.ReplaceSource(results, ReplaceType.DirectSource));
-                                //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} finished, within {sw.ElapsedMilliseconds}ms.");
-                                return result;
+                                return entities.Provider.Execute<TResult>(
+                                    visitor.ExecuteExpression.ReplaceSource(entities, ReplaceType.OriginSource));
                             }
+                            else
+                            {
+                                var selectResult = entities.Provider.CreateQuery<TResult>(
+                                    visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.DirectSource));
+                                if (visitor.ExecuteExpression != default)
+                                {
+                                    result = selectResult.Provider.Execute<TResult>(
+                                        visitor.ExecuteExpression.ReplaceSource(selectResult, ReplaceType.DirectSource));
+                                    //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} finished, within {sw.ElapsedMilliseconds}ms.");
+                                    return result;
+                                }
+                            }
+
                         }
 
                         if (visitor.ExecuteExpression != default)

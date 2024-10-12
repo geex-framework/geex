@@ -236,11 +236,17 @@ namespace MongoDB.Entities.Utilities
                     };
                     stages = stages.SkipLast(1).Concat(new[] { lastStageFilter, mce2 }).ToList();
                 }
-
-                this.selectIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is Q.Select or Q.SelectMany or Q.Skip or Q.Take);
             }
 
             this.ValidateStages(stages);
+
+            var selectIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is Q.Select or Q.SelectMany);
+            var cursorIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is Q.Skip or Q.Take);
+            if (selectIndex != -1 || cursorIndex != -1)
+            {
+                this.selectIndex = Math.Min(selectIndex, cursorIndex + 1);
+            }
+
             if (lastStage is MethodCallExpression mce1 && mce1.Method.Name is Q.Count or Q.LongCount or Q.Any or Q.Sum or Q.Min or Q.MinBy or Q.Average or Q.Max or Q.MaxBy or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault)
             {
                 if (selectIndex == -1)
@@ -250,7 +256,7 @@ namespace MongoDB.Entities.Utilities
                 else
                 {
                     PreSelectExpression = stages[selectIndex - 1];
-                    if (stages.Count - 2 > selectIndex)
+                    if (stages.Count - 1 > selectIndex)
                     {
                         PostSelectExpression = stages.ElementAtOrDefault(stages.Count - 2);
                     }
@@ -267,11 +273,10 @@ namespace MongoDB.Entities.Utilities
                 else
                 {
                     PreSelectExpression = stages[selectIndex - 1];
-                    if (stages.Count - 1 > selectIndex)
+                    if (stages.Count > selectIndex)
                     {
                         PostSelectExpression = stages.ElementAtOrDefault(stages.Count - 1);
                     }
-                    ExecuteExpression = stages.ElementAtOrDefault(selectIndex)?.As<MethodCallExpression>();
                 }
             }
 

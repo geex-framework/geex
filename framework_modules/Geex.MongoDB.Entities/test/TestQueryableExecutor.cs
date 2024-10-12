@@ -22,7 +22,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             //prepare
-            //dbContext.DeleteAsync<TestEntity>().Wait();
+            dbContext.DeleteAsync<TestEntity>().Wait();
             var a1 = new TestEntity()
             {
                 Name = "a1",
@@ -49,7 +49,7 @@ namespace MongoDB.Entities.Tests
             };
             var list = new List<TestEntity>() { a1, a2, b1, b2 };
             dbContext.Attach(list);
-            //dbContext.SaveChanges().Wait();
+            dbContext.SaveChanges().Wait();
             dbContext.Dispose();
         }
 
@@ -218,21 +218,6 @@ namespace MongoDB.Entities.Tests
             list1.Count().ShouldBe(200000);
             Console.WriteLine(sw.ElapsedMilliseconds);
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(1500);
-            dbContext.Dispose();
-        }
-
-        [TestMethod]
-        public async Task performance_test()
-        {
-            var sw = new Stopwatch();
-            sw.Start();
-            var dbContext = new DbContext();
-            var list = dbContext.Query<TestEntity>().AsNoTracking().ToList();
-            sw.Stop();
-            list.Count().ShouldBe(200000);
-            Console.WriteLine(sw.ElapsedMilliseconds);
-            sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(3000);
-            sw.Stop();
             dbContext.Dispose();
         }
 

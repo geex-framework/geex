@@ -131,7 +131,7 @@ namespace MongoDB.Entities.Utilities
                         deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
                     }
                     IQueryable<T> entities;
-                    if (!localEntities.Any() || !deletedEntities.Any())
+                    if (localEntities.Any() || deletedEntities.Any())
                     {
                         var dbQuery = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression);
                         if (localIds.Any())
@@ -153,6 +153,7 @@ namespace MongoDB.Entities.Utilities
                     else
                     {
                         entities = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression).ToList().AsQueryable();
+                        this._dbContext.Attach(entities);
                     }
 
                     BatchLoadLazyQueries(entities, this.TypedProvider.BatchLoadConfig);
@@ -161,7 +162,7 @@ namespace MongoDB.Entities.Utilities
                     if (visitor.PostSelectExpression != default)
                     {
                         var postSelectExpression =
-                            visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.SelectSource);
+                            visitor.PostSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
                         //entities = entities.Provider.CreateQuery<T>(postSelectExpression);
                         var results = entities.Provider.CreateQuery<TSelect>(postSelectExpression);
                         var @return = results.GetEnumerator();
