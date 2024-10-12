@@ -127,7 +127,7 @@ namespace MongoDB.Entities.Utilities
 
                         var localIds = localEntities.Select(x => x.Id).ToList();
                         var deletedEntities = Enumerable.Empty<T>();
-                        if (localIds.Any())
+                        if (localIds.Count != 0)
                         {
                             deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
                         }
@@ -140,7 +140,7 @@ namespace MongoDB.Entities.Utilities
                             //.Where(x => !localIds.Contains(x.Id))
                             .ToList();
 
-                            if (dbEntities.Any())
+                            if (dbEntities.Count != 0)
                             {
                                 dbEntities = this.DbContext.Attach(dbEntities);
                             }
@@ -240,13 +240,12 @@ namespace MongoDB.Entities.Utilities
                     if (batchLoadResult == default)
                     {
                         var allQuery = lazyQuery.DefaultSourceProvider();
-                        var filterExpression = lazyQuery.BatchQuery.As<LambdaExpression>().CompileFast()
-                            .DynamicInvoke(entities).As<LambdaExpression>();
+                        var filterExpression = lazyQuery.BatchQuery.DynamicInvoke(entities).As<LambdaExpression>();
 
                         filterExpression = filterExpression.CastParamType(subQueryEntityType);
 
                         var filteredQuery = (IQueryable)queryableWhereMethodInfo.MakeGenericMethod(subQueryEntityType)
-                            .Invoke(null, new object[] { allQuery, filterExpression });
+                            .Invoke(null, [allQuery, filterExpression]);
 
                         var list = (IList)Activator.CreateInstance(listType, filteredQuery);
                         batchLoadResult = list
@@ -254,7 +253,7 @@ namespace MongoDB.Entities.Utilities
 
                         if (list.Count > 0)
                         {
-                            if (subBatchLoadConfig.SubBatchLoadConfigs.Any())
+                            if (subBatchLoadConfig.SubBatchLoadConfigs.Count != 0)
                             {
                                 this.BatchLoadLazyQueries(batchLoadResult, subBatchLoadConfig);
                             }

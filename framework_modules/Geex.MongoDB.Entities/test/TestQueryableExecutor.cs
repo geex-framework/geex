@@ -189,9 +189,10 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task query_performance_test()
         {
+            var count = 200000;
             await DB.DeleteAsync<TestEntity>();
             //dbContext = new DbContext();
-            var data = Enumerable.Range(1, 200000).Select(x => new TestEntity()
+            var data = Enumerable.Range(1, count).Select(x => new TestEntity()
             {
                 Name = x.ToString()
             });
@@ -209,13 +210,13 @@ namespace MongoDB.Entities.Tests
             sw.Restart();
             var list = dbContext.Query<TestEntity>().AsNoTracking().ToList();
             sw.Stop();
-            list.Count().ShouldBe(200000);
+            list.Count().ShouldBe(count);
             Console.WriteLine(sw.ElapsedMilliseconds);
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(3000);
             sw.Restart();
             var list1 = await dbContext.Find<TestEntity>().ExecuteAsync();
             sw.Stop();
-            list1.Count().ShouldBe(200000);
+            list1.Count().ShouldBe(count);
             Console.WriteLine(sw.ElapsedMilliseconds);
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(1500);
             dbContext.Dispose();

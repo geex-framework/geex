@@ -1158,7 +1158,7 @@ namespace MongoDB.Entities.InnerQuery
 
                 // Special handling for method calls on IGrouping...
                 // c.Sum(d => d.Age), c.Count(), etc
-                if (callExp.Arguments.Any() && callExp.Arguments[0].Type.Name == "IGrouping`2")
+                if (callExp.Arguments.Count != 0 && callExp.Arguments[0].Type.Name == "IGrouping`2")
                 {
                     return GetMongoFieldNameForMethodOnGrouping(callExp);
                 }
@@ -1792,7 +1792,7 @@ namespace MongoDB.Entities.InnerQuery
 """));
             }
 
-            while (booleanAndQueue.Any())
+            while (booleanAndQueue.Count != 0)
             {
                 var exp = booleanAndQueue.Dequeue();
                 if (exp.NodeType == ExpressionType.AndAlso)

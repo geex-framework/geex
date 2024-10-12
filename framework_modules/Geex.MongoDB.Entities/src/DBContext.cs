@@ -596,7 +596,7 @@ namespace MongoDB.Entities
                     toSavedEntities.Add(newValue);
                 }
                 // 如果本地有值变更
-                if (toSavedEntities.Any())
+                if (toSavedEntities.Count != 0)
                 {
                     const int maxRetries = 3;
                     for (int attempt = 0; attempt < maxRetries; attempt++)
