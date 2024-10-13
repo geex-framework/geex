@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -11,6 +12,9 @@ using System.IO.Pipelines;
 using System.Security.Cryptography;
 using SharpCompress.Compressors.Xz;
 using MongoDB.Bson;
+using Geex.MongoDB.Entities.Core;
+using System.Drawing;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 [assembly: InternalsVisibleTo("MongoDB.Entities.Tests")]
 namespace MongoDB.Entities
@@ -66,6 +70,17 @@ namespace MongoDB.Entities
     /// </summary>
     public class DataStreamer
     {
+        // 获取缓冲区大小
+        public static int GetBufferSize(long fileLength)
+        {
+            return fileLength switch
+            {
+                < 1048576L => 64 * 1024,        // 文件 < 1MB, 使用 64 缓冲区
+                < 10485760L => 128 * 1024,        // 文件 < 10MB, 使用 128 缓冲区
+                < 52428800L => 256 * 1024,      // 文件 < 50MB, 使用 256 缓冲区
+                _ => 512 * 1024,               // 文件 >= 50MB, 使用 512 缓冲区
+            };
+        }
         private static readonly HashSet<string> indexedDBs = new HashSet<string>();
 
         private readonly FileEntity parent;
@@ -73,9 +88,9 @@ namespace MongoDB.Entities
         private readonly IMongoDatabase db;
         private readonly IMongoCollection<FileChunk> chunkCollection;
         private FileChunk doc;
-        private int chunkSize, readCount;
-        private byte[] buffer;
-        private List<byte> dataChunk;
+        private int chunkSize = 15728640;
+        private int bufferSize = 65536;
+        private int readCount;
         private MD5? md5Hasher;
 
         public DataStreamer(FileEntity parent)
@@ -116,7 +131,8 @@ namespace MongoDB.Entities
         public async Task<Stream> DownloadAsStreamAsync(int batchSize = 1, CancellationToken cancellation = default)
         {
             parent.ThrowIfUnsaved();
-            if (!parent.UploadSuccessful) throw new InvalidOperationException("Data for this file hasn't been uploaded successfully (yet)!");
+            if (!parent.UploadSuccessful)
+                throw new InvalidOperationException("Data for this file hasn't been uploaded successfully (yet)!");
 
             var filter = Builders<FileChunk>.Filter.Eq(c => c.FileId, parent.Id);
             var options = new FindOptions<FileChunk, byte[]>
@@ -126,37 +142,15 @@ namespace MongoDB.Entities
                 Projection = Builders<FileChunk>.Projection.Expression(c => c.Data)
             };
 
-            var findTask =
-                ((IEntityBase)parent).DbContext?.session == null
-                ? chunkCollection.FindAsync(filter, options, cancellation)
-                : chunkCollection.FindAsync(((IEntityBase)parent).DbContext?.Session, filter, options, cancellation);
+            // Initiate the FindAsync operation
+            IAsyncCursor<byte[]> cursor = ((IEntityBase)parent).DbContext?.session == null
+                ? await chunkCollection.FindAsync(filter, options, cancellation).ConfigureAwait(false)
+                : await chunkCollection.FindAsync(((IEntityBase)parent).DbContext?.Session, filter, options, cancellation).ConfigureAwait(false);
 
-            var pipe = new Pipe(); // 使用 Pipe 来实现高效的流式传输
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var cursor = await findTask.ConfigureAwait(false);
-                    var writer = pipe.Writer;
-
-                    while (await cursor.MoveNextAsync(cancellation).ConfigureAwait(false))
-                    {
-                        foreach (var chunk in cursor.Current)
-                        {
-                            await writer.WriteAsync(chunk, cancellation).ConfigureAwait(false); // 将数据块写入 Pipe
-                        }
-                    }
-
-                    await writer.CompleteAsync(); // 完成写入
-                }
-                catch (Exception ex)
-                {
-                    await pipe.Writer.CompleteAsync(ex); // 如果发生错误，传递异常
-                }
-            }, cancellation);
-
-            return pipe.Reader.AsStream(); // 返回可读的 Stream
+            // Return the custom AsyncFileStream
+            return new AsyncCursorStream(cursor, parent.FileSize, (int)Math.Min(parent.FileSize, chunkSize));
         }
+
 
         /// <summary>
         /// Download binary data for this file entity from mongodb in chunks into a given stream.
@@ -225,7 +219,6 @@ namespace MongoDB.Entities
         /// </summary>
         /// <param name="stream">The input stream to read the data from</param>
         /// <param name="timeOutSeconds">The maximum number of seconds allowed for the operation to complete</param>
-        /// <param name="chunkSizeKB">The 'average' size of one chunk in KiloBytes</param>
 
         public Task UploadWithTimeoutAsync(Stream stream, int timeOutSeconds)
         {
@@ -237,7 +230,6 @@ namespace MongoDB.Entities
         /// <para>TIP: Make sure to save the entity before calling this method.</para>
         /// </summary>
         /// <param name="stream">The input stream to read the data from</param>
-        /// <param name="chunkSizeKB">The 'average' size of one chunk in KiloBytes</param>
         /// <param name="cancellation">An optional cancellation token.</param>
         /// <param name="md5Hasher"></param>
         public async Task UploadAsync(Stream stream, CancellationToken cancellation = default, MD5 md5Hasher = null)
@@ -248,23 +240,32 @@ namespace MongoDB.Entities
             await CleanUpAsync(((IEntityBase)parent).DbContext).ConfigureAwait(false);
 
             doc = new FileChunk { FileId = parent.Id, CreatedOn = DateTimeOffset.Now };
-            chunkSize = 15000000;
-            dataChunk = new List<byte>(chunkSize);
-            buffer = new byte[64 * 1024]; // 64kb read buffer
+            chunkSize = (int)Math.Min(chunkSize, stream.Length);
+            using var chunkMemoryOwner = MemoryPool<byte>.Shared.Rent(chunkSize);
+            var dataChunk = chunkMemoryOwner.Memory;
             readCount = 0;
-
+            var dbContext = ((IEntityBase)parent).DbContext;
             try
             {
                 if (stream.CanSeek && stream.Position > 0) stream.Position = 0;
 
-                while ((readCount = await stream.ReadAsync(buffer, 0, buffer.Length, cancellation).ConfigureAwait(false)) > 0)
+                while ((readCount = stream.Read(dataChunk.Span)) > 0)
                 {
-                    await FlushToDBAsync(((IEntityBase)parent).DbContext, isLastChunk: false, cancellation).ConfigureAwait(false);
+                    var readBytes = dataChunk[..readCount].ToArray();
+                    readBytes.CopyTo(dataChunk);
+                    md5Hasher?.TransformBlock(readBytes, 0, readBytes.Length, null, 0);
+                    doc.Id = doc.GenerateNewId().ToString();
+                    doc.Data = readBytes;
+                    parent.ChunkCount++;
+                    await (dbContext?.Session == null
+                        ? chunkCollection.InsertOneAsync(doc, null, cancellation)
+                        : chunkCollection.InsertOneAsync(dbContext?.Session, doc, null, cancellation));
+                    parent.FileSize += readCount;
                 }
 
                 if (parent.FileSize > 0)
                 {
-                    await FlushToDBAsync(((IEntityBase)parent).DbContext, isLastChunk: true, cancellation).ConfigureAwait(false);
+                    md5Hasher?.TransformFinalBlock([], 0, 0);
                     parent.UploadSuccessful = true;
                 }
                 else
@@ -274,15 +275,13 @@ namespace MongoDB.Entities
             }
             catch (Exception)
             {
-                await CleanUpAsync(((IEntityBase)parent).DbContext).ConfigureAwait(false);
+                await CleanUpAsync(dbContext).ConfigureAwait(false);
                 throw;
             }
             finally
             {
-                await UpdateMetaDataAsync(((IEntityBase)parent).DbContext).ConfigureAwait(false);
+                await UpdateMetaDataAsync(dbContext).ConfigureAwait(false);
                 doc = null;
-                buffer = null;
-                dataChunk = null;
             }
         }
 
@@ -294,38 +293,6 @@ namespace MongoDB.Entities
             return dbContext?.Session == null
                    ? chunkCollection.DeleteManyAsync(c => c.FileId == parent.Id)
                    : chunkCollection.DeleteManyAsync(dbContext?.Session, c => c.FileId == parent.Id);
-        }
-
-        private Task FlushToDBAsync(DbContext dbContext, bool isLastChunk = false, CancellationToken cancellation = default)
-        {
-            if (!isLastChunk)
-            {
-                dataChunk.AddRange(new ArraySegment<byte>(buffer, 0, readCount));
-                parent.FileSize += readCount;
-            }
-
-            if (dataChunk.Count >= chunkSize || isLastChunk)
-            {
-                var data = dataChunk.ToArray();
-                if (isLastChunk)
-                {
-                    md5Hasher?.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                }
-                else
-                {
-                    md5Hasher?.TransformBlock(data, 0, data.Length, null, 0);
-                }
-
-                doc.Id = doc.GenerateNewId().ToString();
-                doc.Data = data;
-                dataChunk.Clear();
-                parent.ChunkCount++;
-                return dbContext?.Session == null
-                       ? chunkCollection.InsertOneAsync(doc, null, cancellation)
-                       : chunkCollection.InsertOneAsync(dbContext?.Session, doc, null, cancellation);
-            }
-
-            return Task.CompletedTask;
         }
 
         private Task UpdateMetaDataAsync(DbContext dbContext)

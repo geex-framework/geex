@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.Buffers;
+using System.Net;
+using System.Threading.Tasks;
 
 using Geex.Common;
 using Geex.Common.Abstraction.Entities;
@@ -31,8 +33,8 @@ namespace Microsoft.AspNetCore.Builder
                     response.Headers.ContentDisposition = $"Attachment;FileName*=utf-8''{blobObject.FileName.UrlEncode()}";
                     response.Headers.Append("Cache-Control", "public,max-age=86400");//缓存1天
                     response.Headers.Append("ETag", blobObject.Md5);
-                    await stream.CopyToAsync(response.Body);
-                    await response.CompleteAsync();
+                    await response.StartAsync();
+                    await stream.CopyToAsync(response.Body).ConfigureAwait(false);
                 }
                 else
                 {

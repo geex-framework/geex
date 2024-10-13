@@ -54,6 +54,19 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         public virtual async Task<IBlobObject> Handle(CreateBlobObjectRequest request, CancellationToken cancellationToken)
         {
             // 打开文件流
+
+            if (!request.Md5.IsNullOrEmpty())
+            {
+                var existed = Uow.Query<BlobObject>().FirstOrDefault(x => x.Md5 == request.Md5);
+                if (existed != default)
+                {
+                    if (existed.FileName == request.File.Name && existed.MimeType == request.File.ContentType)
+                    {
+                        return existed;
+                    }
+                }
+            }
+
             await using var readStream = request.File.OpenReadStream();
 
             // 确定缓冲区大小
@@ -136,7 +149,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                     await RemoveInvalidBlob(cancellationToken, blob);
                 }
                 // 直接使用数据库提供的流而不是将其复制到内存中
-                dataStream = await dbFile.Data.DownloadAsStreamAsync(10, cancellationToken);
+                dataStream = await dbFile.Data.DownloadAsStreamAsync(4, cancellationToken);
                 return (blob, dataStream);
             }
             else if (blob.StorageType == BlobStorageType.Cache)
@@ -171,21 +184,16 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             throw new NotImplementedException();
         }
 
-        // 获取缓冲区大小
-        private int GetBufferSize(long fileLength)
+        public static int GetBufferSize(long fileLength)
         {
             return fileLength switch
             {
-                < 1048576L => 262144,        // 文件 < 1MB, 使用 256KB 缓冲区
-                < 10485760L => 524288,        // 文件 < 10MB, 使用 512KB 缓冲区
-                < 52428800L => 2097152,      // 文件 < 50MB, 使用 2MB 缓冲区
-                < 104857600L => 4194304,     // 文件 < 100MB, 使用 4MB 缓冲区
-                < 209715200L => 8388608,     // 文件 < 200MB, 使用 8MB 缓冲区
-                < 524288000L => 16777216,     // 文件 < 500MB, 使用 16MB 缓冲区
-                _ => 33554432,               // 文件 >= 500MB, 使用 32MB 缓冲区
+                < 1048576L => 64 * 1024,        // 文件 < 1MB, 使用 64 缓冲区
+                < 10485760L => 128 * 1024,        // 文件 < 10MB, 使用 128 缓冲区
+                < 52428800L => 256 * 1024,      // 文件 < 50MB, 使用 256 缓冲区
+                _ => 512 * 1024,               // 文件 >= 50MB, 使用 512 缓冲区
             };
         }
-
         // 获取文件内容类型
         private string GetContentType(IFile file, Stream readStream)
         {
@@ -212,14 +220,6 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             string fileContentType,
             long fileSize, Stream readStream, int bufferSize, CancellationToken cancellationToken)
         {
-            if (!md5.IsNullOrEmpty())
-            {
-                var existed = Uow.Query<BlobObject>().FirstOrDefault(x => x.Md5 == md5 && x.StorageType == BlobStorageType.Cache);
-                if (existed != null)
-                {
-                    return existed;
-                }
-            }
             var entity = Uow.Attach(new BlobObject(fileName, null, BlobStorageType.Cache, fileContentType, fileSize)
             {
                 ExpireAt = DateTimeOffset.Now.AddMinutes(5)
@@ -265,19 +265,10 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         {
             if (!md5.IsNullOrEmpty())
             {
-                var existed = Uow.Query<BlobObject>().FirstOrDefault(x => x.Md5 == md5 && x.StorageType == BlobStorageType.Db);
-                if (existed != default)
+                if (Uow.Query<DbFile>().Any(x => x.Md5 == md5))
                 {
-                    if (existed.FileName == fileName && existed.MimeType == fileContentType)
-                    {
-                        return existed;
-                    }
-
-                    if (Uow.Query<DbFile>().Any(x => x.Md5 == md5))
-                    {
-                        var reuseEntity = Uow.Attach(new BlobObject(fileName, md5, BlobStorageType.FileSystem, fileContentType, fileSize));
-                        return reuseEntity;
-                    }
+                    var reuseEntity = Uow.Attach(new BlobObject(fileName, md5, BlobStorageType.FileSystem, fileContentType, fileSize));
+                    return reuseEntity;
                 }
             }
             var entity = Uow.Attach(new BlobObject(fileName, default, BlobStorageType.Db, fileContentType, fileSize));
@@ -302,16 +293,6 @@ namespace Geex.Common.BlobStorage.Core.Handlers
         {
             if (!md5.IsNullOrEmpty())
             {
-                var existed = Uow.Query<BlobObject>().FirstOrDefault(x => x.Md5 == md5 && x.StorageType == BlobStorageType.FileSystem);
-
-                if (existed != null)
-                {
-                    if (existed.FileName == fileName && existed.MimeType == fileContentType)
-                    {
-                        return existed;
-                    }
-                }
-
                 if (File.Exists(GetFilePath(md5)))
                 {
                     var reuseEntity = Uow.Attach(new BlobObject(fileName, md5, BlobStorageType.FileSystem, fileContentType, fileSize));
