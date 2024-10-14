@@ -1,13 +1,8 @@
-﻿using System.Buffers;
-using System.Net;
-using System.Threading.Tasks;
+﻿using System.Net;
 
 using Geex.Common;
-using Geex.Common.Abstraction.Entities;
 using Geex.Common.BlobStorage.Api;
 using Geex.Common.BlobStorage.Api.Abstractions;
-
-using MediatR;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;

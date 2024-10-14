@@ -70,7 +70,8 @@ namespace Geex.MongoDB.Entities.Core
         /// <inheritdoc />
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            if (_currentBufferOffset >= _currentBuffer.Length)
+            Start:
+            if (_currentBufferOffset == 0)
             {
                 // Load next buffer
                 if (!await _cursor.MoveNextAsync(cancellationToken))
@@ -99,17 +100,18 @@ namespace Geex.MongoDB.Entities.Core
 
             int bytesAvailable = _currentBuffer.Length - _currentBufferOffset;
 
+            if (bytesAvailable <= 0 && _position < Length)
+            {
+                _currentBufferOffset = 0;
+                goto Start;
+            }
+
             int bytesToCopy = Math.Min(count, bytesAvailable);
 
             _currentBuffer.Slice(_currentBufferOffset, bytesToCopy).CopyTo(buffer);
 
             _currentBufferOffset += bytesToCopy;
             _position += bytesToCopy;
-
-            if (bytesToCopy == 0 && _position != Length)
-            {
-                throw new Exception("test");
-            }
 
             return bytesToCopy;
         }
