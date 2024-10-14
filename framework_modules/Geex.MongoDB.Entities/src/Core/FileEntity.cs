@@ -241,8 +241,7 @@ namespace MongoDB.Entities
 
             doc = new FileChunk { FileId = parent.Id, CreatedOn = DateTimeOffset.Now };
             chunkSize = (int)Math.Min(chunkSize, stream.Length);
-            using var chunkMemoryOwner = MemoryPool<byte>.Shared.Rent(chunkSize);
-            var dataChunk = chunkMemoryOwner.Memory;
+            var dataChunk = new Memory<byte>(new byte[chunkSize]);
             readCount = 0;
             var dbContext = ((IEntityBase)parent).DbContext;
             try
