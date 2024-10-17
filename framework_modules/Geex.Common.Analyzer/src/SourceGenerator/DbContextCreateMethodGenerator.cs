@@ -13,6 +13,7 @@ public class IUnitOfWorkCreateMethodGenerator : ISourceGenerator
 {
     public void Initialize(GeneratorInitializationContext context)
     {
+
         // 注册语法接收器
         context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
     }
@@ -42,17 +43,16 @@ public class IUnitOfWorkCreateMethodGenerator : ISourceGenerator
                 entityTypes.Add(symbol);
             }
         }
+        //context.AddSource($"IUnitOfWorkExtensions.g.log", debugSource.ToString());
 
         entityTypes = entityTypes.Distinct(new Comparer()).ToList();
         // 为每个实体生成扩展方法
         foreach (var entityType in entityTypes)
         {
             var source = GenerateExtensionMethod(entityType);
-            context.AddSource($"IUnitOfWorkExtensions.g.{entityType.Name}.log", $"/*{debugSource.ToString()}*/");
-
             if (!string.IsNullOrEmpty(source))
             {
-                context.AddSource($"{entityType.Name}_IUnitOfWorkExtensions.g.cs", source);
+                context.AddSource($"{entityType.Name}_IUnitOfWorkExtensions.g", source);
             }
         }
     }
@@ -173,7 +173,6 @@ namespace {namespaceName} {{
     }}
 }}
 ";
-
         return source;
     }
 

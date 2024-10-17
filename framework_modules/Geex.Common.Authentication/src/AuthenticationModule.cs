@@ -70,7 +70,7 @@ namespace Geex.Common.Authentication
                     ValidAudience = authOptions.ValidAudience,
 
                     // 验证过期
-                    ValidateLifetime = authOptions.TokenExpireInSeconds.HasValue,
+                    ValidateLifetime = authOptions.TokenExpireInSeconds > 0,
 
                     // If you want to allow a certain amount of clock drift, set that here
                     ClockSkew = TimeSpan.Zero,
@@ -112,7 +112,7 @@ namespace Geex.Common.Authentication
                             return schema ?? "Local";
                         };
                     }));
-                services.AddSingleton(new UserTokenGenerateOptions(authOptions.ValidIssuer, authOptions.ValidAudience, authOptions.SecurityKey, authOptions.TokenExpireInSeconds.HasValue ? TimeSpan.FromSeconds(authOptions.TokenExpireInSeconds.Value) : default));
+                services.AddSingleton(new UserTokenGenerateOptions(authOptions.ValidIssuer, authOptions.ValidAudience, authOptions.SecurityKey, TimeSpan.FromSeconds(authOptions.TokenExpireInSeconds)));
                 services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
 
                 services.AddSingleton<IdsvrMiddleware>();
@@ -128,6 +128,9 @@ namespace Geex.Common.Authentication
                     })
                     .AddServer(options =>
                     {
+                        options.AllowRefreshTokenFlow();
+                        options.SetAccessTokenLifetime(TimeSpan.FromSeconds(authOptions.TokenExpireInSeconds));
+
                         // Enable the authorization and token endpoints.
                         options
                             //connect/checksession
