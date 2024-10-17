@@ -223,6 +223,27 @@ namespace MongoDB.Entities.Tests
         }
 
         [TestMethod]
+        public async Task undefined_field_should_work()
+        {
+            var dbContext = new DbContext();
+            var id = ObjectId.GenerateNewId().ToString();
+            await dbContext.Collection<TestEntity>().InsertOneAsync(new TestEntity()
+            {
+                Id = id,
+                Name = "local1",
+                Value = 5,
+                Enum = TestEntityEnum.Value1,
+                Data = new[] { 1, 2 },
+                DateTimeOffset = DateTimeOffset.Now
+            });
+            await dbContext.Collection<TestEntity>().UpdateOneAsync(x => x.Id == id, Builders<TestEntity>.Update.Unset(x => x.DateTimeOffset));
+            var baseQuery = dbContext.Query<TestEntity>().Where(x=>x.Id == id);
+            baseQuery.Where(x => x.DateTimeOffset == default).ToList().Count.ShouldBe(1);
+            baseQuery.Where(x => !x.DateTimeOffset.HasValue).ToList().Count.ShouldBe(1);
+            baseQuery.Where(x => x.DateTimeOffset.HasValue).ToList().Count.ShouldBe(0);
+        }
+
+        [TestMethod]
         public async Task select_should_work()
         {
 
@@ -309,7 +330,7 @@ namespace MongoDB.Entities.Tests
                 });
             await dbContext.SaveChanges();
             dbContext.Dispose();
-            dbContext = new DbContext(entityTrackingEnabled:false);
+            dbContext = new DbContext(entityTrackingEnabled: false);
 
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).Select(x => x.Name).First().ShouldBe("a1");
             dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a1")).ToList().Select(x => x.Name).First().ShouldBe("a1");

@@ -33,6 +33,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using MongoDB.Entities.Utilities;
+
 using ExpressionType = System.Linq.Expressions.ExpressionType;
 
 //using Newtonsoft.Json;
@@ -197,7 +198,8 @@ namespace MongoDB.Entities.InnerQuery
         string GetMongoFieldNameInMatchStage(Expression expression, bool isNamedProperty)
         {
             // Don't support querying property members on DateTime in a $match stage
-            if (expression is MemberExpression memberExp && memberExp.Expression.Type == typeof(DateTime))
+            if (expression is MemberExpression memberExp && (memberExp.Expression.Type == typeof(DateTime) ||
+                                                             memberExp.Expression.Type == typeof(DateTimeOffset)))
             {
                 throw new InvalidQueryException($"Can't access properties on {memberExp.Expression.Type.Name} in $match stage.");
             }

@@ -19,7 +19,7 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
     /// </summary>
     public class BlobObject : Abstraction.Storage.Entity<BlobObject>, IBlobObject
     {
-        internal BlobObject(string fileName, string md5, BlobStorageType storageType, string mimeType, long fileSize)
+        public BlobObject(string fileName, string md5, BlobStorageType storageType, string mimeType, long fileSize,IUnitOfWork uow = default)
         {
             this.FileName = fileName;
             this.Md5 = md5;
@@ -60,7 +60,7 @@ namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
                 {
                     options.Background = true;
                 });
-                indexConfig.MapIndex(x=> x.Ascending(y=>y.ExpireAt), options =>
+                indexConfig.MapIndex(x => x.Ascending(y => y.ExpireAt), options =>
                 {
                     options.ExpireAfter = TimeSpan.FromSeconds(0);
                 });

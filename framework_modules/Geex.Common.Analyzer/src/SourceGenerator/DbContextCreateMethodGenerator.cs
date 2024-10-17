@@ -1,10 +1,12 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Diagnostics;
 
 [Generator]
 public class IUnitOfWorkCreateMethodGenerator : ISourceGenerator
@@ -40,13 +42,14 @@ public class IUnitOfWorkCreateMethodGenerator : ISourceGenerator
                 entityTypes.Add(symbol);
             }
         }
-        //context.AddSource($"IUnitOfWorkExtensions.g.log", debugSource.ToString());
 
         entityTypes = entityTypes.Distinct(new Comparer()).ToList();
         // 为每个实体生成扩展方法
         foreach (var entityType in entityTypes)
         {
             var source = GenerateExtensionMethod(entityType);
+            context.AddSource($"IUnitOfWorkExtensions.g.{entityType.Name}.log", $"/*{debugSource.ToString()}*/");
+
             if (!string.IsNullOrEmpty(source))
             {
                 context.AddSource($"{entityType.Name}_IUnitOfWorkExtensions.g.cs", source);
@@ -85,89 +88,81 @@ public class IUnitOfWorkCreateMethodGenerator : ISourceGenerator
     }
 
     private string GenerateExtensionMethod(INamedTypeSymbol entityType)
-{
-    var namespaceName = entityType.ContainingNamespace.ToDisplayString();
-    var entityName = entityType.Name;
-
-    // Get public instance constructors
-    var constructors = entityType.Constructors
-        .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic);
-
-    // If no public constructors, try to use any parameterless constructor
-    if (!constructors.Any())
     {
-        var parameterlessConstructor = entityType.Constructors.FirstOrDefault(c => c.Parameters.Length == 0);
-        if (parameterlessConstructor != null)
+        var namespaceName = entityType.ContainingNamespace.ToDisplayString();
+        var entityName = entityType.Name;
+
+        // Get public instance constructors
+        var constructors = entityType.Constructors
+            .Where(x => x.Parameters.LastOrDefault()?.Type?.Name == "IUnitOfWork")
+            .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic);
+
+        constructors = constructors.ToList();
+        // If no public constructors, try to use any parameterless constructor
+        if (!constructors.Any())
         {
-            constructors = new[] { parameterlessConstructor };
+            return String.Empty;
         }
-    }
 
-    if (!constructors.Any())
-    {
-        return default;
-    }
+        var methods = new StringBuilder();
 
-    var methods = new StringBuilder();
-
-    foreach (var constructor in constructors)
-    {
-        var parameters = constructor.Parameters;
-
-        var parameterList = string.Join(", ", parameters.Select(p =>
+        foreach (var constructor in constructors)
         {
-            var type = p.Type.ToDisplayString();
-            var name = p.Name;
+            var parameters = constructor.Parameters.Slice(0, constructor.Parameters.Length - 1);
 
-            if (p.HasExplicitDefaultValue)
+            var parameterList = string.Join(", ", parameters.Select(p =>
             {
-                var defaultValue = p.ExplicitDefaultValue;
+                var type = p.Type.ToDisplayString();
+                var name = p.Name;
 
-                string defaultValueCode;
-                if (defaultValue == default)
+                if (p.HasExplicitDefaultValue)
                 {
-                    defaultValueCode = "default";
-                }
-                else if (defaultValue is string)
-                {
-                    defaultValueCode = $"\"{defaultValue}\"";
-                }
-                else if (defaultValue is char)
-                {
-                    defaultValueCode = $"'{defaultValue}'";
-                }
-                else if (defaultValue is bool)
-                {
-                    defaultValueCode = defaultValue.ToString().ToLower();
-                }
-                else if (p.Type.TypeKind == TypeKind.Enum)
-                {
-                    defaultValueCode = $"{type}.{defaultValue}";
+                    var defaultValue = p.ExplicitDefaultValue;
+
+                    string defaultValueCode;
+                    if (defaultValue == default)
+                    {
+                        defaultValueCode = "default";
+                    }
+                    else if (defaultValue is string)
+                    {
+                        defaultValueCode = $"\"{defaultValue}\"";
+                    }
+                    else if (defaultValue is char)
+                    {
+                        defaultValueCode = $"'{defaultValue}'";
+                    }
+                    else if (defaultValue is bool)
+                    {
+                        defaultValueCode = defaultValue.ToString().ToLower();
+                    }
+                    else if (p.Type.TypeKind == TypeKind.Enum)
+                    {
+                        defaultValueCode = $"{type}.{defaultValue}";
+                    }
+                    else
+                    {
+                        defaultValueCode = defaultValue.ToString();
+                    }
+
+                    return $"{type} {name} = {defaultValueCode}";
                 }
                 else
                 {
-                    defaultValueCode = defaultValue.ToString();
+                    return $"{type} {name}";
                 }
+            }));
 
-                return $"{type} {name} = {defaultValueCode}";
-            }
-            else
-            {
-                return $"{type} {name}";
-            }
-        }));
+            var argumentList = string.Join(", ", parameters.Select(p => p.Name));
 
-        var argumentList = string.Join(", ", parameters.Select(p => p.Name));
-
-        methods.AppendLine($@"
-    public static {entityName} Create(this IUnitOfWork uow{(string.IsNullOrEmpty(parameterList) ? "" : ", " + parameterList)})
+            methods.AppendLine($@"
+    public static {entityName} Create(this IUnitOfWork _{(string.IsNullOrEmpty(parameterList) ? "" : ", " + parameterList)})
     {{
-        var instance = ActivatorUtilities.CreateInstance<{entityName}>(uow.ServiceProvider{(string.IsNullOrEmpty(argumentList) ? "" : ", " + argumentList)});
-        return uow.Attach(instance);
+        return ActivatorUtilities.CreateInstance<{entityName}>(_.ServiceProvider{(string.IsNullOrEmpty(argumentList) ? "" : ", " + argumentList)}, _);
     }}");
-    }
+        }
 
-    var source = $@"
+        var source = $@"
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Geex.Common;
@@ -178,8 +173,9 @@ namespace {namespaceName} {{
     }}
 }}
 ";
-    return source;
-}
+
+        return source;
+    }
 
     class SyntaxReceiver : ISyntaxReceiver
     {
