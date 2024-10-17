@@ -91,7 +91,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
 
         public virtual async Task Handle(DeleteBlobObjectRequest request, CancellationToken cancellationToken)
         {
-            if (request.StorageType == BlobStorageType.Db)
+            if (request.StorageType == BlobStorageType.FileSystem)
             {
                 var blobObjects = await Task.FromResult(Uow.Query<BlobObject>().Where(x => request.Ids.Contains(x.Id)));
                 foreach (var blobObject in blobObjects)
@@ -109,7 +109,7 @@ namespace Geex.Common.BlobStorage.Core.Handlers
                 await blobObjects.DeleteAsync();
                 return;
             }
-            else if (request.StorageType == BlobStorageType.FileSystem)
+            else if (request.StorageType == BlobStorageType.Db)
             {
                 var blobObjects = await Task.FromResult(Uow.Query<BlobObject>().Where(x => request.Ids.Contains(x.Id)));
                 foreach (var blobObject in blobObjects)
