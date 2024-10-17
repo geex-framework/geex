@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+
 using FastExpressionCompiler;
 
 namespace MongoDB.Entities.Utilities
@@ -27,23 +28,23 @@ namespace MongoDB.Entities.Utilities
     }
     public class LazyMultiQuery<T, TRelated> : ILazyMultipleQuery, IQueryable<TRelated> where TRelated : IEntityBase where T : IEntityBase
     {
-        private IQueryable<TRelated> _source;
+        private IQueryable<TRelated>? _source;
 
         public LazyMultiQuery(Expression<Func<TRelated, bool>> lazy, Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batch, Func<IQueryable<TRelated>> sourceProvider)
         {
             this.DefaultSourceProvider = sourceProvider;
-            this.Lazy = lazy.CompileFast();
-            this.Batch = batch.CompileFast();
+            this.Lazy = lazy;
+            this.Batch = batch;
         }
 
         /// <inheritdoc />
         public string HashCode => this.GetHashCode().ToString();
 
-        public IQueryable<TRelated> Value => this.Source.Where(this.Lazy).ToList().AsQueryable();
-        public Func<IQueryable<T>, Expression<Func<TRelated, bool>>> Batch { get; set; }
+        public IQueryable<TRelated> Value => this.Source.Where(this.Lazy).AsQueryable();
+        public Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> Batch { get; set; }
 
         public Func<IQueryable<TRelated>> DefaultSourceProvider { get; set; }
-        public Func<TRelated, bool> Lazy { get; set; }
+        public Expression<Func<TRelated, bool>> Lazy { get; set; }
 
         public IQueryable<TRelated> Source
         {
@@ -65,13 +66,29 @@ namespace MongoDB.Entities.Utilities
 
         /// <inheritdoc />
         IQueryable ILazyMultipleQuery.Value => Value;
+        private Delegate? _compiledBatch;
 
-        Delegate ILazyQuery.BatchQuery => Batch;
+        Delegate ILazyQuery.BatchQuery
+        {
+            get
+            {
+                this._compiledBatch ??= Batch.CompileFast();
+                return _compiledBatch;
+            }
+        }
 
         Func<IQueryable> ILazyQuery.DefaultSourceProvider => DefaultSourceProvider;
 
+        private Delegate? _compiledLazy;
         /// <inheritdoc />
-        Delegate ILazyQuery.LazyQuery => Lazy;
+        Delegate ILazyQuery.LazyQuery
+        {
+            get
+            {
+                this._compiledLazy ??= Lazy.CompileFast();
+                return _compiledLazy;
+            }
+        }
 
 
         /// <inheritdoc />
@@ -93,21 +110,21 @@ namespace MongoDB.Entities.Utilities
 
     public class LazySingleQuery<T, TRelated> : ILazySingleQuery where TRelated : IEntityBase where T : IEntityBase
     {
-        private IQueryable<TRelated> _source;
+        private IQueryable<TRelated>? _source;
 
         public LazySingleQuery(Expression<Func<TRelated, bool>> lazy, Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batch, Func<IQueryable<TRelated>> sourceProvider)
         {
             DefaultSourceProvider = sourceProvider;
-            this.Lazy = lazy.CompileFast();
-            this.Batch = batch.CompileFast();
+            this.Lazy = lazy;
+            this.Batch = batch;
         }
 
         public Lazy<TRelated> Value => new(() => this.Source.Where(this.Lazy).FirstOrDefault());
-        public Func<IQueryable<T>, Expression<Func<TRelated, bool>>> Batch { get; set; }
+        public Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> Batch { get; set; }
 
 
         public Func<IQueryable<TRelated>> DefaultSourceProvider { get; set; }
-        public Func<TRelated, bool> Lazy { get; set; }
+        public Expression<Func<TRelated, bool>> Lazy { get; set; }
 
         public IQueryable<TRelated> Source
         {
@@ -115,12 +132,29 @@ namespace MongoDB.Entities.Utilities
             set => _source = value;
         }
 
-        Delegate ILazyQuery.BatchQuery => Batch;
+        private Delegate? _compiledBatch;
+
+        Delegate ILazyQuery.BatchQuery
+        {
+            get
+            {
+                this._compiledBatch ??= Batch.CompileFast();
+                return _compiledBatch;
+            }
+        }
 
         Func<IQueryable> ILazyQuery.DefaultSourceProvider => DefaultSourceProvider;
 
+        private Delegate? _compiledLazy;
         /// <inheritdoc />
-        Delegate ILazyQuery.LazyQuery => Lazy;
+        Delegate ILazyQuery.LazyQuery
+        {
+            get
+            {
+                this._compiledLazy ??= Lazy.CompileFast();
+                return _compiledLazy;
+            }
+        }
 
         /// <inheritdoc />
         IQueryable ILazyQuery.Source
