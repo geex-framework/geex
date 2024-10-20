@@ -237,7 +237,7 @@ namespace MongoDB.Entities.Tests
                 DateTimeOffset = DateTimeOffset.Now
             });
             await dbContext.Collection<TestEntity>().UpdateOneAsync(x => x.Id == id, Builders<TestEntity>.Update.Unset(x => x.DateTimeOffset));
-            var baseQuery = dbContext.Query<TestEntity>().Where(x=>x.Id == id);
+            var baseQuery = dbContext.Query<TestEntity>().Where(x => x.Id == id);
             baseQuery.Where(x => x.DateTimeOffset == default).ToList().Count.ShouldBe(1);
             baseQuery.Where(x => !x.DateTimeOffset.HasValue).ToList().Count.ShouldBe(1);
             baseQuery.Where(x => x.DateTimeOffset.HasValue).ToList().Count.ShouldBe(0);
@@ -311,6 +311,48 @@ namespace MongoDB.Entities.Tests
             dbContext.Query<TestEntity>().Select(x => new { x.Value, x.Name, x.Id }).ToList().Count().ShouldBe(5);
             //dbContext.Queryable<TestEntity>().SelectMany(x=>x.Data).Sum().ShouldBe(3);
             dbContext.Query<TestEntity>().Select(x => x.Data).ToList().SelectMany(x => (x ?? Array.Empty<int>()).ToList()).Sum().ShouldBe(3);
+        }
+
+        [TestMethod]
+        public async Task select_should_work_with_projection()
+        {
+            var dbContext = new DbContext();
+            dbContext.Attach(new List<TestEntity>()
+                {
+                    new TestEntity()
+                    {
+                        Name = "local1",
+                        Value = 5,
+                        Enum = TestEntityEnum.Value1,
+                        Data = new []{1,2}
+                    }
+                });
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext(entityTrackingEnabled: false);
+
+            dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x => new TestEntitySelectSubset()
+            {
+                SelectId = x.Id,
+                SelectName = x.Name,
+                SelectValue = x.Value,
+                SelectEnum = x.Enum,
+                SelectDateTimeOffset = x.DateTimeOffset
+            }).First().SelectName.ShouldBe("local1");
+
+            try
+            {
+                dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("local1")).Select(x =>
+                    new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)
+                    {
+                        SelectDateTimeOffset = x.DateTimeOffset
+                    }).First().SelectName.ShouldBe("local1");
+            }
+            catch (Exception e)
+            {
+                e.Message.ShouldBe("Project fields inside constructor must be pure property, incorrect field: [TestEntitySelectSubset.Id]");
+            }
+
         }
 
         [TestMethod]

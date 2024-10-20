@@ -212,11 +212,7 @@ namespace Geex.Common.Authentication
                              .EnableUserinfoEndpointPassthrough()
                              .EnableStatusCodePagesIntegration();
 
-                        if (Env.IsDevelopment())
-                        {
-                            aspNetCoreBuilder.DisableTransportSecurityRequirement();
-
-                        }
+                        aspNetCoreBuilder.DisableTransportSecurityRequirement();
                     })
                     .AddValidation(options =>
                     {

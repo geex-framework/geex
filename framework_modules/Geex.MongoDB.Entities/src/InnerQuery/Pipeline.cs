@@ -1626,9 +1626,9 @@ namespace MongoDB.Entities.InnerQuery
                     _currentPipelineDocumentUsesResultHack = false;
                     return;
                 }
+                // Handle the hard case: Select(c => new ProjectClass{ c.Age, Name = c.FirstName,  })
                 else
                 {
-                    throw new NotSupportedException("Named class construct is not supported, please use anonymous type instead.");
                     var newExp = (NewExpression)lambdaExp.Body;
                     // Get the mongo field names for each property in the new {...}
                     var fieldNames = newExp.Arguments.Select(x =>
@@ -1641,6 +1641,7 @@ namespace MongoDB.Entities.InnerQuery
                                     }
                                 } memberExp)
                             {
+                                CheckPureSetter(memberExp.Member.Name);
                                 return new
                                 {
                                     FieldName = GetMongoFieldName(memberExp.Member),
@@ -1656,13 +1657,17 @@ namespace MongoDB.Entities.InnerQuery
                                     } nestedMemberExp
                                 })
                             {
+                                CheckPureSetter(nestedMemberExp.Member.Name);
                                 return new
                                 {
                                     FieldName = GetMongoFieldName(nestedMemberExp.Member),
                                     ExpressionValue = BuildMongoSelectExpression(nestedMemberExp, true)
                                 };
                             }
-                            throw new NotSupportedException("Not supported express of: " + x);
+                            throw new NotSupportedException($"Not supported express of: {x}, see data for detail.")
+                            {
+                                Data = { { "newExp", newExp } }
+                            };
                         })
                         .Select(c => new BsonElement(c.FieldName, c.ExpressionValue))
                         .ToList();
@@ -1679,23 +1684,61 @@ namespace MongoDB.Entities.InnerQuery
                 }
             }
 
-            // Handle typed hard case: Select(c => new Foo { Bar = c.FirstName })
+            // Handle typed hard case: Select(c => new Foo(c.Code) { Bar = c.FirstName })
             if (lambdaExp.Body is MemberInitExpression memberInitExp)
             {
-                var fieldNames = memberInitExp.Bindings
-                                              .Cast<MemberAssignment>()
-                                              .Select(c => new
-                                              {
-                                                  FieldName = GetMongoFieldName(c.Member),
-                                                  ExpressionValue = BuildMongoSelectExpression(c.Expression, true)
-                                              })
-                                              .Select(c => new BsonElement(c.FieldName, c.ExpressionValue))
-                                              .ToList();
+                var ctorArgs = memberInitExp.NewExpression.Arguments;
 
+                var fieldNames = ctorArgs.Select(x =>
+                        {
+                            if (x is MemberExpression
+                                {
+                                    Expression:
+                                    {
+                                        //NodeType: ExpressionType.Parameter
+                                    }
+                                } memberExp)
+                            {
+                                CheckPureSetter(memberExp.Member.Name);
+                                return new
+                                {
+                                    FieldName = GetMongoFieldName(memberExp.Member),
+                                    ExpressionValue = BuildMongoSelectExpression(memberExp, true)
+                                };
+                            }
+
+                            if (x is UnaryExpression
+                                {
+                                    Operand: MemberExpression
+                                    {
+                                        //Expression: { NodeType: ExpressionType.Parameter }
+                                    } nestedMemberExp
+                                })
+                            {
+                                CheckPureSetter(nestedMemberExp.Member.Name);
+                                return new
+                                {
+                                    FieldName = GetMongoFieldName(nestedMemberExp.Member),
+                                    ExpressionValue = BuildMongoSelectExpression(nestedMemberExp, true)
+                                };
+                            }
+                            throw new NotSupportedException($"Not supported express of: {x}, see data for detail.")
+                            {
+                                Data = { { "memberInitExp", memberInitExp } }
+                            };
+                        })
+                        .Select(c => new BsonElement(c.FieldName, c.ExpressionValue))
+                        .ToList();
+                var assignments = memberInitExp.Bindings.Cast<MemberAssignment>().Select(x => new
+                {
+                    FieldName = GetMongoFieldName(x.Member),
+                    ExpressionValue = BuildMongoSelectExpression(x.Expression, true)
+                })
+                    .Select(c => new BsonElement(c.FieldName, c.ExpressionValue));
+                fieldNames.AddRange(assignments);
                 // Remove the unnecessary _id field
                 if (fieldNames.All(c => c.Name != "_id"))
                     fieldNames.Add(new BsonElement("_id", new BsonInt32(0)));
-
                 // Perform the projection on multiple fields
                 AddToPipeline("$project", new BsonDocument(fieldNames));
 
@@ -1710,6 +1753,14 @@ namespace MongoDB.Entities.InnerQuery
                 new BsonElement("_id", new BsonInt32(0)),
             });
             _currentPipelineDocumentUsesResultHack = true;
+
+            void CheckPureSetter(string memberName)
+            {
+                if (lambdaExp.Body.Type.GetProperty(memberName)?.SetMethod?.IsSpecialName != true)
+                {
+                    throw new NotSupportedException($"Project fields inside constructor must be pure property, incorrect field: [{lambdaExp.Body.Type.Name}.{memberName}]");
+                }
+            }
         }
 
         public void EmitPipelineStageForOfType(MethodCallExpression mce)

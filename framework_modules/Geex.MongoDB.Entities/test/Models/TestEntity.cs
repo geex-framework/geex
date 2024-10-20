@@ -21,6 +21,10 @@ namespace MongoDB.Entities.Tests.Models
 
     public record TestEntitySelectSubset
     {
+        public TestEntitySelectSubset()
+        {
+
+        }
         public TestEntitySelectSubset(string SelectId,string SelectName, int SelectValue, TestEntityEnum SelectEnum)
         {
             this.SelectId = SelectId;
@@ -29,10 +33,11 @@ namespace MongoDB.Entities.Tests.Models
             this.SelectEnum = SelectEnum;
         }
 
-        public string SelectId { get; }
+        public string SelectId { get; init;}
         public string SelectName { get; init; }
         public int SelectValue { get; init; }
         public TestEntityEnum SelectEnum { get; init; }
+        public DateTimeOffset? SelectDateTimeOffset { get; init; }
 
         public void Deconstruct(out string SelectId,out string SelectName, out int SelectValue, out TestEntityEnum SelectEnum)
         {
