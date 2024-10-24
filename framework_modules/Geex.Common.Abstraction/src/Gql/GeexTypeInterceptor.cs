@@ -17,6 +17,7 @@ namespace Geex.Common.Abstraction.Gql
 {
     public class GeexTypeInterceptor : TypeInterceptor
     {
+        public static HashSet<Type> AuditTypes = new HashSet<Type>();
         static MethodInfo AddObjectTypeMethod = typeof(SchemaBuilderExtensions).GetMethods().First(x => x is { Name: nameof(SchemaBuilderExtensions.AddObjectType), ContainsGenericParameters: true } && x.GetParameters().Length > 1);
         public static HashSet<Type> IgnoredTypes { get; } = new HashSet<Type>();
         public static HashSet<KeyValuePair<Type, Type>> OneOfConfigs { get; } = new HashSet<KeyValuePair<Type, Type>>();

@@ -14,7 +14,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Geex.Common.Abstraction.Gql.Types
 {
-    public abstract class QueryExtension<T> : ObjectTypeExtension<T>, IScopedDependency
+    public abstract class QueryExtension<T> : ObjectTypeExtension<T>, IScopedDependency where T : ObjectTypeExtension
     {
         protected override void Configure(IObjectTypeDescriptor<T> descriptor)
         {
@@ -26,7 +26,7 @@ namespace Geex.Common.Abstraction.Gql.Types
             base.Configure(descriptor);
         }
     }
-    public abstract class MutationExtension<T> : ObjectTypeExtension<T>, IScopedDependency
+    public abstract class MutationExtension<T> : ObjectTypeExtension<T>, IScopedDependency where T : ObjectTypeExtension
     {
         protected override void Configure(IObjectTypeDescriptor<T> descriptor)
         {
@@ -87,12 +87,19 @@ namespace Geex.Common.Abstraction.Gql.Types
                         return await (unApprove.Invoke(this,
                             new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
                     });
+                if (GeexTypeInterceptor.AuditTypes.Contains(mutationType))
+                {
+                    submitFieldDescriptor.Directive("audit");
+                    approveFieldDescriptor.Directive("audit");
+                    unSubmitFieldDescriptor.Directive("audit");
+                    unApproveFieldDescriptor.Directive("audit");
+                }
                 base.Configure(descriptor);
             }
             base.Configure(descriptor);
         }
     }
-    public abstract class SubscriptionExtension<T> : ObjectTypeExtension<T>, IScopedDependency
+    public abstract class SubscriptionExtension<T> : ObjectTypeExtension<T>, IScopedDependency where T : ObjectTypeExtension
     {
         protected override void Configure(IObjectTypeDescriptor<T> descriptor)
         {

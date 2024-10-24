@@ -24,7 +24,6 @@ namespace Geex.Common.AuditLogs
 {
     public class AuditDirectiveType
     {
-
         public class Config : GqlConfig.Directive<AuditDirectiveType>
         {
             /// <inheritdoc />

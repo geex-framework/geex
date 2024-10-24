@@ -11,15 +11,17 @@ using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 using System.Reflection;
 using Geex.Common.Abstraction.Approbation;
+using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
 
 namespace Geex.Common.AuditLogs
 {
     public static class AuditLogExtensions
     {
-        public static IObjectTypeDescriptor<T> AuditFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : class
+        public static IObjectTypeDescriptor<T> AuditFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : ObjectTypeExtension
         {
             var rootExtensionType = typeof(T);
+            GeexTypeInterceptor.AuditTypes.AddIfNotContains(rootExtensionType);
             if (rootExtensionType.IsAssignableTo<MutationExtension<T>>() || rootExtensionType.IsAssignableTo<QueryExtension<T>>() || rootExtensionType.IsAssignableTo<SubscriptionExtension<T>>())
             {
                 var methods = rootExtensionType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).AsEnumerable();
