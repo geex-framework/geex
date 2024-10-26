@@ -49,7 +49,8 @@ public class JsonNodeType : ScalarType<JsonNode>
             return jsonNode;
         }
 
-        return JsonNode.Parse(literal.ToJson());
+        var jsonStr = literal.Value?.ToString();
+        return string.IsNullOrEmpty(jsonStr) ? null : JsonNode.Parse(jsonStr);
     }
 
     public override IValueNode ParseValue(object? value)

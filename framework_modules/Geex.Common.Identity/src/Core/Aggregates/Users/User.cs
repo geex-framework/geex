@@ -41,7 +41,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
         }
 
         public User(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher,
-            ICreateUserRequest request)
+            ICreateUserRequest request) : this()
         {
             this.Username = request.Username;
             this.OpenId = request.OpenId;

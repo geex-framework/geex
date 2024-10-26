@@ -25,6 +25,7 @@ namespace Geex.Common.Authentication
         {
             base.Configure(descriptor);
             descriptor.Field(x=>x.Authenticate(default)).Audit();
+            descriptor.Field(x=>x.FederateAuthenticate(default)).Audit();
         }
 
         private readonly IUnitOfWork _uow;

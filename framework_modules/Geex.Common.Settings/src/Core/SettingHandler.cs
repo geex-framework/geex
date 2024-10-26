@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,12 +69,13 @@ namespace Geex.Common.Settings.Core
                 throw new BusinessException(GeexExceptionType.NotFound, message: "setting name not exists.");
             }
 
-            if (_currentTenant.Value?.Code.IsNullOrEmpty() != true && scope == SettingScopeEnumeration.Global)
+            var isEmptyTenant = string.IsNullOrEmpty(_currentTenant.Value?.Code);
+            if (isEmptyTenant != true && scope == SettingScopeEnumeration.Global)
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "cannot update global setting in tenant.");
             }
 
-            if (_currentTenant.Value?.Code.IsNullOrEmpty() == true && scope == SettingScopeEnumeration.Tenant)
+            if (isEmptyTenant == true && scope == SettingScopeEnumeration.Tenant)
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "cannot update tenant setting in host.");
             }
@@ -87,8 +89,15 @@ namespace Geex.Common.Settings.Core
             {
                 setting.SetValue(value);
             }
-            // bug: 这里挂载事件会导致生命周期延长, 先同步执行
-            await _redisClient.SetNamedAsync(setting.GetRedisKey());
+            try
+            {
+                // bug: 这里挂载事件会导致生命周期延长, 先同步执行
+                await _redisClient.SetNamedAsync(setting.GetRedisKey());
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e,"Failed to update redis cache for settings. {settings}", new { setting.Scope, setting.Name, setting.ScopedKey, setting.Value }.ToJsonSafe());
+            }
             //_dbContext.OnCommitted += async (sender) =>
             // {
             //     await _redisClient.SetNamedAsync(setting.GetRedisKey());
