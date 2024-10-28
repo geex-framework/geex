@@ -1,106 +1,124 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.Json;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.Logging
 {
-    public static class Extensions
+    public static class LoggerExtensions
     {
-        public static void LogTraceWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, params object[] args)
+        private static void _LogWithDataInternal(ILogger logger, LogLevel level, EventId? eventId, Exception exception, string message)
         {
-            logger.Log(LogLevel.Trace, eventId, args, exception, (_, __) => message);
+            if (eventId.HasValue)
+            {
+                logger.Log(level, eventId.Value, exception, message);
+            }
+            else
+            {
+                logger.Log(level, exception, message);
+            }
         }
-        public static void LogTraceWithData(this ILogger logger, EventId eventId, string message, params object[] args)
+        // 通用的日志方法
+        private static void LogWithData(
+            this ILogger logger,
+            LogLevel level,
+            string message,
+            EventId? eventId = null,
+            Exception exception = null,
+            object data = null
+            )
         {
-            logger.LogTraceWithData(eventId, message, default, args);
+            var sb = new StringBuilder();
+            sb.AppendLine(message);
+            sb.AppendLine($"---------- data -----------");
+            sb.AppendLine(data?.ToJsonSafe(x =>
+            {
+                x.WriteIndented = true;
+            }));
+
+            _LogWithDataInternal(logger, level, eventId, exception, sb.ToString());
         }
-        public static void LogDebugWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, params object[] args)
+        public static void LogTraceWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Trace, eventId, exception, message, data);
+
+        public static void LogTraceWithData(this ILogger logger, EventId eventId, string message, object data = null) =>
+            logger.LogTraceWithData(eventId, message, null, data);
+
+        public static void LogTraceWithData(this ILogger logger, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Trace, exception, message, data);
+
+        public static void LogTraceWithData(this ILogger logger, string message, object data = null) =>
+            logger.LogTraceWithData(message, null, data);
+
+        public static void LogDebugWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Debug, eventId, exception, message, data);
+
+        public static void LogDebugWithData(this ILogger logger, EventId eventId, string message, object data = null) =>
+            logger.LogDebugWithData(eventId, message, null, data);
+
+        public static void LogDebugWithData(this ILogger logger, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Debug, exception, message, data);
+
+        public static void LogDebugWithData(this ILogger logger, string message, object data = null) =>
+            logger.LogDebugWithData(message, null, data);
+
+        public static void LogInformationWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Information, eventId, exception, message, data);
+
+        public static void LogInformationWithData(this ILogger logger, EventId eventId, string message, object data = null) =>
+            logger.LogInformationWithData(eventId, message, null, data);
+
+        public static void LogInformationWithData(this ILogger logger, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Information, exception, message, data);
+
+        public static void LogInformationWithData(this ILogger logger, string message, object data = null) =>
+            logger.LogInformationWithData(message, null, data);
+
+        public static void LogWarningWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Warning, eventId, exception, message, data);
+
+        public static void LogWarningWithData(this ILogger logger, EventId eventId, string message, object data = null) =>
+            logger.LogWarningWithData(eventId, message, null, data);
+
+        public static void LogWarningWithData(this ILogger logger, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Warning, exception, message, data);
+
+        public static void LogWarningWithData(this ILogger logger, string message, object data = null) =>
+            logger.LogWarningWithData(message, null, data);
+
+        public static void LogErrorWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Error, eventId, exception, message, data);
+
+        public static void LogErrorWithData(this ILogger logger, EventId eventId, string message, object data = null) =>
+            logger.LogErrorWithData(eventId, message, null, data);
+
+        public static void LogErrorWithData(this ILogger logger, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Error, exception, message, data);
+
+        public static void LogErrorWithData(this ILogger logger, string message, object data = null) =>
+            logger.LogErrorWithData(message, null, data);
+
+        public static void LogCriticalWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Critical, eventId, exception, message, data);
+
+        public static void LogCriticalWithData(this ILogger logger, EventId eventId, string message, object data = null) =>
+            logger.LogCriticalWithData(eventId, message, null, data);
+
+        public static void LogCriticalWithData(this ILogger logger, string message, Exception exception = null, object data = null) =>
+            Log(logger, LogLevel.Critical, exception, message, data);
+
+        public static void LogCriticalWithData(this ILogger logger, string message, object data = null) =>
+            logger.LogCriticalWithData(message, null, data);
+
+        private static void Log(ILogger logger, LogLevel level, EventId eventId, Exception exception, string message, object data = null)
         {
-            logger.Log(LogLevel.Debug, eventId, args, exception, (_, __) => message);
-        }
-        public static void LogDebugWithData(this ILogger logger, EventId eventId, string message, params object[] args)
-        {
-            logger.LogDebugWithData(eventId, message, default, args);
-        }
-        public static void LogInformationWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, params object[] args)
-        {
-            logger.Log(LogLevel.Information, eventId, args, exception, (_, __) => message);
-        }
-        public static void LogInformationWithData(this ILogger logger, EventId eventId, string message, params object[] args)
-        {
-            logger.LogInformationWithData(eventId, message, default, args);
-        }
-        public static void LogWarningWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, params object[] args)
-        {
-            logger.Log(LogLevel.Warning, eventId, args, exception, (_, __) => message);
-        }
-        public static void LogWarningWithData(this ILogger logger, EventId eventId, string message, params object[] args)
-        {
-            logger.LogWarningWithData(eventId, message, default, args);
-        }
-        public static void LogErrorWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, params object[] args)
-        {
-            logger.Log(LogLevel.Error, eventId, args, exception, (_, __) => message);
-        }
-        public static void LogErrorWithData(this ILogger logger, EventId eventId, string message, params object[] args)
-        {
-            logger.LogErrorWithData(eventId, message, default, args);
-        }
-        public static void LogCriticalWithData(this ILogger logger, EventId eventId, string message, Exception exception = null, params object[] args)
-        {
-            logger.Log(LogLevel.Critical, eventId, args, exception, (_, __) => message);
-        }
-        public static void LogCriticalWithData(this ILogger logger, EventId eventId, string message, params object[] args)
-        {
-            logger.LogCriticalWithData(eventId, message, default, args);
+            LogWithData(logger, level, message, eventId, exception, data);
         }
 
-        public static void LogTraceWithData(this ILogger logger, string message, Exception exception = null, params object[] args)
+        private static void Log(ILogger logger, LogLevel level, Exception exception, string message, object data = null)
         {
-            logger.Log(LogLevel.Trace, new EventId(), args, exception, (_, __) => message);
-        }
-        public static void LogTraceWithData(this ILogger logger, string message, params object[] args)
-        {
-            logger.LogTraceWithData(new EventId(), message, default, args);
-        }
-        public static void LogDebugWithData(this ILogger logger, string message, Exception exception = null, params object[] args)
-        {
-            logger.Log(LogLevel.Debug, new EventId(), args, exception, (_, __) => message);
-        }
-        public static void LogDebugWithData(this ILogger logger, string message, params object[] args)
-        {
-            logger.LogDebugWithData(new EventId(), message, default, args);
-        }
-        public static void LogInformationWithData(this ILogger logger, string message, Exception exception = null, params object[] args)
-        {
-            logger.Log(LogLevel.Information, new EventId(), args, exception, (_, __) => message);
-        }
-        public static void LogInformationWithData(this ILogger logger, string message, params object[] args)
-        {
-            logger.LogInformationWithData(new EventId(), message, default, args);
-        }
-        public static void LogWarningWithData(this ILogger logger, string message, Exception exception = null, params object[] args)
-        {
-            logger.Log(LogLevel.Warning, new EventId(), args, exception, (_, __) => message);
-        }
-        public static void LogWarningWithData(this ILogger logger, string message, params object[] args)
-        {
-            logger.LogWarningWithData(new EventId(), message, default, args);
-        }
-        public static void LogErrorWithData(this ILogger logger, Exception exception,string message,  params object[] args)
-        {
-            logger.Log(LogLevel.Error, new EventId(), args, exception, (_, __) => message);
-        }
-        public static void LogErrorWithData(this ILogger logger, string message, params object[] args)
-        {
-            logger.LogErrorWithData(new EventId(), message, default, args);
-        }
-        public static void LogCriticalWithData(this ILogger logger, string message, Exception exception = null, params object[] args)
-        {
-            logger.Log(LogLevel.Critical, new EventId(), args, exception, (_, __) => message);
-        }
-        public static void LogCriticalWithData(this ILogger logger, string message, params object[] args)
-        {
-            logger.LogCriticalWithData(new EventId(), message, default, args);
+            LogWithData(logger, level, message, default, exception, data);
         }
     }
 }

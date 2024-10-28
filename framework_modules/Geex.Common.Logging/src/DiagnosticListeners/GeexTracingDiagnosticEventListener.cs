@@ -6,8 +6,7 @@ using System.Linq;
 using Elastic.Apm;
 using Elastic.Apm.Api;
 using Geex.Common.Abstractions;
-using Geex.Common.Logging;
-
+using Geex.Common.Logging.Extensions;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Instrumentation;
 using HotChocolate.Execution.Options;
@@ -17,7 +16,7 @@ using HotChocolate.Resolvers;
 using HotChocolate.Types;
 using Microsoft.Extensions.Logging;
 
-namespace Geex.Common.Gql
+namespace Geex.Common.Logging.DiagnosticListeners
 {
     internal class GeexTracingDiagnosticEventListener : ExecutionDiagnosticEventListener
     {
@@ -47,7 +46,7 @@ namespace Geex.Common.Gql
                 return EmptyScope;
             DateTime startTime = this._timestampProvider.UtcNow();
             var logEntry = new { QueryId = context.Request.QueryId, Query = context.GetOperationDetails(), OperationName = context.Request.OperationName, Variables = context.Request.VariableValues?.ToDictionary<KeyValuePair<string, object>, string, object>(x => x.Key, x => (x.Value as IValueNode)?.Value) };
-            this.logger.LogInformationWithData(new EventId((nameof(GeexTracingOperationScope) + "Start").GetHashCode(), nameof(GeexTracingOperationScope) + "Start"), "Request started.", logEntry);
+            this.logger.LogInformationWithData(new EventId((nameof(GeexTracingOperationScope) + "Start").GetHashCode(), nameof(GeexTracingOperationScope) + "Start"), $"Request started.", logEntry);
             GeexTracingResultBuilder builder = CreateBuilder(context, logger);
             return new GeexTracingOperationScope(context, logger, startTime, builder, this._timestampProvider);
         }

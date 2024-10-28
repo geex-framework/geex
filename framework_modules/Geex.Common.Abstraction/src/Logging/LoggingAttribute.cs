@@ -3,15 +3,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
-
-using Geex.Common.Abstraction;
-
 using MethodBoundaryAspect.Fody.Attributes;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Geex.Common.Logging
+namespace Geex.Common.Abstraction.Logging
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public sealed class LoggingAttribute : OnMethodBoundaryAspect

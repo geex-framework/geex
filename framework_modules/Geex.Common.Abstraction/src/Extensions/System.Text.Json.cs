@@ -1,7 +1,13 @@
-﻿using System.Text.Encodings.Web;
+﻿using System.Collections.Concurrent;
+using System.Linq.Expressions;
+using System.Text.Encodings.Web;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+
+using Fasterflect;
+
 using Force.DeepCloner;
+
 using Geex.Common.Abstraction.Json;
 using Geex.Common.Abstractions;
 using Geex.Common.Json;
@@ -11,6 +17,7 @@ namespace System.Text.Json
 {
     public static class Json
     {
+        private static readonly ConcurrentDictionary<string, JsonSerializerOptions> CustomOptionsCache = new ConcurrentDictionary<string, JsonSerializerOptions>();
         public static void WriteRaw(this Utf8JsonWriter writer, string jsonRaw)
         {
             using JsonDocument document = JsonDocument.Parse(jsonRaw);
@@ -50,9 +57,34 @@ namespace System.Text.Json
             }
         }
 
+        public static string ToJsonSafe<T>(this T @this, Action<JsonSerializerOptions> optionsAction)
+        {
+            try
+            {
+                return @this.ToJson(optionsAction);
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
+        }
+
         public static string ToJson<T>(this T @this)
         {
             return JsonSerializer.Serialize(@this, DefaultSerializeSettings);
+        }
+
+        public static string ToJson<T>(this T @this, Action<JsonSerializerOptions> optionsAction)
+        {
+            var key = optionsAction.GetHashCode().ToString();
+            if (CustomOptionsCache.TryGetValue(key, out var options))
+            {
+                return JsonSerializer.Serialize(@this, options);
+            }
+            options = new JsonSerializerOptions(DefaultSerializeSettings);
+            optionsAction(options);
+            CustomOptionsCache.TryAdd(key, options);
+            return JsonSerializer.Serialize(@this, options);
         }
 
         public static T? ToObjectSafe<T>(this string @this)
@@ -137,43 +169,43 @@ namespace System.Text.Json
         }
         public static JsonNode? ToNode(this JsonElement @this)
         {
-             return JsonSerializer.Deserialize<JsonNode>(@this, DefaultSerializeSettings);
+            return JsonSerializer.Deserialize<JsonNode>(@this, DefaultSerializeSettings);
         }
         public static JsonElement? ToNode(this JsonNode @this)
         {
-             return JsonSerializer.Deserialize<JsonElement>(@this, DefaultSerializeSettings);
+            return JsonSerializer.Deserialize<JsonElement>(@this, DefaultSerializeSettings);
         }
 
         public static T? GetValue<T>(this JsonNode @this, string key)
         {
-             var paths = key.Split(':', StringSplitOptions.RemoveEmptyEntries);
-             var currentNode = @this;
-             foreach (var path in paths)
-             {
-                 currentNode = currentNode[path];
-             }
-             return currentNode.Deserialize<T>();
+            var paths = key.Split(':', StringSplitOptions.RemoveEmptyEntries);
+            var currentNode = @this;
+            foreach (var path in paths)
+            {
+                currentNode = currentNode[path];
+            }
+            return currentNode.Deserialize<T>();
         }
 
         public static object? GetValue(this JsonNode @this)
         {
-             return @this.Deserialize<object>();
+            return @this.Deserialize<object>();
         }
 
         public static object? GetValue(this JsonElement @this)
         {
-             return @this.Deserialize<object>();
+            return @this.Deserialize<object>();
         }
 
         public static T? GetValue<T>(this JsonElement @this, string key)
         {
-             var paths = key.Split(':', StringSplitOptions.RemoveEmptyEntries);
-             var currentNode = @this;
-             foreach (var path in paths)
-             {
-                 currentNode = currentNode.GetProperty(path);
-             }
-             return currentNode.Deserialize<T>();
+            var paths = key.Split(':', StringSplitOptions.RemoveEmptyEntries);
+            var currentNode = @this;
+            foreach (var path in paths)
+            {
+                currentNode = currentNode.GetProperty(path);
+            }
+            return currentNode.Deserialize<T>();
         }
     }
 

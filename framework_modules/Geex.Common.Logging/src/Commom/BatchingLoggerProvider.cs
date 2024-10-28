@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Commom
+namespace Geex.Common.Logging.Commom
 {
     public abstract class BatchingLoggerProvider : ILoggerProvider
     {

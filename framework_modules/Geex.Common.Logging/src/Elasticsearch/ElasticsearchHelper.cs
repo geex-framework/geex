@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-
 using Elasticsearch.Net;
+using Geex.Common.Logging.Commom;
 
-using GeexBox.ElasticSearch.Zero.Logging.Commom;
-
-namespace GeexBox.ElasticSearch.Zero.Logging.Elasticsearch
+namespace Geex.Common.Logging.Elasticsearch
 {
     internal class ElasticsearchHelper
     {

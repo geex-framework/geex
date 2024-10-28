@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Commom
+namespace Geex.Common.Logging.Commom
 {
     public class BatchLoggerConfigureOptions : IConfigureOptions<BatchingLoggerOptions>
     {

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using GeexBox.ElasticSearch.Zero.Logging.Commom;
+using Geex.Common.Logging.Commom;
 using Microsoft.Extensions.Logging;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Elasticsearch
+namespace Geex.Common.Logging.Elasticsearch
 {
     public class EsLogger : ILogger
     {
@@ -14,7 +14,7 @@ namespace GeexBox.ElasticSearch.Zero.Logging.Elasticsearch
         private readonly string _serviceName;
         private readonly string _serverIp;
         private readonly string _env;
-        private readonly JsonSerializerOptions _serializerSettings = new JsonSerializerOptions(Json.DefaultSerializeSettings)
+        private readonly JsonSerializerOptions _serializerSettings = new JsonSerializerOptions(System.Text.Json.Json.DefaultSerializeSettings)
         {
             IgnoreNullValues = true,
             WriteIndented = false

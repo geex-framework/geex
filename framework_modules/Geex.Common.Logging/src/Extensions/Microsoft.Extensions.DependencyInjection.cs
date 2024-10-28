@@ -1,7 +1,7 @@
 ﻿using System;
 using Geex.Common.Gql;
 using Geex.Common.Logging;
-
+using Geex.Common.Logging.DiagnosticListeners;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Execution.Instrumentation;
 using Microsoft.Extensions.DependencyInjection.Extensions;

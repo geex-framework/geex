@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Elasticsearch
+namespace Geex.Common.Logging.Elasticsearch
 {
     public static class EsLoggerFactoryExtensions
     {

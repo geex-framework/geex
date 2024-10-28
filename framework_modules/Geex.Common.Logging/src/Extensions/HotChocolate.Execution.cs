@@ -1,8 +1,10 @@
 ﻿using System.Reflection;
+using HotChocolate;
+using HotChocolate.Execution;
 using HotChocolate.Execution.Processing;
 using HotChocolate.Resolvers;
 
-namespace HotChocolate.Execution
+namespace Geex.Common.Logging.Extensions
 {
     internal static class HotChocolate_Execution
     {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Geexbox.Logging.ElasticSearch.ZeroLoggingCommom
+namespace Geex.Common.Logging.Commom
 {
     public class GeexboxEventId
     {

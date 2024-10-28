@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Commom
+namespace Geex.Common.Logging.Commom
 {
     public struct LogMessage
     {

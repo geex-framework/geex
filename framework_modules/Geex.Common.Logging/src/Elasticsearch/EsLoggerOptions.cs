@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Elasticsearch.Net;
-using GeexBox.ElasticSearch.Zero.Logging.Commom;
+using Geex.Common.Logging.Commom;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Elasticsearch
+namespace Geex.Common.Logging.Elasticsearch
 {
     public class EsLoggerOptions : BatchingLoggerOptions
     {

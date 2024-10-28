@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Elasticsearch
+namespace Geex.Common.Logging.Elasticsearch
 {
     internal class ElasticsearchTemplateProvider
     {

@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Linq;
-
 using Elastic.Apm;
 using Elastic.Apm.Api;
+using Geex.Common.Logging.Extensions;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Instrumentation;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Geex.Common.Gql
+namespace Geex.Common.Logging.DiagnosticListeners
 {
     internal class GeexTracingOperationScope : IDisposable
     {

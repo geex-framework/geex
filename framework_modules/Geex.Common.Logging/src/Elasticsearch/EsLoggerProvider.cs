@@ -4,14 +4,14 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Elasticsearch.Net;
 using ElasticSearch;
-using GeexBox.ElasticSearch.Zero.Logging.Commom;
+using Elasticsearch.Net;
+using Geex.Common.Logging.Commom;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Elasticsearch
+namespace Geex.Common.Logging.Elasticsearch
 {
     [ProviderAlias("Elasticsearch")]
     public class EsLoggerProvider : BatchingLoggerProvider

@@ -2,7 +2,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace GeexBox.ElasticSearch.Zero.Logging.Commom
+namespace Geex.Common.Logging.Commom
 {
     public class BatchingLogger : ILogger
     {
