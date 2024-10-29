@@ -45,7 +45,7 @@ namespace Geex.Common.Authentication.Utils
             {
                 return AuthenticateResult.NoResult();
             }
-
+            //todo: 授权认证, jwt和openidc配置同步, 增加validation
             var jwt = _tokenHandler.ReadJwtToken(accessToken);
             var identity = new ClaimsIdentity(jwt.Claims, SchemeName);
             var principal = new ClaimsPrincipal(identity);

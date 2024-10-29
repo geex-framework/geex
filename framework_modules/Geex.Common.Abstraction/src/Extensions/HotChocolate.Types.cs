@@ -195,6 +195,7 @@ namespace HotChocolate.Types
                 }
                 else
                 {
+                    @this.Field(item).Authorize();
                     logger.LogWarning($@"跳过匹配权限规则:{item.DeclaringType.Name}.{item.Name}");
                 }
             }
@@ -217,6 +218,7 @@ namespace HotChocolate.Types
                     }
                     else
                     {
+                        @this.Field(policy.Split('_').Last()).Type<BooleanType>().Authorize();
                         logger.LogWarning($@"跳过匹配权限规则:{typeof(T).Name}.{item.Name}");
                     }
                 }
@@ -254,6 +256,7 @@ namespace HotChocolate.Types
             }
             else
             {
+                fieldDescriptor = fieldDescriptor.Authorize();
                 logger.LogDebug($@"跳过匹配权限规则:{propertyOrMethod.DeclaringType?.Name}.{propertyOrMethod.Name}");
             }
 
@@ -283,6 +286,7 @@ namespace HotChocolate.Types
             }
             else
             {
+                fieldDescriptor = fieldDescriptor.Authorize();
                 logger.LogDebug($@"跳过匹配权限规则:{propertyOrMethod.DeclaringType?.Name}.{propertyOrMethod.Name}");
             }
 
