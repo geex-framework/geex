@@ -23,9 +23,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata;
+
+using Geex.MongoDB.Entities.InnerQuery;
 
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
@@ -931,27 +935,29 @@ namespace MongoDB.Entities.InnerQuery
             // c.Age
             if (expression is MemberExpression memberExpression)
             {
+                var member = memberExpression.Member;
+
                 // Handle member access of string objects
-                if (memberExpression.Member.DeclaringType == typeof(string))
+                if (member.DeclaringType == typeof(string))
                 {
-                    if (memberExpression.Member.Name == "Length")
+                    if (member.Name == "Length")
                         return new BsonDocument("$strLenCP", BuildMongoSelectExpression(memberExpression.Expression));
 
-                    throw new InvalidQueryException($"{memberExpression.Member.Name} property on String not supported due to lack of Mongo support :(");
+                    throw new InvalidQueryException($"{member.Name} property on String not supported due to lack of Mongo support :(");
                 }
 
                 // Handle member access of TimeSpan objects
-                if (memberExpression.Member.DeclaringType == typeof(TimeSpan))
+                if (member.DeclaringType == typeof(TimeSpan))
                 {
                     var expressionDoc = BuildMongoSelectExpression(memberExpression.Expression);
 
                     // No-op - we store these natively as ticks
-                    if (memberExpression.Member.Name == "Ticks")
+                    if (member.Name == "Ticks")
                         return expressionDoc;
 
                     // Handle our various Total properties
                     long divisor = 0;
-                    switch (memberExpression.Member.Name)
+                    switch (member.Name)
                     {
                         case "TotalMilliseconds": divisor = 10000; break;
                         case "TotalSeconds": divisor = 10000000; break;
@@ -963,12 +969,12 @@ namespace MongoDB.Entities.InnerQuery
                     if (divisor > 0)
                         return new BsonDocument("$divide", new BsonArray(new[] { expressionDoc, BsonValue.Create(divisor) }));
 
-                    throw new InvalidQueryException($"{memberExpression.Member.Name} property on TimeSpan not supported :(");
+                    throw new InvalidQueryException($"{member.Name} property on TimeSpan not supported :(");
                 }
 
-                if (memberExpression.Member.DeclaringType == typeof(DateTime))
+                if (member.DeclaringType == typeof(DateTime))
                 {
-                    if (memberExpression.Member.Name == "Date")
+                    if (member.Name == "Date")
                     {
                         // Get the thing we're supposed to take the .Date from
                         BsonValue dateTimeExpression;
@@ -1001,16 +1007,16 @@ namespace MongoDB.Entities.InnerQuery
                     }
 
                     // .Net DayOfWeek is 0 indexed, Mongo is 1 indexed
-                    if (memberExpression.Member.Name == "DayOfWeek")
+                    if (member.Name == "DayOfWeek")
                     {
                         var array = new BsonArray(new[] { new BsonDocument("$dayOfWeek", BuildMongoSelectExpression(memberExpression.Expression)), (BsonValue)1 });
                         return new BsonDocument("$subtract", array);
                     }
 
-                    if (NodeToMongoDateOperatorDict.TryGetValue(memberExpression.Member.Name, out string mongoDateOperator))
+                    if (NodeToMongoDateOperatorDict.TryGetValue(member.Name, out string mongoDateOperator))
                         return new BsonDocument(mongoDateOperator, BuildMongoSelectExpression(memberExpression.Expression));
 
-                    throw new InvalidQueryException($"{memberExpression.Member.Name} property on DateTime not supported due to lack of Mongo support :(");
+                    throw new InvalidQueryException($"{member.Name} property on DateTime not supported due to lack of Mongo support :(");
                 }
 
                 // Handle a special case of member access: CreationTime on an ObjectId
@@ -1592,6 +1598,21 @@ namespace MongoDB.Entities.InnerQuery
         /// <summary>Adds a new $project stage to the pipeline for a .Select method call</summary>
         public void EmitPipelineStageForSelect(LambdaExpression lambdaExp)
         {
+            ParameterExpression param;
+            try
+            {
+                param = lambdaExp.Parameters.Single();
+            }
+            catch (Exception e)
+            {
+                throw new NotSupportedException($"select expression is not supported, incorrect params count: {lambdaExp}", e);
+            }
+            if (param.Type.IsAssignableTo<IEntityBase>())
+            {
+                var visitor = new QueryablePropertyVisitor(param);
+                visitor.Visit(lambdaExp.Body);
+            }
+
             // Select supports the following modes:
             //    NewExpression:      Select(c => new { c.Age + 10, Name = c.FirstName })
             //    Non-new expression: Select(c => 10)
@@ -1631,46 +1652,7 @@ namespace MongoDB.Entities.InnerQuery
                 {
                     var newExp = (NewExpression)lambdaExp.Body;
                     // Get the mongo field names for each property in the new {...}
-                    var fieldNames = newExp.Arguments.Select(x =>
-                        {
-                            if (x is MemberExpression
-                                {
-                                    Expression:
-                                    {
-                                        //NodeType: ExpressionType.Parameter
-                                    }
-                                } memberExp)
-                            {
-                                CheckPureSetter(memberExp.Member.Name);
-                                return new
-                                {
-                                    FieldName = GetMongoFieldName(memberExp.Member),
-                                    ExpressionValue = BuildMongoSelectExpression(memberExp, true)
-                                };
-                            }
-
-                            if (x is UnaryExpression
-                                {
-                                    Operand: MemberExpression
-                                    {
-                                        //Expression: { NodeType: ExpressionType.Parameter }
-                                    } nestedMemberExp
-                                })
-                            {
-                                CheckPureSetter(nestedMemberExp.Member.Name);
-                                return new
-                                {
-                                    FieldName = GetMongoFieldName(nestedMemberExp.Member),
-                                    ExpressionValue = BuildMongoSelectExpression(nestedMemberExp, true)
-                                };
-                            }
-                            throw new NotSupportedException($"Not supported express of: {x}, see data for detail.")
-                            {
-                                Data = { { "newExp", newExp } }
-                            };
-                        })
-                        .Select(c => new BsonElement(c.FieldName, c.ExpressionValue))
-                        .ToList();
+                    var fieldNames = BuildFieldProjections(newExp);
 
                     // Remove the unnecessary _id field
                     if (fieldNames.All(c => c.Name != "_id" && c.Name != "Id"))
@@ -1687,48 +1669,7 @@ namespace MongoDB.Entities.InnerQuery
             // Handle typed hard case: Select(c => new Foo(c.Code) { Bar = c.FirstName })
             if (lambdaExp.Body is MemberInitExpression memberInitExp)
             {
-                var ctorArgs = memberInitExp.NewExpression.Arguments;
-
-                var fieldNames = ctorArgs.Select(x =>
-                        {
-                            if (x is MemberExpression
-                                {
-                                    Expression:
-                                    {
-                                        //NodeType: ExpressionType.Parameter
-                                    }
-                                } memberExp)
-                            {
-                                CheckPureSetter(memberExp.Member.Name);
-                                return new
-                                {
-                                    FieldName = GetMongoFieldName(memberExp.Member),
-                                    ExpressionValue = BuildMongoSelectExpression(memberExp, true)
-                                };
-                            }
-
-                            if (x is UnaryExpression
-                                {
-                                    Operand: MemberExpression
-                                    {
-                                        //Expression: { NodeType: ExpressionType.Parameter }
-                                    } nestedMemberExp
-                                })
-                            {
-                                CheckPureSetter(nestedMemberExp.Member.Name);
-                                return new
-                                {
-                                    FieldName = GetMongoFieldName(nestedMemberExp.Member),
-                                    ExpressionValue = BuildMongoSelectExpression(nestedMemberExp, true)
-                                };
-                            }
-                            throw new NotSupportedException($"Not supported express of: {x}, see data for detail.")
-                            {
-                                Data = { { "memberInitExp", memberInitExp } }
-                            };
-                        })
-                        .Select(c => new BsonElement(c.FieldName, c.ExpressionValue))
-                        .ToList();
+                var fieldNames = BuildFieldProjections(memberInitExp.NewExpression);
                 var assignments = memberInitExp.Bindings.Cast<MemberAssignment>().Select(x => new
                 {
                     FieldName = GetMongoFieldName(x.Member),
@@ -1758,7 +1699,58 @@ namespace MongoDB.Entities.InnerQuery
             {
                 if (lambdaExp.Body.Type.GetProperty(memberName)?.SetMethod?.IsSpecialName != true)
                 {
-                    throw new NotSupportedException($"Project fields inside constructor must be pure property, incorrect field: [{lambdaExp.Body.Type.Name}.{memberName}]");
+                    throw new NotSupportedException($"Project fields must be pure property and should be same-name-assigned if in constructor, incorrect field: [{lambdaExp.Body.Type.FullName}.{memberName}]");
+                }
+            }
+
+            List<BsonElement> BuildFieldProjections(NewExpression newExpression)
+            {
+                var argsExpression = newExpression.Arguments;
+                try
+                {
+                    return argsExpression.Select(x =>
+                        {
+                            if (x is MemberExpression
+                                {
+                                    Expression:
+                                    {
+                                        //NodeType: ExpressionType.Parameter
+                                    }
+                                } memberExp)
+                            {
+                                CheckPureSetter(memberExp.Member.Name);
+                                return new
+                                {
+                                    FieldName = GetMongoFieldName(memberExp.Member),
+                                    ExpressionValue = BuildMongoSelectExpression(memberExp, true)
+                                };
+                            }
+
+                            if (x is UnaryExpression
+                                {
+                                    Operand: MemberExpression
+                                    {
+                                        //Expression: { NodeType: ExpressionType.Parameter }
+                                    } nestedMemberExp
+                                })
+                            {
+                                CheckPureSetter(nestedMemberExp.Member.Name);
+                                return new
+                                {
+                                    FieldName = GetMongoFieldName(nestedMemberExp.Member),
+                                    ExpressionValue = BuildMongoSelectExpression(nestedMemberExp, true)
+                                };
+                            }
+
+                            throw new NotSupportedException(
+                                $"Not supported express of: [{x}].");
+                        })
+                        .Select(c => new BsonElement(c.FieldName, c.ExpressionValue))
+                        .ToList();
+                }
+                catch (NotSupportedException e)
+                {
+                    throw new NotSupportedException($"Not supported express of: [{newExpression}], see inner exception for details.", e);
                 }
             }
         }

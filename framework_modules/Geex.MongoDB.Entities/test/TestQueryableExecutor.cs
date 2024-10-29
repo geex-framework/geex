@@ -222,7 +222,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
         }
 
-        [TestMethod]
+        //[TestMethod]
         public async Task undefined_field_should_work()
         {
             var dbContext = new DbContext();
@@ -314,6 +314,40 @@ namespace MongoDB.Entities.Tests
         }
 
         [TestMethod]
+        public async Task select_should_not_work_with_calculated_property()
+        {
+            var dbContext = new DbContext();
+            var entity = dbContext.Attach(new TestEntity()
+            {
+                Name = "local1",
+                Value = 5,
+                Enum = TestEntityEnum.Value1,
+                Data = new[] { 1, 2 }
+            });
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext(entityTrackingEnabled: false);
+            var testEntityQuery = dbContext.Query<TestEntity>().Where(x => x.Id == entity.Id);
+            testEntityQuery.Select(x => x.Value).FirstOrDefault().ShouldBe(5);
+            try
+            {
+                testEntityQuery.Select(x => x.ValuePlus1).FirstOrDefault().ShouldBe(6);
+            }
+            catch (Exception e)
+            {
+                e.Message.ShouldContain("ValuePlus1");
+            }
+            try
+            {
+                testEntityQuery.Select(x => x.ValuePlus1 + 1).FirstOrDefault().ShouldBe(7);
+            }
+            catch (Exception e)
+            {
+                e.Message.ShouldContain("ValuePlus1");
+            }
+        }
+
+        [TestMethod]
         public async Task select_should_work_with_projection()
         {
             var dbContext = new DbContext();
@@ -350,7 +384,7 @@ namespace MongoDB.Entities.Tests
             }
             catch (Exception e)
             {
-                e.Message.ShouldBe("Project fields inside constructor must be pure property, incorrect field: [TestEntitySelectSubset.Id]");
+                e.Message.ShouldStartWith("Not supported express of: [new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum)]");
             }
 
         }

@@ -166,7 +166,7 @@ public class StandardizeQueryExpressionVisitor : ExpressionVisitor
                         return Expression.Call(
                             typeof(Queryable),
                             node.Method.Name,
-                            new Type[] { },
+                            new Type[] {  },
                             selectCall
                         );
                     }

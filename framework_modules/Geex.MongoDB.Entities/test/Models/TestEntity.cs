@@ -8,6 +8,7 @@ namespace MongoDB.Entities.Tests.Models
         public string Name { get; set; }
         public int Value { get; set; }
         public TestEntityEnum Enum { get; set; }
+        public int ValuePlus1 => Value + 1;
         public int[] Data { get; set; }
         public DateTimeOffset? DateTimeOffset { get; set; }
         public DateTime DateTime { get; set; }
