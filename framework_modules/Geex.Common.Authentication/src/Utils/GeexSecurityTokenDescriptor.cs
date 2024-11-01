@@ -18,14 +18,14 @@ namespace Geex.Common.Authentication.Utils
     {
         public GeexSecurityTokenDescriptor(IUser user, LoginProviderEnum provider, UserTokenGenerateOptions options, IEnumerable<Claim> customClaims = default)
         {
-            this.Audience = options.Audience;
-            this.SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SecretKey)), SecurityAlgorithms.HmacSha256Signature);
+            if (options.Issuer != null) Issuer = options.Issuer;
+            if (options.SigningCredentials != null) this.SigningCredentials = options.SigningCredentials;
+            if (options.Audience != null) this.Audience = options.Audience;
             if (options.Expires.HasValue)
             {
                 Expires = DateTime.Now.Add(options.Expires.Value);
             }
             IssuedAt = DateTime.Now;
-            Issuer = options.Issuer;
             Subject = new ClaimsIdentity(new Claim[]
             {
                 new GeexClaim(GeexClaimType.Sub, user.Id),

@@ -6,6 +6,7 @@ using Geex.Common.Abstraction.Entities;
 using HotChocolate.Types;
 
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Geex.Common.Authentication.Domain
 {
@@ -44,17 +45,17 @@ namespace Geex.Common.Authentication.Domain
 
     public record UserTokenGenerateOptions
     {
-        public string Issuer;
-        public string Audience;
+        public string? Issuer;
+        public string? Audience;
         public TimeSpan? Expires;
-        public string SecretKey;
+        public SigningCredentials? SigningCredentials;
 
-        public UserTokenGenerateOptions(string issuer, string audience, string secretKey, TimeSpan? expires)
+        public UserTokenGenerateOptions(string? issuer, string audience, SigningCredentials? signingCredentials, TimeSpan? expires)
         {
             this.Issuer = issuer;
             this.Audience = audience;
             this.Expires = expires;
-            this.SecretKey = secretKey;
+            this.SigningCredentials = signingCredentials;
         }
     }
 }

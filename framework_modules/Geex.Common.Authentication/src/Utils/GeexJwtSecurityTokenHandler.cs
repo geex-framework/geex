@@ -20,12 +20,6 @@ namespace Geex.Common.Authentication.Utils
 
         public override ClaimsPrincipal ValidateToken(string securityToken, TokenValidationParameters validationParameters, out SecurityToken validatedToken)
         {
-            var token = base.ReadJwtToken(securityToken);
-            if (token.Claims.FirstOrDefault(x => x.Type == GeexClaimType.Provider)?.Value == LoginProviderEnum.Trusted)
-            {
-                validatedToken = token;
-                return new ClaimsPrincipal(base.CreateClaimsIdentity(token, validationParameters.ValidIssuer, validationParameters));
-            }
             var principal = base.ValidateToken(securityToken, validationParameters, out validatedToken);
             //if (validatedToken.ValidFrom > DateTime.Now && validatedToken.ValidTo < DateTime.Now)
             //{

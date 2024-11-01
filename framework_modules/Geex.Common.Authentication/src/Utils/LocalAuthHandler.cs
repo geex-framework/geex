@@ -15,24 +15,35 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+
+using OpenIddict.Abstractions;
+using OpenIddict.Validation.DataProtection;
 
 namespace Geex.Common.Authentication.Utils
 {
     internal class LocalAuthHandler : JwtBearerHandler, IAuthenticationHandler
     {
         private GeexJwtSecurityTokenHandler _tokenHandler;
-        private UserTokenGenerateOptions _userTokenGenerateOptions;
+        private readonly TokenValidationParameters _tokenManager;
 
         public const string SchemeName = "Local";
 
 
         /// <inheritdoc />
         public LocalAuthHandler([NotNull][ItemNotNull] IOptionsMonitor<JwtBearerOptions> options,
-            [NotNull] ILoggerFactory logger, [NotNull] UrlEncoder encoder, [NotNull] ISystemClock clock, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions) : base(options,
+            [NotNull] ILoggerFactory logger, [NotNull] UrlEncoder encoder, [NotNull] ISystemClock clock, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters tokenManager) : base(options,
             logger, encoder, clock)
         {
             _tokenHandler = tokenHandler;
-            _userTokenGenerateOptions = userTokenGenerateOptions;
+            _tokenManager = tokenManager;
+        }
+
+
+        /// <inheritdoc />
+        public new Task<AuthenticateResult> AuthenticateAsync()
+        {
+            return this.HandleAuthenticateAsync();
         }
 
         /// <inheritdoc />
@@ -45,9 +56,8 @@ namespace Geex.Common.Authentication.Utils
             {
                 return AuthenticateResult.NoResult();
             }
-            //todo: 授权认证, jwt和openidc配置同步, 增加validation
-            var jwt = _tokenHandler.ReadJwtToken(accessToken);
-            var identity = new ClaimsIdentity(jwt.Claims, SchemeName);
+            var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenManager);
+            var identity = result.ClaimsIdentity;
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, SchemeName);
             return AuthenticateResult.Success(ticket);

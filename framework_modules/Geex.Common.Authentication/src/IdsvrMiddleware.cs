@@ -32,18 +32,13 @@ namespace Geex.Common.Authentication
             // If the user principal can't be extracted, redirect the user to the login page.
             if (!result.Succeeded)
             {
-                await HttpContext.ChallengeAsync("Local",
+                await HttpContext.ChallengeAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                     properties: new AuthenticationProperties
                     {
                         RedirectUri = HttpContext.Request.PathBase + HttpContext.Request.Path + QueryString.Create(
                             HttpContext.Request.HasFormContentType ? HttpContext.Request.Form.ToList() : HttpContext.Request.Query.ToList())
                     });
                 return;
-            }
-
-            if (result.Principal.Identity.AuthenticationType == "Local")
-            {
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal);
             }
 
             // Create a new claims principal

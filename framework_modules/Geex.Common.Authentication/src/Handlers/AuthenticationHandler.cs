@@ -14,6 +14,7 @@ using Geex.Common.Authentication.Utils;
 using MediatR;
 using Geex.Common.Abstraction.Authorization;
 using Geex.Common.Requests.Authentication;
+using OpenIddict.Abstractions;
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
@@ -26,14 +27,16 @@ namespace Geex.Common.Authentication.Handlers
         private UserTokenGenerateOptions _userTokenGenerateOptions;
         private readonly IEnumerable<IExternalLoginProvider> _externalLoginProviders;
         private IRedisDatabase _redis;
+        private readonly IOpenIddictTokenManager _tokenManager;
 
-        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis)
+        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis, IOpenIddictTokenManager tokenManager)
         {
             _uow = uow;
             _tokenHandler = tokenHandler;
             _userTokenGenerateOptions = userTokenGenerateOptions;
             _externalLoginProviders = externalLoginProviders;
             _redis = redis;
+            _tokenManager = tokenManager;
         }
 
         /// <inheritdoc />
@@ -49,6 +52,7 @@ namespace Geex.Common.Authentication.Handlers
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "用户未激活无法登陆, 如有疑问, 请联系管理员.");
             }
+
             return UserToken.New(user, LoginProviderEnum.Local, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user, LoginProviderEnum.Local, _userTokenGenerateOptions)));
         }
 
