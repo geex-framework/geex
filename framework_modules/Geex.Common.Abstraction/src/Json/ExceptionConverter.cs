@@ -2,10 +2,16 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Geex.Common.Abstractions;
+
 namespace Geex.Common.Abstraction.Json
 {
     public class ExceptionConverter : JsonConverter<Exception>
     {
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return typeToConvert.IsAssignableTo<Exception>();
+        }
         public override Exception Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             throw new NotImplementedException();

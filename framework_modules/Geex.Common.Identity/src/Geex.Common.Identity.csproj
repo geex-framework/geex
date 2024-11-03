@@ -1,25 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.Authorization\src\Geex.Common.Authorization.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.BlobStorage\src\Geex.Common.BlobStorage.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.Messaging\src\Geex.Common.Messaging.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Api\GqlSchemas\Orgs\Types\" />
-    <Folder Include="Api\GqlSchemas\Roles\Types\" />
-    <Folder Include="Api\GqlSchemas\Users\Types\" />
-    <Folder Include="Migrations\" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\Geex.Common.Analyzer\src\Geex.Common.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" Version="1.0.0" />
+        <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+        <ProjectReference Include="..\..\Geex.Common.Authorization\src\Geex.Common.Authorization.csproj" />
+        <ProjectReference Include="..\..\Geex.Common.BlobStorage\src\Geex.Common.BlobStorage.csproj" />
+        <ProjectReference Include="..\..\Geex.Common.Messaging\src\Geex.Common.Messaging.csproj" />
+        <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Api\GqlSchemas\Orgs\Types\" />
+        <Folder Include="Api\GqlSchemas\Roles\Types\" />
+        <Folder Include="Api\GqlSchemas\Users\Types\" />
+        <Folder Include="Migrations\" />
+    </ItemGroup>
 </Project>

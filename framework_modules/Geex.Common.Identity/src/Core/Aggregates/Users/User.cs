@@ -40,8 +40,7 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             ConfigLazyQuery(x => x.AvatarFile, blob => blob.Id == AvatarFileId, users => blob => users.SelectList(x => x.AvatarFileId).Contains(blob.Id));
         }
 
-        public User(IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher,
-            ICreateUserRequest request) : this()
+        public User(ICreateUserRequest request, IUnitOfWork? uow = default) : this()
         {
             this.Username = request.Username;
             this.OpenId = request.OpenId;
@@ -51,8 +50,11 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             this.Nickname = request.Nickname;
             this.AvatarFileId = request.AvatarFileId;
             this.IsEnable = request.IsEnable;
+            IUserCreationValidator userCreationValidator = uow.ServiceProvider.GetService<IUserCreationValidator>();
             userCreationValidator.Check(this);
+            IPasswordHasher<IUser> passwordHasher = uow.ServiceProvider.GetService<IPasswordHasher<IUser>>();
             this.Password = passwordHasher.HashPassword(this, request.Password);
+            uow?.Attach(this);
         }
 
         public string Password { get; set; }

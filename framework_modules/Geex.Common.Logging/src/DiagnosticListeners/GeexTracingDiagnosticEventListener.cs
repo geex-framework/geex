@@ -45,7 +45,7 @@ namespace Geex.Common.Logging.DiagnosticListeners
             if (!this.IsEnabled(context.ContextData) || context.Operation.Definition.Directives.Any(x => x.Name.Value == "noLog"))
                 return EmptyScope;
             DateTime startTime = this._timestampProvider.UtcNow();
-            var logEntry = new { QueryId = context.Request.QueryId, Query = context.GetOperationDetails(), OperationName = context.Request.OperationName, Variables = context.Request.VariableValues?.ToDictionary<KeyValuePair<string, object>, string, object>(x => x.Key, x => (x.Value as IValueNode)?.Value) };
+            var logEntry = new { QueryId = context.Request.QueryId, Query = context.GetOperationDetails(), OperationName = context.Request.OperationName, Variables = context.Request.VariableValues };
             this.logger.LogInformationWithData(new EventId((nameof(GeexTracingOperationScope) + "Start").GetHashCode(), nameof(GeexTracingOperationScope) + "Start"), $"Request started.", logEntry);
             GeexTracingResultBuilder builder = CreateBuilder(context, logger);
             return new GeexTracingOperationScope(context, logger, startTime, builder, this._timestampProvider);

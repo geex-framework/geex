@@ -7,6 +7,10 @@ namespace Geex.Common.Abstraction.Json
 {
     public class JsonNodeConverter : JsonConverter<JsonNode>
     {
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return typeToConvert.IsAssignableTo<JsonNode>();
+        }
         /// <inheritdoc />
         public override JsonNode? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {

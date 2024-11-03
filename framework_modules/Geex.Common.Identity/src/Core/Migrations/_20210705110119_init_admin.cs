@@ -34,7 +34,7 @@ namespace Geex.Core.Authentication.Migrations
 
         public override async Task  UpgradeAsync(IUnitOfWork uow)
         {
-            var superAdmin = new User(uow.ServiceProvider.GetService<IUserCreationValidator>(), uow.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
+            var superAdmin = uow.Create(new CreateUserRequest()
             {
                 Username = "superAdmin",
                 Nickname = "superAdmin",
@@ -42,7 +42,6 @@ namespace Geex.Core.Authentication.Migrations
                 Email = "superAdmin@geex.com",
                 Password = "superAdmin"
             });
-            uow.Attach(superAdmin);
             superAdmin.Id = "000000000000000000000001";
             var adminRole = new Role("admin")
             {
@@ -66,7 +65,7 @@ namespace Geex.Core.Authentication.Migrations
             };
             uow.Attach(orgs);
 
-            var admin = new User(uow.ServiceProvider.GetService<IUserCreationValidator>(), uow.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
+            var admin = uow.Create(new CreateUserRequest()
             {
                 Username = "admin",
                 Nickname = "admin",
@@ -74,10 +73,9 @@ namespace Geex.Core.Authentication.Migrations
                 Email = "admin@geex.com",
                 Password = "admin"
             });
-            uow.Attach(admin);
             await admin.AssignOrgs(orgs);
             await admin.AssignRoles(adminRole.Id);
-            var user = new User(uow.ServiceProvider.GetService<IUserCreationValidator>(), uow.ServiceProvider.GetService<IPasswordHasher<IUser>>(), new CreateUserRequest()
+            var user = uow.Create(new CreateUserRequest()
             {
                 Username = "user",
                 Nickname = "user",
@@ -85,7 +83,6 @@ namespace Geex.Core.Authentication.Migrations
                 Email = "user@geex.com",
                 Password = "user"
             });
-            uow.Attach(user);
             await user.AssignRoles(userRole.Id);
             await user.AssignOrgs(orgs);
             var permissions = AppPermission.List.Select(x => x.Value);

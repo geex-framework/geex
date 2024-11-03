@@ -165,6 +165,12 @@ namespace MongoDB.Entities
             {
                 return default(T);
             }
+
+            if (!this.EntityTrackingEnabled)
+            {
+                return this.AttachNoTracking(entity);
+            }
+
             var isNew = entity.Id == default;
             var now = DateTimeOffset.Now;
             if (isNew)

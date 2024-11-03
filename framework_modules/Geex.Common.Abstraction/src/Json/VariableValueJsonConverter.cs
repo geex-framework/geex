@@ -14,6 +14,12 @@ namespace Geex.Common.Abstraction.Json
 {
     public class ValueNodeJsonConverter : JsonConverter<IValueNode>
     {
+        /// <inheritdoc />
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return typeToConvert.IsAssignableTo<IValueNode>();
+        }
+
         public override IValueNode Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             throw new NotSupportedException();
@@ -83,6 +89,12 @@ namespace Geex.Common.Abstraction.Json
 
     public class VariableValueCollectionJsonConverter : JsonConverter<IVariableValueCollection>
     {
+        /// <inheritdoc />
+        public override bool CanConvert(Type typeToConvert)
+        {
+            return typeToConvert.IsAssignableTo<IVariableValueCollection>();
+        }
+
         public override IVariableValueCollection Read(ref Utf8JsonReader reader, Type typeToConvert,
             JsonSerializerOptions options)
         {

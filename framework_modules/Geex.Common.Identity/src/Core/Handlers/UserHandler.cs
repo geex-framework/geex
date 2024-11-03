@@ -185,8 +185,7 @@ namespace Geex.Common.Identity.Core.Handlers
         /// <inheritdoc />
         public virtual async Task<IUser> Handle(CreateUserRequest request, CancellationToken cancellationToken)
         {
-            var user = new User(this.UserCreationValidator, this.PasswordHasher, request);
-            Uow.Attach(user);
+            var user = Uow.Create(request);
             await user.AssignRoles(request.RoleIds);
             await user.AssignOrgs(request.OrgCodes);
             await user.SaveAsync(cancellationToken);
