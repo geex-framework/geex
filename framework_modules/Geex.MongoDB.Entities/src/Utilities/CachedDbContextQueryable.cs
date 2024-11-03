@@ -56,10 +56,10 @@ namespace MongoDB.Entities.Utilities
 
                 if (_selectType.IsAssignableFrom(_sourceType) || _sourceType.IsAssignableFrom(_selectType))
                 {
-                    var entities = resultQuery.OfType<T>().AsQueryable();
-                    var attachedEntities = _dbContext.AttachNoTracking(entities);
-                    BatchLoadLazyQueries(attachedEntities.AsQueryable(), this.TypedProvider.BatchLoadConfig);
-                    var finalResult = attachedEntities.OfType<TSelect>().AsQueryable();
+                    var entities = resultQuery.OfType<T>();
+                    var attachedEntities = _dbContext.AttachNoTracking(entities).AsQueryable();
+                    BatchLoadLazyQueries(attachedEntities, this.TypedProvider.BatchLoadConfig);
+                    var finalResult = attachedEntities.OfType<TSelect>();
                     finalResult = PostFilter(finalResult);
                     return finalResult.GetEnumerator();
                 }
@@ -169,7 +169,7 @@ namespace MongoDB.Entities.Utilities
 
         private IQueryable<TSelect> PostFilter(IQueryable<TSelect> result)
         {
-            if (_dbContext?.DataFilters.IsEmpty == true)
+            if (_dbContext?.DataFilters.IsEmpty == false)
             {
                 foreach (var (targetType, value) in _dbContext.DataFilters)
                 {

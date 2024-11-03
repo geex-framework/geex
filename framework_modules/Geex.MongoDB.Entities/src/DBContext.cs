@@ -145,11 +145,10 @@ namespace MongoDB.Entities
                 return default(T);
             }
             var isNew = entity.Id == default;
-            var now = DateTimeOffset.Now;
             if (isNew)
             {
                 entity.Id = entity.GenerateNewId().ToString();
-                entity.CreatedOn = now;
+                entity.CreatedOn = DateTimeOffset.Now;
             }
             entity.DbContext = this;
             return entity;

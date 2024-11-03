@@ -200,24 +200,25 @@ namespace MongoDB.Entities.Tests
             sw.Start();
             await DB.Collection<TestEntity>().InsertManyAsync(data, new InsertManyOptions()
             {
-                BypassDocumentValidation = true
+                BypassDocumentValidation = true,
             });
             //await dbContext.SaveChanges();
             sw.Stop();
-            sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(60000);
+            Console.WriteLine("insert:" + sw.ElapsedMilliseconds);
+            sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(3000);
             await Task.Delay(1000);
             var dbContext = new DbContext();
             sw.Restart();
             var list = dbContext.Query<TestEntity>().AsNoTracking().ToList();
             sw.Stop();
             list.Count().ShouldBe(count);
-            Console.WriteLine(sw.ElapsedMilliseconds);
+            Console.WriteLine("query:" + sw.ElapsedMilliseconds);
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(3000);
             sw.Restart();
             var list1 = await dbContext.Find<TestEntity>().ExecuteAsync();
             sw.Stop();
             list1.Count().ShouldBe(count);
-            Console.WriteLine(sw.ElapsedMilliseconds);
+            Console.WriteLine("find:" + sw.ElapsedMilliseconds);
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(1500);
             dbContext.Dispose();
         }
