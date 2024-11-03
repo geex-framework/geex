@@ -50,13 +50,10 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore ./framework_modules/framework_modules.sln
         
-      - name: Build Analyzer
-        run: dotnet build ./framework_modules/Geex.Common.Analyzer/src/Geex.Common.Analyzer.csproj
-
-      - name: Build Libs
+      - name: Build projects
         run: |
-          dotnet clean ./framework_modules/framework_modules.sln
-          dotnet build --configuration Release ./framework_modules/framework_modules.sln --no-restore
+          dotnet build --configuration Release ./framework_modules/Geex.Common.Analyzer/src/Geex.Common.Analyzer.csproj
+          dotnet build --configuration Release ./framework_modules/framework_modules.sln /p:IncludeSourceGeneratedFiles=true
         
       - name: Generate NuGet release packages
         if: ${{ steps.version.outputs.suffix == '' }}
