@@ -23,6 +23,7 @@
         </Content>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Geex.Common.Analyzer" Version="8.0.5.15" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.4" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
         <PackageReference Include="Shouldly" Version="4.2.1" />
@@ -39,7 +40,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
         <ProjectReference Include="..\Geex.Common.Accounting\src\Geex.Common.Accounting.csproj" />
-        <ProjectReference Include="..\Geex.Common.Analyzer\src\Geex.Common.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" Version="1.0.0" />
         <ProjectReference Include="..\Geex.Common.AuditLogs\src\Geex.Common.AuditLogs.csproj" />
         <ProjectReference Include="..\Geex.Common.Authentication\src\Geex.Common.Authentication.csproj" />
         <ProjectReference Include="..\Geex.Common.Authorization\src\Geex.Common.Authorization.csproj" />
