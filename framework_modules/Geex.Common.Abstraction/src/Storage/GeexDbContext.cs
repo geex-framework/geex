@@ -76,7 +76,7 @@ namespace Geex.Common.Abstraction.Storage
 
         public override IEnumerable<T> Attach<T>(IEnumerable<T> entities)
         {
-            return entities.Select(this.Attach);
+            return entities.Select(this.Attach).ToList();
         }
         public Queue<INotification> DomainEvents { get; } = new Queue<INotification>();
 
