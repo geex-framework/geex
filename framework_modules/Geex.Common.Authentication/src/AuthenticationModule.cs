@@ -111,7 +111,7 @@ namespace Geex.Common.Authentication
                         options
                             //connect/checksession
                             .SetUserinfoEndpointUris("/idsvr/userinfo")
-                            .SetLogoutEndpointUris("/idsvr/endsession")
+                            .SetLogoutEndpointUris("/idsvr/logout")
                             .SetRevocationEndpointUris("/idsvr/revocation")
                             .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
                             .SetIntrospectionEndpointUris("/idsvr/introspect")

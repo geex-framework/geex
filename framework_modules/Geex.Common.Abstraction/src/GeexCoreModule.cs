@@ -10,6 +10,7 @@ using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Bson;
 using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
+using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
 using Geex.Common.Gql;
@@ -34,6 +35,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 
 using MongoDB.Bson.Serialization.Conventions;
+using MongoDB.Entities;
 using MongoDB.Entities.Interceptors;
 
 using RestSharp;
@@ -140,7 +142,14 @@ namespace Geex.Common
                     if (context.Request.Query?.ToString().StartsWith("query ", StringComparison.InvariantCultureIgnoreCase) == true)
                     {
                         var work = context.Services.GetService<IUnitOfWork>();
-                        if (work != null) work.DbContext.EntityTrackingEnabled = false;
+                        if (work != null)
+                        {
+                            work.DbContext.EntityTrackingEnabled = false;
+                            if (string.IsNullOrEmpty(context.Services.GetService<ICurrentTenant>()?.Code))
+                            {
+                                work.DbContext.DisableDataFilters(typeof(ITenantFilteredEntity));
+                            }
+                        }
                     }
                     await next(context);
                 })
@@ -164,7 +173,7 @@ namespace Geex.Common
             context.Services.AddTransient(typeof(LazyService<>));
             context.Services.AddTransient<ClaimsPrincipal>(x =>
             x.GetService<IHttpContextAccessor>()?.HttpContext?.User);
-            context.Services.AddScoped<ICurrentUser,CurrentUser>();
+            context.Services.AddScoped<ICurrentUser, CurrentUser>();
             context.Services.AddResponseCompression(x =>
             {
                 // todo: 此处可能有安全风险
