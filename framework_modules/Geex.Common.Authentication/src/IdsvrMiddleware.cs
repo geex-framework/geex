@@ -70,6 +70,7 @@ namespace Geex.Common.Authentication
                     await this.Token(context, next);
                     break;
                 case OpenIddictServerEndpointType.Logout:
+                    await this.Logout(context, next);
                     break;
                 case OpenIddictServerEndpointType.Configuration:
                     break;
@@ -85,6 +86,7 @@ namespace Geex.Common.Authentication
                 case OpenIddictServerEndpointType.Device:
                     break;
                 case OpenIddictServerEndpointType.Verification:
+                    await this.Verification(context, next);
                     break;
                 default:
                     await next(context);
@@ -92,9 +94,66 @@ namespace Geex.Common.Authentication
             }
         }
 
+        private async Task Verification(HttpContext context, RequestDelegate next)
+        {
+            var request = context.GetOpenIddictServerRequest() ??
+                throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+
+            // Retrieve the user principal stored in the authentication cookie
+            var result = await context.AuthenticateAsync();
+
+            if (!result.Succeeded)
+            {
+                throw new InvalidOperationException("Authentication failed.");
+            }
+
+            // Create a new claims principal with existing claims
+            var claims = result.Principal.Claims;
+            var claimsIdentity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+            // Set requested scopes
+            claimsPrincipal.SetScopes(request.GetScopes());
+
+            // Sign in the user
+            await context.SignInAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, claimsPrincipal);
+        }
+
+        private async Task Logout(HttpContext context, RequestDelegate next)
+        {
+            var request = context.GetOpenIddictServerRequest() ??
+                throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+
+            // Revoke authentication cookie
+            await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            // Revoke OpenID tokens
+            await context.SignOutAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+
+            // Redirect to post_logout_redirect_uri if provided
+            if (request.PostLogoutRedirectUri != null)
+            {
+                var properties = new AuthenticationProperties
+                {
+                    RedirectUri = request.PostLogoutRedirectUri
+                };
+                return;
+            }
+
+            await next(context);
+        }
+
         private async Task UserInfo(HttpContext HttpContext, RequestDelegate requestDelegate)
         {
-            var claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+            ClaimsPrincipal? claimsPrincipal;
+            if (HttpContext.User.Identity?.IsAuthenticated == true && HttpContext.User.FindUserId() != null)
+            {
+                claimsPrincipal = HttpContext.User;
+            }
+            else
+            {
+                claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+            }
 
             var claims = claimsPrincipal.Claims;
             var users = HttpContext.RequestServices.GetService<IUnitOfWork>().Query<IUser>();

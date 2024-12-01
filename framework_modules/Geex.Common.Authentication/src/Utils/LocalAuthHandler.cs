@@ -63,6 +63,16 @@ namespace Geex.Common.Authentication.Utils
             return AuthenticateResult.Success(ticket);
         }
 
+        /// <inheritdoc />
+        protected override Task HandleChallengeAsync(AuthenticationProperties properties)
+        {
+            return base.HandleChallengeAsync(properties);
+        }
 
+        /// <inheritdoc />
+        protected override Task HandleForbiddenAsync(AuthenticationProperties properties)
+        {
+            return base.HandleForbiddenAsync(properties);
+        }
     }
 }

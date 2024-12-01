@@ -104,7 +104,6 @@ namespace Geex.Common.Authentication
                     })
                     .AddServer(options =>
                     {
-                        options.AllowRefreshTokenFlow();
                         options.SetAccessTokenLifetime(TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
 
                         // Enable the authorization and token endpoints.
@@ -142,12 +141,16 @@ namespace Geex.Common.Authentication
                             );
 
                         // Enable the flows.
-                        options.AllowAuthorizationCodeFlow()
+                        options
+                            .AllowAuthorizationCodeFlow()
                             .RequireProofKeyForCodeExchange()
                             .AllowClientCredentialsFlow()
                             .AllowDeviceCodeFlow()
                             .AllowRefreshTokenFlow()
                             .AllowImplicitFlow()
+                            .AllowHybridFlow()
+                            .AllowNoneFlow()
+                            .AllowPasswordFlow()
                             ;
 
                         // Register the signing and encryption credentials.
@@ -194,7 +197,10 @@ namespace Geex.Common.Authentication
                             .EnableLogoutEndpointPassthrough()
                             .EnableTokenEndpointPassthrough()
                             .EnableUserinfoEndpointPassthrough()
-                            .EnableStatusCodePagesIntegration();
+                            .EnableVerificationEndpointPassthrough()
+                            .EnableErrorPassthrough()
+                            //.EnableStatusCodePagesIntegration()
+                            ;
 
                         aspNetCoreBuilder.DisableTransportSecurityRequirement();
                     })
