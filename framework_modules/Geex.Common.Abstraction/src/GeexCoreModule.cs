@@ -139,16 +139,24 @@ namespace Geex.Common
                 .UseRequest(next => async context =>
                 {
                     // todo: extract to request middleware
+                    var work = context.Services.GetService<IUnitOfWork>();
+                    if (work != null)
+                    {
+                        if (string.IsNullOrEmpty(context.Services.GetService<ICurrentTenant>()?.Code))
+                        {
+                            work.DbContext.DisableDataFilters(typeof(ITenantFilteredEntity));
+                        }
+
+                        if (context.Services.GetService<ICurrentUser>()?.IsSuperAdmin == true)
+                        {
+                            work.DbContext.DisableAllDataFilters();
+                        }
+                    }
                     if (context.Request.Query?.ToString().StartsWith("query ", StringComparison.InvariantCultureIgnoreCase) == true)
                     {
-                        var work = context.Services.GetService<IUnitOfWork>();
                         if (work != null)
                         {
                             work.DbContext.EntityTrackingEnabled = false;
-                            if (string.IsNullOrEmpty(context.Services.GetService<ICurrentTenant>()?.Code))
-                            {
-                                work.DbContext.DisableDataFilters(typeof(ITenantFilteredEntity));
-                            }
                         }
                     }
                     await next(context);

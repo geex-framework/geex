@@ -46,6 +46,8 @@ namespace Geex.Common.Abstraction.Authentication
     {
         public IUser? User { get; }
         public string? UserId { get; }
+        bool IsSuperAdmin => UserId == IUser.SuperAdminId;
+
         /// <summary>
         /// Change current user, return a disposable object to revert the change
         /// </summary>
