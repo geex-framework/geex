@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
@@ -71,11 +72,12 @@ namespace Geex.Common.Authentication
                         // Direct path if fully qualified
                         Path.IsPathFullyQualified(certFile) ? certFile : null,
                         // Project directory path
-                        Path.Combine(AppContext.BaseDirectory, certFileName),
+                        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, certFile)),
+                        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../", certFile)),
                         // Bin directory path
-                        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, certFileName),
+                        Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, certFile)),
+                        Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"../../../", certFile)),
                     };
-
                     // Use first existing file path
                     certFile = possiblePaths.FirstOrDefault(p => p != null && Path.IsPathFullyQualified(p) && File.Exists(p));
 
@@ -152,6 +154,8 @@ namespace Geex.Common.Authentication
                             .AllowNoneFlow()
                             .AllowPasswordFlow()
                             ;
+
+                        Console.WriteLine(certFile);
 
                         // Register the signing and encryption credentials.
                         if (cert2 != default)
