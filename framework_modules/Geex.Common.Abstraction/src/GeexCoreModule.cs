@@ -142,11 +142,6 @@ namespace Geex.Common
                     var work = context.Services.GetService<IUnitOfWork>();
                     if (work != null)
                     {
-                        if (string.IsNullOrEmpty(context.Services.GetService<ICurrentTenant>()?.Code))
-                        {
-                            work.DbContext.DisableDataFilters(typeof(ITenantFilteredEntity));
-                        }
-
                         if (context.Services.GetService<ICurrentUser>()?.IsSuperAdmin == true)
                         {
                             work.DbContext.DisableAllDataFilters();
