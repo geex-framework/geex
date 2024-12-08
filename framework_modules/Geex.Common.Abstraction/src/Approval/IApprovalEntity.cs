@@ -1,10 +1,10 @@
 ﻿using System.Threading.Tasks;
-using Geex.Common.Abstraction.Approbation.Events;
+using Geex.Common.Abstraction.Approval.Events;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
 using MongoDB.Entities;
 
-namespace Geex.Common.Abstraction.Approbation
+namespace Geex.Common.Abstraction.Approval
 {
     public interface IApproveEntity : IEntityBase
     {

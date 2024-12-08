@@ -1,6 +1,6 @@
 ﻿using Geex.Common.Abstractions;
 
-namespace Geex.Common.Abstraction.Approbation
+namespace Geex.Common.Abstraction.Approval
 {
     public static class ApproveExtensions
     {

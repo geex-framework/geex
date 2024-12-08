@@ -10,7 +10,7 @@ using Fasterflect;
 
 using Geex.Common;
 using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Approbation;
+using Geex.Common.Abstraction.Approval;
 using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Abstraction.Gql.Types.Scalars;

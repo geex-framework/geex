@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Geex.Common;
-using Geex.Common.Abstraction.Approbation;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.AuditLogs;
 using Geex.Tests.TestEntities;

@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace Geex.Common.Abstraction.Approbation.Events
+namespace Geex.Common.Abstraction.Approval.Events
 {
     public class EntitySubmittedNotification<TEntity> : INotification
     {

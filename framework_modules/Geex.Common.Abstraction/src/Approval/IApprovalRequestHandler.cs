@@ -7,7 +7,7 @@ using Geex.Common.Abstractions;
 
 using MediatR;
 
-namespace Geex.Common.Abstraction.Approbation
+namespace Geex.Common.Abstraction.Approval
 {
     public interface IApproveRequestHandler<TInterface, TEntity> :
         ICommonHandler<TInterface, TEntity>,

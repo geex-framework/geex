@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Approbation;
+using Geex.Common.Abstraction.Approval;
 
 using HotChocolate.Types;
 

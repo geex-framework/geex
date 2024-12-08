@@ -6,7 +6,7 @@ using HotChocolate;
 
 using MediatR;
 
-namespace Geex.Common.Abstraction.Approbation
+namespace Geex.Common.Abstraction.Approval
 {
     public interface IHasApproveMutation
     {

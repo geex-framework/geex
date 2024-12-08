@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Geex.Common.Abstraction.Approbation
+namespace Geex.Common.Abstraction.Approval
 {
     [Flags]
     public enum ApproveStatus
