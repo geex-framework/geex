@@ -34,6 +34,9 @@ namespace Geex.Common.Abstraction.Storage
             }
         }
 
+        /// <inheritdoc />
+        protected IUnitOfWork Uow => base.DbContext as IUnitOfWork;
+
         /// <summary>校验对象合法性, 会在对象被Attach后立即触发</summary>
         /// <param name="sp">依赖注入器, 等价于this.ServiceProvider</param>
         /// <returns>A collection that holds failed-validation information.</returns>

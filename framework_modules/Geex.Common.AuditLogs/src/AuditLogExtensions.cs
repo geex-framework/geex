@@ -10,6 +10,7 @@ using HotChocolate.Types;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 using System.Reflection;
+using Geex.Common.Abstraction.Approval;
 using Geex.Common.Abstraction.Gql;
 using Geex.Common.Abstraction.Gql.Types;
 

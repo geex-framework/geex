@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\Geex.Common.Analyzer\src\Geex.Common.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
+        <PackageReference Include="OpenIddict.MongoDb" Version="5.8.0" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
+        <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+        <ProjectReference Include="..\..\Geex.Common.Identity\src\Geex.Common.Identity.csproj" />
+    </ItemGroup>
+</Project>
