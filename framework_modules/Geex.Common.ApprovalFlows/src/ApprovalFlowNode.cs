@@ -21,7 +21,7 @@ using Volo.Abp;
 
 namespace Geex.Common.ApprovalFlows
 {
-    public class ApprovalFlowNode : Entity<ApprovalFlowNode>
+    public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
     {
         protected ApprovalFlowNode()
         {
@@ -45,13 +45,13 @@ namespace Geex.Common.ApprovalFlows
             {
                 throw new UserFriendlyException("工作流节点必须包含审核用户Id");
             }
-            this.IsFromTemplate = data.IsFromTemplate;
+            this.IsFromTemplate = data.IsFromTemplate.GetValueOrDefault();
             this.AuditRole = data.AuditRole;
             this.Name = data.Name;
             this.Description = data.Description;
             this.AuditUserId = data.AuditUserId;
             this.ApprovalFlowId = data.ApprovalFlowId;
-            this.Index = data.Index;
+            this.Index = data.Index.GetValueOrDefault();
             this.CarbonCopyUserIds = data.CarbonCopyUserIds.ToImmutableList();
         }
 
@@ -68,7 +68,7 @@ namespace Geex.Common.ApprovalFlows
         }
 
         private ICurrentUser CurrentUser => this.ServiceProvider.GetService<ICurrentUser>();
-        public string AuditRole { get; set; }
+        public string? AuditRole { get; set; }
 
         public virtual IQueryable<ApprovalFlowNodeLog> ChatLogs => LazyQuery(() => ChatLogs);
         public bool IsFromTemplate { get; set; }

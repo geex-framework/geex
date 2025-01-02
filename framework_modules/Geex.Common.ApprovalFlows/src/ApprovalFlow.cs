@@ -2,13 +2,19 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+
+using Dynamitey.DynamicObjects;
+
 using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Identity.Core;
 using Geex.Common.Identity.Core.Aggregates.Users;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using Volo.Abp;
 
 namespace Geex.Common.ApprovalFlows
@@ -16,6 +22,7 @@ namespace Geex.Common.ApprovalFlows
     public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity, IOrgFilteredEntity
     {
         public ApprovalFlow(IApprovalFlowDate data, IUnitOfWork uow = default)
+        : this()
         {
             if (!data.ApprovalFlowNodes.Any())
             {
@@ -27,50 +34,53 @@ namespace Geex.Common.ApprovalFlows
             this.Name = data.Name;
             this.Description = data.Description;
             this.Nodes = data.ApprovalFlowNodes.Select((x, i) => uow.Create(x)).ToImmutableList();
-            this.Stakeholders.Add(new ApprovalFlowUserRef(this.Id, uow.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create));
+            List<ApprovalFlowUserRef> stakeholders = [new ApprovalFlowUserRef(this.Id, uow.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create)];
             foreach (var userId in this.Nodes.Select(x => x.AuditUserId))
             {
                 if (!userId.IsNullOrEmpty())
                 {
-                    this.Stakeholders.Add(new ApprovalFlowUserRef(this.Id, userId, ApprovalFlowOwnershipType.Participate));
+                    stakeholders.Add(new ApprovalFlowUserRef(this.Id, userId, ApprovalFlowOwnershipType.Participate));
                 }
             }
             foreach (var userId in this.Nodes.SelectMany(x => x.CarbonCopyUserIds))
             {
-                this.Stakeholders.Add(new ApprovalFlowUserRef(this.Id, userId, ApprovalFlowOwnershipType.CarbonCopy));
+                stakeholders.Add(new ApprovalFlowUserRef(this.Id, userId, ApprovalFlowOwnershipType.CarbonCopy));
             }
 
-            this.Stakeholders =
-                this.Stakeholders.DistinctBy(x => new { x.OwnershipType, x.UserId, x.ApprovalFlowId }).ToImmutableList();
+            this.Stakeholders = stakeholders.DistinctBy(x => new { x.OwnershipType, x.UserId, x.ApprovalFlowId }).ToImmutableList();
             uow?.Attach(this);
         }
 
-        public ApprovalFlow(ApprovalFlowTemplate template)
+        public ApprovalFlow(ApprovalFlowTemplate template, IUnitOfWork uow = default)
+        : this()
         {
             this.Name = template.Name;
             this.Description = template.Description;
-            this.Nodes = template.ApprovalFlowNodeTemplates.Select((x) => new ApprovalFlowNode(x)).ToList();
-            this.Stakeholders.Add(new ApprovalFlowUserRef(this.Id, Uow.ServiceProvider.GetService<ICurrentUser>().UserId, ApprovalFlowOwnershipType.Create));
-            this.OrgCode = template.AreaId;
+            this.Nodes = template.ApprovalFlowNodeTemplates.Select((x) => new ApprovalFlowNode(x)).ToImmutableList();
+            this.Stakeholders = this.Stakeholders = this.Stakeholders.Add(new ApprovalFlowUserRef(this.Id, Uow.ServiceProvider.GetService<ICurrentUser>().UserId, ApprovalFlowOwnershipType.Create));
+            this.OrgCode = template.OrgCode;
             this.TemplateId = template.Id;
             this.ApprovalFlowType = template.ApprovalFlowType;
+            uow?.Attach(this);
+        }
+
+        protected ApprovalFlow()
+        {
+            this.ConfigLazyQuery(x => x.CreatorUser, blob => blob.Id == CreatorUserId, users => blob => users.SelectList(x => x.CreatorUserId).Contains(blob.Id));
         }
 
         public string TemplateId { get; set; }
 
         public ApprovalFlowType ApprovalFlowType { get; set; }
 
-        public dynamic Meta { get; set; } = new Object();
-
         public string Description { get; set; }
 
         public string Name { get; set; }
 
-        public virtual ICollection<ApprovalFlowUserRef> Stakeholders { get; set; } = new List<ApprovalFlowUserRef>();
-        public virtual ICollection<ApprovalFlowNode> Nodes { get; set; } = new List<ApprovalFlowNode>();
-        public DateTime CreationTime { get; set; }
+        public ImmutableList<ApprovalFlowUserRef> Stakeholders { get; set; } = ImmutableList<ApprovalFlowUserRef>.Empty;
+        public ImmutableList<ApprovalFlowNode> Nodes { get; set; } = ImmutableList<ApprovalFlowNode>.Empty;
         public string? CreatorUserId { get; set; }
-        public virtual User CreatorUser { get; set; }
+        public System.Lazy<User> CreatorUser => LazyQuery(() => CreatorUser);
         public ApprovalFlowStatus Status { get; set; }
         public int ActiveIndex { get; set; }
 

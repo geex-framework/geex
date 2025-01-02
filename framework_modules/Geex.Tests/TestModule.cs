@@ -1,5 +1,6 @@
 ﻿using Geex.Common;
 using Geex.Common.Abstractions;
+using Geex.Common.ApprovalFlows;
 using Geex.Common.AuditLogs;
 using Geex.Common.BlobStorage.Core;
 using Geex.Common.Settings;
@@ -15,9 +16,8 @@ using Volo.Abp.Modularity;
 namespace Geex.Tests;
 
 [DependsOn(typeof(GeexCoreModule),
-    typeof(SettingsModule),
-    typeof(BlobStorageCoreModule),
-    typeof(AuditLogsModule))]
+    typeof(GeexCommonModule),
+    typeof(ApprovalFlowModule))]
 public class TestModule : GeexEntryModule<TestModule>
 {
     /// <inheritdoc />

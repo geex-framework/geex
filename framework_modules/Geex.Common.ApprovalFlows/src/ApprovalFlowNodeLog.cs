@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Geex.Common.ApprovalFlows
 {
-    public class ApprovalFlowNodeLog : Entity<ApprovalFlowNodeLog>
+    public partial class ApprovalFlowNodeLog : Entity<ApprovalFlowNodeLog>
     {
         [Obsolete("仅供EF内部使用", true)]
         public ApprovalFlowNodeLog()

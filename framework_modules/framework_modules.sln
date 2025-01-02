@@ -81,9 +81,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common.Analyzer", "Gee
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Analyzer", "Geex.Common.Analyzer\src\Geex.Common.Analyzer.csproj", "{4B52A79F-D740-49F8-9720-4930BA7AE29A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common.ApprovalFlow", "Geex.Common.ApprovalFlow", "{D9B2D26D-FBCE-4258-BE0E-7BF5F1239EE4}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common.ApprovalFlows", "Geex.Common.ApprovalFlows", "{D9B2D26D-FBCE-4258-BE0E-7BF5F1239EE4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Common.ApprovalFlow", "Geex.Common.ApprovalFlow\src\Geex.Common.ApprovalFlow.csproj", "{D54BB6F9-85E8-4713-989C-0CDD145434A0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Common.ApprovalFlows", "Geex.Common.ApprovalFlows\src\Geex.Common.ApprovalFlows.csproj", "{D54BB6F9-85E8-4713-989C-0CDD145434A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

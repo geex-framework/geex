@@ -1,4 +1,5 @@
-﻿using Geex.Common.Abstraction;
+﻿using System.Collections.Immutable;
+using Geex.Common.Abstraction;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 
@@ -23,6 +24,8 @@ public partial class ApprovalFlow
         protected override void Configure(IObjectTypeDescriptor<ApprovalFlow> descriptor)
         {
             descriptor.ConfigEntity();
+            //descriptor.Implements<InterfaceType<IApprovalFlowDate>>();
+            //descriptor.Field(x=>x.Nodes).Type<ListType<ObjectType<ApprovalFlowNode>>>();
             base.Configure(descriptor);
         }
     }

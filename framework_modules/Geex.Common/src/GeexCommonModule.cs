@@ -1,6 +1,7 @@
 ﻿using Geex.Common.Abstractions;
 using Geex.Common.Accounting;
 using Geex.Common.AuditLogs;
+using Geex.Common.Authentication;
 using Geex.Common.Authorization;
 using Geex.Common.BackgroundJob;
 using Geex.Common.BlobStorage.Core;
@@ -14,6 +15,8 @@ namespace Geex.Common
 {
     [DependsOn(
         typeof(GeexCoreModule),
+        typeof(AuthenticationModule),
+        typeof(AuthorizationModule),
         typeof(AccountingModule),
         typeof(IdentityCoreModule),
         typeof(LoggingModule),
@@ -21,8 +24,7 @@ namespace Geex.Common
         typeof(BlobStorageCoreModule),
         typeof(BackgroundJobModule),
         typeof(SettingsModule),
-        typeof(AuditLogsModule),
-        typeof(AuthorizationModule)
+        typeof(AuditLogsModule)
         )]
     public class GeexCommonModule : GeexModule<GeexCommonModule>
     {
