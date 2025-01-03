@@ -56,11 +56,19 @@ namespace Geex.Common.Authentication.Utils
             {
                 return AuthenticateResult.NoResult();
             }
-            var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenManager);
-            var identity = result.ClaimsIdentity;
-            var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, SchemeName);
-            return AuthenticateResult.Success(ticket);
+            try
+            {
+                var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenManager);
+                var identity = result.ClaimsIdentity;
+                var principal = new ClaimsPrincipal(identity);
+                var ticket = new AuthenticationTicket(principal, SchemeName);
+                return AuthenticateResult.Success(ticket);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return AuthenticateResult.NoResult();
+            }
         }
 
         /// <inheritdoc />
