@@ -24,8 +24,8 @@ namespace Geex.Common.ApprovalFlows.GqlSchemas
 
         public async Task<ApprovalFlow> CreateApprovalFlow(CreateApprovalFlowRequest request)
         {
-            var entity = new ApprovalFlow(request);
-            _uow.Attach(entity);
+            var entity = _uow.Create(request);
+            await entity.ActiveNode.Start();
             return entity;
         }
 
@@ -36,7 +36,11 @@ namespace Geex.Common.ApprovalFlows.GqlSchemas
             {
                 entity.Name = request.Name;
                 entity.Description = request.Description;
-                entity.Nodes = request.ApprovalFlowNodes.Select((x, i) => _uow.Create(x)).ToImmutableList();
+                request.Nodes.Select((x, i) =>
+                {
+                    x.ApprovalFlowId = request.Id;
+                    return _uow.Create(x);
+                }).ToList();
             }
             return entity;
         }
@@ -120,8 +124,7 @@ namespace Geex.Common.ApprovalFlows.GqlSchemas
 
         public async Task<ApprovalFlowTemplate> CreateApprovalFlowTemplate(CreateApprovalFlowTemplateRequest request)
         {
-            var entity = new ApprovalFlowTemplate(request, _uow);
-            _uow.Attach(entity);
+            var entity = _uow.Create(request);
             return entity;
         }
 

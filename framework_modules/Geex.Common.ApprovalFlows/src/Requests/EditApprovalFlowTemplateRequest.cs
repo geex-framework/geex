@@ -13,7 +13,6 @@ public record EditApprovalFlowTemplateRequest : IRequest<ApprovalFlowTemplate>, 
 
     /// <inheritdoc />
     public string? OrgCode { get; set; }
-    public ApprovalFlowType ApprovalFlowType { get; set; }
     List<IApprovalFlowNodeTemplateData> IApprovalFlowTemplateDate.ApprovalFlowNodeTemplates => ApprovalFlowNodeTemplates.Cast<IApprovalFlowNodeTemplateData>().ToList();
     public List<ApprovalFlowNodeTemplateData> ApprovalFlowNodeTemplates { get; set; }
 }

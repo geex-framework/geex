@@ -107,6 +107,7 @@ namespace Geex.Common
                     opt.SortFieldsByName = true;
                     opt.EnableTrueNullability = true;
                     opt.EnableOneOf = true;
+                    opt.EnableFlagEnums = true;
                     capturedSchemaOptions = opt;
                 })
                 .AddInputParser(o =>

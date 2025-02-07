@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
-using Dynamitey.DynamicObjects;
-
+using Geex.Common.Abstraction.Approval;
 using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
+using Geex.Common.Abstractions;
 using Geex.Common.Identity.Core;
 using Geex.Common.Identity.Core.Aggregates.Users;
 
@@ -24,16 +25,22 @@ namespace Geex.Common.ApprovalFlows
         public ApprovalFlow(IApprovalFlowDate data, IUnitOfWork uow = default)
         : this()
         {
-            if (!data.ApprovalFlowNodes.Any())
+            if (!data.Nodes.Any())
             {
                 throw new UserFriendlyException("工作流必须包含审批节点");
             }
-
             this.TemplateId = data.TemplateId;
             this.OrgCode = data.OrgCode;
             this.Name = data.Name;
             this.Description = data.Description;
-            this.Nodes = data.ApprovalFlowNodes.Select((x, i) => uow.Create(x)).ToImmutableList();
+            uow?.Attach(this);
+            this.CreatorUserId = uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId;
+
+            data.Nodes.Select((x, i) =>
+            {
+                x.ApprovalFlowId = this.Id;
+                return uow.Create(x);
+            }).ToList();
             List<ApprovalFlowUserRef> stakeholders = [new ApprovalFlowUserRef(this.Id, uow.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create)];
             foreach (var userId in this.Nodes.Select(x => x.AuditUserId))
             {
@@ -47,8 +54,7 @@ namespace Geex.Common.ApprovalFlows
                 stakeholders.Add(new ApprovalFlowUserRef(this.Id, userId, ApprovalFlowOwnershipType.CarbonCopy));
             }
 
-            this.Stakeholders = stakeholders.DistinctBy(x => new { x.OwnershipType, x.UserId, x.ApprovalFlowId }).ToImmutableList();
-            uow?.Attach(this);
+            this.Stakeholders = stakeholders.DistinctBy(x => new { x.OwnershipType, x.UserId, x.ApprovalFlowId }).ToList();
         }
 
         public ApprovalFlow(ApprovalFlowTemplate template, IUnitOfWork uow = default)
@@ -56,31 +62,50 @@ namespace Geex.Common.ApprovalFlows
         {
             this.Name = template.Name;
             this.Description = template.Description;
-            this.Nodes = template.ApprovalFlowNodeTemplates.Select((x) => new ApprovalFlowNode(x)).ToImmutableList();
-            this.Stakeholders = this.Stakeholders = this.Stakeholders.Add(new ApprovalFlowUserRef(this.Id, Uow.ServiceProvider.GetService<ICurrentUser>().UserId, ApprovalFlowOwnershipType.Create));
+            uow?.Attach(this);
+            this.CreatorUserId = uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId;
+            template.Nodes.Select((x) =>
+            {
+                var node = new ApprovalFlowNode(x);
+                node.ApprovalFlowId = this.Id;
+                return node;
+            }).ToList();
+            this.Stakeholders = [.. Stakeholders, new ApprovalFlowUserRef(this.Id, Uow.ServiceProvider.GetService<ICurrentUser>().UserId, ApprovalFlowOwnershipType.Create)];
             this.OrgCode = template.OrgCode;
             this.TemplateId = template.Id;
-            this.ApprovalFlowType = template.ApprovalFlowType;
-            uow?.Attach(this);
         }
 
         protected ApprovalFlow()
         {
             this.ConfigLazyQuery(x => x.CreatorUser, blob => blob.Id == CreatorUserId, users => blob => users.SelectList(x => x.CreatorUserId).Contains(blob.Id));
+            this.ConfigLazyQuery(x => x.Nodes, node => node.ApprovalFlowId == Id, approvalFlows => node => approvalFlows.SelectList(x => x.Id).Contains(node.ApprovalFlowId));
+            this.ConfigLazyQuery(x => x.AssociatedEntity, approveEntity => approveEntity.Id == AssociatedEntityId, approvalFlows => approveEntity => approvalFlows.SelectList(x => x.AssociatedEntityId).Contains(approveEntity.Id),
+                () =>
+                {
+                    var type = this.AssociatedEntityType.Type;
+                    var parameter = Expression.Parameter(typeof(IUnitOfWork), "uow");
+                    var genericMethod = typeof(IUnitOfWork).GetMethod("Query").MakeGenericMethod(type);
+                    var lambda = Expression.Lambda(
+                        Expression.Call(parameter, genericMethod),
+                        parameter
+                    );
+                    var compiled = (Func<IUnitOfWork, object>)lambda.Compile();
+                    var result = compiled(Uow);
+                    return result as IQueryable<IApproveEntity>;
+                });
         }
 
-        public string TemplateId { get; set; }
+        public string? TemplateId { get; set; }
 
-        public ApprovalFlowType ApprovalFlowType { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public string Name { get; set; }
 
-        public ImmutableList<ApprovalFlowUserRef> Stakeholders { get; set; } = ImmutableList<ApprovalFlowUserRef>.Empty;
-        public ImmutableList<ApprovalFlowNode> Nodes { get; set; } = ImmutableList<ApprovalFlowNode>.Empty;
+        public List<ApprovalFlowUserRef> Stakeholders { get; set; } = new List<ApprovalFlowUserRef>();
+        public IQueryable<ApprovalFlowNode> Nodes => LazyQuery(() => Nodes);
         public string? CreatorUserId { get; set; }
-        public System.Lazy<User> CreatorUser => LazyQuery(() => CreatorUser);
+        public Lazy<User> CreatorUser => LazyQuery(() => CreatorUser);
         public ApprovalFlowStatus Status { get; set; }
         public int ActiveIndex { get; set; }
 
@@ -103,8 +128,21 @@ namespace Geex.Common.ApprovalFlows
         public async Task Finish()
         {
             this.Status = ApprovalFlowStatus.Finished;
+            if (this.AssociatedEntityId != default)
+            {
+                await this.AssociatedEntity.Value.Approve(this.GetType(), "审批流自动审批通过");
+            }
             this.AddDomainEvent(new ApprovalFlowFinishEvent(this, this.Id));
         }
+        /// <summary>
+        /// 关联的实体对象
+        /// </summary>
+        public Lazy<IApproveEntity> AssociatedEntity => LazyQuery(() => AssociatedEntity);
+        /// <summary>
+        /// 关联的实体对象类型
+        /// </summary>
+        public AssociatedEntityType AssociatedEntityType { get; set; }
+        public string? AssociatedEntityId { get; set; }
 
         public async Task CancelAsync()
         {
@@ -119,7 +157,7 @@ namespace Geex.Common.ApprovalFlows
                 node.Index += 1;
             }
             approvalflowNode.Index = index + 1;
-            this.Nodes.Add(approvalflowNode);
+            approvalflowNode.ApprovalFlowId = this.Id;
             return this;
         }
 
@@ -131,6 +169,19 @@ namespace Geex.Common.ApprovalFlows
 
         /// <inheritdoc />
         public string? TenantCode { get; set; }
+    }
+
+    public class AssociatedEntityType : Enumeration<AssociatedEntityType>
+    {
+        public Type Type { get; }
+
+        /// <inheritdoc />
+        public AssociatedEntityType(string value, Type type) : base(value)
+        {
+            Type = type;
+        }
+
+        public static AssociatedEntityType Object { get; } = new(nameof(Object), typeof(object));
     }
 
     public enum ApprovalFlowStatus

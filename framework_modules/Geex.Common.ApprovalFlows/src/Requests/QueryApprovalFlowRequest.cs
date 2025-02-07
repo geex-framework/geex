@@ -9,7 +9,7 @@ namespace Geex.Common.ApprovalFlows.Requests
     {
         public string? TemplateId { get; set; }
         public string? CreatorUserId { get; set; }
-        public ApprovalFlowType? Type { get; set; }
+        public ApprovalFlowStatus? Status { get; set; }
         public DateTimeOffset? StartTime { get; set; }
         public DateTimeOffset? EndTime { get; set; }
     }
@@ -17,8 +17,8 @@ namespace Geex.Common.ApprovalFlows.Requests
     public record QueryApprovalFlowTemplateRequest : IRequest<IQueryable<ApprovalFlowTemplate>>
     {
         public string? CreatorUserId { get; set; }
-        public ApprovalFlowType? Type { get; set; }
         public DateTimeOffset? StartTime { get; set; }
         public DateTimeOffset? EndTime { get; set; }
+        public string? OrgCode { get; set; }
     }
 }

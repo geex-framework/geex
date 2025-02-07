@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 
 using Geex.Common.Abstraction.Authentication;
+using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Storage;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -12,27 +13,26 @@ namespace Geex.Common.ApprovalFlows
 {
     public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     {
-        [Obsolete("仅供EF内部使用", true)]
-        public ApprovalFlowTemplate()
+        protected ApprovalFlowTemplate()
         {
-
+            ConfigLazyQuery(x => x.CreatorUser, x => x.Id == this.CreatorUserId, templates => user => templates.SelectList(x => x.CreatorUserId).Contains(user.Id));
         }
         public ApprovalFlowTemplate(IApprovalFlowTemplateDate data, IUnitOfWork uow = default)
+        : this()
         {
             this.Name = data.Name;
             this.Description = data.Description;
             this.OrgCode = data.OrgCode;
-            this.ApprovalFlowNodeTemplates = data.ApprovalFlowNodeTemplates.Select((x, i) => new ApprovalFlowNodeTemplate(x, i)).ToImmutableList();
-            this.ApprovalFlowType = data.ApprovalFlowType;
+            this.Nodes = data.ApprovalFlowNodeTemplates.Select((x, i) => new ApprovalFlowNodeTemplate(x, i)).ToList();
             this.CreatorUserId = uow.ServiceProvider.GetService<ICurrentUser>()?.UserId;
             uow?.Attach(this);
         }
 
         public string? CreatorUserId { get; set; }
-        public ApprovalFlowType ApprovalFlowType { get; set; }
+        public Lazy<IUser> CreatorUser => this.LazyQuery(() => CreatorUser);
         public string Name { get; set; }
         public string Description { get; set; }
-        public ImmutableList<ApprovalFlowNodeTemplate> ApprovalFlowNodeTemplates { get; set; } = ImmutableList<ApprovalFlowNodeTemplate>.Empty;
+        public List<ApprovalFlowNodeTemplate> Nodes { get; set; } = new List<ApprovalFlowNodeTemplate>();
         public string OrgCode { get; set; }
 
         public void Edit(IApprovalFlowTemplateDate request)
@@ -41,9 +41,8 @@ namespace Geex.Common.ApprovalFlows
             if (!request.Description.IsNullOrEmpty()) this.Description = request.Description;
             if (!request.OrgCode.IsNullOrEmpty()) this.OrgCode = request.OrgCode;
             if (!request.ApprovalFlowNodeTemplates.IsNullOrEmpty())
-                this.ApprovalFlowNodeTemplates = request.ApprovalFlowNodeTemplates
-                    .Select((x, i) => new ApprovalFlowNodeTemplate(x, i)).ToImmutableList();
-            if (request.ApprovalFlowType != default) this.ApprovalFlowType = request.ApprovalFlowType;
+                this.Nodes = request.ApprovalFlowNodeTemplates
+                    .Select((x, i) => new ApprovalFlowNodeTemplate(x, i)).ToList();
         }
     }
 
@@ -60,12 +59,12 @@ namespace Geex.Common.ApprovalFlows
             this.AuditRole = data.AuditRole;
             this.Name = data.Name;
             this.Index = i;
-            this.CarbonCopyUserIds = data.CarbonCopyUserIds.ToImmutableList();
+            this.CarbonCopyUserIds = data.CarbonCopyUserIds.ToList();
         }
 
         public string Id { get; set; }
         public string AuditRole { get; set; }
-        public ImmutableList<string> CarbonCopyUserIds { get; set; } = ImmutableList<string>.Empty;
+        public List<string> CarbonCopyUserIds { get; set; } = new List<string>();
         public int Index { get; set; }
         public string Name { get; set; }
     }

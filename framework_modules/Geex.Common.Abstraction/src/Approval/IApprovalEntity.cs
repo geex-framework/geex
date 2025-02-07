@@ -1,7 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Reflection;
+using System.Threading.Tasks;
 using Geex.Common.Abstraction.Approval.Events;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
+using MediatR;
 using MongoDB.Entities;
 
 namespace Geex.Common.Abstraction.Approval
@@ -50,6 +53,27 @@ namespace Geex.Common.Abstraction.Approval
                 this.ApproveStatus |= ApproveStatus.Approved;
                 this.ApproveRemark = remark;
                 (this as IEntity)?.AddDomainEvent(new EntityApprovedNotification<TEntity>(this));
+            }
+            else
+            {
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "不满足审批条件.");
+            }
+        }
+        /// <summary>
+        /// 审批
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="remark"></param>
+        /// <returns></returns>
+        /// <exception cref="BusinessException"></exception>
+        async Task Approve(Type entityType, string? remark = default)
+        {
+            if (this.ApproveStatus == ApproveStatus.Submitted)
+            {
+                this.ApproveStatus |= ApproveStatus.Approved;
+                this.ApproveRemark = remark;
+                var entity = Activator.CreateInstance(typeof(EntityApprovedNotification<IApproveEntity>).MakeGenericType(entityType), [this]) as INotification;
+                (this as IEntity)?.AddDomainEvent(entity);
             }
             else
             {

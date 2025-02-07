@@ -24,6 +24,8 @@ public partial class ApprovalFlow
         protected override void Configure(IObjectTypeDescriptor<ApprovalFlow> descriptor)
         {
             descriptor.ConfigEntity();
+            //descriptor.Field(x=>x.Nodes).Type<ListType<ObjectType<ApprovalFlowNode>>>();
+            //descriptor.Field(x=>x.Stakeholders).Type<ListType<ObjectType<ApprovalFlowUserRef>>>();
             //descriptor.Implements<InterfaceType<IApprovalFlowDate>>();
             //descriptor.Field(x=>x.Nodes).Type<ListType<ObjectType<ApprovalFlowNode>>>();
             base.Configure(descriptor);

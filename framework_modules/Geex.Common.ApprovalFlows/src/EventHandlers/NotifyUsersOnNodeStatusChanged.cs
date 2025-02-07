@@ -34,7 +34,7 @@ namespace Geex.Common.ApprovalFlows.EventHandlers
             var messageEntity = await _uow.Request(new CreateMessageRequest()
             {
                 Severity = MessageSeverityType.Success,
-                Text = $"【工作流】:{node.ApprovalFlow.Name} 的审批已通过.",
+                Text = $"【工作流】:{node.ApprovalFlow.Value.Name} 的审批已通过.",
                 Meta = new JsonObject([new("ApprovalFlowId", node.ApprovalFlowId)]),
             });
             await _uow.Request(new SendNotificationMessageRequest()
@@ -56,7 +56,7 @@ namespace Geex.Common.ApprovalFlows.EventHandlers
             var messageEntity = await _uow.Request(new CreateMessageRequest()
             {
                 Severity = MessageSeverityType.Warn,
-                Text = $"【工作流】:{node.ApprovalFlow.Name} 的审批权限已由 {originUserName} 移交给您.",
+                Text = $"【工作流】:{node.ApprovalFlow.Value.Name} 的审批权限已由 {originUserName} 移交给您.",
                 Meta = new JsonObject([new("ApprovalFlowId", node.ApprovalFlowId)]),
             });
             await _uow.Request(new SendNotificationMessageRequest()
@@ -77,7 +77,7 @@ namespace Geex.Common.ApprovalFlows.EventHandlers
                 var messageEntity = await _uow.Request(new CreateMessageRequest()
                 {
                     Severity = MessageSeverityType.Warn,
-                    Text = $"【工作流】:{node.ApprovalFlow.Name} 的审批被驳回.",
+                    Text = $"【工作流】:{node.ApprovalFlow.Value.Name} 的审批被驳回.",
                     Meta = new JsonObject([new("ApprovalFlowId", node.ApprovalFlowId)]),
                 });
                 await _uow.Request(new SendNotificationMessageRequest()
@@ -94,7 +94,7 @@ namespace Geex.Common.ApprovalFlows.EventHandlers
             var messageEntity = await _uow.Request(new CreateMessageRequest()
             {
                 Severity = MessageSeverityType.Warn,
-                Text = $"【工作流】:{node.ApprovalFlow.Name} 需要您进行审批, 请尽快处理.",
+                Text = $"【工作流】:{node.ApprovalFlow.Value.Name} 需要您进行审批, 请尽快处理.",
                 Meta = new JsonObject([new("ApprovalFlowId", node.ApprovalFlowId)]),
             });
             await _uow.Request(new SendNotificationMessageRequest()
@@ -110,7 +110,7 @@ namespace Geex.Common.ApprovalFlows.EventHandlers
              var messageEntity = await _uow.Request(new CreateMessageRequest()
             {
                 Severity = MessageSeverityType.Warn,
-                Text = $"【工作流】:{node.ApprovalFlow.Name} 的征询意见已回复, 请确认.",
+                Text = $"【工作流】:{node.ApprovalFlow.Value.Name} 的征询意见已回复, 请确认.",
                 Meta = new JsonObject([new("ApprovalFlowId", node.ApprovalFlowId)]),
             });
             await _uow.Request(new SendNotificationMessageRequest()

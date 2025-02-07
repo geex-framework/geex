@@ -14,8 +14,8 @@ namespace Geex.Common.ApprovalFlows.GqlSchemas
         protected override void Configure(IObjectTypeDescriptor<ApprovalFlowQuery> descriptor)
         {
             descriptor.AuthorizeFieldsImplicitly();
-            descriptor.Field(x => x.ApprovalFlowById(default))
-                .Authorize();
+            descriptor.Field(x => x.ApprovalFlowById(default)).Authorize();
+            descriptor.Field(x => x.ApprovalFlowTemplateById(default)).Authorize();
             descriptor.Field(x => x.ApprovalFlow(default))
                 .UseOffsetPaging<ObjectType<ApprovalFlow>>()
                 .UseFiltering<ApprovalFlow>()
@@ -42,7 +42,7 @@ namespace Geex.Common.ApprovalFlows.GqlSchemas
                 .WhereIf(request.EndTime.HasValue, x => x.CreatedOn <= request.EndTime)
                 .WhereIf(!string.IsNullOrEmpty(request.TemplateId), x => x.TemplateId == request.TemplateId)
                 .WhereIf(!string.IsNullOrEmpty(request.CreatorUserId), x => x.CreatorUserId == request.CreatorUserId)
-                .WhereIf(request.Type != default, x => x.ApprovalFlowType == request.Type);
+                .WhereIf(request.Status != default, x => x.Status == request.Status);
             return result;
         }
 
@@ -55,7 +55,7 @@ namespace Geex.Common.ApprovalFlows.GqlSchemas
                 .WhereIf(request.StartTime.HasValue, x => x.CreatedOn >= request.StartTime)
                 .WhereIf(request.EndTime.HasValue, x => x.CreatedOn <= request.EndTime)
                 .WhereIf(!string.IsNullOrEmpty(request.CreatorUserId), x => x.CreatorUserId == request.CreatorUserId)
-                .WhereIf(request.Type != default, x => x.ApprovalFlowType == request.Type);
+                .WhereIf(request.OrgCode != default, x => x.OrgCode == request.OrgCode);
             return result;
         }
 

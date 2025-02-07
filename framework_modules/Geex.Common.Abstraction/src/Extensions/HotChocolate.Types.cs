@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -130,6 +131,7 @@ namespace HotChocolate.Types
                     x.Field(y => y.ApproveStatus);
                     x.Field(y => y.Submittable);
                 })
+                .AddEnumType<ApproveStatus>()
                 .AddInterfaceType<IPagedList>()
                 .BindRuntimeType<ObjectId, ObjectIdType>()
                 .BindRuntimeType<MediaType, MimeTypeType>()

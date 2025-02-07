@@ -153,7 +153,11 @@ public class IUnitOfWorkCreateMethodGenerator : ISourceGenerator
                 }
             }));
 
-            var argumentList = string.Join(", ", parameters.Select(p => p.Name));
+            var argumentList = string.Join(", ", parameters.Select(p =>
+            {
+                var type = p.Type.ToDisplayString();
+                return $"({type}){p.Name}";
+            }));
 
             methods.AppendLine($@"
     public static {entityName} Create(this IUnitOfWork _{(string.IsNullOrEmpty(parameterList) ? "" : ", " + parameterList)})

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using MediatX;
 
 namespace Geex.Common.ApprovalFlows
@@ -52,7 +53,7 @@ namespace Geex.Common.ApprovalFlows
 
     public class ApprovalFlowNodeBulkRejectedEvent : ApprovalFlowNodeStatusChangeEvent
     {
-        public ImmutableList<ApprovalFlowNode> NodesToReject { get; }
+        public List<ApprovalFlowNode> NodesToReject { get; }
         public string TargetNodeId { get; }
 
         public ApprovalFlowNodeBulkRejectedEvent(ApprovalFlowNode approvalflowNode, string targetNodeId) : base(approvalflowNode)
@@ -62,7 +63,7 @@ namespace Geex.Common.ApprovalFlows
 
         public ApprovalFlowNodeBulkRejectedEvent(ApprovalFlowNode approvalflowNode, List<ApprovalFlowNode> nodesToReject) : base(approvalflowNode)
         {
-            NodesToReject = nodesToReject.ToImmutableList();
+            NodesToReject = nodesToReject.ToList();
         }
     }
 

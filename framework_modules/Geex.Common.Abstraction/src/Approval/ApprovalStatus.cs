@@ -2,21 +2,20 @@
 
 namespace Geex.Common.Abstraction.Approval
 {
-    [Flags]
     public enum ApproveStatus
     {
         /// <summary>
         /// 待上报/默认
         /// </summary>
-        Default = 0,
+        Default = 0b0,
         /// <summary>
         /// 已上报
         /// </summary>
-        Submitted = 1,
+        Submitted = 0b1,
         /// <summary>
         /// 已审批
         /// </summary>
-        Approved = 3,
+        Approved = 0b11,
 
     }
 }

@@ -17,38 +17,27 @@ namespace Geex.Common.ApprovalFlows
 
         }
 
-        public ApprovalFlowNodeLog(ApprovalFlowNodeLogType auditType, string userId, string message = "", IUnitOfWork uow = default)
-        {
-            this.LogType = auditType;
-            this.FromUserId = userId;
-            var user = uow.Query<IUser>().GetById(userId);
-            this.Message = this.LogType switch
-            {
-                ApprovalFlowNodeLogType.Withdraw => $"【{user.Nickname}】撤回了流程节点",
-                ApprovalFlowNodeLogType.View => $"{user.Nickname} 查阅了流程节点",
-                ApprovalFlowNodeLogType.Approve => $"通过了流程节点, 提交意见: {message}",
-                ApprovalFlowNodeLogType.Reject => $"流程节点被退回: {message}",
-                ApprovalFlowNodeLogType.Chat or ApprovalFlowNodeLogType.ConsultChat => message,
-                _ => throw new ArgumentOutOfRangeException(nameof(auditType), auditType, null)
-            };
-            uow?.Attach(this);
-        }
-        public ApprovalFlowNodeLog(ApprovalFlowNodeLogType auditType, string fromUserId, string toUserId, string message = null, IUnitOfWork uow = default)
+        public ApprovalFlowNodeLog(ApprovalFlowNodeLogType auditType, string? fromUserId, string? toUserId, string? message, IUnitOfWork uow = default)
         {
             this.LogType = auditType;
             this.FromUserId = fromUserId;
             this.ToUserId = toUserId;
+            uow?.Attach(this);
             var fromUser = uow.Query<IUser>().GetById(fromUserId);
             var toUser = uow.Query<IUser>().GetById(toUserId);
-
             this.Message = this.LogType switch
             {
                 ApprovalFlowNodeLogType.Consult => $"向 {toUser.Nickname} 发起了征询: {message}",
                 ApprovalFlowNodeLogType.CarbonCopy => $"向 {toUser.Nickname} 转发了当前审批节点",
                 ApprovalFlowNodeLogType.Transfer => $"向 {toUser.Nickname} 转移了审核权限",
+                ApprovalFlowNodeLogType.Withdraw => $"【{fromUser.Nickname}】撤回了流程节点",
+                ApprovalFlowNodeLogType.View => $"{fromUser.Nickname} 查阅了流程节点",
+                ApprovalFlowNodeLogType.Approve => $"通过了流程节点, 提交意见: {message}",
+                ApprovalFlowNodeLogType.Reject => $"流程节点被退回: {message}",
+                ApprovalFlowNodeLogType.Chat => message,
+                ApprovalFlowNodeLogType.ConsultChat => message,
                 _ => throw new ArgumentOutOfRangeException(nameof(auditType), auditType, null)
             };
-            uow?.Attach(this);
         }
 
         //public ApprovalFlowNodeLog(ApprovalFlowNodeLogType logType, string fromUserId, Guid fileId, string fileName)
@@ -56,7 +45,7 @@ namespace Geex.Common.ApprovalFlows
         //    this.LogType = logType;
         //    this.FromUserId = fromUserId;
         //    var user = IocManager.Instance.Resolve<UserManager>().FindByIdAsync(fromUserId.ToString()).Result;
-        //    this.Message = $"【{user.GetDisplayName()}】撤回了流程节点";
+        //    this.Message = $"【{fromUser.Nickname}】撤回了流程节点";
         //}
 
         public string Message { get; set; }

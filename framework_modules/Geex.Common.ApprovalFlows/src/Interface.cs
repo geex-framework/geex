@@ -13,14 +13,13 @@ namespace Geex.Common.ApprovalFlows
         string? Description { get; set; }
         List<IApprovalFlowNodeTemplateData> ApprovalFlowNodeTemplates { get; }
         string? OrgCode { get; set; }
-        ApprovalFlowType? ApprovalFlowType { get; set; }
     }
 
     public interface IApprovalFlowDate
     {
         string? Name { get; set; }
         string? Description { get; set; }
-        List<IApprovalFlowNodeData> ApprovalFlowNodes { get; }
+        List<IApprovalFlowNodeData> Nodes { get; }
         string? OrgCode { get; set; }
         string? TemplateId { get; set; }
     }
