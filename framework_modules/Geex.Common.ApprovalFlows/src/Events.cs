@@ -21,6 +21,7 @@ namespace Geex.Common.ApprovalFlows
     {
         public ApprovalFlowNodeStartEvent(ApprovalFlowNode approvalflowNode) : base(approvalflowNode)
         {
+            ApprovalFlowId = approvalflowNode.ApprovalFlowId;
             AuditUserId = approvalflowNode.AuditUserId;
         }
 

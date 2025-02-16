@@ -25,23 +25,14 @@ namespace Geex.Common.ApprovalFlows.GqlSchemas
         public async Task<ApprovalFlow> CreateApprovalFlow(CreateApprovalFlowRequest request)
         {
             var entity = _uow.Create(request);
-            await entity.ActiveNode.Start();
+            await entity.Start();
             return entity;
         }
 
         public async Task<ApprovalFlow> EditApprovalFlow(EditApprovalFlowRequest request)
         {
             var entity = _uow.Query<ApprovalFlow>().GetById(request.Id);
-            if (entity.CanEdit)
-            {
-                entity.Name = request.Name;
-                entity.Description = request.Description;
-                request.Nodes.Select((x, i) =>
-                {
-                    x.ApprovalFlowId = request.Id;
-                    return _uow.Create(x);
-                }).ToList();
-            }
+            entity.Edit(request);
             return entity;
         }
 

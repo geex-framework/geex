@@ -12,4 +12,7 @@ public class ApprovalFlowNodeTemplateData:IApprovalFlowNodeTemplateData
     /// <inheritdoc />
     public int? Index { get; set; }
     public List<string> CarbonCopyUserIds { get; set; } = new List<string>();
+
+    /// <inheritdoc />
+    public AssociatedEntityType? AssociatedEntityType { get; set; }
 }

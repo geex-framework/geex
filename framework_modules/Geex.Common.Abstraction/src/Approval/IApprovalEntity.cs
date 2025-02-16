@@ -46,6 +46,27 @@ namespace Geex.Common.Abstraction.Approval
         /// <param name="remark"></param>
         /// <returns></returns>
         /// <exception cref="BusinessException"></exception>
+        async Task Submit(Type entityType, string? remark = default)
+        {
+            if (this.Submittable)
+            {
+                this.ApproveStatus |= ApproveStatus.Submitted;
+                this.ApproveRemark = remark;
+                 var entity = Activator.CreateInstance(typeof(EntitySubmittedNotification<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as INotification;
+                (this as IEntity)?.AddDomainEvent(entity);
+            }
+            else
+            {
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "不满足上报条件.");
+            }
+        }
+        /// <summary>
+        /// 审批
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="remark"></param>
+        /// <returns></returns>
+        /// <exception cref="BusinessException"></exception>
         async Task Approve<TEntity>(string? remark = default)
         {
             if (this.ApproveStatus == ApproveStatus.Submitted)
@@ -72,7 +93,7 @@ namespace Geex.Common.Abstraction.Approval
             {
                 this.ApproveStatus |= ApproveStatus.Approved;
                 this.ApproveRemark = remark;
-                var entity = Activator.CreateInstance(typeof(EntityApprovedNotification<IApproveEntity>).MakeGenericType(entityType), [this]) as INotification;
+                var entity = Activator.CreateInstance(typeof(EntityApprovedNotification<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as INotification;
                 (this as IEntity)?.AddDomainEvent(entity);
             }
             else

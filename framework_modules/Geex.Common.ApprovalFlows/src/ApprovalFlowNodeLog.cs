@@ -11,17 +11,18 @@ namespace Geex.Common.ApprovalFlows
 {
     public partial class ApprovalFlowNodeLog : Entity<ApprovalFlowNodeLog>
     {
-        [Obsolete("仅供EF内部使用", true)]
         public ApprovalFlowNodeLog()
         {
-
+            ConfigLazyQuery(x => x.ApprovalFlowNode, user => user.Id == ApprovalFlowNodeId, nodes => approvalFlowNode => nodes.SelectList(x => x.ApprovalFlowNodeId).Contains(approvalFlowNode.Id));
         }
 
-        public ApprovalFlowNodeLog(ApprovalFlowNodeLogType auditType, string? fromUserId, string? toUserId, string? message, IUnitOfWork uow = default)
+        public ApprovalFlowNodeLog(string approvalFlowNodeId, ApprovalFlowNodeLogType auditType, string? fromUserId, string? toUserId, string? message, IUnitOfWork uow = default)
+            : this()
         {
             this.LogType = auditType;
             this.FromUserId = fromUserId;
             this.ToUserId = toUserId;
+            this.ApprovalFlowNodeId = approvalFlowNodeId;
             uow?.Attach(this);
             var fromUser = uow.Query<IUser>().GetById(fromUserId);
             var toUser = uow.Query<IUser>().GetById(toUserId);
@@ -55,7 +56,7 @@ namespace Geex.Common.ApprovalFlows
         public virtual User To { get; set; }
         public string? ToUserId { get; set; }
         public DateTime CreationTime { get; set; } = DateTime.Now;
-        public virtual ApprovalFlowNode ApprovalFlowNode { get; set; }
+        public virtual Lazy<ApprovalFlowNode> ApprovalFlowNode => LazyQuery(() => ApprovalFlowNode);
         public string ApprovalFlowNodeId { get; set; }
     }
 

@@ -19,5 +19,7 @@ namespace Geex.Common.ApprovalFlows.Requests
 
         public string OrgCode { get; set; }
         public string? TemplateId { get; set; }
+        public AssociatedEntityType? AssociatedEntityType { get; set; }
+        public string? AssociatedEntityId { get; set; }
     }
 }

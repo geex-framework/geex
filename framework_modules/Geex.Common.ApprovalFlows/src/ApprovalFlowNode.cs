@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Storage;
+using Geex.Common.ApprovalFlows.Requests;
 using Geex.Common.Identity.Core.Aggregates.Users;
 using Geex.Common.Requests.Messaging;
 
@@ -60,7 +61,7 @@ namespace Geex.Common.ApprovalFlows
             uow?.Attach(this);
         }
 
-        private ApprovalFlowNode(ApprovalFlowNode data)
+        public ApprovalFlowNode(ApprovalFlowNode data, IUnitOfWork uow = default)
         : this()
         {
             this.IsFromTemplate = data.IsFromTemplate;
@@ -70,6 +71,7 @@ namespace Geex.Common.ApprovalFlows
             this.AuditUserId = data.AuditUserId;
             this.ApprovalFlowId = data.ApprovalFlowId;
             this.CarbonCopyUserIds = data.CarbonCopyUserIds?.ToList() ?? [];
+            uow?.Attach(this);
         }
 
         private ICurrentUser CurrentUser => this.ServiceProvider.GetService<ICurrentUser>();
@@ -109,7 +111,7 @@ namespace Geex.Common.ApprovalFlows
             CheckAuditUser();
             CheckNotConsulting();
             this.NodeStatus |= ApprovalFlowNodeStatus.Approved;
-            Uow.Create(ApprovalFlowNodeLogType.Approve, CurrentUser.UserId, "", message);
+            Uow.Create(this.Id, ApprovalFlowNodeLogType.Approve, CurrentUser.UserId, "", message);
             if (this.NextNode == default)
             {
                 await this.ApprovalFlow.Value.Finish();
@@ -191,9 +193,10 @@ namespace Geex.Common.ApprovalFlows
         {
             CheckIntegrity();
             //this.NodeStatus |= ApprovalFlowNodeStatus.Rejected;
-            Uow.Create(ApprovalFlowNodeLogType.Reject, CurrentUser.UserId, "", message);
+            Uow.Create(this.Id, ApprovalFlowNodeLogType.Reject, CurrentUser.UserId, "", message);
             //this.ApprovalComment = message;
-            this.ApprovalFlow.Value.InsertNode(this.ApprovalFlow.Value.ActiveIndex, new ApprovalFlowNode(this));
+            var newNode = Uow.Create(this);
+            this.ApprovalFlow.Value.InsertNode(this.ApprovalFlow.Value.ActiveIndex, newNode);
             this.ApprovalFlow.Value.ActiveIndex += 1;
             //this.AddDomainEvent(new ApprovalFlowNodeRejectedEvent(this));
         }
@@ -209,12 +212,11 @@ namespace Geex.Common.ApprovalFlows
             {
                 this.ApprovalFlow.Value.Stakeholders.Add(new ApprovalFlowUserRef(this.ApprovalFlowId, userId, ApprovalFlowOwnershipType.Participate));
             }
-            Uow.Create(ApprovalFlowNodeLogType.Transfer, this.AuditUserId, "", userId);
-            this.ApprovalFlow.Value.InsertNode(this.ApprovalFlow.Value.ActiveIndex, new ApprovalFlowNode(this)
-            {
-                AuditUserId = userId,
-                ApprovalComment = "",
-            });
+            Uow.Create(this.Id, ApprovalFlowNodeLogType.Transfer, this.AuditUserId, userId, "");
+            var newNode = Uow.Create(this);
+            newNode.AuditUserId = userId;
+            newNode.ApprovalComment = "";
+            this.ApprovalFlow.Value.InsertNode(this.ApprovalFlow.Value.ActiveIndex, newNode);
             this.ApprovalFlow.Value.ActiveIndex += 1;
             await this.NextNode.Start();
             this.AddDomainEvent(new ApprovalFlowNodeTransferredEvent(this, originUserId, userId));
@@ -233,7 +235,7 @@ namespace Geex.Common.ApprovalFlows
 
             this.ConsultUserId = userId;
             this.NodeStatus |= ApprovalFlowNodeStatus.Consulting;
-            Uow.Create(ApprovalFlowNodeLogType.Consult, this.AuditUserId, "", userId);
+            Uow.Create(this.Id, ApprovalFlowNodeLogType.Consult, this.AuditUserId, userId, message);
             var user = CurrentUser.User;
             var messageEntity = await this.Uow.Request(new CreateMessageRequest()
             {
@@ -253,7 +255,7 @@ namespace Geex.Common.ApprovalFlows
             this.NodeStatus |= ApprovalFlowNodeStatus.Viewed;
             if (this.ChatLogs.ToList().All(x => x.LogType != ApprovalFlowNodeLogType.View))
             {
-                Uow.Create(ApprovalFlowNodeLogType.View, CurrentUser.UserId, "", "");
+                Uow.Create(this.Id, ApprovalFlowNodeLogType.View, CurrentUser.UserId, "", "");
             }
         }
 
@@ -265,7 +267,7 @@ namespace Geex.Common.ApprovalFlows
             }
             this.NodeStatus &= ~ApprovalFlowNodeStatus.Approved;
             this.ApprovalComment = "已撤回";
-            Uow.Create(ApprovalFlowNodeLogType.Withdraw, CurrentUser.UserId, "", "");
+            Uow.Create(this.Id, ApprovalFlowNodeLogType.Withdraw, CurrentUser.UserId, "", "");
             this.ApprovalFlow.Value.ActiveIndex -= 1;
             var messageEntity = await this.Uow.Request(new CreateMessageRequest()
             {
@@ -298,7 +300,7 @@ namespace Geex.Common.ApprovalFlows
             }
 
             this.CarbonCopyUserIds = [.. this.CarbonCopyUserIds, userId];
-            Uow.Create(ApprovalFlowNodeLogType.CarbonCopy, this.AuditUserId, "", userId);
+            Uow.Create(this.Id, ApprovalFlowNodeLogType.CarbonCopy, this.AuditUserId, userId, "");
             var user = CurrentUser.User;
             var messageEntity = await this.Uow.Request(new CreateMessageRequest()
             {
@@ -320,12 +322,12 @@ namespace Geex.Common.ApprovalFlows
             {
                 this.ConsultUserId = null;
                 this.NodeStatus &= ~ApprovalFlowNodeStatus.Consulting;
-                Uow.Create(ApprovalFlowNodeLogType.ConsultChat, CurrentUser.UserId, "", message);
+                Uow.Create(this.Id, ApprovalFlowNodeLogType.ConsultChat, CurrentUser.UserId, "", message);
                 this.AddDomainEvent(new ApprovalFlowNodeConsultRepliedEvent(this, userId));
             }
             else
             {
-                Uow.Create(ApprovalFlowNodeLogType.Chat, CurrentUser.UserId, "", message);
+                Uow.Create(this.Id, ApprovalFlowNodeLogType.Chat, CurrentUser.UserId, "", message);
             }
         }
 
@@ -336,6 +338,14 @@ namespace Geex.Common.ApprovalFlows
         //    this.ApprovalFlow?.ActiveNode?.ChatLogs.Add(new ApprovalFlowNodeLog(ApprovalFlowNodeLogType.AttachFile, CurrentUser.UserId, fileId, fileName));
         //}
 
+        public void Edit(IApprovalFlowNodeData approvalFlowNodeData)
+        {
+            this.AuditRole = approvalFlowNodeData.AuditRole;
+            this.AuditUserId = approvalFlowNodeData.AuditUserId;
+            this.Description = approvalFlowNodeData.Description;
+            this.Name = approvalFlowNodeData.Name;
+            this.CarbonCopyUserIds = approvalFlowNodeData.CarbonCopyUserIds;
+        }
     }
 
 

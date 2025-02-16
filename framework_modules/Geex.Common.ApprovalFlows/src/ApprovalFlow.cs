@@ -11,6 +11,7 @@ using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Abstractions;
+using Geex.Common.ApprovalFlows.Requests;
 using Geex.Common.Identity.Core;
 using Geex.Common.Identity.Core.Aggregates.Users;
 
@@ -33,6 +34,8 @@ namespace Geex.Common.ApprovalFlows
             this.OrgCode = data.OrgCode;
             this.Name = data.Name;
             this.Description = data.Description;
+            this.AssociatedEntityType = data.AssociatedEntityType;
+            this.AssociatedEntityId = data.AssociatedEntityId;
             uow?.Attach(this);
             this.CreatorUserId = uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId;
 
@@ -55,6 +58,14 @@ namespace Geex.Common.ApprovalFlows
             }
 
             this.Stakeholders = stakeholders.DistinctBy(x => new { x.OwnershipType, x.UserId, x.ApprovalFlowId }).ToList();
+        }
+
+        public async Task Start()
+        {
+            var entity = this.AssociatedEntity.Value;
+            await entity.Submit(this.AssociatedEntityType.Type, "审批流自动触发上报.");
+            await this.ActiveNode.Start();
+
         }
 
         public ApprovalFlow(ApprovalFlowTemplate template, IUnitOfWork uow = default)
@@ -83,15 +94,9 @@ namespace Geex.Common.ApprovalFlows
                 () =>
                 {
                     var type = this.AssociatedEntityType.Type;
-                    var parameter = Expression.Parameter(typeof(IUnitOfWork), "uow");
-                    var genericMethod = typeof(IUnitOfWork).GetMethod("Query").MakeGenericMethod(type);
-                    var lambda = Expression.Lambda(
-                        Expression.Call(parameter, genericMethod),
-                        parameter
-                    );
-                    var compiled = (Func<IUnitOfWork, object>)lambda.Compile();
-                    var result = compiled(Uow);
-                    return result as IQueryable<IApproveEntity>;
+                    var method = typeof(IRepository).GetMethod(nameof(IRepository.Query)).MakeGenericMethod(type);
+                    var query = method.Invoke(Uow, []) as IQueryable<IApproveEntity>;
+                    return query as IQueryable<IApproveEntity>;
                 });
         }
 
@@ -103,13 +108,13 @@ namespace Geex.Common.ApprovalFlows
         public string Name { get; set; }
 
         public List<ApprovalFlowUserRef> Stakeholders { get; set; } = new List<ApprovalFlowUserRef>();
-        public IQueryable<ApprovalFlowNode> Nodes => LazyQuery(() => Nodes);
+        public IQueryable<ApprovalFlowNode> Nodes => LazyQuery(() => Nodes).OrderBy(x=>x.Index);
         public string? CreatorUserId { get; set; }
         public Lazy<User> CreatorUser => LazyQuery(() => CreatorUser);
         public ApprovalFlowStatus Status { get; set; }
         public int ActiveIndex { get; set; }
 
-        public ApprovalFlowNode ActiveNode
+        public ApprovalFlowNode? ActiveNode
         {
             get
             {
@@ -130,18 +135,18 @@ namespace Geex.Common.ApprovalFlows
             this.Status = ApprovalFlowStatus.Finished;
             if (this.AssociatedEntityId != default)
             {
-                await this.AssociatedEntity.Value.Approve(this.GetType(), "审批流自动审批通过");
+                await this.AssociatedEntity.Value!.Approve(this.AssociatedEntityType.Type, "审批流自动触发审批通过");
             }
             this.AddDomainEvent(new ApprovalFlowFinishEvent(this, this.Id));
         }
         /// <summary>
         /// 关联的实体对象
         /// </summary>
-        public Lazy<IApproveEntity> AssociatedEntity => LazyQuery(() => AssociatedEntity);
+        public Lazy<IApproveEntity?> AssociatedEntity => LazyQuery(() => AssociatedEntity);
         /// <summary>
         /// 关联的实体对象类型
         /// </summary>
-        public AssociatedEntityType AssociatedEntityType { get; set; }
+        public AssociatedEntityType? AssociatedEntityType { get; set; }
         public string? AssociatedEntityId { get; set; }
 
         public async Task CancelAsync()
@@ -169,6 +174,22 @@ namespace Geex.Common.ApprovalFlows
 
         /// <inheritdoc />
         public string? TenantCode { get; set; }
+
+        public void Edit(EditApprovalFlowRequest request)
+        {
+            if (this.CanEdit)
+            {
+                this.Name = request.Name;
+                this.Description = request.Description;
+                this.AssociatedEntityType = request.AssociatedEntityType;
+                this.AssociatedEntityId = request.AssociatedEntityId;
+                var nodes = this.Nodes.ToList();
+                foreach (var (node, requestNode) in nodes.Join(request.Nodes, l => l.Index, r => r.Index, (l, r) => (node: l, requestNode: r)))
+                {
+                    node.Edit(requestNode);
+                }
+            }
+        }
     }
 
     public class AssociatedEntityType : Enumeration<AssociatedEntityType>

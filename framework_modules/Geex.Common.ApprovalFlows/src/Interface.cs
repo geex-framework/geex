@@ -22,6 +22,8 @@ namespace Geex.Common.ApprovalFlows
         List<IApprovalFlowNodeData> Nodes { get; }
         string? OrgCode { get; set; }
         string? TemplateId { get; set; }
+        public AssociatedEntityType? AssociatedEntityType { get; set; }
+        public string? AssociatedEntityId { get; set; }
     }
 
     public interface IApprovalFlowNodeData
@@ -43,5 +45,6 @@ namespace Geex.Common.ApprovalFlows
         string? Name { get; set; }
         int? Index { get; set; }
         List<string> CarbonCopyUserIds { get; set; }
+        public AssociatedEntityType? AssociatedEntityType { get; set; }
     }
 }

@@ -11,5 +11,7 @@ namespace Geex.Common.ApprovalFlows.Requests
         public string Name { get; set; }
         public string Description { get; set; }
         public List<ApprovalFlowNodeData> Nodes { get; set; }
+        public AssociatedEntityType? AssociatedEntityType { get; set; }
+        public string? AssociatedEntityId { get; set; }
     }
 }
