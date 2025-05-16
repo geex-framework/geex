@@ -1,8 +1,13 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Threading.Tasks;
+
 using Geex.Common.Abstraction;
 using Geex.Common.Abstractions.Enumerations;
+
 using Microsoft.IdentityModel.Tokens;
 
 namespace Geex.Common.Authentication.Utils
@@ -28,6 +33,13 @@ namespace Geex.Common.Authentication.Utils
             //var subClaim = principal.Claims.First(c => c.Type == GeexClaimType.Sub);
             //var expireClaim = principal.Claims.First(x => x.Type == GeexClaimType.Expires);
             return principal;
+        }
+
+        /// <inheritdoc />
+        public override async Task<TokenValidationResult> ValidateTokenAsync(string token, TokenValidationParameters validationParameters)
+        {
+            var result = await base.ValidateTokenAsync(token, validationParameters);
+            return result;
         }
     }
 

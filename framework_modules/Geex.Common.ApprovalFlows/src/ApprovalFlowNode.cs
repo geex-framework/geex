@@ -305,7 +305,7 @@ namespace Geex.Common.ApprovalFlows
             var messageEntity = await this.Uow.Request(new CreateMessageRequest()
             {
                 Severity = MessageSeverityType.Info,
-                Text = $"【工作流】: 审批人 {user} 转发了 {this.ApprovalFlow.Value.Name} .",
+                Text = $"【工作流】: 审批人 {user} 抄送了 {this.ApprovalFlow.Value.Name} .",
                 Meta = new JsonObject([new("ApprovalFlowId", this.ApprovalFlowId)]),
             });
             await this.Uow.Request(new SendNotificationMessageRequest()
