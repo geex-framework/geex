@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using EasyCronJob.Abstractions;
+
+using Geex.Common;
+
+using Geex.Common.Abstraction.Authentication;
 using Geex.Common.BackgroundJob;
 
 // ReSharper disable once CheckNamespace
@@ -32,6 +37,22 @@ namespace Microsoft.Extensions.DependencyInjection
 
             var register = typeof(CronJob<>).MakeGenericType(jobType).GetMethod(nameof(CronJob<CronJobService>.Register));
             register.Invoke(null, new object[] { services, cronExp });
+        }
+
+        public static void ScheduleFireAndForgetTask(this IUnitOfWork uow, IFireAndForgetTask task, bool afterSaveChange, int? delay = default)
+        {
+            var taskScheduler = uow.ServiceProvider.GetRequiredService<FireAndForgetTaskScheduler>();
+            if (afterSaveChange)
+            {
+                uow.PostSaveChanges += async () =>
+                {
+                    taskScheduler.Schedule(task, delay);
+                };
+            }
+            else
+            {
+                taskScheduler.Schedule(task, delay);
+            }
         }
     }
 }

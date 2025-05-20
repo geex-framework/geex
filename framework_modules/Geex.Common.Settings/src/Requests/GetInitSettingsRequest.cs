@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using Geex.Common.Settings.Api.Aggregates.Settings;
+using Geex.Common.Abstraction.Settings;
+using Geex.Common.Settings.Abstraction;
 using MediatR;
 
 namespace Geex.Common.Requests.Settings

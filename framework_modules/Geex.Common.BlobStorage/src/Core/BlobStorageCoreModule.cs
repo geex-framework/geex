@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 
 using Geex.Common.Abstractions;
 using Geex.Common.BlobStorage.Api;
+using Geex.Common.BlobStorage.Api.Abstractions;
+using Geex.Common.BlobStorage.Core.Services;
 
 using HotChocolate.Types;
 
@@ -22,6 +24,10 @@ namespace Geex.Common.BlobStorage.Core
         {
             SchemaBuilder.AddType<UploadType>();
             context.Services.AddMemoryCache();
+            
+            // Register BlobStorageService
+            context.Services.AddScoped<IBlobService, BlobService>();
+            
             base.ConfigureServices(context);
         }
 

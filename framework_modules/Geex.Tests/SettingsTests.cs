@@ -11,7 +11,6 @@ using Geex.Common.Abstraction.Approval;
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Requests.Settings;
 using Geex.Common.Settings;
-using Geex.Common.Settings.Abstraction;
 using Geex.Tests.TestEntities;
 
 using HotChocolate;

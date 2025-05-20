@@ -1,8 +1,8 @@
-﻿using Geex.Common.Settings.Abstraction;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
+using Geex.Common.Abstraction.Settings;
 using MongoDB.Entities;
 
-namespace Geex.Common.Settings.Api.Aggregates.Settings
+namespace Geex.Common.Settings.Abstraction
 {
     public interface ISetting : IEntityBase
     {

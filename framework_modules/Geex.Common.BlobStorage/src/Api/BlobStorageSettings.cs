@@ -1,4 +1,4 @@
-using Geex.Common.Settings.Abstraction;
+using Geex.Common.Abstraction.Settings;
 
 namespace Geex.Common.BlobStorage.Api
 {

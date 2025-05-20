@@ -6,10 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
+using Geex.Common.Abstraction.Settings;
 using Geex.Common.Abstraction.Storage;
 using Geex.Common.Settings.Abstraction;
-using Geex.Common.Settings.Api.Aggregates.Settings;
-
 using HotChocolate.Types;
 
 using MongoDB.Bson.Serialization;

@@ -1,9 +1,7 @@
 ﻿using System.Text.Json.Nodes;
-
 using Geex.Common.Abstractions;
-using Geex.Common.Settings.Core;
 
-namespace Geex.Common.Settings.Abstraction
+namespace Geex.Common.Abstraction.Settings
 {
     public class SettingDefinition : Enumeration<SettingDefinition>
     {
@@ -11,7 +9,6 @@ namespace Geex.Common.Settings.Abstraction
         public SettingScopeEnumeration[] ValidScopes { get; }
         public bool IsHiddenForClients { get; }
         public JsonNode DefaultValue { get; }
-        public Setting DefaultInstance => new (this, DefaultValue, SettingScopeEnumeration.Global);
 
         public SettingDefinition(string name, SettingScopeEnumeration[] validScopes = default, string? description = null, bool isHiddenForClients = false, JsonNode defaultValue = null) : base(name, name)
         {

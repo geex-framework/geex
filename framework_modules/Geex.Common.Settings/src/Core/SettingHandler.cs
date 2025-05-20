@@ -8,13 +8,15 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.MultiTenant;
+using Geex.Common.Abstraction.Settings;
 using Geex.Common.Abstractions;
-using Geex.Common.Settings.Abstraction;
-using Geex.Common.Settings.Api.Aggregates.Settings;
 using Geex.Common.Requests.Settings;
+using Geex.Common.Settings.Abstraction;
 using MediatR;
+
 using Microsoft.Extensions.Logging;
 
 using MongoDB.Entities;
@@ -24,9 +26,10 @@ using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Common.Settings.Core
 {
-    public class SettingHandler : IRequestHandler<EditSettingRequest, ISetting>,
+    public class SettingHandler : ISettingService,
+        IRequestHandler<EditSettingRequest, ISetting>,
         IRequestHandler<GetSettingsRequest, IQueryable<ISetting>>,
-         IRequestHandler<GetInitSettingsRequest, List<ISetting>>
+        IRequestHandler<GetInitSettingsRequest, List<ISetting>>
     {
         public ILogger<SettingHandler> Logger { get; }
         private IRedisDatabase _redisClient;
@@ -34,9 +37,9 @@ namespace Geex.Common.Settings.Core
         private readonly ICurrentUser _currentUser;
         private readonly LazyService<ICurrentTenant> _currentTenant;
         private static IReadOnlyList<SettingDefinition> _settingDefinitions;
-        private static IReadOnlyList<Setting> _settingDefaults;
+        private static IReadOnlyList<Setting>? _settingDefaults;
 
-        private static IReadOnlyList<Setting> SettingDefaults => _settingDefaults ??= _settingDefinitions?.Select(x => x.DefaultInstance).ToList();
+        private static IReadOnlyList<Setting> SettingDefaults => _settingDefaults ??= _settingDefinitions?.Select(x => new Setting(x, x.DefaultValue, SettingScopeEnumeration.Global)).ToList();
 
 
         public SettingHandler(IRedisDatabase redisClient, IEnumerable<GeexModule> modules, DbContext dbContext, ICurrentUser currentUser, ILogger<SettingHandler> logger, LazyService<ICurrentTenant> currentTenant)
@@ -60,6 +63,8 @@ namespace Geex.Common.Settings.Core
         }
 
         public IReadOnlyList<SettingDefinition> SettingDefinitions => _settingDefinitions;
+
+        async Task<ISetting> ISettingService.SetAsync(SettingDefinition settingDefinition, SettingScopeEnumeration scope, string? scopedKey, JsonNode? value) => await SetAsync(settingDefinition, scope, scopedKey, value);
 
         public async Task<Setting> SetAsync(SettingDefinition settingDefinition, SettingScopeEnumeration scope, string? scopedKey, JsonNode? value)
         {
@@ -96,7 +101,7 @@ namespace Geex.Common.Settings.Core
             }
             catch (Exception e)
             {
-                Logger.LogError(e,"Failed to update redis cache for settings. {settings}", new { setting.Scope, setting.Name, setting.ScopedKey, setting.Value }.ToJsonSafe());
+                Logger.LogError(e, "Failed to update redis cache for settings. {settings}", new { setting.Scope, setting.Name, setting.ScopedKey, setting.Value }.ToJsonSafe());
             }
             //_dbContext.OnCommitted += async (sender) =>
             // {
@@ -104,6 +109,8 @@ namespace Geex.Common.Settings.Core
             // };
             return setting;
         }
+
+        async Task<IEnumerable<ISetting>> ISettingService.GetActiveSettings() => await GetActiveSettings();
 
         public async Task<IEnumerable<Setting>> GetActiveSettings()
         {
@@ -116,6 +123,9 @@ namespace Geex.Common.Settings.Core
                 .Union(globalSettings, new GenericEqualityComparer<Setting>().With(x => x.Name))
                 ;
         }
+
+        async Task<List<ISetting>> ISettingService.GetGlobalSettings() => (await this.GetGlobalSettings()).Cast<ISetting>().ToList();
+
         public async Task<List<Setting>> GetGlobalSettings()
         {
             var globalSettings = await _redisClient.GetAllNamedByKeyAsync<Setting>($"{SettingScopeEnumeration.Global}:*");
@@ -143,6 +153,8 @@ namespace Geex.Common.Settings.Core
             _ = await _redisClient.AddAllAsync(dbSettings.Select(x => new Tuple<string, Setting>(x.GetRedisKey(), x)).ToList());
         }
 
+        async Task<List<ISetting>> ISettingService.GetTenantSettings() => (await this.GetTenantSettings()).Cast<ISetting>().ToList();
+
         public async Task<List<Setting>> GetTenantSettings()
         {
             var tenantCode = _currentTenant?.Value?.Code;
@@ -165,6 +177,8 @@ namespace Geex.Common.Settings.Core
             return result.Union(SettingDefaults.Where(x => x.Scope == SettingScopeEnumeration.Tenant), new GenericEqualityComparer<Setting>().With(x => x.Name)).ToList();
         }
 
+        async Task<List<ISetting>> ISettingService.GetUserSettings() => (await this.GetUserSettings()).Cast<ISetting>().ToList();
+
         public async Task<List<Setting>> GetUserSettings()
         {
             var userId = _currentUser.UserId;
@@ -186,6 +200,8 @@ namespace Geex.Common.Settings.Core
             }
             return result.Union(SettingDefaults.Where(x => x.Scope == SettingScopeEnumeration.User), new GenericEqualityComparer<Setting>().With(x => x.Name)).ToList();
         }
+
+        async Task<ISetting?> ISettingService.GetOrNullAsync(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope, string? scopedKey) => await GetOrNullAsync(settingDefinition, settingScope, scopedKey);
 
         public async Task<Setting?> GetOrNullAsync(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope = default,
             string? scopedKey = default)

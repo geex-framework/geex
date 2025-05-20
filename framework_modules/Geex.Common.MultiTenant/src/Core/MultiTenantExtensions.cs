@@ -1,4 +1,5 @@
-﻿using Geex.Common.Abstraction.MultiTenant;
+﻿using Geex.Common.Abstraction.Authentication;
+using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstractions;
 using Geex.Common.MultiTenant.Api;
 
@@ -16,6 +17,11 @@ namespace Geex.Common.MultiTenant.Core
             services.AddScoped<ICurrentTenantResolver, CurrentTenantResolver>();
             services.AddScoped<IDataFilter<ITenantFilteredEntity>, TenantDataFilter>(x => new TenantDataFilter(x.GetService<LazyService<ICurrentTenant>>()));
             return services;
+        }
+
+        public static ICurrentTenant? GetCurrentTenant(this IUnitOfWork uow)
+        {
+            return uow.ServiceProvider.GetService<ICurrentTenant>();
         }
     }
 }

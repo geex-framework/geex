@@ -43,6 +43,7 @@
     <ItemGroup>
         <Folder Include="Desensitization\" />
         <Folder Include="Gql\Interceptors\" />
+        <Folder Include="Settings\" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Casbin\src\Geex.Casbin.csproj" />

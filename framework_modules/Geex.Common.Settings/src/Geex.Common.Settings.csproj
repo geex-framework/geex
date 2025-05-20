@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Api\Aggregates\Settings\" />
     <Folder Include="Api\GqlSchemas\Types\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
