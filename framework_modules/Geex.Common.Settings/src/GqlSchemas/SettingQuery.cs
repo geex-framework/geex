@@ -1,18 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Abstraction.Settings;
-using Geex.Common.Settings.Core;
 using Geex.Common.Requests.Settings;
-using Geex.Common.Settings.Abstraction;
 using HotChocolate.Data.Filters;
 using HotChocolate.Types;
+using Geex.Common.Settings.Aggregates;
 
-using MediatR;
-
-namespace Geex.Common.Settings.Api
+namespace Geex.Common.Settings.GqlSchemas
 {
     public sealed class SettingQuery : QueryExtension<SettingQuery>
     {

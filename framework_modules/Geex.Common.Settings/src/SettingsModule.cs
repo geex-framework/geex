@@ -1,7 +1,9 @@
-﻿using Geex.Common.Abstraction.Settings;
-using Geex.Common.Abstractions;
-using Geex.Common.Settings.Core;
+﻿using Geex.Common.Abstractions;
+using Geex.Common.Settings.Handlers;
+using Geex.Common.Settings.Services;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using Volo.Abp.Modularity;
 
 namespace Geex.Common.Settings

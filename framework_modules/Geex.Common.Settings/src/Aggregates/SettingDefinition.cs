@@ -1,7 +1,8 @@
 ﻿using System.Text.Json.Nodes;
+
 using Geex.Common.Abstractions;
 
-namespace Geex.Common.Abstraction.Settings
+namespace Geex.Common.Settings.Aggregates
 {
     public class SettingDefinition : Enumeration<SettingDefinition>
     {

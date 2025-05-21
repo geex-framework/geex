@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Geex.Common.Abstraction.Settings;
-using Geex.Common.Requests;
-using Geex.Common.Settings.Abstraction;
+using Geex.Common.Settings.Aggregates;
 
 namespace Geex.Common.Requests.Settings
 {

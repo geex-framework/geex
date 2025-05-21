@@ -1,9 +1,8 @@
 ﻿using Geex.Common.Abstraction;
-
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities;
 
-namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
+namespace Geex.Common.BlobStorage.Aggregates.BlobObjects
 {
     public class DbFile : FileEntity
     {

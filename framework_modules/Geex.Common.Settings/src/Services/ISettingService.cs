@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using Geex.Common.Settings.Abstraction;
 
-namespace Geex.Common.Abstraction.Settings
+using Geex.Common.Settings.Aggregates;
+
+namespace Geex.Common.Settings.Services
 {
     /// <summary>
     /// Service for managing application settings

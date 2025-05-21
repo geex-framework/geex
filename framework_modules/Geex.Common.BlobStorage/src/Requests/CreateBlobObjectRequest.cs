@@ -2,7 +2,7 @@ using Geex.Common.Abstraction.Entities;
 using HotChocolate.Types;
 using MediatR;
 
-namespace Geex.Common.Requests.BlobStorage
+namespace Geex.Common.BlobStorage.Requests
 {
     public record CreateBlobObjectRequest : IRequest<IBlobObject>
     {

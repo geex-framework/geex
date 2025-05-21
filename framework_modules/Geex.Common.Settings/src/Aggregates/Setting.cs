@@ -6,14 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Settings;
 using Geex.Common.Abstraction.Storage;
-using Geex.Common.Settings.Abstraction;
+
 using HotChocolate.Types;
 
 using MongoDB.Bson.Serialization;
 
-namespace Geex.Common.Settings.Core;
+namespace Geex.Common.Settings.Aggregates;
 
 [DebuggerDisplay("{Name}")]
 public class Setting : Entity<Setting>, ISetting

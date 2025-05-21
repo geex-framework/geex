@@ -8,18 +8,15 @@ using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstractions;
-using Geex.Common.BlobStorage.Api.Abstractions;
-using Geex.Common.Requests.BlobStorage;
-using Microsoft.Extensions.DependencyInjection;
+using Geex.Common.BlobStorage.Requests;
 using HotChocolate.Types;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MimeKit;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using MongoDB.Entities;
-using MediatR;
-using MimeKit;
 
-namespace Geex.Common.BlobStorage.Core.Aggregates.BlobObjects
+namespace Geex.Common.BlobStorage.Aggregates.BlobObjects
 {
     /// <summary>
     /// Represents a blob object in the storage system

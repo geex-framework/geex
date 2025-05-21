@@ -1,7 +1,9 @@
-﻿using Geex.Common.Abstraction.Settings;
+﻿using Geex.Common.Settings.Aggregates;
+using Geex.Common.Settings.Services;
+
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Geex.Common.Settings.Core
+namespace Geex.Common.Settings
 {
     public static class Extension
     {

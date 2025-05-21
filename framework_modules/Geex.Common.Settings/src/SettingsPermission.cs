@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+
 using Geex.Common.Authorization;
 
-namespace Geex.Common.Settings.Api
+namespace Geex.Common.Settings
 {
     public class SettingsPermission : AppPermission<SettingsPermission>
     {

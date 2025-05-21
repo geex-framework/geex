@@ -1,15 +1,9 @@
 using System.Threading.Tasks;
-
-using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Requests.BlobStorage;
+using Geex.Common.BlobStorage.Requests;
 
-using HotChocolate.Types;
-
-using MediatR;
-
-namespace Geex.Common.BlobStorage.Core.GqlSchemas.BlobObjects
+namespace Geex.Common.BlobStorage.GqlSchemas.BlobObjects
 {
     public sealed class BlobObjectMutation : MutationExtension<BlobObjectMutation>
     {

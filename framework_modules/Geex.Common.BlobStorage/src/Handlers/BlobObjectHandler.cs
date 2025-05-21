@@ -1,23 +1,19 @@
-using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.BlobStorage.Api;
-using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
-using Geex.Common.Requests.BlobStorage;
-using MediatR;
+using Geex.Common.BlobStorage.Aggregates.BlobObjects;
 using Geex.Common.BlobStorage.Requests;
+using MediatR;
 
-namespace Geex.Common.BlobStorage.Core.Handlers
+namespace Geex.Common.BlobStorage.Handlers
 {
     public class BlobObjectHandler :
         ICommonHandler<IBlobObject, BlobObject>,
         IRequestHandler<CreateBlobObjectRequest, IBlobObject>,
-        IRequestHandler<DeleteBlobObjectRequest>,
-        IRequestHandler<DownloadFileRequest, (IBlobObject blob, Stream dataStream)>
+        IRequestHandler<DeleteBlobObjectRequest>
     {
         public BlobObjectHandler(IUnitOfWork uow)
         {
@@ -39,14 +35,6 @@ namespace Geex.Common.BlobStorage.Core.Handlers
             {
                 await blobObject.DeleteAsync(cancellationToken);
             }
-        }
-
-        public virtual async Task<(IBlobObject blob, Stream dataStream)> Handle(DownloadFileRequest request, CancellationToken cancellationToken)
-        {
-            var blob = await Task.FromResult(Uow.Query<BlobObject>().First(x => x.Id == request.BlobId));
-            var dataStream = await blob.StreamFromStorage(cancellationToken);
-
-            return (blob, dataStream);
         }
     }
 }

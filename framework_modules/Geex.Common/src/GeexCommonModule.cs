@@ -4,6 +4,7 @@ using Geex.Common.AuditLogs;
 using Geex.Common.Authentication;
 using Geex.Common.Authorization;
 using Geex.Common.BackgroundJob;
+using Geex.Common.BlobStorage;
 using Geex.Common.BlobStorage.Core;
 using Geex.Common.Identity.Core;
 using Geex.Common.Logging;

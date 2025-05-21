@@ -1,16 +1,11 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.Requests;
-
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.BlobStorage.Core.Aggregates.BlobObjects;
+using Geex.Common.Requests;
 using HotChocolate.Types;
 
-using MediatR;
-
-namespace Geex.Common.BlobStorage.Core.GqlSchemas.BlobObjects
+namespace Geex.Common.BlobStorage.GqlSchemas.BlobObjects
 {
     public sealed class BlobObjectQuery : QueryExtension<BlobObjectQuery>
     {

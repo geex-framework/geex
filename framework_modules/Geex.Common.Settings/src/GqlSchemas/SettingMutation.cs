@@ -2,13 +2,9 @@
 using Geex.Common.Abstraction.Gql.Types;
 using Geex.Common.Requests.Settings;
 using HotChocolate.Types;
+using Geex.Common.Settings.Aggregates;
 
-using MediatR;
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Settings;
-using Geex.Common.Settings.Abstraction;
-
-namespace Geex.Common.Settings.Api
+namespace Geex.Common.Settings.GqlSchemas
 {
     public sealed class SettingMutation : MutationExtension<SettingMutation>
     {

@@ -1,7 +1,6 @@
 using Geex.Common;
 using Geex.Common.Abstraction.Entities;
-using Geex.Common.BlobStorage.Api.Abstractions;
-using Geex.Common.Requests.BlobStorage;
+using Geex.Common.BlobStorage.Requests;
 using HotChocolate.Types;
 
 using MediatR;
@@ -35,7 +34,7 @@ namespace Geex.Tests
             await uow.SaveChanges();
             // Assert
             using var service1 = service.CreateScope();
-            var file = await service1.ServiceProvider.GetService<IMediator>().Send(new DownloadFileRequest(blob.Id));
+            var file = await service1.ServiceProvider.GetService<IUnitOfWork>().GetBlobService();
             file.dataStream.Length.ShouldBe(data.Length);
             file.blob.FileSize.ShouldBe(data.Length);
         }

@@ -1,8 +1,9 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 
 using Geex.Common;
+using Geex.Common.Abstraction.Entities;
 using Geex.Common.BlobStorage;
-using Geex.Common.BlobStorage.Api.Abstractions;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -23,12 +24,18 @@ namespace Geex.Common.BlobStorage.Extensions
                 var response = context.Response;
                 if (context.Request.Query.TryGetValue("fileId", out var fileId))
                 {
-                    var (blobObject, stream) = await context.RequestServices.GetService<IUnitOfWork>().Request(new DownloadFileRequest(fileId));
+                    var blobObject = context.RequestServices.GetService<IUnitOfWork>().Query<IBlobObject>().FirstOrDefault(x=>x.Id == fileId);
+                    if (blobObject == null)
+                    {
+                        response.StatusCode = (int)HttpStatusCode.NotFound;
+                        return;
+                    }
                     var mimeType = blobObject.MimeType;
                     response.ContentType = mimeType;
                     response.Headers.ContentDisposition = $"Attachment;FileName*=utf-8''{blobObject.FileName.UrlEncode()}";
                     response.Headers.Append("Cache-Control", "public,max-age=86400");//缓存1天
                     response.Headers.Append("ETag", blobObject.Md5);
+                    var stream = await blobObject.StreamFromStorage();
                     await response.StartAsync();
                     await stream.CopyToAsync(response.Body).ConfigureAwait(false);
                 }

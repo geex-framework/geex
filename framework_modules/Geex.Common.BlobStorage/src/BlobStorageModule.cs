@@ -1,19 +1,16 @@
 using System.IO;
 using System.Threading.Tasks;
-
 using Geex.Common.Abstractions;
 using Geex.Common.BlobStorage.Extensions;
-
 using HotChocolate.Types;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
 
-namespace Geex.Common.BlobStorage.Core
+namespace Geex.Common.BlobStorage
 {
     [DependsOn(typeof(GeexCoreModule))]
     public class BlobStorageModule : GeexModule<BlobStorageModule, BlobStorageModuleOptions>
@@ -22,6 +19,7 @@ namespace Geex.Common.BlobStorage.Core
         {
             SchemaBuilder.AddType<UploadType>();
             context.Services.AddMemoryCache();
+
 
              var fileSystemStoragePath = this.ModuleOptions.FileSystemStoragePath;
             Directory.CreateDirectory(fileSystemStoragePath);
