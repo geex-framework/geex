@@ -2,9 +2,7 @@ using System.IO;
 using System.Threading.Tasks;
 
 using Geex.Common.Abstractions;
-using Geex.Common.BlobStorage.Api;
-using Geex.Common.BlobStorage.Api.Abstractions;
-using Geex.Common.BlobStorage.Core.Services;
+using Geex.Common.BlobStorage.Extensions;
 
 using HotChocolate.Types;
 
@@ -17,17 +15,17 @@ using Volo.Abp.Modularity;
 
 namespace Geex.Common.BlobStorage.Core
 {
-    [DependsOn(typeof(BlobStorageApiModule))]
-    public class BlobStorageCoreModule : GeexModule<BlobStorageCoreModule>
+    [DependsOn(typeof(GeexCoreModule))]
+    public class BlobStorageModule : GeexModule<BlobStorageModule, BlobStorageModuleOptions>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             SchemaBuilder.AddType<UploadType>();
             context.Services.AddMemoryCache();
-            
-            // Register BlobStorageService
-            context.Services.AddScoped<IBlobService, BlobService>();
-            
+
+             var fileSystemStoragePath = this.ModuleOptions.FileSystemStoragePath;
+            Directory.CreateDirectory(fileSystemStoragePath);
+
             base.ConfigureServices(context);
         }
 

@@ -1,6 +1,6 @@
 using Geex.Common.Abstraction.Settings;
 
-namespace Geex.Common.BlobStorage.Api
+namespace Geex.Common.BlobStorage
 {
     public class BlobStorageSettings : SettingDefinition
     {

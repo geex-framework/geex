@@ -1,8 +1,9 @@
 ﻿using Geex.Common.Abstractions;
+using Geex.Common.BlobStorage.Core;
 
-namespace Geex.Common.BlobStorage.Api
+namespace Geex.Common.BlobStorage
 {
-    public class BlobStorageModuleOptions : GeexModuleOption<BlobStorageApiModule>
+    public class BlobStorageModuleOptions : GeexModuleOption<BlobStorageModule>
     {
         /// <summary>
         /// File download path, default is "/download",

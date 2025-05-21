@@ -31,6 +31,7 @@ using Microsoft.Extensions.Logging;
 
 using MongoDB.Bson;
 using MongoDB.Entities;
+
 using ExpressionType = System.Linq.Expressions.ExpressionType;
 
 // ReSharper disable once CheckNamespace
@@ -38,6 +39,24 @@ namespace HotChocolate.Types
 {
     public static class HotChocolateTypesExtension
     {
+        private static Dictionary<Type, MethodInfo> LazyGetterCache = new Dictionary<Type, MethodInfo>();
+        /// <summary>
+        /// 用于强制获取Lazy值
+        /// </summary>
+        private static object? GetLazyValue(this object lazy, Type valueType)
+        {
+
+            if (LazyGetterCache.TryGetValue(valueType, out var method))
+            {
+                return method.Invoke(lazy, Array.Empty<object>());
+            }
+
+            var lazyType = lazy.GetType();
+            method = lazyType.GetProperty(nameof(Lazy<object>.Value))!.GetMethod!;
+            LazyGetterCache.Add(valueType, method);
+            return method.Invoke(lazy, Array.Empty<object>());
+        }
+
         public static void ConfigEntity<T>(
             this IObjectTypeDescriptor<T> @this) where T : class, IEntity
         {

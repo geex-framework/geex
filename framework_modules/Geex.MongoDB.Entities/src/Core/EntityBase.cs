@@ -4,7 +4,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
@@ -14,7 +16,7 @@ namespace MongoDB.Entities
 {
     public abstract class EntityBase<T> : IEntityBase where T : IEntityBase
     {
-        protected LazyMultiQuery<TEntity, TRelated> ConfigLazyQuery<TEntity,TRelated>(
+        protected LazyMultiQuery<TEntity, TRelated> ConfigLazyQuery<TEntity, TRelated>(
             Expression<Func<TEntity, IQueryable<TRelated>>> propToLoad, Expression<Func<TRelated, bool>> loadCondition,
             Expression<Func<IQueryable<TEntity>, Expression<Func<TRelated, bool>>>> batchLoadRule,
             Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase where TEntity : T
@@ -26,7 +28,7 @@ namespace MongoDB.Entities
             return lazyObj;
         }
 
-        protected LazySingleQuery<TEntity, TRelated> ConfigLazyQuery<TEntity,TRelated>(
+        protected LazySingleQuery<TEntity, TRelated> ConfigLazyQuery<TEntity, TRelated>(
             // 关联导航属性
             Expression<Func<TEntity, Lazy<TRelated>>> propExpression,
             // 导航属性的懒加载实现
@@ -133,6 +135,16 @@ namespace MongoDB.Entities
                 return await this.DbContext.DeleteAsync(this);
             }
             return await DB.DeleteAsync(this.GetType(), this.Id);
+        }
+
+        /// <inheritdoc />
+        public virtual async Task<long> DeleteAsync(CancellationToken cancellationToken = default)
+        {
+            if (DbContext != default)
+            {
+                return await this.DbContext.DeleteAsync(this, cancellationToken);
+            }
+            return await DB.DeleteAsync(this.GetType(), this.Id, cancellation: cancellationToken);
         }
 
         /// <inheritdoc />

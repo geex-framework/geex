@@ -10,7 +10,6 @@ namespace System
 {
     public static class SystemExtensions
     {
-        private static Dictionary<Type, MethodInfo> LazyGetterCache = new Dictionary<Type, MethodInfo>();
 
         /// <summary>
         /// 用于强制触发属性成员调用
@@ -27,23 +26,6 @@ namespace System
         public static object? Call(this object value, MethodInfo method, object[] arguments = null)
         {
             return method.Invoke(value, arguments);
-        }
-
-        /// <summary>
-        /// 用于强制获取Lazy值
-        /// </summary>
-        public static object? GetLazyValue(this object lazy, Type valueType)
-        {
-
-            if (LazyGetterCache.TryGetValue(valueType, out var method))
-            {
-                return method.Invoke(lazy, Array.Empty<object>());
-            }
-
-            var lazyType = lazy.GetType();
-            method = lazyType.GetProperty(nameof(Lazy<object>.Value))!.GetMethod!;
-            LazyGetterCache.Add(valueType, method);
-            return method.Invoke(lazy, Array.Empty<object>());
         }
 
         public static string ToShortDateString(this DateTimeOffset value)

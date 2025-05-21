@@ -1,9 +1,10 @@
 ﻿using System.Net;
 
 using Geex.Common;
-using Geex.Common.BlobStorage.Api;
+using Geex.Common.BlobStorage;
 using Geex.Common.BlobStorage.Api.Abstractions;
 
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RestSharp.Extensions;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.AspNetCore.Builder
+namespace Geex.Common.BlobStorage.Extensions
 {
     internal static class MicrosoftAspNetCoreBuilderExtension
     {

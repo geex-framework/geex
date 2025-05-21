@@ -21,7 +21,7 @@ namespace Geex.Common
         typeof(IdentityCoreModule),
         typeof(LoggingModule),
         typeof(MessagingCoreModule),
-        typeof(BlobStorageCoreModule),
+        typeof(BlobStorageModule),
         typeof(BackgroundJobModule),
         typeof(SettingsModule),
         typeof(AuditLogsModule)

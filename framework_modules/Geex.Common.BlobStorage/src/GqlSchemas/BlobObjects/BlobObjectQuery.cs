@@ -10,7 +10,7 @@ using HotChocolate.Types;
 
 using MediatR;
 
-namespace Geex.Common.BlobStorage.Api.GqlSchemas.BlobObjects
+namespace Geex.Common.BlobStorage.Core.GqlSchemas.BlobObjects
 {
     public sealed class BlobObjectQuery : QueryExtension<BlobObjectQuery>
     {
