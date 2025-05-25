@@ -29,51 +29,50 @@ using Volo.Abp.Modularity;
 
 namespace Geex.Common.Abstractions
 {
-    public abstract class GeexModule<TModule, TModuleOptions> : GeexModule<TModule> where TModule : GeexModule where TModuleOptions : GeexModuleOption<TModule>
+    public abstract class GeexModule<TModule, TModuleOptions> : GeexModule<TModule> where TModule : GeexModule where TModuleOptions : GeexModuleOption
     {
         private TModuleOptions _moduleOptions;
         protected new TModuleOptions ModuleOptions => this._moduleOptions ??= this.ServiceConfigurationContext.Services.GetSingletonInstance<TModuleOptions>();
-    }
-    public abstract class GeexModule<TModule> : GeexModule where TModule : GeexModule
-    {
-        public IConfiguration Configuration { get; private set; }
-        public IWebHostEnvironment Env { get; private set; }
 
-        public virtual void ConfigureModuleOptions(Action<GeexModuleOption<TModule>> optionsAction)
+        public virtual void ConfigureModuleOptions(Action<GeexModuleOption> optionsAction)
         {
-            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<GeexModuleOption<TModule>>());
+            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<TModuleOptions>());
             if (type == default)
             {
-                throw new InvalidOperationException($"{nameof(GeexModuleOption<TModule>)} of {nameof(TModule)} is not declared, cannot be configured.");
+                throw new InvalidOperationException($"{nameof(TModuleOptions)} of {nameof(TModule)} is not declared, cannot be configured.");
             }
-            var options = (GeexModuleOption<TModule>)(this.ServiceConfigurationContext.Services
+            var options = (TModuleOptions)(this.ServiceConfigurationContext.Services
               .GetSingletonInstanceOrNull(type) ?? Activator.CreateInstance(type));
             optionsAction.Invoke(options);
             this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(type, options));
         }
         public override void PreConfigureServices(ServiceConfigurationContext context)
         {
-            Configuration = context.Services.GetConfiguration();
-            Env = context.Services.GetSingletonInstanceOrNull<IWebHostEnvironment>();
+            base.PreConfigureServices(context);
             context.Services.Add(new ServiceDescriptor(typeof(GeexModule), this));
             context.Services.Add(new ServiceDescriptor(this.GetType(), this));
             this.InitModuleOptions();
-            base.PreConfigureServices(context);
         }
 
         private void InitModuleOptions()
         {
-            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<GeexModuleOption<TModule>>());
+            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<TModuleOptions>());
             if (type == default)
             {
                 return;
             }
-            var options = Activator.CreateInstance(type) as GeexModuleOption<TModule>;
+            var options = Activator.CreateInstance(type) as TModuleOptions;
             Configuration.GetSection(type.Name).Bind(options);
             this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(type, options));
-            this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(typeof(GeexModuleOption<TModule>), options));
+            this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(typeof(TModuleOptions), options));
             //this.ServiceConfigurationContext.Services.GetRequiredServiceLazy<ILogger<GeexModule>>().Value.LogInformation($"Module loaded with options:{Environment.NewLine}{options.ToJson()}");
         }
+
+    }
+    public abstract class GeexModule<TModule> : GeexModule where TModule : GeexModule
+    {
+        public IConfiguration Configuration { get; protected set; }
+        public IWebHostEnvironment Env { get; protected set; }
 
         public virtual void ConfigureModuleEntityMaps(IServiceProvider serviceProvider)
         {
@@ -85,13 +84,22 @@ namespace Geex.Common.Abstractions
 
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
+            var assembly = typeof(TModule).Assembly;
             context.Services.AddMediatR(x =>
             {
-                x.RegisterServicesFromAssembly(typeof(TModule).Assembly);
+                x.RegisterServicesFromAssembly(assembly);
                 x.AutoRegisterRequestProcessors = true;
             });
-            this.SchemaBuilder.AddModuleTypes(this.GetType());
+            this.SchemaBuilder.TryAddGeexAssembly(assembly);
             base.ConfigureServices(context);
+        }
+
+        /// <inheritdoc />
+        public override void PreConfigureServices(ServiceConfigurationContext context)
+        {
+            Configuration = context.Services.GetConfiguration();
+            Env = context.Services.GetSingletonInstanceOrNull<IWebHostEnvironment>();
+            base.PreConfigureServices(context);
         }
     }
 

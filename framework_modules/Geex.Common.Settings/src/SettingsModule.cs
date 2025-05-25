@@ -1,7 +1,5 @@
 ﻿using Geex.Common.Abstractions;
-using Geex.Common.Settings.Handlers;
-using Geex.Common.Settings.Services;
-
+using Geex.Common.Settings.Core.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 
 using Volo.Abp.Modularity;
@@ -11,7 +9,7 @@ namespace Geex.Common.Settings
     [DependsOn(
         typeof(GeexCoreModule)
     )]
-    public class SettingsModule : GeexModule<SettingsModule>
+    public class SettingsModule : GeexModule<SettingsModule, SettingsModuleOptions>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {

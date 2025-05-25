@@ -34,7 +34,7 @@ namespace Geex.Common.AuditLogs
     [DependsOn(
         typeof(GeexCoreModule)
     )]
-    public class AuditLogsModule : GeexModule<AuditLogsModule>
+    public class AuditLogsModule : GeexModule<AuditLogsModule, AuditLogsModuleOptions>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {

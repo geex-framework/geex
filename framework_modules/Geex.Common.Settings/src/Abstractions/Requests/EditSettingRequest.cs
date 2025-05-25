@@ -1,10 +1,7 @@
 ﻿using System.Text.Json.Nodes;
-
-using Geex.Common.Settings.Aggregates;
-
 using MediatR;
 
-namespace Geex.Common.Requests.Settings
+namespace Geex.Common.Settings.Requests
 {
     public record EditSettingRequest : IRequest<ISetting>
     {

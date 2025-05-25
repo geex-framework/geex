@@ -7,24 +7,17 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Geex.Common.Abstraction.Authentication;
 using Geex.Common.Abstraction.MultiTenant;
 using Geex.Common.Abstractions;
-using Geex.Common.Requests.Settings;
-using Geex.Common.Settings.Aggregates;
-using Geex.Common.Settings.Services;
-
+using Geex.Common.Settings.Requests;
 using MediatR;
-
 using Microsoft.Extensions.Logging;
-
 using MongoDB.Entities;
-
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
-namespace Geex.Common.Settings.Handlers
+namespace Geex.Common.Settings.Core.Handlers
 {
     public class SettingHandler : ISettingService,
         IRequestHandler<EditSettingRequest, ISetting>,
@@ -62,7 +55,7 @@ namespace Geex.Common.Settings.Handlers
         private static IReadOnlyList<Setting> SettingDefaults => _settingDefaults ??= _settingDefinitions?.Select(x => new Setting(x, x.DefaultValue, SettingScopeEnumeration.Global)).ToList();
         public ILogger<SettingHandler> Logger { get; }
 
-        public async Task<IEnumerable<Setting>> GetActiveSettings()
+        public async Task<List<Setting>> GetActiveSettings()
         {
             var globalSettings = await this.GetGlobalSettings();
             var tenantSettings = await this.GetTenantSettings();
@@ -71,7 +64,7 @@ namespace Geex.Common.Settings.Handlers
             return userSettings
                 .Union(tenantSettings, new GenericEqualityComparer<Setting>().With(x => x.Name))
                 .Union(globalSettings, new GenericEqualityComparer<Setting>().With(x => x.Name))
-                ;
+                .ToList();
         }
 
         public async Task<List<Setting>> GetGlobalSettings()
@@ -230,7 +223,7 @@ namespace Geex.Common.Settings.Handlers
             return result.AsQueryable();
         }
 
-        async Task<IEnumerable<ISetting>> ISettingService.GetActiveSettings() => await GetActiveSettings();
+        async Task<List<ISetting>> ISettingService.GetActiveSettings() => (await GetActiveSettings()).Cast<ISetting>().ToList();
 
         async Task<List<ISetting>> ISettingService.GetGlobalSettings() => (await this.GetGlobalSettings()).Cast<ISetting>().ToList();
 

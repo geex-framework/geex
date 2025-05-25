@@ -2,7 +2,6 @@
 using Geex.Common.Abstractions;
 using Geex.Common.ApprovalFlows;
 using Geex.Common.AuditLogs;
-using Geex.Common.BlobStorage.Core;
 using Geex.Common.Settings;
 using HotChocolate;
 using HotChocolate.Execution;

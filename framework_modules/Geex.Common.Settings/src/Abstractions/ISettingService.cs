@@ -2,9 +2,7 @@ using System.Collections.Generic;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
-using Geex.Common.Settings.Aggregates;
-
-namespace Geex.Common.Settings.Services
+namespace Geex.Common.Settings
 {
     /// <summary>
     /// Service for managing application settings
@@ -25,7 +23,7 @@ namespace Geex.Common.Settings.Services
         /// Gets all active settings (user, tenant, and global)
         /// </summary>
         /// <returns>Collection of setting entities</returns>
-        Task<IEnumerable<ISetting>> GetActiveSettings();
+        Task<List<ISetting>> GetActiveSettings();
 
         /// <summary>
         /// Gets all global settings

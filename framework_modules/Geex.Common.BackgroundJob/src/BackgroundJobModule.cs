@@ -9,7 +9,7 @@ using Volo.Abp.Modularity;
 namespace Geex.Common.BackgroundJob
 {
     [DependsOn(typeof(GeexCoreModule))]
-    public class BackgroundJobModule : GeexModule<BackgroundJobModule>
+    public class BackgroundJobModule : GeexModule<BackgroundJobModule, BackgroundJobModuleOptions>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {

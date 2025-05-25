@@ -5,14 +5,19 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Common.Abstraction;
 using Geex.Common.Abstraction.Entities;
 using Geex.Common.Abstractions;
 using Geex.Common.BlobStorage.Requests;
+
 using HotChocolate.Types;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using MimeKit;
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 
@@ -25,27 +30,15 @@ namespace Geex.Common.BlobStorage.Aggregates.BlobObjects
     {
         const long MaxCacheSize = 2048L * 1024 * 1024; // 2GB
 
-        public BlobObject(string fileName, string md5, BlobStorageType storageType, string mimeType, long fileSize, IUnitOfWork uow = default)
+        public BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow = default):this()
         {
-            this.FileName = fileName;
-            this.Md5 = md5;
-            this.MimeType = mimeType;
-            this.FileSize = fileSize;
-            this.StorageType = storageType;
             uow?.Attach(this);
-        }
-
-        public BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow = default)
-        {
-            var existed = Uow.Query<BlobObject>().FirstOrDefault(x => x.Md5 == request.Md5);
+            var file = request.File;
+            var existed = uow.Query<BlobObject>().FirstOrDefault(x => x.Md5 == request.Md5 && x.FileName == file.Name && x.MimeType == file.ContentType && x.StorageType == request.StorageType);
             if (existed != default)
             {
-                if (existed.FileName == request.File.Name && existed.MimeType == request.File.ContentType && existed.StorageType == request.StorageType)
-                {
-                    throw new BusinessException("A blob object with the same filename and MD5 already exists for this storage type.");
-                }
+                throw new BusinessException("A blob object with the same filename and MD5 already exists for this storage type.");
             }
-            var file = request.File;
             // 打开文件流
             using var readStream = file.OpenReadStream();
 
@@ -53,15 +46,15 @@ namespace Geex.Common.BlobStorage.Aggregates.BlobObjects
             this.FileSize = file.Length ?? readStream.Length;
             var fileName = readStream is FileStream fs ? Path.GetFileName(fs.Name) : file.Name;
             this.FileName = fileName;
-            string fileContentType;
 
             if (!string.IsNullOrEmpty(file.ContentType))
-                fileContentType = file.ContentType;
+                this.MimeType = file.ContentType;
             else if (!string.IsNullOrEmpty(fileName))
-                fileContentType = GetContentType(fileName);
+                this.MimeType = GetContentType(fileName);
+            this.Md5 = request.Md5;
+            this.StorageType = request.StorageType;
             // 保存到存储
             this.StreamToStorage(readStream).ConfigureAwait(true).GetAwaiter().GetResult();
-            uow?.Attach(this);
         }
 
 

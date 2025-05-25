@@ -39,7 +39,7 @@ namespace Geex.Common.Authentication
     [DependsOn(
         typeof(GeexCoreModule)
     )]
-    public class AuthenticationModule : GeexModule<AuthenticationModule>
+    public class AuthenticationModule : GeexModule<AuthenticationModule, AuthenticationModuleOptions>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {

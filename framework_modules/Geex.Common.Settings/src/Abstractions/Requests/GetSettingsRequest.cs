@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Geex.Common.Settings.Aggregates;
+using Geex.Common.Requests;
 
-namespace Geex.Common.Requests.Settings
+namespace Geex.Common.Settings.Requests
 {
     public record GetSettingsRequest : QueryRequest<ISetting>
     {

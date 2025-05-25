@@ -32,6 +32,7 @@ namespace MongoDB.Entities
             BsonSerializer.RegisterSerializer(typeof(ObjectId), new StringCompatibleObjectIdSerializer());
             //BsonSerializer.RegisterSerializer(typeof(object), new AnonymousObjectBsonSerializer());
             BsonSerializer.RegisterSerializer(new JsonNodeSerializer());
+            BsonSerializer.RegisterSerializer(new JsonValueSerializer());
             BsonSerializer.RegisterSerializer(new DateSerializer());
             BsonSerializer.RegisterSerializer(new FuzzyStringSerializer());
             BsonSerializer.RegisterSerializer(typeof(decimal), new DecimalSerializer(BsonType.Decimal128));

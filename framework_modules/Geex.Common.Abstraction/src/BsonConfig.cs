@@ -52,10 +52,7 @@ namespace Geex.Common.Abstraction
 
             if (this.IndexConfig.Indexes.Any() == true)
             {
-                DB.Collection<TEntity>().Indexes.CreateMany(this.IndexConfig.Indexes, new CreateManyIndexesOptions()
-                {
-                    CommitQuorum = CreateIndexCommitQuorum.Majority,
-                });
+                DB.Collection<TEntity>().Indexes.CreateMany(this.IndexConfig.Indexes, new CreateManyIndexesOptions());
             }
         }
         public void Map(BsonClassMap<TEntity> map);

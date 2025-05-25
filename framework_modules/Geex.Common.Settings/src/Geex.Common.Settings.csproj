@@ -7,6 +7,11 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Abstractions\**" />
+    <EmbeddedResource Remove="Abstractions\**" />
+    <None Remove="Abstractions\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="AutoEquality" Version="0.5.4" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.1.0" />
     <PackageReference Include="Autofac.Extras.DynamicProxy" Version="6.0.0" />
@@ -25,9 +30,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+    <ProjectReference Include="Abstractions\Geex.Common.Settings.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="GqlSchemas\Types\" />
+    <Folder Include="Gql\Types\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
 </Project>

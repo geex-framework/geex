@@ -19,6 +19,7 @@ using MongoDB.Entities.Utilities;
 using ReadConcern = MongoDB.Driver.ReadConcern;
 using WriteConcern = MongoDB.Driver.WriteConcern;
 using MongoDB.Bson.IO;
+using MongoDB.Driver.Core.Clusters;
 
 namespace MongoDB.Entities
 {
@@ -76,8 +77,13 @@ namespace MongoDB.Entities
         {
             this.ServiceProvider = serviceProvider;
             EntityTrackingEnabled = entityTrackingEnabled;
-            this.session = DB.Database(database).Client.StartSession(options ?? DefaultSessionOptions);
+            var mongoClient = DB.Database(database).Client;
+            this.session = mongoClient.StartSession(options ?? DefaultSessionOptions);
+            var topology = mongoClient.Cluster.Description.Type;
+            this.SupportTransaction = topology is ClusterType.ReplicaSet or ClusterType.Sharded;
         }
+
+        public bool SupportTransaction { get; set; }
 
         public IServiceProvider ServiceProvider { get; }
         public bool EntityTrackingEnabled { get; internal set; }
@@ -610,7 +616,7 @@ namespace MongoDB.Entities
                         {
                             savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
                             var list = (castMethod.MakeGenericMethod(type).Invoke(null, new object[] { toSavedEntities }));
-                            if (!Session.IsInTransaction)
+                            if (!Session.IsInTransaction && this.SupportTransaction)
                             {
                                 Session.StartTransaction();
                             }
@@ -620,7 +626,11 @@ namespace MongoDB.Entities
                             {
                                 await task.ConfigureAwait(false);
                             }
-                            await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
+
+                            if (Session.IsInTransaction)
+                            {
+                                await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
+                            }
                             break; // 如果成功，跳出循环
                         }
                         catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))

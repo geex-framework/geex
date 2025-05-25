@@ -1,4 +1,5 @@
-using Geex.Common.Settings.Aggregates;
+using Geex.Common.Abstraction;
+using Geex.Common.Settings;
 
 namespace Geex.Common.BlobStorage
 {

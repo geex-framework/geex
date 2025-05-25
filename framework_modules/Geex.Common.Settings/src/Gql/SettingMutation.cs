@@ -1,10 +1,9 @@
 ﻿using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Requests.Settings;
+using Geex.Common.Settings.Requests;
 using HotChocolate.Types;
-using Geex.Common.Settings.Aggregates;
 
-namespace Geex.Common.Settings.GqlSchemas
+namespace Geex.Common.Settings.Gql
 {
     public sealed class SettingMutation : MutationExtension<SettingMutation>
     {

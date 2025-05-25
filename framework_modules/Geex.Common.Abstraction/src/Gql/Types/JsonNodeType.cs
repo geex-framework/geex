@@ -44,23 +44,32 @@ public class JsonNodeType : ScalarType<JsonNode>
     public override object? ParseLiteral(IValueNode literal)
     {
         //return literal.Value;
-        if (literal.Value is JsonNode jsonNode)
+        var literalValue = literal.Value;
+        if (literalValue is JsonNode jsonNode)
         {
             return jsonNode;
         }
 
-        if (literal.GetValueKind() == ValueKind.Null)
+        if (literal.TryGetValueKind(out var kind))
         {
-            return default(JsonNode);
+            return kind switch
+            {
+                ValueKind.String => JsonValue.Create(literalValue as string),
+                ValueKind.Integer => JsonValue.Create(int.Parse(literalValue.ToString())),
+                ValueKind.Float => JsonValue.Create(decimal.Parse(literalValue.ToString())),
+                ValueKind.Boolean => JsonValue.Create(bool.Parse(literalValue.ToString())),
+                ValueKind.Enum => JsonValue.Create(literalValue.ToString()),
+                ValueKind.Object => JsonNode.Parse(literalValue.As<IList<ObjectFieldNode>>()
+                    .ToDictionary(x => x.Name.Value, x => this.ParseLiteral(x.Value))
+                    .ToJson()),
+                ValueKind.List => JsonNode.Parse(literalValue.ToJson()),
+                ValueKind.Null => JsonValue.Create(default(object)),
+                ValueKind.Unknown => JsonValue.Create(literalValue.ToString()),
+                _ => throw new ArgumentOutOfRangeException()
+            };
         }
 
-        if (literal.GetValueKind() == ValueKind.String)
-        {
-            var jsonStr = literal.Value?.ToString();
-            return string.IsNullOrEmpty(jsonStr) ? null : JsonNode.Parse(jsonStr);
-        }
-
-        return JsonNode.Parse(literal.Value.ToJson());
+        return JsonNode.Parse(literal.ToJson());
     }
 
     public override IValueNode ParseValue(object? value)

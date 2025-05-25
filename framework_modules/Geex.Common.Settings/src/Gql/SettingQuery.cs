@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Requests.Settings;
+using Geex.Common.Settings.Core;
+using Geex.Common.Settings.Requests;
 using HotChocolate.Data.Filters;
 using HotChocolate.Types;
-using Geex.Common.Settings.Aggregates;
 
-namespace Geex.Common.Settings.GqlSchemas
+namespace Geex.Common.Settings.Gql
 {
     public sealed class SettingQuery : QueryExtension<SettingQuery>
     {

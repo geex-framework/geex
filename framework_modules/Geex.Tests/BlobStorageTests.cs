@@ -34,9 +34,10 @@ namespace Geex.Tests
             await uow.SaveChanges();
             // Assert
             using var service1 = service.CreateScope();
-            var file = await service1.ServiceProvider.GetService<IUnitOfWork>().GetBlobService();
-            file.dataStream.Length.ShouldBe(data.Length);
-            file.blob.FileSize.ShouldBe(data.Length);
+            var file = service1.ServiceProvider.GetService<IUnitOfWork>().Query<IBlobObject>().GetById(blob.Id);
+            var dataStream = await file.StreamFromStorage();
+            dataStream.Length.ShouldBe(data.Length);
+            file.FileSize.ShouldBe(data.Length);
         }
     }
 }

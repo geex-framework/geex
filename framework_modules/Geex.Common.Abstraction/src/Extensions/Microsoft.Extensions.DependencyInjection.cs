@@ -130,69 +130,82 @@ namespace Microsoft.Extensions.DependencyInjection
             return schemaBuilder;
         }
 
-        public static IRequestExecutorBuilder AddModuleTypes(this IRequestExecutorBuilder schemaBuilder, Type gqlModuleType)
+        public static IRequestExecutorBuilder TryAddGeexAssembly(this IRequestExecutorBuilder schemaBuilder, Assembly assembly)
         {
-            GeexModule.Modules.AddIfNotContains(gqlModuleType);
-            if (GeexModule.KnownModuleAssembly.AddIfNotContains(gqlModuleType.Assembly))
+            if (!GeexModule.KnownModuleAssembly.AddIfNotContains(assembly))
             {
-                var moduleName = gqlModuleType.Name;
-                var dependedModuleTypes = gqlModuleType.GetCustomAttribute<DependsOnAttribute>()?.DependedTypes;
-                if (dependedModuleTypes?.Any() == true)
+                return schemaBuilder;
+            }
+
+            var assemblyName = assembly.GetName().Name;
+            var refAssemblies = assembly.GetReferencedAssemblies().Where(x => x.Name.StartsWith(assemblyName));
+            refAssemblies = refAssemblies.Except(GeexModule.KnownModuleAssembly.Select(x => x.GetName()));
+            if (refAssemblies.Any())
+            {
+                var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                foreach (var refAssemblyName in refAssemblies)
                 {
-                    foreach (var dependedModuleType in dependedModuleTypes)
+                    var matchedAssembly = assemblies.FirstOrDefault(x => x.FullName == refAssemblyName.FullName);
+                    if (matchedAssembly == null)
                     {
-                        schemaBuilder.AddModuleTypes(dependedModuleType);
+                        continue;
                     }
-                }
-                var exportedTypes = gqlModuleType.Assembly.GetExportedTypes();
-
-                var rootTypes = exportedTypes.Where(x => x.IsAssignableTo<ObjectTypeExtension>() && !x.IsAbstract);
-                foreach (var rootType in rootTypes)
-                {
-                    var baseClasses = rootType.GetBaseClasses(typeof(ObjectTypeExtension));
-                    var type2replace = baseClasses.ElementAtOrDefault(baseClasses.Length - 1);
-                    if (type2replace != null && type2replace.BaseType?.BaseType?.BaseType == typeof(ObjectTypeExtension))
-                    {
-                        schemaBuilder.Services.ReplaceAll(x => x.ServiceType == typeof(ObjectTypeExtension) && x.ImplementationType == type2replace, () => new ServiceDescriptor(typeof(ObjectTypeExtension), rootType, ServiceLifetime.Scoped));
-                    }
-                    else
-                    {
-                        schemaBuilder.Services.AddScoped(typeof(ObjectTypeExtension), rootType);
-                    }
-                }
-                GeexModule.RootTypes.AddIfNotContains(rootTypes);
-
-                var objectTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
-                GeexModule.ObjectTypes.AddIfNotContains(objectTypes);
-
-                var remoteNotificationHandleTypes = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRemoteNotificationHandler)));
-                //var inheritanceDeclarations = notificationHandleTypes.SelectMany(x => x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(INotificationHandler<>))));
-                //var notificationTypes = inheritanceDeclarations.Select(x => x.GenericTypeArguments[0]).ToArray().ToList();
-                var remoteNotificationHandlers = remoteNotificationHandleTypes
-                    .Select(x => (notifications: x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(IRemoteNotificationHandler<>))).Select(x => x.GenericTypeArguments[0]).ToArray(), handlerType: x))
-                    .ToList();
-                var dic = remoteNotificationHandlers.ToDictionary(x => x.handlerType, x => x.notifications);
-                GeexModule.RemoteNotificationHandlerTypes.AddIfNotContains(dic);
-
-                var requestHandlers = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRequestHandler<>))).ToList();
-                GeexModule.RequestHandlerTypes.AddIfNotContains(requestHandlers);
-
-                var classEnumTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsClassEnum() && x.Name != nameof(Enumeration)).ToList();
-                GeexModule.ClassEnumTypes.AddIfNotContains(classEnumTypes);
-
-                var directiveTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<DirectiveType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
-                GeexModule.DirectiveTypes.AddIfNotContains(directiveTypes);
-
-                foreach (var socketInterceptor in exportedTypes.Where(x => x.IsAssignableTo<ISocketSessionInterceptor>()).ToList())
-                {
-                    schemaBuilder.ConfigureSchemaServices(s => s.TryAdd(ServiceDescriptor.Scoped(typeof(ISocketSessionInterceptor), socketInterceptor)));
-                }
-
-                foreach (var requestInterceptor in exportedTypes.Where(x => x.IsAssignableTo<IHttpRequestInterceptor>()).ToList())
-                {
-                    schemaBuilder.ConfigureSchemaServices(s => s.TryAdd(ServiceDescriptor.Scoped(typeof(IHttpRequestInterceptor), requestInterceptor)));
+                    schemaBuilder.TryAddGeexAssembly(matchedAssembly);
                 }
             }
+
+            var exportedTypes = assembly.GetExportedTypes();
+
+            var rootTypes = exportedTypes.Where(x => x.IsAssignableTo<ObjectTypeExtension>() && !x.IsAbstract);
+            foreach (var rootType in rootTypes)
+            {
+                var baseClasses = rootType.GetBaseClasses(typeof(ObjectTypeExtension));
+                var type2replace = baseClasses.ElementAtOrDefault(baseClasses.Length - 1);
+                if (type2replace != null && type2replace.BaseType?.BaseType?.BaseType == typeof(ObjectTypeExtension))
+                {
+                    schemaBuilder.Services.ReplaceAll(x => x.ServiceType == typeof(ObjectTypeExtension) && x.ImplementationType == type2replace, () => new ServiceDescriptor(typeof(ObjectTypeExtension), rootType, ServiceLifetime.Scoped));
+                }
+                else
+                {
+                    schemaBuilder.Services.AddScoped(typeof(ObjectTypeExtension), rootType);
+                }
+            }
+            GeexModule.RootTypes.AddIfNotContains(rootTypes);
+
+            var objectTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
+            GeexModule.ObjectTypes.AddIfNotContains(objectTypes);
+
+            var remoteNotificationHandleTypes = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRemoteNotificationHandler)));
+            //var inheritanceDeclarations = notificationHandleTypes.SelectMany(x => x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(INotificationHandler<>))));
+            //var notificationTypes = inheritanceDeclarations.Select(x => x.GenericTypeArguments[0]).ToArray().ToList();
+            var remoteNotificationHandlers = remoteNotificationHandleTypes
+                .Select(x => (notifications: x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(IRemoteNotificationHandler<>))).Select(x => x.GenericTypeArguments[0]).ToArray(), handlerType: x))
+                .ToList();
+            var dic = remoteNotificationHandlers.ToDictionary(x => x.handlerType, x => x.notifications);
+            GeexModule.RemoteNotificationHandlerTypes.AddIfNotContains(dic);
+
+            var requestHandlers = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRequestHandler<>))).ToList();
+            GeexModule.RequestHandlerTypes.AddIfNotContains(requestHandlers);
+
+            var classEnumTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsClassEnum() && x.Name != nameof(Enumeration)).ToList();
+            GeexModule.ClassEnumTypes.AddIfNotContains(classEnumTypes);
+
+            var directiveTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<DirectiveType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
+            GeexModule.DirectiveTypes.AddIfNotContains(directiveTypes);
+
+            foreach (var socketInterceptor in exportedTypes.Where(x => x.IsAssignableTo<ISocketSessionInterceptor>()).ToList())
+            {
+                schemaBuilder.ConfigureSchemaServices(s => s.TryAdd(ServiceDescriptor.Scoped(typeof(ISocketSessionInterceptor), socketInterceptor)));
+            }
+
+            foreach (var requestInterceptor in exportedTypes.Where(x => x.IsAssignableTo<IHttpRequestInterceptor>()).ToList())
+            {
+                schemaBuilder.ConfigureSchemaServices(s => s.TryAdd(ServiceDescriptor.Scoped(typeof(IHttpRequestInterceptor), requestInterceptor)));
+            }
+
+            var geexModuleTypes = assembly.GetExportedTypes().Where(x => x.IsAssignableTo<GeexModule>() && !x.IsAbstract).ToList();
+            GeexModule.Modules.AddIfNotContains(geexModuleTypes);
+
             return schemaBuilder;
         }
 

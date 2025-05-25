@@ -85,6 +85,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common.ApprovalFlows",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Common.ApprovalFlows", "Geex.Common.ApprovalFlows\src\Geex.Common.ApprovalFlows.csproj", "{D54BB6F9-85E8-4713-989C-0CDD145434A0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Common.Settings.Abstractions", "Geex.Common.Settings\src\Abstractions\Geex.Common.Settings.Abstractions.csproj", "{02EF6B75-1E13-7E77-C209-807F1C85A2C9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -179,6 +181,10 @@ Global
 		{D54BB6F9-85E8-4713-989C-0CDD145434A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D54BB6F9-85E8-4713-989C-0CDD145434A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D54BB6F9-85E8-4713-989C-0CDD145434A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02EF6B75-1E13-7E77-C209-807F1C85A2C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02EF6B75-1E13-7E77-C209-807F1C85A2C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02EF6B75-1E13-7E77-C209-807F1C85A2C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02EF6B75-1E13-7E77-C209-807F1C85A2C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -205,6 +211,7 @@ Global
 		{20573EB5-B7A2-4106-9015-6E188977C8AA} = {B17EB9C2-B7E3-487F-B2A0-03869115A348}
 		{4B52A79F-D740-49F8-9720-4930BA7AE29A} = {C61EC666-17FC-45B1-90FF-83967D16C220}
 		{D54BB6F9-85E8-4713-989C-0CDD145434A0} = {D9B2D26D-FBCE-4258-BE0E-7BF5F1239EE4}
+		{02EF6B75-1E13-7E77-C209-807F1C85A2C9} = {838310F5-58DD-4546-850D-8BE9233333AC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {65E33D9A-23A7-46EA-9E8C-8B20AB9B6F0D}

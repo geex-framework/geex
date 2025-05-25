@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
+
 using Geex.Common.Abstractions;
+
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -9,7 +11,7 @@ namespace Geex.Common.ApprovalFlows
     [DependsOn(
         typeof(GeexCoreModule)
     )]
-    public class ApprovalFlowModule : GeexModule<ApprovalFlowModule>
+    public class ApprovalFlowModule : GeexModule<ApprovalFlowModule, ApprovalFlowModuleOptions>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {

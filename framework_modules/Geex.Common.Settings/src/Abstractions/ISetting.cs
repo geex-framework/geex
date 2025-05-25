@@ -1,8 +1,7 @@
 ﻿using System.Text.Json.Nodes;
-
 using MongoDB.Entities;
 
-namespace Geex.Common.Settings.Aggregates
+namespace Geex.Common.Settings
 {
     public interface ISetting : IEntityBase
     {

@@ -1,6 +1,6 @@
 ﻿using Geex.Common.Abstractions;
 
-namespace Geex.Common.Settings.Aggregates
+namespace Geex.Common.Settings
 {
     public class SettingScopeEnumeration : Enumeration<SettingScopeEnumeration>
     {

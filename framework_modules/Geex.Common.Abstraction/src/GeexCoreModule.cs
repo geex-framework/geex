@@ -102,12 +102,14 @@ namespace Geex.Common
                 {
                     opt.RemoveUnreachableTypes = false;
                     opt.RemoveUnusedTypeSystemDirectives = false;
-                    opt.EnsureAllNodesCanBeResolved = true;
+                    opt.EnsureAllNodesCanBeResolved = false;
                     opt.PreserveSyntaxNodes = true;
                     opt.SortFieldsByName = true;
                     opt.EnableTrueNullability = true;
                     opt.EnableOneOf = true;
                     opt.EnableFlagEnums = true;
+                    opt.StrictRuntimeTypeValidation = false;
+                    opt.StrictValidation = false;
                     capturedSchemaOptions = opt;
                 })
                 .AddInputParser(o =>
