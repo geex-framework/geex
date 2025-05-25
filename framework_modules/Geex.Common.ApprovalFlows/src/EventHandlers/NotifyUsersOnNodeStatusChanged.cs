@@ -5,8 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions.Entities;
 using KuanFang.Rms.MessageManagement.Messages;
-using Geex.Common.Identity.Core.Aggregates.Users;
-
 using Geex.Common.Requests.Messaging;
 
 using MediatR;

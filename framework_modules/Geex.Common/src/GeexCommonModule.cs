@@ -1,11 +1,10 @@
 ﻿using Geex.Abstractions;
-using Geex.Common.Accounting;
 using Geex.Common.AuditLogs;
 using Geex.Common.Authentication;
 using Geex.Common.Authorization;
 using Geex.Common.BackgroundJob;
 using Geex.Common.BlobStorage;
-using Geex.Common.Identity.Core;
+using Geex.Common.Identity;
 using Geex.Common.Logging;
 using Geex.Common.Messaging.Core;
 using Geex.Common.Settings;
@@ -17,8 +16,7 @@ namespace Geex.Common
         typeof(GeexCoreModule),
         typeof(AuthenticationModule),
         typeof(AuthorizationModule),
-        typeof(AccountingModule),
-        typeof(IdentityCoreModule),
+        typeof(IdentityModule),
         typeof(LoggingModule),
         typeof(MessagingCoreModule),
         typeof(BlobStorageModule),

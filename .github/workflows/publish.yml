@@ -52,7 +52,7 @@ jobs:
         
       - name: Build projects
         run: |
-          dotnet build --configuration Release ./framework_modules/Geex.Common.Analyzer/src/Geex.Common.Analyzer.csproj
+          dotnet build --configuration Release ./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj
           dotnet build --configuration Release ./framework_modules/framework_modules.sln /p:IncludeSourceGeneratedFiles=true
         
       - name: Generate NuGet release packages
@@ -66,7 +66,7 @@ jobs:
           dotnet pack ./framework_modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.AuditLogs/src/Geex.Common.AuditLogs.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
-          dotnet pack ./framework_modules/Geex.Common.Analyzer/src/Geex.Common.Analyzer.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Authentication/src/Geex.Common.Authentication.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Authorization/src/Geex.Common.Authorization.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
@@ -91,7 +91,7 @@ jobs:
           dotnet pack ./framework_modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.AuditLogs/src/Geex.Common.AuditLogs.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
-          dotnet pack ./framework_modules/Geex.Common.Analyzer/src/Geex.Common.Analyzer.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Authentication/src/Geex.Common.Authentication.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Authorization/src/Geex.Common.Authorization.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}

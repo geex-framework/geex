@@ -12,7 +12,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
-        <ProjectReference Include="..\..\Geex.Common.Analyzer\src\Geex.Common.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\..\Geex.Analyzer\src\Geex.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
     <ItemGroup>
         <Folder Include="GqlSchemas\BlobObjects\Types\" />

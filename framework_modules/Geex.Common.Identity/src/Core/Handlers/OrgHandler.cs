@@ -10,10 +10,8 @@ using Geex.Abstractions.ClientNotification;
 using Geex.Common.Notifications;
 using Geex.Common.Requests;
 using Geex.Abstractions;
-using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
-using Geex.Common.Identity.Core.Aggregates.Orgs;
-using Geex.Common.Identity.Core.Aggregates.Users;
-using Geex.Common.Requests.Identity;
+using Geex.Common.Identity.Core.Entities;
+using Geex.Common.Identity.Requests;
 using Geex.Common.Messaging.Api.GqlSchemas.Messages;
 
 using HotChocolate.Subscriptions;

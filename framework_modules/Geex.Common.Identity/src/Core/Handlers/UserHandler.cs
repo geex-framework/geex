@@ -5,16 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Abstractions;
+using Geex.Abstractions.Authentication;
 using Geex.Abstractions.Authorization;
 using Geex.Abstractions.Entities;
 using Geex.Abstractions.Events;
-using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
-using Geex.Common.Identity.Api.Aggregates.Users;
-using Geex.Common.Identity.Core.Aggregates.Orgs;
-using Geex.Common.Identity.Core.Aggregates.Users;
+using Geex.Common.Authentication;
+using Geex.Common.Identity.Core.Entities;
 using Geex.Common.Identity.Requests;
-using Geex.Common.Requests.Identity;
-
+using Geex.Common.Requests.Accounting;
 using HotChocolate.Utilities;
 
 using MediatR;
@@ -30,7 +28,7 @@ using StackExchange.Redis.Extensions.Core.Abstractions;
 
 using Volo.Abp;
 
-using Role = Geex.Common.Identity.Api.Aggregates.Roles.Role;
+using Role = Geex.Common.Identity.Core.Entities.Role;
 
 namespace Geex.Common.Identity.Core.Handlers
 {
@@ -40,6 +38,8 @@ namespace Geex.Common.Identity.Core.Handlers
         IRequestHandler<EditUserRequest, IUser>,
         IRequestHandler<ResetUserPasswordRequest, IUser>,
         IRequestHandler<DeleteUserRequest, bool>,
+        IRequestHandler<ChangePasswordRequest, IUser>,
+        IRequestHandler<RegisterUserRequest>,
         INotificationHandler<UserOrgChangedEvent>,
         INotificationHandler<OrgCodeChangedEvent>,
         ICommonHandler<IUser, User>,
@@ -190,6 +190,45 @@ namespace Geex.Common.Identity.Core.Handlers
             await user.AssignOrgs(request.OrgCodes);
             await user.SaveAsync(cancellationToken);
             return user;
+        }
+
+        /// <summary>Handles a request</summary>
+        /// <param name="request">The request</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Response from the request</returns>
+        public virtual async Task<IUser> Handle(ChangePasswordRequest request, CancellationToken cancellationToken)
+        {
+            var currentUser = Uow.GetCurrentUser();
+            if (currentUser?.UserId == default)
+            {
+                return default;
+            }
+            var user = this.Uow.Query<IUser>().GetById(currentUser.UserId);
+            user.ChangePassword(request.OriginPassword, request.NewPassword);
+            return user;
+        }
+
+
+
+        /// <summary>Handles a request</summary>
+        /// <param name="request">The request</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Response from the request</returns>
+        public virtual async Task Handle(RegisterUserRequest request, CancellationToken cancellationToken)
+        {
+            await this.Uow.Request(new CreateUserRequest
+            {
+                Username = request.Username,
+                IsEnable = true,
+                Email = request.Email,
+                RoleIds = new List<string>(),
+                OrgCodes = new List<string>(),
+                AvatarFileId = null,
+                Claims = new List<UserClaim>(),
+                PhoneNumber = request.PhoneNumber,
+                Password = request.Password
+            }, cancellationToken);
+            return;
         }
     }
 }

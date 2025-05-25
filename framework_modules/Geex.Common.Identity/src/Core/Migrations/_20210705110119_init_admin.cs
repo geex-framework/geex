@@ -10,12 +10,8 @@ using Geex.Abstractions.Entities;
 using Geex.Abstractions.Migrations;
 using Geex.Common.Authorization;
 using Geex.Common.Authorization.Events;
-using Geex.Common.Identity.Api.Aggregates.Roles;
-using Geex.Common.Identity.Api.Aggregates.Users;
-using Geex.Common.Identity.Core.Aggregates.Orgs;
-using Geex.Common.Identity.Core.Aggregates.Users;
-using Geex.Common.Requests.Identity;
-
+using Geex.Common.Identity.Core.Entities;
+using Geex.Common.Identity.Requests;
 using MediatR;
 
 using Microsoft.AspNetCore.Identity;

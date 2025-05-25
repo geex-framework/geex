@@ -4,8 +4,7 @@ using System.Linq;
 using Geex.Abstractions;
 using Geex.Abstractions.Entities;
 using Geex.Abstractions.Storage;
-using Geex.Common.Identity.Core.Aggregates.Users;
-
+using Geex.Common.Identity.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace Geex.Common.ApprovalFlows

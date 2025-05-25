@@ -3,12 +3,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Abstractions.Entities;
+using Geex.Common.Identity.Core.Entities;
 using Geex.Common.Requests;
-using Geex.Common.Identity.Api.Aggregates.Roles;
-using Geex.Common.Requests.Identity;
 using MediatR;
 
 using MongoDB.Entities;
+using Geex.Common.Identity.Requests;
 
 namespace Geex.Common.Identity.Core.Handlers
 {

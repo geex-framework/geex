@@ -3,8 +3,6 @@ using System.Security.Claims;
 
 using Geex.Abstractions.Authentication;
 using Geex.Abstractions;
-
-using MongoDB.Entities;
 using MongoDB.Entities.Interceptors;
 
 namespace Geex.Common.Identity.Core
@@ -18,12 +16,5 @@ namespace Geex.Common.Identity.Core
         {
 
         }
-    }
-    /// <summary>
-    /// 授权过滤接口
-    /// </summary>
-    public interface IOrgFilteredEntity : IEntityBase
-    {
-        public string OrgCode { get; }
     }
 }

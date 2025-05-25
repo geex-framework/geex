@@ -12,9 +12,9 @@ using Geex.Abstractions.MultiTenant;
 using Geex.Abstractions.Storage;
 using Geex.Abstractions;
 using Geex.Common.ApprovalFlows.Requests;
+using Geex.Common.Identity;
 using Geex.Common.Identity.Core;
-using Geex.Common.Identity.Core.Aggregates.Users;
-
+using Geex.Common.Identity.Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 
 using Volo.Abp;
