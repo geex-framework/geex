@@ -1,5 +1,5 @@
 # Geex Framework
-
+![star](https://gitcode.com/geexcode/geex/star/badge.svg)
 [![publish](https://github.com/geex-framework/geex/actions/workflows/publish.yml/badge.svg)](https://github.com/geex-framework/geex/actions/workflows/publish.yml)
 
 Geex是一个基于.NET的现代化模块化应用框架，专为构建高性能、可扩展的企业应用而设计。它集成了多种常用功能模块和扩展，为开发者提供了完整的应用开发解决方案。
