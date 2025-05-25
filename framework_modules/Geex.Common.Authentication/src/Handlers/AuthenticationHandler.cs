@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Geex.Abstractions.Entities;
 using Geex.Common.Requests;
 using Geex.Abstractions;
-using Geex.Abstractions;
 using Geex.Common.Authentication.Domain;
 using Geex.Common.Authentication.Utils;
 

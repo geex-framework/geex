@@ -3,10 +3,9 @@ using System.Collections.Generic;
 
 using EasyCronJob.Abstractions;
 
-using Geex.Common;
-
 using Geex.Abstractions.Authentication;
 using Geex.Common.BackgroundJob;
+using Geex.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

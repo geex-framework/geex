@@ -9,7 +9,6 @@ using Geex.Abstractions;
 using Geex.Abstractions.Authentication;
 using Geex.Abstractions.Entities;
 using Geex.Abstractions.ClientNotification;
-using Geex.Abstractions;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
 using Geex.Common.Messaging.Api.GqlSchemas.Messages;
 using Geex.Common.Messaging.Core.Aggregates.Messages;

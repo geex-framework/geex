@@ -5,7 +5,6 @@ using Geex.Abstractions;
 using Geex.Abstractions.Entities;
 using Geex.Common.Requests;
 using Geex.Abstractions.MultiTenant;
-using Geex.Abstractions;
 using Geex.Common.MultiTenant.Core.Aggregates.Tenants;
 
 using MediatR;

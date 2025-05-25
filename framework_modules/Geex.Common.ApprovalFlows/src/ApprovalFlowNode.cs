@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
+using Geex.Abstractions;
 using Geex.Abstractions.Authentication;
 using Geex.Abstractions.Entities;
 using Geex.Abstractions.Storage;

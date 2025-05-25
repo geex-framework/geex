@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
+using Geex.Abstractions;
 using Geex.Abstractions.Authentication;
 using Geex.Abstractions.Entities;
 using Geex.Abstractions.Storage;

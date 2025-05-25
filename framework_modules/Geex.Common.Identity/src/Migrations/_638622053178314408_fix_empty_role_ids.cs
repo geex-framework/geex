@@ -7,6 +7,7 @@ using MongoDB.Bson;
 using MongoDB.Entities;
 using MongoDB.Driver;
 using Geex.Abstractions.Migrations;
+using Geex.Abstractions;
 
 namespace Geex.Common.Identity.Migrations
 {

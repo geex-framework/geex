@@ -3,7 +3,7 @@ using StackExchange.Redis.Extensions.Core.Configuration;
 
 namespace Geex.Abstractions
 {
-    public class GeexCoreModuleOptions : GeexModuleOption<GeexCoreModule>
+    public class GeexCoreModuleOptions : GeexModuleOption
     {
         public string ConnectionString { get; set; } = "mongodb://localhost:27017/x_proj_x";
         /// <summary>

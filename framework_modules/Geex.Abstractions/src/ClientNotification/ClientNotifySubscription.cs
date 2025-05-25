@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using System.Threading.Tasks;
 using Geex.Abstractions.Authentication;
-using Geex.Abstractions.ClientNotification;
 using Geex.Abstractions.Gql.Types;
+using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Subscriptions;
 using HotChocolate.Types;
-using HotChocolate;
 
-namespace Geex.Common.ClientNotification
+namespace Geex.Abstractions.ClientNotification
 {
     public class ClientNotifySubscription : SubscriptionExtension<ClientNotifySubscription>
     {
@@ -48,7 +42,7 @@ namespace Geex.Common.ClientNotification
         {
             Task.Run(async () =>
             {
-                for (int i = 0; i < 2; i++)
+                for (var i = 0; i < 2; i++)
                 {
                     await Task.Delay(1000);
                     await sender.SendAsync(nameof(Echo), text);

@@ -1,4 +1,6 @@
 ﻿using System.Threading.Tasks;
+
+using Geex.Abstractions;
 using Geex.Abstractions.Gql.Types;
 using Geex.Common.Settings.Requests;
 using HotChocolate.Types;

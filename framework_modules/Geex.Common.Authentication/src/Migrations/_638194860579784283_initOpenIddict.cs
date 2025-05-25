@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Abstractions;
 using Geex.Abstractions.Migrations;
 
 using Microsoft.Extensions.DependencyInjection;

@@ -12,6 +12,7 @@ using Geex.Common.Requests.Messaging;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Volo.Abp.DependencyInjection;
+using Geex.Abstractions;
 
 namespace Geex.Common.ApprovalFlows.EventHandlers
 {

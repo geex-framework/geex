@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using Geex.Abstractions;
 using Geex.Abstractions.MultiTenant;
 using Geex.Common.MultiTenant.Api;
 using Geex.Common.MultiTenant.Core.Aggregates.Tenants;

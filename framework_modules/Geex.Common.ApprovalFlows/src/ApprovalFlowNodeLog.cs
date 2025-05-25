@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 
+using Geex.Abstractions;
 using Geex.Abstractions.Entities;
 using Geex.Abstractions.Storage;
 using Geex.Common.Identity.Core.Aggregates.Users;

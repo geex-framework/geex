@@ -1,6 +1,4 @@
-﻿using Geex.Abstractions;
-
-namespace Geex.Abstractions.ClientNotification;
+﻿namespace Geex.Abstractions.ClientNotification;
 
 public class DataChangeType : Enumeration<DataChangeType>
 {

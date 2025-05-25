@@ -1,5 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
+
+using Geex.Abstractions;
 using Geex.Abstractions.Entities;
 using Geex.Abstractions.Gql.Types;
 using Geex.Common.Requests;

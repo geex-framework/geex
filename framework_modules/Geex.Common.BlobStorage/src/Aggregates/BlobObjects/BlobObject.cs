@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using Geex.Abstractions;
 using Geex.Abstractions.Entities;
-using Geex.Abstractions;
+using Geex.Abstractions.Storage;
 using Geex.Common.BlobStorage.Requests;
 
 using HotChocolate.Types;
@@ -26,7 +26,7 @@ namespace Geex.Common.BlobStorage.Aggregates.BlobObjects
     /// <summary>
     /// Represents a blob object in the storage system
     /// </summary>
-    public class BlobObject : Abstraction.Storage.Entity<BlobObject>, IBlobObject
+    public class BlobObject : Entity<BlobObject>, IBlobObject
     {
         const long MaxCacheSize = 2048L * 1024 * 1024; // 2GB
 

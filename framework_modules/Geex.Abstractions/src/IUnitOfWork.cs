@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using Geex.Abstractions.ClientNotification;
 using Geex.Abstractions.Storage;
-using Geex.Common.ClientNotification;
+using Geex.Abstractions.ClientNotification;
 
 using HotChocolate.Subscriptions;
 
@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Entities;
 
-namespace Geex.Common;
+namespace Geex.Abstractions;
 
 public interface IBus
 {
@@ -30,7 +30,7 @@ public interface IBus
     /// <returns>A task that represents the send operation. The task result contains the handler response</returns>
     Task<TResponse> Request<TResponse>(
         IRequest<TResponse> request,
-        CancellationToken cancellationToken = default(CancellationToken)) =>
+        CancellationToken cancellationToken = default) =>
         Mediator.Send(request, cancellationToken);
 
     /// <summary>
@@ -39,7 +39,7 @@ public interface IBus
     /// <param name="request">Request object</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>A task that represents the send operation.</returns>
-    Task Request<TRequest>(TRequest request, CancellationToken cancellationToken = default(CancellationToken)) where TRequest : IRequest => Mediator.Send(request, cancellationToken);
+    Task Request<TRequest>(TRequest request, CancellationToken cancellationToken = default) where TRequest : IRequest => Mediator.Send(request, cancellationToken);
 
     /// <summary>
     /// Asynchronously send an object request to a single handler via dynamic dispatch
@@ -47,19 +47,19 @@ public interface IBus
     /// <param name="request">Request object</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>A task that represents the send operation. The task result contains the type erased handler response</returns>
-    Task<object?> Request(object request, CancellationToken cancellationToken = default(CancellationToken)) => Mediator.Send(request, cancellationToken);
+    Task<object?> Request(object request, CancellationToken cancellationToken = default) => Mediator.Send(request, cancellationToken);
 
     /// <summary>Asynchronously send a notification to multiple handlers</summary>
     /// <param name="notification">Notification object</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>A task that represents the publish operation.</returns>
-    Task Notify(object notification, CancellationToken cancellationToken = default(CancellationToken)) => Mediator.Publish(notification, cancellationToken);
+    Task Notify(object notification, CancellationToken cancellationToken = default) => Mediator.Publish(notification, cancellationToken);
 
     /// <summary>Asynchronously send a notification to multiple handlers</summary>
     /// <param name="notification">Notification object</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>A task that represents the publish operation.</returns>
-    Task Notify<TNotification>(TNotification notification, CancellationToken cancellationToken = default(CancellationToken)) where TNotification : INotification => Mediator.Publish(notification, cancellationToken);
+    Task Notify<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification => Mediator.Publish(notification, cancellationToken);
 }
 
 public interface IRepository

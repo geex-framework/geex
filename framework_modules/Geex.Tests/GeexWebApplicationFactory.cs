@@ -1,10 +1,13 @@
 ﻿using Autofac.Extensions.DependencyInjection;
-using Geex.Common;
+
+using Geex.Abstractions;
 using Geex.Tests.TestEntities;
+
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using Volo.Abp.DependencyInjection;
 
 

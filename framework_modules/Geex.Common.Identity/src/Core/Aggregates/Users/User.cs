@@ -10,7 +10,7 @@ using Geex.Abstractions;
 using Geex.Abstractions.Authorization;
 using Geex.Abstractions.Entities;
 using Geex.Abstractions.Events;
-using Geex.Abstractions;
+using Geex.Abstractions.Storage;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using Geex.Common.Identity.Api.Aggregates.Roles;
 using Geex.Common.Identity.Api.Aggregates.Users;
@@ -31,7 +31,7 @@ using MongoDB.Bson.Serialization;
 
 namespace Geex.Common.Identity.Core.Aggregates.Users
 {
-    public partial class User : Abstraction.Storage.Entity<User>, IUser
+    public partial class User : Entity<User>, IUser
     {
         [JsonConstructor]
         protected User()

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Transactions;
 
+using Geex.Abstractions;
+
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Processing;

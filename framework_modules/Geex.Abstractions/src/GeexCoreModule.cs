@@ -12,7 +12,6 @@ using Geex.Abstractions.Gql;
 using Geex.Abstractions.Gql.Types;
 using Geex.Abstractions.MultiTenant;
 using Geex.Abstractions.Storage;
-using Geex.Abstractions;
 using Geex.Common.Gql;
 
 using HotChocolate;

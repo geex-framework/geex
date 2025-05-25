@@ -8,7 +8,6 @@ using Geex.Common;
 using Geex.Abstractions;
 using Geex.Abstractions.Gql;
 using Geex.Abstractions.Storage;
-using Geex.Abstractions;
 using Geex.Common.Gql.Types;
 
 using HotChocolate.AspNetCore;

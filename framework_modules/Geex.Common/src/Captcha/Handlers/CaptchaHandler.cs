@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Abstractions;
 using Geex.Common.Captcha.Domain;
 using Geex.Common.Requests.Captcha;
 using MediatR;
