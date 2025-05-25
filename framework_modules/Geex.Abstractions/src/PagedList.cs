@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public class PagedList<T> : IPagedList
     {

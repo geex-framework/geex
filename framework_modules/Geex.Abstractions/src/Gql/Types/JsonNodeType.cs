@@ -4,13 +4,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-
 using HotChocolate.Language;
 using HotChocolate.Types;
-
 using MongoDB.Bson;
 
-namespace Geex.Abstractions.Gql.Types;
+namespace Geex.Gql.Types;
 
 public class JsonNodeType : ScalarType<JsonNode>
 {

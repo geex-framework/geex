@@ -1,7 +1,7 @@
 ﻿using HotChocolate.Data;
 using HotChocolate.Data.Filters;
 
-namespace Geex.Common;
+namespace Geex.Gql;
 
 public class GeexFilterConvention : FilterConvention
 {

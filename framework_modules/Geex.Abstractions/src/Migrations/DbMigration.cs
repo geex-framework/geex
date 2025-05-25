@@ -1,8 +1,7 @@
 ﻿using System.Threading.Tasks;
-using MongoDB.Entities;
 using Volo.Abp.DependencyInjection;
 
-namespace Geex.Abstractions.Migrations
+namespace Geex.Migrations
 {
     /// <summary>
     /// The contract for writing user data migration classes

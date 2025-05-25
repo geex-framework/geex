@@ -1,6 +1,6 @@
 ﻿using HotChocolate.Types;
 
-namespace Geex.Abstractions.ClientNotification
+namespace Geex.ClientNotification
 {
     public class DataChangeClientNotify : ClientNotify
     {

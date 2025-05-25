@@ -3,28 +3,21 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Geex.Abstractions.Migrations;
-using Geex.Common.Notifications;
+using Geex.Migrations;
 using Geex.MongoDB.Entities.Utilities;
-
+using Geex.Notifications;
 using KellermanSoftware.CompareNetObjects;
-
 using MediatR;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
 using MongoDB.Driver;
 using MongoDB.Entities;
-
 using Nito.AsyncEx.Synchronous;
 
-namespace Geex.Abstractions.Storage
+namespace Geex.Storage
 {
     public class GeexDbContext : DbContext, IUnitOfWork
     {

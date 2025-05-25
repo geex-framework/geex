@@ -1,7 +1,7 @@
-﻿using Geex.Abstractions.ExternalInfo;
+﻿using Geex.ExternalInfo;
 using MongoDB.Entities;
 
-namespace Geex.Abstractions.MultiTenant
+namespace Geex.MultiTenant
 {
     public interface ITenant : IEntityBase, IHasExternalInfo
     {

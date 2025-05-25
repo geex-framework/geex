@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Geex.Abstractions;
 using MediatR;
 using MongoDB.Entities;
 
-namespace Geex.Abstractions.Storage
+namespace Geex.Storage
 {
     public interface IEntity
     {

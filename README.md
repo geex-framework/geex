@@ -20,16 +20,16 @@ framework_modules/         # 核心框架模块
 ├── Geex.Casbin/           # 基于Casbin的授权系统
 ├── Geex.Common/           # 框架通用组件
 ├── Geex.Abstractions/ # 抽象层和接口定义
-├── Geex.Common.Accounting/ # 账户功能
-├── Geex.Common.Authentication/ # 认证模块
-├── Geex.Common.Authorization/ # 授权模块
-├── Geex.Common.BackgroundJob/ # 后台任务处理
-├── Geex.Common.BlobStorage/ # Blob存储功能
-├── Geex.Common.Identity/   # 身份管理
-├── Geex.Common.Logging/    # 日志系统
-├── Geex.Common.Messaging/  # 消息系统
-├── Geex.Common.MultiTenant/ # 多租户支持
-├── Geex.Common.Settings/   # 应用设置管理
+├── Geex.Extensions.Accounting/ # 账户功能
+├── Geex.Extensions.Authentication/ # 认证模块
+├── Geex.Extensions.Authorization/ # 授权模块
+├── Geex.Extensions.BackgroundJob/ # 后台任务处理
+├── Geex.Extensions.BlobStorage/ # Blob存储功能
+├── Geex.Extensions.Identity/   # 身份管理
+├── Geex.Extensions.Logging/    # 日志系统
+├── Geex.Extensions.Messaging/  # 消息系统
+├── Geex.Extensions.MultiTenant/ # 多租户支持
+├── Geex.Extensions.Settings/   # 应用设置管理
 ├── Geex.MediatX/           # MediatR扩展，支持分布式任务
 └── Geex.MongoDB.Entities/  # MongoDB数据访问增强库
 
@@ -58,8 +58,8 @@ dotnet add package Geex.Abstractions
 dotnet add package Geex.Common
 
 # 根据需要添加其他模块
-dotnet add package Geex.Common.Authentication
-dotnet add package Geex.Common.Authorization
+dotnet add package Geex.Extensions.Authentication
+dotnet add package Geex.Extensions.Authorization
 # ...其他模块
 ```
 
@@ -99,15 +99,15 @@ MediatX是对MediatR的扩展，允许将in-process的Mediator模式扩展为支
 
 基于官方MongoDB.Entities的增强版本，提供了更友好的API来操作MongoDB数据库，简化了数据访问层的开发。
 
-### Geex.Common.Authorization
+### Geex.Extensions.Authorization
 
 基于Casbin的授权系统，提供灵活的基于RBAC和ABAC的权限控制。
 
-### Geex.Common.Authentication
+### Geex.Extensions.Authentication
 
 提供JWT认证和其他身份验证机制的集成。
 
-### Geex.Common.MultiTenant
+### Geex.Extensions.MultiTenant
 
 多租户支持模块，为SaaS应用提供租户隔离和管理功能。
 

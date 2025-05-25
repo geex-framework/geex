@@ -169,7 +169,7 @@ public class IUnitOfWorkCreateMethodGenerator : ISourceGenerator
         var source = $@"
 using System;
 using Microsoft.Extensions.DependencyInjection;
-using Geex.Abstractions;
+using Geex;
 
 namespace {namespaceName} {{
     public static class IUnitOfWorkExtensions_{entityName} {{

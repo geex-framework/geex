@@ -2,9 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using Geex.Abstractions;
-
-namespace Geex.Abstractions.Json
+namespace Geex.Json
 {
     public class ExceptionConverter : JsonConverter<Exception>
     {

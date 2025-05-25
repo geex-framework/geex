@@ -1,11 +1,9 @@
 ﻿using System;
-using Geex.Abstractions.Storage;
-using Geex.Abstractions;
-
+using Geex.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities.Interceptors;
 
-namespace Geex.Abstractions.MultiTenant
+namespace Geex.MultiTenant
 {
     /// <summary>
     /// 租户过滤标记接口, 被标记的实体将默认参与租户过滤

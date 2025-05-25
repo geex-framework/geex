@@ -4,11 +4,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Abstractions.Logging;
+using Geex.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Geex.Abstractions.Tasking
+namespace Geex.Tasking
 {
     public class PwshScriptRunner
     {

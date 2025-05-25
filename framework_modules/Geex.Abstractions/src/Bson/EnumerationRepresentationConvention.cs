@@ -1,10 +1,8 @@
 ﻿using System;
-using Geex.Abstractions;
-
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
 
-namespace Geex.Abstractions.Bson
+namespace Geex.Bson
 {
     public class EnumerationRepresentationConvention : ConventionBase, IMemberMapConvention
     {

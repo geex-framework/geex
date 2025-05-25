@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-using Geex.Abstractions.Approval;
-using Geex.Abstractions.Storage;
+using Geex.ApprovalFlows;
+using Geex.Extensions.ApprovalFlows;
+using Geex.Storage;
 
 namespace Geex.Tests.TestEntities
 {

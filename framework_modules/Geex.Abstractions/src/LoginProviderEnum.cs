@@ -1,7 +1,6 @@
-﻿using Geex.Abstractions;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 
-namespace Geex.Abstractions;
+namespace Geex;
 
 public class LoginProviderEnum : Enumeration<LoginProviderEnum>
 {

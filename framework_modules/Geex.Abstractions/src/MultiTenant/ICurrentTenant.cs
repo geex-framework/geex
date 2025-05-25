@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Geex.Abstractions.MultiTenant
+namespace Geex.MultiTenant
 {
     public interface ICurrentTenant
     {

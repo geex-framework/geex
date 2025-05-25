@@ -7,9 +7,7 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using Geex.Common;
-using Geex.Abstractions.Approval;
-using Geex.Abstractions.Gql.Types;
-using Geex.Common.Settings;
+using Geex.Extensions.Settings;
 using Geex.Tests.TestEntities;
 
 using HotChocolate;

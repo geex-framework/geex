@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using MongoDB.Bson.Serialization;
 
-namespace MongoDB.Bson
+namespace Geex
 {
     public static class MongoDB_Bson_Extensions
     {

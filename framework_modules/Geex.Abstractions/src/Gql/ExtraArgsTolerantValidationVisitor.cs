@@ -1,9 +1,8 @@
-﻿using System.Linq;
-using HotChocolate.Language;
+﻿using HotChocolate.Language;
 using HotChocolate.Language.Visitors;
 using HotChocolate.Validation;
 
-namespace Geex.Abstractions.Gql
+namespace Geex.Gql
 {
     public class ExtraArgsTolerantValidationVisitor : DocumentValidatorVisitor
     {

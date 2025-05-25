@@ -2,23 +2,20 @@
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
-
-using Geex.Abstractions.Authentication;
-using Geex.Abstractions;
-
 using HotChocolate;
 using HotChocolate.AspNetCore.Serialization;
 using HotChocolate.Execution;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Geex.Abstractions.Gql
+namespace Geex.Gql
 {
     public class GeexHttpResponseFormatter : DefaultHttpResponseFormatter
     {
-        private readonly ICurrentUser _currentUser;
+        private readonly IServiceProvider _serviceProvider;
 
-        public GeexHttpResponseFormatter(ICurrentUser currentUser)
+        public GeexHttpResponseFormatter(IServiceProvider serviceProvider)
         {
-            _currentUser = currentUser;
+            _serviceProvider = serviceProvider;
         }
 
         /// <inheritdoc />
@@ -30,8 +27,8 @@ namespace Geex.Abstractions.Gql
             {
                 if (result.Errors.Any(e => e.Code == ErrorCodes.Authentication.NotAuthorized || e.Code == ErrorCodes.Authentication.NotAuthenticated))
                 {
-                    var userId = _currentUser.UserId;
-                    return userId.IsNullOrEmpty() ? HttpStatusCode.Unauthorized : HttpStatusCode.Forbidden;
+                    var authenticated = _serviceProvider.GetService<ClaimsPrincipal>().Identity.IsAuthenticated;
+                    return authenticated ? HttpStatusCode.Forbidden : HttpStatusCode.Unauthorized;
                 }
 
                 if (result.Errors.All(x => x.Code == ErrorCodes.Execution.NonNullViolation || x.Code == ErrorCodes.Execution.CannotResolveAbstractType))

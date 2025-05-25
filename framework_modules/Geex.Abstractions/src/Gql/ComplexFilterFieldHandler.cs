@@ -1,13 +1,12 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
-
 using HotChocolate.Configuration;
 using HotChocolate.Data.Filters;
 using HotChocolate.Data.Filters.Expressions;
 using HotChocolate.Language;
 using HotChocolate.Language.Visitors;
 
-namespace Geex.Common
+namespace Geex.Gql
 {
     public class ComplexFilterFieldHandler : FilterOperationHandler<QueryableFilterContext, Expression>
     {

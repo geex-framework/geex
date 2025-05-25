@@ -3,10 +3,9 @@ using System.Text.Encodings.Web;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Force.DeepCloner;
-
-using Geex.Abstractions.Json;
+using Geex;
 using Geex.Abstractions;
-using Geex.Common.Json;
+using Geex.Json;
 
 // ReSharper disable once CheckNamespace
 namespace System.Text.Json

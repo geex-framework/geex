@@ -24,15 +24,15 @@
     <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Geex.Common.AuditLogs\src\Geex.Common.AuditLogs.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.Identity\src\Geex.Common.Identity.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.AuditLogs\src\Geex.Extensions.AuditLogs.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Identity\src\Geex.Extensions.Identity.csproj" />
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.Authorization\src\Geex.Common.Authorization.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.BackgroundJob\src\Geex.Common.BackgroundJob.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.BlobStorage\src\Geex.Common.BlobStorage.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.Logging\src\Geex.Common.Logging.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.Messaging\src\Geex.Common.Messaging.csproj" />
-    <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Authorization\src\Geex.Extensions.Authorization.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.BackgroundJob\src\Geex.Extensions.BackgroundJob.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.BlobStorage\src\Geex.Extensions.BlobStorage.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Logging\src\Geex.Extensions.Logging.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Messaging\src\Geex.Extensions.Messaging.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Settings\src\Geex.Extensions.Settings.csproj" />
   </ItemGroup>
 </Project>

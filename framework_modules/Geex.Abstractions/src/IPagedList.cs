@@ -1,4 +1,4 @@
-﻿namespace Geex.Abstractions
+﻿namespace Geex
 {
     public interface IPagedList
     {

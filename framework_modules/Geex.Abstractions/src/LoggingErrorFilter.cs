@@ -1,8 +1,7 @@
 ﻿using HotChocolate;
-
 using Microsoft.Extensions.Logging;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public class LoggingErrorFilter : IErrorFilter
     {

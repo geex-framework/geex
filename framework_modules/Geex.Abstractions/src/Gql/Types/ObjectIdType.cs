@@ -3,7 +3,7 @@ using HotChocolate.Language;
 using HotChocolate.Types;
 using MongoDB.Bson;
 
-namespace Geex.Common.Gql.Types
+namespace Geex.Gql.Types
 {
     public class ObjectIdType : ScalarType<ObjectId>
     {

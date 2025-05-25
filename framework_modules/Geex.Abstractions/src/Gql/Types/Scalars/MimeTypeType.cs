@@ -1,10 +1,9 @@
 ﻿using System.Text.RegularExpressions;
 using HotChocolate.Language;
 using HotChocolate.Types;
-
 using Microsoft.AspNetCore.Mvc.Formatters;
 
-namespace Geex.Abstractions.Gql.Types.Scalars
+namespace Geex.Gql.Types.Scalars
 {
     public class MimeTypeType : ScalarType<MediaType, StringValueNode>
     {

@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public class ServiceLocator
     {

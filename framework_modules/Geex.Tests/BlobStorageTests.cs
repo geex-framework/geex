@@ -1,5 +1,4 @@
-using Geex.Abstractions.Entities;
-using Geex.Common.BlobStorage.Requests;
+using Geex.Extensions.BlobStorage.Requests;
 using HotChocolate.Types;
 
 using MediatR;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Shouldly;
 using Geex.Abstractions;
+using Geex.Entities;
 
 namespace Geex.Tests
 {

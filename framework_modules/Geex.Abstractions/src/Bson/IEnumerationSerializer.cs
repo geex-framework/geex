@@ -1,4 +1,4 @@
-﻿namespace Geex.Abstractions.Bson
+﻿namespace Geex.Bson
 {
     public interface IEnumerationSerializer
     {

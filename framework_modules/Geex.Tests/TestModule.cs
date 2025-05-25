@@ -1,8 +1,8 @@
 ﻿using Geex.Common;
 using Geex.Abstractions;
-using Geex.Common.ApprovalFlows;
-using Geex.Common.AuditLogs;
-using Geex.Common.Settings;
+using Geex.Extensions.ApprovalFlows;
+using Geex.Extensions.AuditLogs;
+using Geex.Extensions.Settings;
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Configuration;

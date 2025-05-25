@@ -42,6 +42,7 @@
     </ItemGroup>
     <ItemGroup>
         <Folder Include="Desensitization\" />
+        <Folder Include="Enumerations\" />
         <Folder Include="Gql\Interceptors\" />
         <Folder Include="Settings\" />
     </ItemGroup>
@@ -57,6 +58,7 @@
     </ItemGroup>
     <PropertyGroup>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
+        <RootNamespace>Geex</RootNamespace>
     </PropertyGroup>
     <Target Name="CompareDll">
         <ItemGroup>

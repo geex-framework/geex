@@ -7,7 +7,7 @@ using MethodBoundaryAspect.Fody.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Geex.Abstractions.Logging
+namespace Geex.Logging
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
     public sealed class LoggingAttribute : OnMethodBoundaryAspect

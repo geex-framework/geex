@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Reflection;
-
-using GreenDonut;
-
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 
-namespace Geex.Abstractions.Gql
+namespace Geex.Gql
 {
     public class GeexNamingConventions : DefaultNamingConventions
     {

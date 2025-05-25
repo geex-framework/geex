@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using MongoDB.Entities.Utilities;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public sealed class Enumeration : Enumeration<IEnumeration>
     {

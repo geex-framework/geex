@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public struct GeexboxEventId
     {

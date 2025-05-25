@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Geex.Abstractions;
-
 using HotChocolate.Internal;
 using HotChocolate.Types.Descriptors;
-
 using MongoDB.Entities;
 
-namespace Geex.Common.Gql
+namespace Geex.Gql
 {
     public class GeexTypeInspector : DefaultTypeInspector
     {

@@ -4,27 +4,16 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-using Geex.Abstractions;
 using Geex.Abstractions.Authentication;
-using Geex.Abstractions.Bson;
-using Geex.Abstractions.Gql;
-using Geex.Abstractions.Gql.Types;
-using Geex.Abstractions.MultiTenant;
-using Geex.Abstractions.Storage;
-using Geex.Common.Gql;
-
+using Geex.Bson;
+using Geex.Gql;
+using Geex.Gql.Types;
 using HotChocolate;
-using HotChocolate.Execution;
-using HotChocolate.Execution.Configuration;
-using HotChocolate.Language;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Utilities;
-
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,20 +21,14 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
-
 using MongoDB.Bson.Serialization.Conventions;
-using MongoDB.Entities;
-using MongoDB.Entities.Interceptors;
-
 using RestSharp;
-
 using StackExchange.Redis.Extensions.Core;
-
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
 
-namespace Geex.Common
+namespace Geex
 {
     public class GeexCoreModule : GeexModule<GeexCoreModule, GeexCoreModuleOptions>
     {
@@ -93,7 +76,7 @@ namespace Geex.Common
                 context.Services.AddStackExchangeRedisExtensions();
             }
             context.Services.AddSingleton(schemaBuilder);
-            context.Services.AddHttpResultSerializer(x => new GeexHttpResponseFormatter(x.GetService<ICurrentUser>()));
+            context.Services.AddHttpResultSerializer(x => new GeexHttpResponseFormatter(x));
             IReadOnlySchemaOptions capturedSchemaOptions = default;
             schemaBuilder.AddConvention<ITypeInspector>(typeof(GeexTypeInspector))
                 .TrimTypes(false)

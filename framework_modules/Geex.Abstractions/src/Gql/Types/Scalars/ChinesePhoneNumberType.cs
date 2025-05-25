@@ -2,7 +2,7 @@
 using HotChocolate.Language;
 using HotChocolate.Types;
 
-namespace Geex.Common.Gql.Types.Scalars
+namespace Geex.Gql.Types.Scalars
 {
     public class ChinesePhoneNumberType : RegexType
     {

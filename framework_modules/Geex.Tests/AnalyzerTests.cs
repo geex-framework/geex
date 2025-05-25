@@ -1,6 +1,5 @@
 using System.Reflection;
 using Geex.Common;
-using Geex.Abstractions.Entities;
 using Geex.Tests.TestEntities;
 using HotChocolate.Types;
 

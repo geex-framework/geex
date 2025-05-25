@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Transactions;
-
-using Geex.Abstractions;
-
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Processing;
-
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Geex.Common
+namespace Geex
 {
   public class GeexTransactionScopeHandler : ITransactionScopeHandler
   {

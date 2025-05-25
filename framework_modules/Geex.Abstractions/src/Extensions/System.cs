@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 
-namespace System
+namespace Geex
 {
     public static class SystemExtensions
     {

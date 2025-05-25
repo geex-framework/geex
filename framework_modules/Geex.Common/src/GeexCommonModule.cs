@@ -1,7 +1,6 @@
 ﻿using Geex.Abstractions;
 using Geex.Common.AuditLogs;
 using Geex.Common.Authentication;
-using Geex.Common.Authorization;
 using Geex.Common.BackgroundJob;
 using Geex.Common.BlobStorage;
 using Geex.Common.Identity;

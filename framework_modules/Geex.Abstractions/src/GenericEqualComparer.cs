@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using AutoEquality;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public sealed class GenericEqualityComparer<T> : AutoEqualityComparerBase<T> where T : class
     {

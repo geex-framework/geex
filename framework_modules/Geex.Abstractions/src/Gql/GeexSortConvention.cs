@@ -1,7 +1,7 @@
 ﻿using HotChocolate.Data;
 using HotChocolate.Data.Sorting;
 
-namespace Geex.Abstractions.Gql;
+namespace Geex.Gql;
 
 public class GeexSortConvention : SortConvention
 {

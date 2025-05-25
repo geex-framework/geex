@@ -1,7 +1,6 @@
-﻿using Geex.Abstractions;
-using StackExchange.Redis.Extensions.Core.Configuration;
+﻿using StackExchange.Redis.Extensions.Core.Configuration;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public class GeexCoreModuleOptions : GeexModuleOption
     {

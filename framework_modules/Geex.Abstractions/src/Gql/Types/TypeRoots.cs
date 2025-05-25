@@ -1,18 +1,10 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-
-using Geex.Abstractions.Approval;
-
+using Geex.ApprovalFlows;
 using HotChocolate.Types;
-
-using MediatR;
-
-using RestSharp.Extensions;
-
 using Volo.Abp.DependencyInjection;
 
-namespace Geex.Abstractions.Gql.Types
+namespace Geex.Gql.Types
 {
     public abstract class QueryExtension<T> : ObjectTypeExtension<T>, IScopedDependency where T : ObjectTypeExtension
     {

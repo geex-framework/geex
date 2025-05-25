@@ -1,11 +1,8 @@
 ﻿using System;
-
-using Geex.Abstractions;
-
 using KellermanSoftware.CompareNetObjects;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
 
-namespace Geex.Abstractions.Storage
+namespace Geex.Storage
 {
     internal class EnumerationComparer : BaseTypeComparer
     {

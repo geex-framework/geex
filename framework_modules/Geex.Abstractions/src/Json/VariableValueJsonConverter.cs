@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Nodes;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using HotChocolate.Execution;
 using HotChocolate.Language;
 using HotChocolate.Types;
 
-namespace Geex.Abstractions.Json
+namespace Geex.Json
 {
     public class ValueNodeJsonConverter : JsonConverter<IValueNode>
     {

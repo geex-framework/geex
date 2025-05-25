@@ -1,4 +1,5 @@
-﻿using Geex.Abstractions;
+﻿using Geex;
+using Geex.Abstractions;
 using Microsoft.Extensions.Hosting;
 
 // ReSharper disable once CheckNamespace

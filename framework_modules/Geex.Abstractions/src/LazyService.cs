@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public class LazyService<T>
     {

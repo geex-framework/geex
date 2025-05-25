@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Geex.Common.Json
+namespace Geex.Json
 {
     public class JsonEnumConverter : JsonConverterFactory
     {

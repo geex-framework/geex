@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using HotChocolate.Language;
 using HotChocolate.Types;
 
-namespace Geex.Common.Identity.Api.GqlSchemas.Roles.Types
+namespace Geex.Gql.Types.Scalars
 {
     public abstract class RegexStringType<TRuntimeType> : ScalarType<TRuntimeType, StringValueNode>
     {

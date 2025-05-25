@@ -4,20 +4,14 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Geex.Abstractions.ClientNotification;
-using Geex.Abstractions.Storage;
-using Geex.Abstractions.ClientNotification;
-
+using Geex.ClientNotification;
+using Geex.Storage;
 using HotChocolate.Subscriptions;
-
 using MediatR;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using MongoDB.Entities;
 
-namespace Geex.Abstractions;
+namespace Geex;
 
 public interface IBus
 {

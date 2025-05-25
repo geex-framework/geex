@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-
 using HotChocolate;
 using HotChocolate.Data;
 using HotChocolate.Data.Filters;
@@ -13,7 +12,7 @@ using HotChocolate.Language;
 using HotChocolate.Resolvers;
 using HotChocolate.Types;
 
-namespace Geex.Common
+namespace Geex.Gql
 {
     public class GeexQueryablePostFilterProvider : QueryableFilterProvider
     {

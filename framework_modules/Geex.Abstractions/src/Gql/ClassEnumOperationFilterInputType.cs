@@ -1,6 +1,6 @@
 ﻿using HotChocolate.Data.Filters;
 
-namespace Geex.Abstractions.Gql
+namespace Geex.Gql
 {
     public class ClassEnumOperationFilterInputType<TEnum> : EnumOperationFilterInputType<TEnum>
     {

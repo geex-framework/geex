@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-
 using HotChocolate;
 using HotChocolate.Configuration;
 using HotChocolate.Data.Filters;
@@ -12,7 +11,7 @@ using HotChocolate.Language;
 using HotChocolate.Language.Visitors;
 using HotChocolate.Types;
 
-namespace Geex.Common
+namespace Geex.Gql
 {
     public class QueryableExecuteFilterHandler : FilterFieldHandler<QueryableFilterContext, Expression>
     {

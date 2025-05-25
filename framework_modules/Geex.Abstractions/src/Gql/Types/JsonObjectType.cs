@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using HotChocolate.Language;
 
-namespace Geex.Abstractions.Gql.Types
+namespace Geex.Gql.Types
 {
     public class ObjectValueToJsonNodeConverter : SyntaxWalkerBase<IValueNode, Action<object>>
     {

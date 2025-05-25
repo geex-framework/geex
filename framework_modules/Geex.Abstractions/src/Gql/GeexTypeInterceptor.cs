@@ -2,18 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
-using Geex.Abstractions.Gql.Types;
-
 using HotChocolate;
 using HotChocolate.Configuration;
-using HotChocolate.Language;
-using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 using HotChocolate.Types.Helpers;
 
-namespace Geex.Abstractions.Gql
+namespace Geex.Gql
 {
     public class GeexTypeInterceptor : TypeInterceptor
     {

@@ -8,7 +8,7 @@ using MediatR;
 using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public interface ICommonHandler<TInterface, TEntity> :
         IRequestHandler<QueryRequest<TInterface>, IQueryable<TInterface>>,

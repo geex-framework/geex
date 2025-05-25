@@ -1,6 +1,6 @@
 ﻿using MongoDB.Entities;
 
-namespace Geex.Abstractions.Migrations
+namespace Geex.Migrations
 {
     /// <summary>
     /// Represents a migration history item in the database

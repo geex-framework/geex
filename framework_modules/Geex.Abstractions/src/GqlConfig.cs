@@ -1,8 +1,6 @@
-﻿using Geex.Abstractions.Gql.Types;
+﻿using HotChocolate.Types;
 
-using HotChocolate.Types;
-
-namespace Geex.Abstractions
+namespace Geex
 {
     public static class GqlConfig
     {

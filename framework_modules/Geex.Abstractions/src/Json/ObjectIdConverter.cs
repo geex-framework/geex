@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MongoDB.Bson;
 
-namespace Geex.Abstractions.Json
+namespace Geex.Json
 {
     public class ObjectIdConverter : JsonConverter<ObjectId>
     {

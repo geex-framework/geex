@@ -1,14 +1,11 @@
 ﻿using System;
-using Geex.Abstractions;
-
 using Microsoft.Extensions.DependencyInjection;
-
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 
-namespace Geex.Abstractions.Bson
+namespace Geex.Bson
 {
 
     public class EnumerationSerializer<TEnum> :

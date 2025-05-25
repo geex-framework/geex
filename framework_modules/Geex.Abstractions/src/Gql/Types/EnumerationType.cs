@@ -1,10 +1,8 @@
-﻿using Geex.Abstractions;
-
-using HotChocolate.Configuration;
+﻿using HotChocolate.Configuration;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors.Definitions;
 
-namespace Geex.Common.Gql.Types
+namespace Geex.Gql.Types
 {
     public class EnumerationType<TEnum> : EnumType<TEnum> where TEnum : class, IEnumeration
     {

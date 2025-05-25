@@ -6,17 +6,14 @@ using System.Dynamic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
 using ImpromptuInterface;
-
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities;
-
 using JsonTokenType = System.Text.Json.JsonTokenType;
 
-namespace Geex.Common.Json
+namespace Geex.Json
 {
     /// <summary>
     /// Temp Dynamic Converter

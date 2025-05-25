@@ -2,7 +2,7 @@
 using System.Linq;
 using HotChocolate.Types;
 
-namespace Geex.Abstractions.Gql.Directives
+namespace Geex.Gql.Directives
 {
     public class LastDirectiveType : DirectiveType
     {

@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace Geex.Abstractions;
+namespace Geex;
 
 public class ExceptionModel
 {

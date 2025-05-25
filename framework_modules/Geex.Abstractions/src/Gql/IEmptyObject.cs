@@ -1,4 +1,4 @@
-﻿namespace Geex.Abstractions.Gql
+﻿namespace Geex.Gql
 {
     public interface IEmptyObject
     {

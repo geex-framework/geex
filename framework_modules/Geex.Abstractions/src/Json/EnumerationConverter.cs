@@ -2,9 +2,8 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Geex.Abstractions;
 
-namespace Geex.Common.Json
+namespace Geex.Json
 {
     public class EnumerationConverter : JsonConverterFactory
     {

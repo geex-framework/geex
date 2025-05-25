@@ -4,11 +4,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-
+using Geex.ApprovalFlows;
 using Geex.Common;
-using Geex.Abstractions.Approval;
-using Geex.Abstractions.Gql.Types;
-using Geex.Common.AuditLogs;
+using Geex.Extensions.ApprovalFlows;
+using Geex.Extensions.AuditLogs;
+using Geex.Gql.Types;
 using Geex.Tests.TestEntities;
 using HotChocolate;
 using HotChocolate.Execution;

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Entities;
+using MongoDB.Entities.Interceptors;
 
-namespace MongoDB.Entities.Interceptors
+namespace Geex
 {
     public static class InterceptorsExtensions
     {

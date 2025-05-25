@@ -2,10 +2,9 @@
 using System.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-
 using RestSharp;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public class LoggedRestClient : RestClient
     {

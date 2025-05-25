@@ -8,18 +8,14 @@ using System.Reflection;
 using System.Text.Json.Nodes;
 
 using Fasterflect;
-
+using Geex;
 using Geex.Common;
 using Geex.Abstractions;
-using Geex.Abstractions.Approval;
-using Geex.Abstractions.Gql;
-using Geex.Abstractions.Gql.Types;
-using Geex.Abstractions.Gql.Types.Scalars;
-using Geex.Abstractions.Storage;
-using Geex.Abstractions;
-using Geex.Common.Authorization;
-using Geex.Common.Gql.Types;
-
+using Geex.ApprovalFlows;
+using Geex.Gql;
+using Geex.Gql.Types;
+using Geex.Gql.Types.Scalars;
+using Geex.Storage;
 using HotChocolate.Data.Filters;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Types.Descriptors;
@@ -143,14 +139,6 @@ namespace HotChocolate.Types
                     x.Field(y => y.Id);
                     x.Field(y => y.CreatedOn);
                 })
-                .AddInterfaceType<IApproveEntity>(x =>
-                {
-                    x.BindFieldsExplicitly();
-                    //x.Implements<IEntityType>();
-                    x.Field(y => y.ApproveStatus);
-                    x.Field(y => y.Submittable);
-                })
-                .AddEnumType<ApproveStatus>()
                 .AddInterfaceType<IPagedList>()
                 .BindRuntimeType<ObjectId, ObjectIdType>()
                 .BindRuntimeType<MediaType, MimeTypeType>()
@@ -177,6 +165,23 @@ namespace HotChocolate.Types
         //    var prefix = $"{moduleName}_query_{entityName}";
         //    return prefix;
         //}
+
+        private static MethodInfo GetFieldsMethodInfo = typeof(ObjectTypeDescriptor).GetProperty("Fields", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
+        public static ICollection<ObjectFieldDescriptor> GetFields<T>(this IObjectTypeDescriptor<T> descriptor)
+        {
+            return GetFieldsMethodInfo.Invoke(descriptor, new object?[] { }) as ICollection<ObjectFieldDescriptor>;
+        }
+        public static IObjectTypeDescriptor<T> AuthorizeFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : class
+        {
+            var rootExtensionType = typeof(T);
+            var methods = rootExtensionType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).AsEnumerable();
+            methods = methods.Where(x => x is { IsSpecialName: false });
+            foreach (var methodInfo in methods)
+            {
+                descriptor.FieldWithDefaultAuthorize(methodInfo);
+            }
+            return descriptor;
+        }
 
         public static IObjectTypeDescriptor<T> AuthorizeWithDefaultName<T>(this IObjectTypeDescriptor<T> @this)
         {
@@ -247,23 +252,6 @@ namespace HotChocolate.Types
             return @this;
         }
 
-        private static MethodInfo GetFieldsMethodInfo = typeof(ObjectTypeDescriptor).GetProperty("Fields", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
-        public static ICollection<ObjectFieldDescriptor> GetFields<T>(this IObjectTypeDescriptor<T> descriptor)
-        {
-            return GetFieldsMethodInfo.Invoke(descriptor, new object?[] { }) as ICollection<ObjectFieldDescriptor>;
-        }
-        public static IObjectTypeDescriptor<T> AuthorizeFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : class
-        {
-            var rootExtensionType = typeof(T);
-            var methods = rootExtensionType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).AsEnumerable();
-            methods = methods.Where(x => x is { IsSpecialName: false });
-            foreach (var methodInfo in methods)
-            {
-                descriptor.FieldWithDefaultAuthorize(methodInfo);
-            }
-            return descriptor;
-        }
-
         public static IObjectFieldDescriptor FieldWithDefaultAuthorize<T>(this IObjectTypeDescriptor<T> @this, IObjectFieldDescriptor fieldDescriptor)
         {
             var propertyOrMethod = ((ObjectFieldDefinition)fieldDescriptor.GetPropertyValue("Definition")).Member.DeclaringType;
@@ -283,7 +271,6 @@ namespace HotChocolate.Types
 
             return fieldDescriptor;
         }
-
 
         public static IObjectFieldDescriptor FieldWithDefaultAuthorize<T, TValue>(this IObjectTypeDescriptor<T> @this, Expression<Func<T, TValue>> propertyOrMethod)
         {

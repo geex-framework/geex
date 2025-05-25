@@ -2,20 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
 using Fasterflect;
-
-using Geex.Abstractions.Storage;
-
+using Geex.Storage;
 using Microsoft.Extensions.DependencyInjection;
-
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Entities;
-
 using Volo.Abp.DependencyInjection;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     internal interface IBsonConfig
     {

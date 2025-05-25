@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Principal;
+
 using Castle.Core.Internal;
 
-using Geex.Abstractions.Enumerations;
+using Geex;
 
 using Volo.Abp;
 
@@ -20,15 +21,6 @@ namespace System.Security.Claims
         public static string? FindClientId(this ClaimsPrincipal principal)
         {
             return principal.Identity?.FindClientId();
-        }
-
-        public static string[]? FindOrgCodes(this ClaimsPrincipal principal)
-        {
-            Check.NotNull(principal, nameof(principal));
-            IEnumerable<Claim> claims = principal.Claims.Where((Func<Claim, bool>)(c => c.Type == GeexClaimType.Org));
-            if (claims.IsNullOrEmpty())
-                return Array.Empty<string>();
-            return claims.Select(x => x.Value).ToArray();
         }
 
         public static string? FindUserId(this IIdentity identity)
@@ -62,35 +54,11 @@ namespace System.Security.Claims
             {
                 IEnumerable<Claim> claims = claimsIdentity.Claims;
                 claim = claims != null
-                    ? claims.FirstOrDefault((Func<Claim, bool>)(c => c.Type == GeexClaimType.ClientId))
+                    ? claims.FirstOrDefault((Func<Claim, bool>)(c => c.Type == "client_id"))
                     : null;
             }
 
             return claim?.Value;
-        }
-
-        public static string? FindTenantCode(this IIdentity identity)
-        {
-            Check.NotNull(identity, nameof(identity));
-            Claim? claim;
-            if (!(identity is ClaimsIdentity claimsIdentity))
-            {
-                claim = null;
-            }
-            else
-            {
-                IEnumerable<Claim> claims = claimsIdentity.Claims;
-                claim = claims != null
-                    ? claims.FirstOrDefault((Func<Claim, bool>)(c => c.Type == GeexClaimType.Tenant))
-                    : null;
-            }
-
-            return claim?.Value;
-        }
-
-        public static string? FindTenantCode(this ClaimsPrincipal principal)
-        {
-            return principal.Identity?.FindTenantCode();
         }
 
         public static Guid? FindEditionId(this ClaimsPrincipal principal)

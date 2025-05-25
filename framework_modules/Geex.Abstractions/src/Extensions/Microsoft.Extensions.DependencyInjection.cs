@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-
+using Geex;
 using Geex.Common;
 using Geex.Abstractions;
-using Geex.Abstractions.Gql;
-using Geex.Abstractions.Storage;
-using Geex.Common.Gql.Types;
-
+using Geex.Gql;
+using Geex.Gql.Types;
+using Geex.Storage;
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Serialization;
 using HotChocolate.Data.Filters;

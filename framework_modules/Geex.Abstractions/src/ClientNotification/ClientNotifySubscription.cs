@@ -1,12 +1,12 @@
-﻿using System.Threading.Tasks;
-using Geex.Abstractions.Authentication;
-using Geex.Abstractions.Gql.Types;
+﻿using System.Security.Claims;
+using System.Threading.Tasks;
+using Geex.Gql.Types;
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Subscriptions;
 using HotChocolate.Types;
 
-namespace Geex.Abstractions.ClientNotification
+namespace Geex.ClientNotification
 {
     public class ClientNotifySubscription : SubscriptionExtension<ClientNotifySubscription>
     {
@@ -17,9 +17,9 @@ namespace Geex.Abstractions.ClientNotification
         /// <param name="claimsPrincipal"></param>
         /// <returns></returns>
         [SubscribeAndResolve]
-        public ValueTask<ISourceStream<ClientNotify>> OnPrivateNotify([Service] ITopicEventReceiver receiver, [Service] ICurrentUser claimsPrincipal)
+        public ValueTask<ISourceStream<ClientNotify>> OnPrivateNotify([Service] ITopicEventReceiver receiver, [Service] ClaimsPrincipal claimsPrincipal)
         {
-            return receiver.SubscribeAsync<ClientNotify>($"{nameof(OnPrivateNotify)}:{claimsPrincipal.UserId}");
+            return receiver.SubscribeAsync<ClientNotify>($"{nameof(OnPrivateNotify)}:{claimsPrincipal.FindUserId()}");
         }
 
         /// <summary>

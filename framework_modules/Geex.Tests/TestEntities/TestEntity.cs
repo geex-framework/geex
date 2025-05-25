@@ -1,7 +1,6 @@
-﻿using Geex.Abstractions.Storage;
-
-using MongoDB.Entities;
+﻿using MongoDB.Entities;
 using Geex.Abstractions;
+using Geex.Storage;
 
 namespace Geex.Tests.TestEntities
 {

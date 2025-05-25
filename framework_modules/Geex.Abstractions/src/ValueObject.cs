@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public abstract class ValueObject<T> : IValueObject where T : class
     {

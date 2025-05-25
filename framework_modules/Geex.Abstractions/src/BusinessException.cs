@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     public class BusinessException : Exception
     {

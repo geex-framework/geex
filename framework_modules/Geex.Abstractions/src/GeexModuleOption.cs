@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.Configuration;
 
-namespace Geex.Abstractions
+namespace Geex
 {
     [Obsolete("please use GeexModuleOption without generic param instead.")]
     public abstract class GeexModuleOption<T> : GeexModuleOption where T : GeexModule

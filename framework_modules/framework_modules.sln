@@ -9,23 +9,23 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common", "Geex.Common\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Abstractions", "Geex.Abstractions\src\Geex.Abstractions.csproj", "{42B4D80F-0E64-4070-83A0-C77BB4087B8C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Authentication", "Geex.Common.Authentication\src\Geex.Common.Authentication.csproj", "{5AB33C5E-C576-4187-A824-28C6AE752D50}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Authentication", "Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj", "{5AB33C5E-C576-4187-A824-28C6AE752D50}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Authorization", "Geex.Common.Authorization\src\Geex.Common.Authorization.csproj", "{70D8208D-5EFB-4E6F-AC11-AF28784A86A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Authorization", "Geex.Extensions.Authorization\src\Geex.Extensions.Authorization.csproj", "{70D8208D-5EFB-4E6F-AC11-AF28784A86A0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.BackgroundJob", "Geex.Common.BackgroundJob\src\Geex.Common.BackgroundJob.csproj", "{68CFF1F4-E89D-41FB-A4C4-E38FB539D472}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.BackgroundJob", "Geex.Extensions.BackgroundJob\src\Geex.Extensions.BackgroundJob.csproj", "{68CFF1F4-E89D-41FB-A4C4-E38FB539D472}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.BlobStorage", "Geex.Common.BlobStorage\src\Geex.Common.BlobStorage.csproj", "{03BE59FF-24EB-46F9-A38B-DFA90660E712}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.BlobStorage", "Geex.Extensions.BlobStorage\src\Geex.Extensions.BlobStorage.csproj", "{03BE59FF-24EB-46F9-A38B-DFA90660E712}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Identity", "Geex.Common.Identity\src\Geex.Common.Identity.csproj", "{4922955D-02BA-4A04-B763-56247A8433FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Identity", "Geex.Extensions.Identity\src\Geex.Extensions.Identity.csproj", "{4922955D-02BA-4A04-B763-56247A8433FF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Logging", "Geex.Common.Logging\src\Geex.Common.Logging.csproj", "{33C641AC-EFB2-4EC6-BD73-D09764A18688}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Logging", "Geex.Extensions.Logging\src\Geex.Extensions.Logging.csproj", "{33C641AC-EFB2-4EC6-BD73-D09764A18688}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Messaging", "Geex.Common.Messaging\src\Geex.Common.Messaging.csproj", "{A283A77A-1E51-4E61-BF39-AF66DAE63F8C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Messaging", "Geex.Extensions.Messaging\src\Geex.Extensions.Messaging.csproj", "{A283A77A-1E51-4E61-BF39-AF66DAE63F8C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.MultiTenant", "Geex.Common.MultiTenant\src\Geex.Common.MultiTenant.csproj", "{7039D4BB-E773-44B8-B4DA-D1B19F29BAFB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.MultiTenant", "Geex.Extensions.MultiTenant\src\Geex.Extensions.MultiTenant.csproj", "{7039D4BB-E773-44B8-B4DA-D1B19F29BAFB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Settings", "Geex.Common.Settings\src\Geex.Common.Settings.csproj", "{938D1D32-1B77-486B-AE79-31BA321A94AF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Settings", "Geex.Extensions.Settings\src\Geex.Extensions.Settings.csproj", "{938D1D32-1B77-486B-AE79-31BA321A94AF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.MongoDB.Entities", "Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj", "{C68DA23A-8E0A-40FE-A2F6-A5DA45212DED}"
 EndProject
@@ -41,13 +41,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatX", "Geex.MediatX\Med
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compare-NET-Objects", "patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj", "{3C6D84D9-CA61-432D-8320-1B2180296124}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.AuditLogs", "Geex.Common.AuditLogs\src\Geex.Common.AuditLogs.csproj", "{20573EB5-B7A2-4106-9015-6E188977C8AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.AuditLogs", "Geex.Extensions.AuditLogs\src\Geex.Extensions.AuditLogs.csproj", "{20573EB5-B7A2-4106-9015-6E188977C8AA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Analyzer", "Geex.Analyzer\src\Geex.Analyzer.csproj", "{4B52A79F-D740-49F8-9720-4930BA7AE29A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Common.ApprovalFlows", "Geex.Common.ApprovalFlows\src\Geex.Common.ApprovalFlows.csproj", "{D54BB6F9-85E8-4713-989C-0CDD145434A0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Extensions.ApprovalFlows", "Geex.Extensions.ApprovalFlows\src\Geex.Extensions.ApprovalFlows.csproj", "{D54BB6F9-85E8-4713-989C-0CDD145434A0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Common.Settings.Abstractions", "Geex.Common.Settings\src\Abstractions\Geex.Common.Settings.Abstractions.csproj", "{02EF6B75-1E13-7E77-C209-807F1C85A2C9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Extensions.Settings.Abstractions", "Geex.Extensions.Settings\src\Abstractions\Geex.Extensions.Settings.Abstractions.csproj", "{02EF6B75-1E13-7E77-C209-807F1C85A2C9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
