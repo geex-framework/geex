@@ -1,5 +1,5 @@
 ﻿using System;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions.Storage;
 
 namespace MongoDB.Entities.Tests.Models
 {

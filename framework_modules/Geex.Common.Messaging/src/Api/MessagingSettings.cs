@@ -1,4 +1,4 @@
-using Geex.Common.Abstraction;
+using Geex.Abstractions;
 using Geex.Common.Settings;
 
 namespace Geex.Common.Messaging.Api

@@ -1,5 +1,5 @@
 ﻿using Geex.Common;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions.Storage;
 
 using MongoDB.Entities;
 

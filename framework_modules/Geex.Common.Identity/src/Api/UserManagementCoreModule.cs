@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstractions;
+﻿using Geex.Abstractions;
 using Geex.Common.Identity.Api.Aggregates.Users;
 using Geex.Common.Identity.Core.Aggregates.Users;
 using Microsoft.Extensions.DependencyInjection;

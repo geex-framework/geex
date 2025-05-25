@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstractions;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions;
 using Geex.Common.Identity.Api;
 
 using Microsoft.Extensions.DependencyInjection;

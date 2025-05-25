@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Migrations;
+using Geex.Abstractions.Migrations;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

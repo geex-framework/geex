@@ -6,9 +6,9 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions;
 using Geex.Common.BlobStorage.Requests;
 
 using HotChocolate.Types;

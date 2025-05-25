@@ -4,11 +4,11 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions;
+using Geex.Abstractions.Authorization;
+using Geex.Abstractions.Entities;
 using Geex.Common.Requests;
-using Geex.Common.Abstractions.Enumerations;
+using Geex.Abstractions.Enumerations;
 using Geex.Common.Authentication.Domain;
 using MediatR;
 using Microsoft.AspNetCore.Authentication;

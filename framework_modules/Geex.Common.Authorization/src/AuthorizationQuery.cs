@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions.Authorization;
+using Geex.Abstractions.Gql.Types;
+using Geex.Abstractions;
 using HotChocolate;
 using HotChocolate.Types;
 using MediatR;

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions.Entities;
 using HotChocolate;
 using MediatR;
 

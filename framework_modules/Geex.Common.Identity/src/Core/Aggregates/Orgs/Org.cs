@@ -5,10 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.MultiTenant;
+using Geex.Abstractions.Storage;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 
 using HotChocolate.Types;

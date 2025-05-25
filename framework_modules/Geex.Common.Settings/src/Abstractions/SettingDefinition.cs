@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Nodes;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 
 namespace Geex.Common.Settings
 {

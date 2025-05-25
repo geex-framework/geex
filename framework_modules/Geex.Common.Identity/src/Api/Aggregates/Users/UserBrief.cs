@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstraction;
+﻿using Geex.Abstractions;
 
 namespace Geex.Common.Identity.Api.Aggregates.Users
 {

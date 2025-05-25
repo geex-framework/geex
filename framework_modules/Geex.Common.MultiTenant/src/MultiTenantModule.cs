@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstractions;
+﻿using Geex.Abstractions;
 using Geex.Common.MultiTenant.Core;
 
 using Volo.Abp.Modularity;

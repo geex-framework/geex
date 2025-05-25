@@ -2,7 +2,7 @@
 using System.Net;
 
 using Geex.Common;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions.Entities;
 using Geex.Common.BlobStorage;
 
 using Microsoft.AspNetCore.Builder;

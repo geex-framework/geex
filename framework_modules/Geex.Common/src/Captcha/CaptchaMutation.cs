@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.Requests.Captcha;
 
 using HotChocolate;

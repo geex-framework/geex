@@ -4,10 +4,10 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstractions;
-using Geex.Common.Abstractions.Enumerations;
+using Geex.Abstractions;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions;
+using Geex.Abstractions.Enumerations;
 using Geex.Common.Authentication.Domain;
 
 using Microsoft.IdentityModel.Tokens;

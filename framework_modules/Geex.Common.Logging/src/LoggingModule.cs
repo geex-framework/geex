@@ -2,7 +2,7 @@
 
 using Elastic.Apm.AspNetCore;
 
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

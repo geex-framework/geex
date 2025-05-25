@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstraction.Entities;
+﻿using Geex.Abstractions.Entities;
 using Geex.Common.Identity.Api.Aggregates.Roles;
 using MediatR;
 

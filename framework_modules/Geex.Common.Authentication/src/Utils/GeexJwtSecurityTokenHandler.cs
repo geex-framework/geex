@@ -5,8 +5,8 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstractions.Enumerations;
+using Geex.Abstractions;
+using Geex.Abstractions.Enumerations;
 
 using Microsoft.IdentityModel.Tokens;
 

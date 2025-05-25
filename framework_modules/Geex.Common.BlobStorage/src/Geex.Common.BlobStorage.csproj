@@ -10,7 +10,7 @@
         <PackageReference Include="MimeKitLite" Version="2.14.0" />
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+        <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <ProjectReference Include="..\..\Geex.Common.Settings\src\Geex.Common.Settings.csproj" />
         <ProjectReference Include="..\..\Geex.Common.Analyzer\src\Geex.Common.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>

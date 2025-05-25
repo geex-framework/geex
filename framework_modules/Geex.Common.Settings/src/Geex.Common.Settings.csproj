@@ -29,7 +29,7 @@
     <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+    <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
     <ProjectReference Include="Abstractions\Geex.Common.Settings.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>

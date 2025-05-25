@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Geex.Common.Abstraction.Logging;
+using Geex.Abstractions.Logging;
 using Geex.Common.Logging;
 using Microsoft.Extensions.DependencyInjection;
 

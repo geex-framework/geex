@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Geex.Common.Abstraction.MultiTenant;
+using Geex.Abstractions.MultiTenant;
 
 using KuanFang.Rms.MessageManagement.Messages;
 

@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Authorization;
+using Geex.Abstractions.Authorization;
 using HotChocolate.Resolvers;
 
 using Microsoft.AspNetCore.Authorization;

@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstractions;
+﻿using Geex.Abstractions;
 using JetBrains.Annotations;
 
 namespace Geex.Common.Captcha.Domain

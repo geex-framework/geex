@@ -11,7 +11,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Common.Analyzer\src\Geex.Common.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
-        <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+        <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <ProjectReference Include="..\..\Geex.Common.Authorization\src\Geex.Common.Authorization.csproj" />
         <ProjectReference Include="..\..\Geex.Common.BlobStorage\src\Geex.Common.BlobStorage.csproj" />
         <ProjectReference Include="..\..\Geex.Common.Messaging\src\Geex.Common.Messaging.csproj" />

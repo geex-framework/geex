@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions;
+using Geex.Abstractions.Entities;
 using Geex.Common.Identity.Core.Aggregates.Users;
 
 using MediatR;

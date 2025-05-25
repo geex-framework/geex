@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;

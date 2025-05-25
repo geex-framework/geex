@@ -5,7 +5,7 @@ using EasyCronJob.Abstractions;
 
 using Geex.Common;
 
-using Geex.Common.Abstraction.Authentication;
+using Geex.Abstractions.Authentication;
 using Geex.Common.BackgroundJob;
 
 // ReSharper disable once CheckNamespace

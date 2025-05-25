@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.Requests.Authorization;
 
 using HotChocolate.Types;

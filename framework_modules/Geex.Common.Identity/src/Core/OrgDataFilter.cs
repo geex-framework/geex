@@ -1,8 +1,8 @@
 ﻿using System.Linq;
 using System.Security.Claims;
 
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstractions;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions;
 
 using MongoDB.Entities;
 using MongoDB.Entities.Interceptors;

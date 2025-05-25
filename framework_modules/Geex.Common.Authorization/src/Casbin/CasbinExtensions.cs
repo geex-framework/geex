@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstraction.Authorization;
+﻿using Geex.Abstractions.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;

@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp;

@@ -2,9 +2,9 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.AuditLogs;
 using Geex.Common.Authentication.Domain;
 using Geex.Common.Requests.Authentication;

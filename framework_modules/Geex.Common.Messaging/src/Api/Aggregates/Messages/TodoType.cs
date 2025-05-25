@@ -1,5 +1,5 @@
 ﻿
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 
 namespace KuanFang.Rms.MessageManagement.Messages
 {

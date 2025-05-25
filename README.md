@@ -19,7 +19,7 @@ Geex是一个基于.NET的现代化模块化应用框架，专为构建高性能
 framework_modules/         # 核心框架模块
 ├── Geex.Casbin/           # 基于Casbin的授权系统
 ├── Geex.Common/           # 框架通用组件
-├── Geex.Common.Abstraction/ # 抽象层和接口定义
+├── Geex.Abstractions/ # 抽象层和接口定义
 ├── Geex.Common.Accounting/ # 账户功能
 ├── Geex.Common.Authentication/ # 认证模块
 ├── Geex.Common.Authorization/ # 授权模块
@@ -52,7 +52,7 @@ Geex框架的各个模块作为NuGet包发布，可以使用NuGet包管理器安
 
 ```bash
 # 安装核心抽象层
-dotnet add package Geex.Common.Abstraction
+dotnet add package Geex.Abstractions
 
 # 安装通用模块
 dotnet add package Geex.Common

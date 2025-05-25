@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions;
+using Geex.Abstractions.Entities;
 using Geex.Common.Requests;
-using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Abstractions;
+using Geex.Abstractions.MultiTenant;
+using Geex.Abstractions;
 using Geex.Common.MultiTenant.Core.Aggregates.Tenants;
 
 using MediatR;

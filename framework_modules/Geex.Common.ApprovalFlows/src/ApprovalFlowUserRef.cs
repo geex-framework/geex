@@ -1,5 +1,5 @@
-﻿using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Storage;
+﻿using Geex.Abstractions;
+using Geex.Abstractions.Storage;
 using HotChocolate.Types;
 
 using MongoDB.Bson.Serialization;

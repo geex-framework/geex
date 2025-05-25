@@ -1,5 +1,5 @@
 ﻿using System.Collections.Immutable;
-using Geex.Common.Abstraction;
+using Geex.Abstractions;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 

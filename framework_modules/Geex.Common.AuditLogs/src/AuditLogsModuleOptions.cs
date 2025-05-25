@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 
 namespace Geex.Common.AuditLogs
 {

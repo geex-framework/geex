@@ -20,7 +20,7 @@
     <PackageReference Include="Shouldly" Version="4.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+    <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
     <ProjectReference Include="..\src\Geex.MongoDB.Entities.csproj" />
   </ItemGroup>
   <ItemGroup>

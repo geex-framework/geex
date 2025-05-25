@@ -7,8 +7,8 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using Geex.Common;
-using Geex.Common.Abstraction.Approval;
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Approval;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.Settings;
 using Geex.Tests.TestEntities;
 

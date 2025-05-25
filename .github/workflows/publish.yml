@@ -64,7 +64,7 @@ jobs:
           dotnet pack ./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
-          dotnet pack ./framework_modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.AuditLogs/src/Geex.Common.AuditLogs.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Analyzer/src/Geex.Common.Analyzer.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
@@ -89,7 +89,7 @@ jobs:
           dotnet pack ./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common/src/Geex.Common.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
-          dotnet pack ./framework_modules/Geex.Common.Abstraction/src/Geex.Common.Abstraction.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
+          dotnet pack ./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.AuditLogs/src/Geex.Common.AuditLogs.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Analyzer/src/Geex.Common.Analyzer.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Common.Accounting/src/Geex.Common.Accounting.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}

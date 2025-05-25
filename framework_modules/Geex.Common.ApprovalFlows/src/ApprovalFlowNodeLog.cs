@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
 
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.Storage;
 using Geex.Common.Identity.Core.Aggregates.Users;
 
 using Microsoft.AspNetCore.Identity;

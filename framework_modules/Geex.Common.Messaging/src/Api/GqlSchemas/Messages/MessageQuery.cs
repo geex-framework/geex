@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction;
+using Geex.Abstractions;
 using Geex.Common.Requests;
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
 using Geex.Common.Messaging.Core.Aggregates.Messages;
 using Geex.Common.Requests.Messaging;

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.BlobStorage.Requests;
 
 namespace Geex.Common.BlobStorage.GqlSchemas.BlobObjects

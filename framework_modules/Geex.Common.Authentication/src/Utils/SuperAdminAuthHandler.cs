@@ -4,8 +4,8 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstractions.Enumerations;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.Enumerations;
 
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication;

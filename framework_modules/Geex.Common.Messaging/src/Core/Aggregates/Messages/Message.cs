@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions;
+using Geex.Abstractions.Storage;
 using Geex.Common.Messaging.Api.Aggregates.Messages;
 
 using HotChocolate.Types;

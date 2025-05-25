@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstraction;
+﻿using Geex.Abstractions;
 using Geex.Common.Authentication.Domain;
 using MediatR;
 

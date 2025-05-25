@@ -1,4 +1,4 @@
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Gql.Types;
 
 namespace Geex.Common.BlobStorage.GqlSchemas.BlobObjects
 {

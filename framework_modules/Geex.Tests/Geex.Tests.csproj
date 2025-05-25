@@ -37,7 +37,7 @@
         </PackageReference>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+        <ProjectReference Include="..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <ProjectReference Include="..\Geex.Common.Accounting\src\Geex.Common.Accounting.csproj" />
         <ProjectReference Include="..\Geex.Common.Analyzer\src\Geex.Common.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="..\Geex.Common.ApprovalFlows\src\Geex.Common.ApprovalFlows.csproj" />

@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstraction.MultiTenant;
+﻿using Geex.Abstractions.MultiTenant;
 using MediatR;
 
 namespace Geex.Common.Requests.MultiTenant;

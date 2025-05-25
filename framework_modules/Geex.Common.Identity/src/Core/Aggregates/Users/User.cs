@@ -6,11 +6,11 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Events;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
+using Geex.Abstractions.Authorization;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.Events;
+using Geex.Abstractions;
 using Geex.Common.Identity.Api.Aggregates.Orgs.Events;
 using Geex.Common.Identity.Api.Aggregates.Roles;
 using Geex.Common.Identity.Api.Aggregates.Users;

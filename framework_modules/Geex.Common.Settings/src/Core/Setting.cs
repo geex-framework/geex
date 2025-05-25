@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions.Storage;
 
 namespace Geex.Common.Settings.Core;
 

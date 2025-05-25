@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.Storage;
 using Geex.Common.ApprovalFlows.Requests;
 using Geex.Common.Identity.Core.Aggregates.Users;
 using Geex.Common.Requests.Messaging;

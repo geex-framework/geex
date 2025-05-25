@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions.Entities;
 using KuanFang.Rms.MessageManagement.Messages;
 using Geex.Common.Identity.Core.Aggregates.Users;
 

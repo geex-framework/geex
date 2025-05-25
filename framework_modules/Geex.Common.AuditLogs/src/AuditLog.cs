@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Nodes;
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions;
+using Geex.Abstractions.MultiTenant;
+using Geex.Abstractions.Storage;
 using Geex.Common.AuditLogs.Enums;
 using HotChocolate.Execution;
 using HotChocolate.Types;

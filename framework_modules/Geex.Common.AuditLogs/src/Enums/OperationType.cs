@@ -1,5 +1,5 @@
 ﻿using System;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 
 namespace Geex.Common.AuditLogs.Enums
 {

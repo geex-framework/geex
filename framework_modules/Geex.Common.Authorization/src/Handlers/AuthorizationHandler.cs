@@ -3,10 +3,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Events;
+using Geex.Abstractions;
+using Geex.Abstractions.Authorization;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.Events;
 using Geex.Common.Authorization.Events;
 using Geex.Common.Requests.Authorization;
 using MediatR;

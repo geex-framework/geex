@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Elastic.Apm;
 using Elastic.Apm.Api;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 using Geex.Common.Logging.Extensions;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Instrumentation;

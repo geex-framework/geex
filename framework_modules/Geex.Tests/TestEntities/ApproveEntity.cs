@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Approval;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions.Approval;
+using Geex.Abstractions.Storage;
 
 namespace Geex.Tests.TestEntities
 {

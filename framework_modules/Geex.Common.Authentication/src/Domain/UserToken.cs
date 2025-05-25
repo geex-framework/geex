@@ -1,7 +1,7 @@
 ﻿using System;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions;
+using Geex.Abstractions.Entities;
 
 using HotChocolate.Types;
 

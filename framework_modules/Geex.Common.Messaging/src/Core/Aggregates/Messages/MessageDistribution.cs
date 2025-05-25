@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions.Storage;
 
 namespace Geex.Common.Messaging.Core.Aggregates.Messages
 {

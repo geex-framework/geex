@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions.Storage;
 
 using HotChocolate.Language;
 using HotChocolate.Types;

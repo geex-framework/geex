@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstractions;
+﻿using Geex.Abstractions;
 using Volo.Abp.Modularity;
 
 namespace Geex.Common.Captcha

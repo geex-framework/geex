@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstractions;
+﻿using Geex.Abstractions;
 using Geex.Common.Accounting;
 using Geex.Common.AuditLogs;
 using Geex.Common.Authentication;

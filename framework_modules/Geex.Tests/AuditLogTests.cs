@@ -6,8 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Geex.Common;
-using Geex.Common.Abstraction.Approval;
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Approval;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.AuditLogs;
 using Geex.Tests.TestEntities;
 using HotChocolate;

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstractions;
-using Geex.Common.Abstractions.Enumerations;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions;
+using Geex.Abstractions.Enumerations;
 
 using HotChocolate;
 using HotChocolate.AspNetCore;

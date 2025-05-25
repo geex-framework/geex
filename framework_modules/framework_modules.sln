@@ -11,9 +11,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common", "Geex.Common"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common", "Geex.Common\src\Geex.Common.csproj", "{36351BDC-30B6-4BCD-B7AF-093DE6A2AF1F}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common.Abstraction", "Geex.Common.Abstraction", "{8BE0E065-B866-456D-86DA-AB63BAB31289}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Abstractions", "Geex.Abstractions", "{8BE0E065-B866-456D-86DA-AB63BAB31289}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Common.Abstraction", "Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj", "{42B4D80F-0E64-4070-83A0-C77BB4087B8C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Abstractions", "Geex.Abstractions\src\Geex.Abstractions.csproj", "{42B4D80F-0E64-4070-83A0-C77BB4087B8C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Common.Accounting", "Geex.Common.Accounting", "{DBAA1411-7127-405E-BE25-A126BC959405}"
 EndProject

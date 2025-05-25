@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstractions;
+﻿using Geex.Abstractions;
 using Geex.Common.BlobStorage.Core;
 
 namespace Geex.Common.BlobStorage

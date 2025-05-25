@@ -1,10 +1,10 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Authorization;
+using Geex.Abstractions;
+using Geex.Abstractions.Authorization;
 using Geex.Common.Requests;
-using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Abstraction.MultiTenant;
+using Geex.Abstractions.Gql.Types;
+using Geex.Abstractions.MultiTenant;
 using HotChocolate.Types;
 
 using MediatR;

@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.ApprovalFlows.Requests;
 
 using HotChocolate.Types;

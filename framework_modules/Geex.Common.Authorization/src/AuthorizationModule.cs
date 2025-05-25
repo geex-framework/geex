@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 using Geex.Common.Authentication;
 using Geex.Common.Authorization.Casbin;
 using Microsoft.Extensions.DependencyInjection;

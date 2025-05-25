@@ -1,9 +1,9 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstraction.ClientNotification;
-using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Abstractions;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions.ClientNotification;
+using Geex.Abstractions.Gql.Types;
+using Geex.Abstractions;
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Subscriptions;

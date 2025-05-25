@@ -1,6 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 using Geex.Common.BlobStorage.Extensions;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Builder;

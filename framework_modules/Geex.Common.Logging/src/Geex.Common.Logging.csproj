@@ -14,6 +14,6 @@
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.10.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Geex.Common.Abstraction\src\Geex.Common.Abstraction.csproj" />
+    <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
   </ItemGroup>
 </Project>

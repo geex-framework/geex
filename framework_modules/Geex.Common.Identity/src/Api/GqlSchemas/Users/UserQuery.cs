@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions.Entities;
 using Geex.Common.Requests;
-using Geex.Common.Abstraction.Gql.Types;
-using Geex.Common.Abstractions;
+using Geex.Abstractions.Gql.Types;
+using Geex.Abstractions;
 using Geex.Common.Identity.Core.Aggregates.Users;
 using HotChocolate.Types;
 

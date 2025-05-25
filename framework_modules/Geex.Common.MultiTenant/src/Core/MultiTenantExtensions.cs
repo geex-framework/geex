@@ -1,6 +1,6 @@
-﻿using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Abstractions;
+﻿using Geex.Abstractions.Authentication;
+using Geex.Abstractions.MultiTenant;
+using Geex.Abstractions;
 using Geex.Common.MultiTenant.Api;
 
 using Microsoft.Extensions.DependencyInjection;

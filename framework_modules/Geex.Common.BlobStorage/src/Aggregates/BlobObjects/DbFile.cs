@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstraction;
+﻿using Geex.Abstractions;
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities;
 

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using MongoDB.Bson;
 using MongoDB.Entities;
 using MongoDB.Driver;
-using Geex.Common.Abstraction.Migrations;
+using Geex.Abstractions.Migrations;
 
 namespace Geex.Common.Identity.Migrations
 {

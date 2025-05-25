@@ -6,7 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-using Geex.Common.Abstraction;
+using Geex.Abstractions;
 
 using HotChocolate.Types;
 

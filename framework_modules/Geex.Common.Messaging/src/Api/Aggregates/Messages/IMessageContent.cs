@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstraction;
+﻿using Geex.Abstractions;
 using HotChocolate.Types;
 
 namespace KuanFang.Rms.MessageManagement.Messages

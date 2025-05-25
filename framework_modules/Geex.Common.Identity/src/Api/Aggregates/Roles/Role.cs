@@ -5,10 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Authorization;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.MultiTenant;
+using Geex.Abstractions;
+using Geex.Abstractions.Authorization;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.MultiTenant;
 using Geex.Common.Identity.Core.Aggregates.Users;
 
 using HotChocolate.Types;
@@ -25,7 +25,7 @@ namespace Geex.Common.Identity.Api.Aggregates.Roles
     /// <summary>
     /// role为了方便和string的相互转化, 采用class的形式
     /// </summary>
-    public class Role : Geex.Common.Abstraction.Storage.Entity<Role>, ITenantFilteredEntity, IRole
+    public class Role : Geex.Abstractions.Storage.Entity<Role>, ITenantFilteredEntity, IRole
     {
         public string Name { get; set; }
         public string Code { get; set; }

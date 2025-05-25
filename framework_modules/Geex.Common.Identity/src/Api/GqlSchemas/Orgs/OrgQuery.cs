@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions;
+using Geex.Abstractions.Entities;
 using Geex.Common.Requests;
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Gql.Types;
 using Geex.Common.Identity.Core.Aggregates.Orgs;
 using HotChocolate.Types;
 

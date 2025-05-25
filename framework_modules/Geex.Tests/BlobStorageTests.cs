@@ -1,5 +1,5 @@
 using Geex.Common;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions.Entities;
 using Geex.Common.BlobStorage.Requests;
 using HotChocolate.Types;
 

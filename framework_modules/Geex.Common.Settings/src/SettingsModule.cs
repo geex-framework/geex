@@ -1,4 +1,4 @@
-﻿using Geex.Common.Abstractions;
+﻿using Geex.Abstractions;
 using Geex.Common.Settings.Core.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 

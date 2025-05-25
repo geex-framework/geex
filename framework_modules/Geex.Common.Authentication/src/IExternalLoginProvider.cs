@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions;
+using Geex.Abstractions.Entities;
 
 namespace Geex.Common.Authentication
 {

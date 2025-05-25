@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Geex.Common.Abstraction.Authentication;
+using Geex.Abstractions.Authentication;
 
 using Microsoft.Extensions.DependencyInjection;
 

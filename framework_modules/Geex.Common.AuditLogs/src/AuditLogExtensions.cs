@@ -10,9 +10,9 @@ using HotChocolate.Types;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 using System.Reflection;
-using Geex.Common.Abstraction.Approval;
-using Geex.Common.Abstraction.Gql;
-using Geex.Common.Abstraction.Gql.Types;
+using Geex.Abstractions.Approval;
+using Geex.Abstractions.Gql;
+using Geex.Abstractions.Gql.Types;
 
 namespace Geex.Common.AuditLogs
 {

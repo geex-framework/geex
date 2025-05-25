@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction;
-using Geex.Common.Abstraction.ClientNotification;
+using Geex.Abstractions;
+using Geex.Abstractions.ClientNotification;
 
 using HotChocolate.Types;
 

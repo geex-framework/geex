@@ -1,5 +1,5 @@
 ﻿using Geex.Common;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
 using Geex.Common.ApprovalFlows;
 using Geex.Common.AuditLogs;
 using Geex.Common.Settings;

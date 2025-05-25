@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-using Geex.Common.Abstraction.Authentication;
-using Geex.Common.Abstraction.Entities;
-using Geex.Common.Abstraction.Storage;
+using Geex.Abstractions.Authentication;
+using Geex.Abstractions.Entities;
+using Geex.Abstractions.Storage;
 
 using Microsoft.Extensions.DependencyInjection;
 

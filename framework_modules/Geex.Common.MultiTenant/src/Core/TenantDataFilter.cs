@@ -1,6 +1,6 @@
 ﻿using System.Linq;
-using Geex.Common.Abstraction.MultiTenant;
-using Geex.Common.Abstractions;
+using Geex.Abstractions.MultiTenant;
+using Geex.Abstractions;
 using MongoDB.Entities.Interceptors;
 
 namespace Geex.Common.MultiTenant.Core

@@ -4,15 +4,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Common.Abstraction.Entities;
+using Geex.Abstractions.Entities;
 using Geex.Common.Requests;
-using Geex.Common.Abstraction;
-using Geex.Common.Abstractions;
+using Geex.Abstractions;
+using Geex.Abstractions;
 using Geex.Common.Authentication.Domain;
 using Geex.Common.Authentication.Utils;
 
 using MediatR;
-using Geex.Common.Abstraction.Authorization;
+using Geex.Abstractions.Authorization;
 using Geex.Common.Requests.Authentication;
 using OpenIddict.Abstractions;
 using StackExchange.Redis.Extensions.Core;
