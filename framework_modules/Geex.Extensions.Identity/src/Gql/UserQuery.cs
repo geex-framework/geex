@@ -21,7 +21,6 @@ namespace Geex.Extensions.Identity.Gql
 
         protected override void Configure(IObjectTypeDescriptor<UserQuery> descriptor)
         {
-            descriptor.AuthorizeWithDefaultName();
             descriptor.Field(x => x.Users())
             .UseOffsetPaging<InterfaceType<IUser>>()
             .UseFiltering<IUser>(x =>

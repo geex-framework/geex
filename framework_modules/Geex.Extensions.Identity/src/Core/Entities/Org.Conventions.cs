@@ -25,9 +25,7 @@ public partial class Org
         /// <inheritdoc />
         protected override void Configure(IObjectTypeDescriptor<Org> descriptor)
         {
-            descriptor.AuthorizeFieldsImplicitly();
             descriptor.BindFieldsImplicitly();
-            descriptor.ConfigEntity();
             //descriptor.Field(x => x.Users).Type<ListType<UserType>>().Resolve(x=>x.ToString());
             //descriptor.Field(x => x.Code);
             //descriptor.Field(x => x.Name);

@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 using Geex.Abstractions;
 using Geex.Authorization;
+
+using HotChocolate.Types;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using NetCasbin.Abstractions;
 
 namespace Geex.Extensions.Authorization

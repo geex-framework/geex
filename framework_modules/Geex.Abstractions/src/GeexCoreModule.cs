@@ -101,6 +101,7 @@ namespace Geex
                 })
                 .AddConvention<INamingConventions>(sp => new GeexNamingConventions(new XmlDocumentationProvider(new XmlDocumentationFileResolver(capturedSchemaOptions.ResolveXmlDocumentationFileName), sp.GetApplicationService<ObjectPool<StringBuilder>>())))
                 .TryAddTypeInterceptor<GeexTypeInterceptor>()
+                .TryAddTypeInterceptor<LazyQueryTypeInterceptor>()
                 .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
                 {
                     converter = o => o;
@@ -205,12 +206,6 @@ namespace Geex
             app.UseResponseCompression();
 
             return base.OnPreApplicationInitializationAsync(context);
-        }
-
-        /// <inheritdoc />
-        public override void InterceptTypes(ITypeCompletionContext completionContext, DefinitionBase definition)
-        {
-            base.InterceptTypes(completionContext, definition);
         }
     }
 }

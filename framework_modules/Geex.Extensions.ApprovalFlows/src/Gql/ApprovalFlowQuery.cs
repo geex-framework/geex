@@ -12,7 +12,6 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
 {
     protected override void Configure(IObjectTypeDescriptor<ApprovalFlowQuery> descriptor)
     {
-        descriptor.AuthorizeFieldsImplicitly();
         descriptor.Field(x => x.ApprovalFlowById(default)).Authorize();
         descriptor.Field(x => x.ApprovalFlowTemplateById(default)).Authorize();
         descriptor.Field(x => x.ApprovalFlow(default))

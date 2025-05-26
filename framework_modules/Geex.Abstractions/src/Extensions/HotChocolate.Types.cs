@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -34,46 +33,11 @@ namespace HotChocolate.Types
 {
     public static class HotChocolateTypesExtension
     {
-        private static Dictionary<Type, MethodInfo> LazyGetterCache = new Dictionary<Type, MethodInfo>();
-        /// <summary>
-        /// 用于强制获取Lazy值
-        /// </summary>
-        private static object? GetLazyValue(this object lazy, Type valueType)
-        {
-
-            if (LazyGetterCache.TryGetValue(valueType, out var method))
-            {
-                return method.Invoke(lazy, Array.Empty<object>());
-            }
-
-            var lazyType = lazy.GetType();
-            method = lazyType.GetProperty(nameof(Lazy<object>.Value))!.GetMethod!;
-            LazyGetterCache.Add(valueType, method);
-            return method.Invoke(lazy, Array.Empty<object>());
-        }
-
+        [Obsolete]
         public static void ConfigEntity<T>(
             this IObjectTypeDescriptor<T> @this) where T : class, IEntity
         {
-            @this.IgnoreMethods();
-            @this.AuthorizeFieldsImplicitly();
-
-            var properties = typeof(T).GetProperties();
-            var lazyGetters = properties.Where(x => x.PropertyType.Name == "ResettableLazy`1" || x.PropertyType.Name == "Lazy`1");
-            foreach (var getter in lazyGetters)
-            {
-                var field = @this.Field(getter);
-                var valueType = getter.PropertyType.GenericTypeArguments[0];
-                field.Resolve(x => getter.GetMethod!.Invoke(x.Parent<T>(), Array.Empty<object>())?.GetLazyValue(valueType));
-                field.Type(valueType);
-            }
-
-            var queryGetters = properties.Where(x => x.PropertyType.Name == "IQueryable`1");
-            foreach (var getter in queryGetters)
-            {
-                var field = @this.Field(getter);
-                field.Resolve(x => getter.GetMethod!.Invoke(x.Parent<T>(), Array.Empty<object>()));
-            }
+            //@this.IgnoreMethods();
         }
 
         public static IInterfaceTypeDescriptor<T> IgnoreMethods<T>(
@@ -140,20 +104,8 @@ namespace HotChocolate.Types
                 .BindRuntimeType<JsonNode, JsonNodeType>();
 
             return builder;
-        }
-
-
-        public static string GetAggregateAuthorizePrefix<TAggregate>(this IObjectTypeDescriptor<TAggregate> @this)
-        {
-            var moduleName = typeof(TAggregate).DomainName();
-            var entityName = typeof(TAggregate).Name.ToCamelCase();
-            var prefix = $"{moduleName}_query_{entityName}";
-            return prefix;
-        }
-
-        //public static string GetAggregateAuthorizePrefix<TAggregate>(this IInterfaceTypeDescriptor<TAggregate> @this)
+        }        //public static string GetAggregateAuthorizePrefix<TAggregate>(this IInterfaceTypeDescriptor<TAggregate> @this)
         //{
-
         //    var moduleName = typeof(TAggregate).Assembly.GetName().Name.Split(".").ToList().Where(x => !x.IsIn("Gql", "Api", "Core", "Tests")).Last().ToCamelCase();
         //    var entityName = typeof(TAggregate).Name.RemovePreFix("I").ToCamelCase();
         //    var prefix = $"{moduleName}_query_{entityName}";
@@ -165,93 +117,10 @@ namespace HotChocolate.Types
         {
             return GetFieldsMethodInfo.Invoke(descriptor, new object?[] { }) as ICollection<ObjectFieldDescriptor>;
         }
-        public static IObjectTypeDescriptor<T> AuthorizeFieldsImplicitly<T>(this IObjectTypeDescriptor<T> descriptor) where T : class
-        {
-            var rootExtensionType = typeof(T);
-            var methods = rootExtensionType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).AsEnumerable();
-            methods = methods.Where(x => x is { IsSpecialName: false });
-            foreach (var methodInfo in methods)
-            {
-                descriptor.FieldWithDefaultAuthorize(methodInfo);
-            }
-            return descriptor;
-        }
 
-        public static IObjectTypeDescriptor<T> AuthorizeWithDefaultName<T>(this IObjectTypeDescriptor<T> @this)
-        {
-            var trace = new StackTrace();
-            //获取是哪个类来调用的
-            var caller = trace.GetFrame(1).GetMethod();
-            var callerDeclaringType = caller.DeclaringType;
-            var prefixMatchModules = GeexModule.ModuleTypes.Where(x => callerDeclaringType.Namespace.Contains(x.Namespace.RemovePostFix("Gql", "Api", "Core", "Tests"), StringComparison.InvariantCultureIgnoreCase));
-            var module = prefixMatchModules.OrderByDescending(x => x.Name.Length).FirstOrDefault();
-            var moduleName = module.Namespace.Split(".").ToList().Last(x => !x.IsIn("Gql", "Api", "Core", "Tests")).ToCamelCase();
-            var className = callerDeclaringType.Name;
-            var operationTypePrefix = "";
-            var logger = (@this as IHasDescriptorContext)!.Context.Services.GetService<ILogger<IObjectTypeDescriptor<T>>>();
-            if (className.Contains("Query"))
-            {
-                operationTypePrefix = $"{moduleName}_query";
-
-            }
-            else if (className.Contains("Mutation"))
-            {
-                operationTypePrefix = $"{moduleName}_mutation";
-
-            }
-            else if (className.Contains("Subscription"))
-            {
-                operationTypePrefix = $"{moduleName}_subscription";
-            }
-
-            var propertyList = typeof(T).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-            foreach (var item in propertyList)
-            {
-                var policy = $"{operationTypePrefix}_{item.Name.RemovePreFix("Get").ToCamelCase()}";
-                if (AppPermission.List.Any(x => x.Value == policy) && AppPermission.List.Any(x => x.Value == policy))
-                {
-                    @this.Field(item).Authorize(policy);
-                    logger.LogInformation($@"成功匹配权限规则:{policy} for {item.DeclaringType.Name}.{item.Name}");
-                }
-                else
-                {
-                    @this.Field(item).Authorize();
-                    logger.LogWarning($@"跳过匹配权限规则:{item.DeclaringType.Name}.{item.Name}");
-                }
-            }
-
-            return @this;
-        }
-
-        public static IObjectFieldDescriptor FieldWithDefaultAuthorize<T, TValue>(this IObjectTypeDescriptor<T> @this, Expression<Func<T, TValue>> propertyOrMethod)
-        {
-            if (propertyOrMethod.Body.NodeType == ExpressionType.Call)
-            {
-                return @this.FieldWithDefaultAuthorize((propertyOrMethod.Body as MethodCallExpression)!.Method);
-            }
-            return @this.FieldWithDefaultAuthorize((propertyOrMethod.Body as MemberExpression)!.Member);
-        }
-
-        public static IObjectFieldDescriptor FieldWithDefaultAuthorize<T>(this IObjectTypeDescriptor<T> @this, MemberInfo propertyOrMethod)
-        {
-            var prefix = @this.GetAggregateAuthorizePrefix();
-            var fieldDescriptor = @this.Field(propertyOrMethod);
-            var logger = (@this as IHasDescriptorContext)!.Context.Services.GetService<ILogger<IObjectTypeDescriptor<T>>>();
-            var policy = $"{prefix}_{propertyOrMethod.Name.ToCamelCase()}";
-            if (AppPermission.List.Any(x => x.Value == policy) && AppPermission.List.Any(x => x.Value == policy))
-            {
-                fieldDescriptor = fieldDescriptor.Authorize(policy);
-                logger.LogInformation($@"成功匹配权限规则:{policy} for {propertyOrMethod.DeclaringType?.Name}.{propertyOrMethod.Name}");
-            }
-            else
-            {
-                fieldDescriptor = fieldDescriptor.Authorize();
-                logger.LogDebug($@"跳过匹配权限规则:{propertyOrMethod.DeclaringType?.Name}.{propertyOrMethod.Name}");
-            }
-
-            return fieldDescriptor;
-        }
-
+        /// <summary>
+        /// Ignore extension fields for object type descriptors
+        /// </summary>
         internal static void IgnoreExtensionFields<T>(this IObjectTypeDescriptor<T> descriptor)
         {
             var type = typeof(T);
@@ -261,6 +130,10 @@ namespace HotChocolate.Types
             descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.Description))).Ignore();
             descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.ContextData))).Ignore();
         }
+
+        /// <summary>
+        /// Mark a type to be ignored by the schema
+        /// </summary>
         public static IObjectTypeDescriptor<T> Ignore<T>(
       this IObjectTypeDescriptor<T> descriptor)
         {
@@ -268,6 +141,9 @@ namespace HotChocolate.Types
             return descriptor;
         }
 
+        /// <summary>
+        /// Mark an input object type as part of a OneOf group
+        /// </summary>
         public static IInputObjectTypeDescriptor<T> IsOneOf<T, TParent>(
      this IInputObjectTypeDescriptor<T> descriptor) where T : TParent
         {

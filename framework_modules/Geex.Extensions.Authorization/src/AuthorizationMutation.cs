@@ -17,7 +17,6 @@ namespace Geex.Extensions.Authorization
         }
         protected override void Configure(IObjectTypeDescriptor<AuthorizationMutation> descriptor)
         {
-            descriptor.AuthorizeWithDefaultName();
             base.Configure(descriptor);
         }
 

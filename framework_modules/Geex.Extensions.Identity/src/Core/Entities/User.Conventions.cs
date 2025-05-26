@@ -38,11 +38,9 @@ public partial class User
         protected override void Configure(IObjectTypeDescriptor<User> descriptor)
         {
             descriptor.Implements<InterfaceType<IUser>>();
-            descriptor.AuthorizeFieldsImplicitly();
             descriptor.BindFieldsImplicitly();
             descriptor.Field(x => x.AvatarFile).Type<InterfaceType<IBlobObject>>();
             descriptor.Ignore(x => x.Password);
-            descriptor.ConfigEntity();
             //descriptor.Field(x => x.UserName);
             //descriptor.Field(x => x.IsEnable);
             //descriptor.Field(x => x.Email);

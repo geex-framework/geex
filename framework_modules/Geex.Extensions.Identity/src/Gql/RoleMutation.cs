@@ -11,7 +11,6 @@ namespace Geex.Extensions.Identity.Gql
     {
         protected override void Configure(IObjectTypeDescriptor<RoleMutation> descriptor)
         {
-            descriptor.AuthorizeWithDefaultName();
             base.Configure(descriptor);
         }
 

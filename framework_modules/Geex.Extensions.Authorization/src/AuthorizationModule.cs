@@ -2,6 +2,7 @@
 using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization.Casbin;
+using Geex.Gql;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -19,6 +20,7 @@ namespace Geex.Extensions.Authorization
             var services = context.Services;
             services.AddCasbinAuthorization();
             SchemaBuilder.AddAuthorization();
+            SchemaBuilder.TryAddTypeInterceptor<AuthorizationTypeInterceptor>();
             base.ConfigureServices(context);
         }
 

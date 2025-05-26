@@ -14,7 +14,6 @@ namespace Geex.Extensions.Identity.Gql
 
         protected override void Configure(IObjectTypeDescriptor<RoleQuery> descriptor)
         {
-            descriptor.AuthorizeWithDefaultName();
             descriptor.Field(x => x.Roles())
             .UseOffsetPaging<InterfaceType<IRole>>()
             .UseFiltering<IRole>(x =>

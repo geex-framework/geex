@@ -12,7 +12,6 @@ public class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutation>
 {
     protected override void Configure(IObjectTypeDescriptor<ApprovalFlowMutation> descriptor)
     {
-        descriptor.AuthorizeFieldsImplicitly();
         base.Configure(descriptor);
     }
 

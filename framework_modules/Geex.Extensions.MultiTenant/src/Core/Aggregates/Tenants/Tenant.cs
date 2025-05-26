@@ -61,8 +61,6 @@ namespace Geex.Extensions.MultiTenant.Core.Aggregates.Tenants
             {
                 descriptor.BindFieldsImplicitly();
                 descriptor.Implements<InterfaceType<ITenant>>();
-                descriptor.AuthorizeFieldsImplicitly();
-                descriptor.ConfigEntity();
             }
         }
     }

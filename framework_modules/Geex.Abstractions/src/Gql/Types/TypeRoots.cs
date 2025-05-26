@@ -10,10 +10,6 @@ namespace Geex.Gql.Types
         protected override void Configure(IObjectTypeDescriptor<T> descriptor)
         {
             descriptor.Name(OperationTypeNames.Query);
-            if (typeof(T).IsAssignableTo<ObjectTypeExtension>())
-            {
-                descriptor.IgnoreExtensionFields();
-            }
             base.Configure(descriptor);
         }
     }
@@ -21,13 +17,7 @@ namespace Geex.Gql.Types
     {
         protected override void Configure(IObjectTypeDescriptor<T> descriptor)
         {
-            var mutationType = typeof(T);
             descriptor.Name(OperationTypeNames.Mutation);
-            if (mutationType.IsAssignableTo<ObjectTypeExtension>())
-            {
-                descriptor.IgnoreExtensionFields();
-            }
-
             base.Configure(descriptor);
         }
     }
@@ -36,11 +26,6 @@ namespace Geex.Gql.Types
         protected override void Configure(IObjectTypeDescriptor<T> descriptor)
         {
             descriptor.Name(OperationTypeNames.Subscription);
-            if (typeof(T).IsAssignableTo<ObjectTypeExtension>())
-            {
-                descriptor.IgnoreExtensionFields();
-            }
-
             base.Configure(descriptor);
         }
     }

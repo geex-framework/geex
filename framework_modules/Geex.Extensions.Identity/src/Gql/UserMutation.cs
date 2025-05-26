@@ -12,7 +12,6 @@ namespace Geex.Extensions.Identity.Gql
     {
         protected override void Configure(IObjectTypeDescriptor<UserMutation> descriptor)
         {
-            descriptor.AuthorizeWithDefaultName();
             base.Configure(descriptor);
         }
 

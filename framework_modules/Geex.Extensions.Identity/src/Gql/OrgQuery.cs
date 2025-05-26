@@ -13,7 +13,6 @@ namespace Geex.Extensions.Identity.Gql
     {
         protected override void Configure(IObjectTypeDescriptor<OrgQuery> descriptor)
         {
-            descriptor.AuthorizeWithDefaultName();
             descriptor
                 .Field(x => x.Orgs())
                 .UseOffsetPaging<InterfaceType<IOrg>>()

@@ -11,7 +11,6 @@ namespace Geex.Extensions.Settings.Gql
     {
         protected override void Configure(IObjectTypeDescriptor<SettingMutation> descriptor)
         {
-            descriptor.AuthorizeWithDefaultName();
             base.Configure(descriptor);
         }
         private readonly IUnitOfWork _uow;

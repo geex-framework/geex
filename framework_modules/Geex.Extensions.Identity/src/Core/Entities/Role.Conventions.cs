@@ -26,8 +26,6 @@ public partial class Role
         {
             descriptor.BindFieldsImplicitly();
             //descriptor.Field(x => x.Users).Type<ListType<UserType>>().Resolve(x=>x.ToString());
-            descriptor.ConfigEntity();
-            descriptor.AuthorizeFieldsImplicitly();
         }
     }
 }
