@@ -12,7 +12,7 @@ using Shouldly;
 
 namespace Geex.Tests.SchemaTests
 {
-    public class AuditLogTests : IClassFixture<GeexWebApplicationFactory>
+    public class AuditLogsTypeInterceptorTests : IClassFixture<GeexWebApplicationFactory>
     {
         public class AuditLogMutation : MutationExtension<AuditLogMutation>, IHasApproveMutation<ApproveEntity>
         {
@@ -28,7 +28,7 @@ namespace Geex.Tests.SchemaTests
 
         private readonly GeexWebApplicationFactory _factory;
 
-        public AuditLogTests(GeexWebApplicationFactory factory)
+        public AuditLogsTypeInterceptorTests(GeexWebApplicationFactory factory)
         {
             _factory = factory;
         }
