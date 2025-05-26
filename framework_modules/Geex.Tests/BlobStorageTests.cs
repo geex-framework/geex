@@ -6,7 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using Shouldly;
 using Geex.Abstractions;
-using Geex.Entities;
+using Geex.Extensions.BlobStorage;
+
 
 namespace Geex.Tests
 {

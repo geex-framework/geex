@@ -10,7 +10,9 @@ using Geex.Storage;
 using HotChocolate;
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Voyager;
+using HotChocolate.Configuration;
 using HotChocolate.Execution.Configuration;
+using HotChocolate.Types.Descriptors.Definitions;
 
 using MediatX;
 
@@ -103,20 +105,18 @@ namespace Geex
             base.PreConfigureServices(context);
         }
     }
-
     public class GeexModule : AbpModule
     {
         public IRequestExecutorBuilder SchemaBuilder => this.ServiceConfigurationContext.Services.GetSingletonInstance<IRequestExecutorBuilder>();
         public static HashSet<Assembly> KnownModuleAssembly { get; } = new HashSet<Assembly>();
         public static HashSet<Type> RootTypes { get; } = new HashSet<Type>();
         public static HashSet<GeexModule> LoadedModules { get; } = new HashSet<GeexModule>();
-        public static HashSet<Type> ModuleTypes => LoadedModules.Select(x=>x.GetType()).ToHashSet();
+        public static HashSet<Type> ModuleTypes => LoadedModules.Select(x => x.GetType()).ToHashSet();
         public static HashSet<Type> ClassEnumTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> DirectiveTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> ObjectTypes { get; } = new HashSet<Type>();
         public static Dictionary<Type, Type[]> RemoteNotificationHandlerTypes { get; } = new Dictionary<Type, Type[]>();
         public static HashSet<Type> RequestHandlerTypes { get; } = new HashSet<Type>();
-        public virtual
     }
 
     public abstract class GeexEntryModule<T> : GeexModule<T> where T : GeexModule

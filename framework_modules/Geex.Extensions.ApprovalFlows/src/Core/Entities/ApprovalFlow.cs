@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Abstractions.Authentication;
 using Geex.ApprovalFlows;
+using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.ApprovalFlows.Requests;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Core.Entities;

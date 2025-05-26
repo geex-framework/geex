@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Entities;
+
 
 namespace Geex.Extensions.Authentication
 {
@@ -15,7 +15,7 @@ namespace Geex.Extensions.Authentication
         /// </summary>
         /// <param name="code"></param>
         /// <returns></returns>
-        public Task<IUser> ExternalLogin(string code);
+        public Task<IAuthUser> ExternalLogin(string code);
     }
 
 }

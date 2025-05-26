@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Geex.Extensions.Authorization;
 
 namespace Geex.Extensions.Settings
 {

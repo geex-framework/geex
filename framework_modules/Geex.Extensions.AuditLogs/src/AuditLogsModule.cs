@@ -3,7 +3,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using Geex.Abstractions;
+using Geex.Extensions.Authentication;
+
 using HotChocolate;
 using HotChocolate.AspNetCore;
 
@@ -28,12 +31,14 @@ using Volo.Abp.Modularity;
 namespace Geex.Extensions.AuditLogs
 {
     [DependsOn(
-        typeof(GeexCoreModule)
+        typeof(AuthenticationModule)
     )]
-    public class AuditLogsModule : GeexModule<AuditLogsModule, AuditLogsModuleOptions>
+    public partial class AuditLogsModule : GeexModule<AuditLogsModule, AuditLogsModuleOptions>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
+            SchemaBuilder.AddDirectiveType(typeof(AuditDirectiveType.Config));
+            SchemaBuilder.TryAddTypeInterceptor<AuditLogsTypeInterceptor>();
             base.ConfigureServices(context);
         }
 

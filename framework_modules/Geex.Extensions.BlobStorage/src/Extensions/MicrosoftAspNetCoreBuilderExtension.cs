@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using RestSharp.Extensions;
 using Geex.Abstractions;
-using Geex.Entities;
+
 
 // ReSharper disable once CheckNamespace
 namespace Geex.Extensions.BlobStorage.Extensions

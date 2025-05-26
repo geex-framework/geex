@@ -5,8 +5,7 @@ using HotChocolate;
 using MediatR;
 using MongoDB.Entities;
 
-// ReSharper disable once CheckNamespace
-namespace Geex.Common.Requests
+namespace Geex.Requests
 {
     public record QueryRequest<T> : IRequest<IQueryable<T>> where T : IEntityBase
     {

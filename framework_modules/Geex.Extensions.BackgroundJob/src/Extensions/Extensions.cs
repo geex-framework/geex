@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 using EasyCronJob.Abstractions;
 using Geex;
-using Geex.Abstractions.Authentication;
 using Geex.Extensions.BackgroundJob;
 using Geex.Abstractions;
 

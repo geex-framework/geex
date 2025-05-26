@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Entities;
+
 using Geex.Extensions.BlobStorage.Aggregates.BlobObjects;
 using Geex.Extensions.BlobStorage.Requests;
 using MediatR;

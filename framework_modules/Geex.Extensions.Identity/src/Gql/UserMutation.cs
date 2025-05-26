@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Entities;
+
 using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Requests.Accounting;
 using Geex.Gql.Types;

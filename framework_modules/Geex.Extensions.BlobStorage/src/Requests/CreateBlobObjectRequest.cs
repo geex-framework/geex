@@ -1,4 +1,4 @@
-using Geex.Entities;
+
 using HotChocolate.Types;
 using MediatR;
 

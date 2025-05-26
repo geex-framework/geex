@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Geex.Entities;
+
 using MediatR;
 
 namespace Geex.Extensions.BlobStorage.Requests

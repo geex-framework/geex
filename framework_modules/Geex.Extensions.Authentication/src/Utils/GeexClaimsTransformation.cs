@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Geex.Abstractions;
 using Geex.Authorization;
-using Geex.Entities;
+
 using Geex.Extensions.Requests;
 using Geex.Extensions.Authentication.Domain;
 using MediatR;
@@ -36,8 +36,6 @@ namespace Geex.Extensions.Authentication.Utils
             _validationParams = validationParams;
         }
 
-
-
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
             var userId = principal.FindUserId();
@@ -56,21 +54,10 @@ namespace Geex.Extensions.Authentication.Utils
             //    return principal;
             //}
 
-            var user = _uow.Query<IUser>().GetById(userId);
+            var user = _uow.Query<IAuthUser>().GetById(userId);
             if (user == null)
             {
                 return principal;
-            }
-            //var ownedOrgCodes = DB.Queryable<User>().Select(x => new { x.Id, x.OrgCodes }).First(x => x.Id == principal.FindUserId()).OrgCodes;
-            var ownedOrgCodes = user.OrgCodes ?? [];
-            foreach (var ownedOrgCode in ownedOrgCodes)
-            {
-                claimsIdentity.AppendClaims(new Claim(GeexClaimType.Org, ownedOrgCode, valueType: "array"));
-            }
-
-            foreach (var role in user.RoleIds ?? [])
-            {
-                claimsIdentity.AppendClaims(new Claim(GeexClaimType.Role, role, valueType: "array"));
             }
 
             foreach (var transformation in this._transformations)

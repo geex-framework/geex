@@ -1,12 +1,13 @@
 ﻿using Geex.Abstractions;
-using Geex.Common.AuditLogs;
-using Geex.Common.Authentication;
-using Geex.Common.BackgroundJob;
-using Geex.Common.BlobStorage;
-using Geex.Common.Identity;
-using Geex.Common.Logging;
-using Geex.Common.Messaging.Core;
-using Geex.Common.Settings;
+using Geex.Extensions.AuditLogs;
+using Geex.Extensions.Authentication;
+using Geex.Extensions.Authorization;
+using Geex.Extensions.BackgroundJob;
+using Geex.Extensions.BlobStorage;
+using Geex.Extensions.Identity;
+using Geex.Extensions.Logging;
+using Geex.Extensions.Messaging.Core;
+using Geex.Extensions.Settings;
 using Volo.Abp.Modularity;
 
 namespace Geex.Common

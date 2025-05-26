@@ -1,5 +1,6 @@
 using Geex.Abstractions;
 using Geex.Entities;
+using Geex.Extensions.BlobStorage;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 

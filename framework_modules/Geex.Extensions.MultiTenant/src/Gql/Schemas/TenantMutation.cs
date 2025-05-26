@@ -8,8 +8,10 @@ using MediatR;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 using Geex.Extensions.Requests.MultiTenant;
 using Geex.Abstractions;
+using Geex.Common.Requests;
 using Geex.Gql.Types;
 using Geex.MultiTenant;
+using Geex.Requests;
 
 namespace Geex.Extensions.MultiTenant.Gql.Schemas
 {

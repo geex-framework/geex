@@ -12,7 +12,7 @@ namespace Geex.Extensions.Identity.Core
     /// </summary>
     public class OrgDataFilter : ExpressionDataFilter<IOrgFilteredEntity>
     {
-        public OrgDataFilter(ICurrentUser currentUser) : base(PredicateBuilder.New<IOrgFilteredEntity>(entity => currentUser.UserId == "000000000000000000000001" || entity.OrgCode == null || (currentUser.User != null && currentUser.User.OrgCodes.Contains(entity.OrgCode))), null)
+        public OrgDataFilter(ICurrentUser currentUser) : base(PredicateBuilder.New<IOrgFilteredEntity>(entity => currentUser.UserId == GeexConstants.SuperAdminId || entity.OrgCode == null || (currentUser.GetOrgCodes().Contains(entity.OrgCode))), null)
         {
 
         }

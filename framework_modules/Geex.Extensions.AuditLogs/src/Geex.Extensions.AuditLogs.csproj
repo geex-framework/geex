@@ -11,5 +11,9 @@
     <PackageReference Include="OpenIddict.MongoDb" Version="5.8.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Abstractions\" />
   </ItemGroup>
 </Project>

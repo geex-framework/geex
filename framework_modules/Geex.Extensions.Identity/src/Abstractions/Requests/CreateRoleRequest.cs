@@ -1,4 +1,4 @@
-﻿using Geex.Entities;
+﻿
 using MediatR;
 
 namespace Geex.Extensions.Identity.Requests

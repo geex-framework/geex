@@ -4,13 +4,14 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Geex.Abstractions.Authentication;
 using Geex.Bson;
 using Geex.Gql;
 using Geex.Gql.Types;
 using HotChocolate;
+using HotChocolate.Configuration;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
+using HotChocolate.Types.Descriptors.Definitions;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Utilities;
 using Microsoft.AspNetCore.Builder;
@@ -127,7 +128,7 @@ namespace Geex
                     var work = context.Services.GetService<IUnitOfWork>();
                     if (work != null)
                     {
-                        if (context.Services.GetService<ICurrentUser>()?.IsSuperAdmin == true)
+                        if (context.Services.GetService<ClaimsPrincipal>()?.FindUserId() == GeexConstants.SuperAdminId)
                         {
                             work.DbContext.DisableAllDataFilters();
                         }
@@ -161,7 +162,6 @@ namespace Geex
             context.Services.AddTransient(typeof(LazyService<>));
             context.Services.AddTransient<ClaimsPrincipal>(x =>
             x.GetService<IHttpContextAccessor>()?.HttpContext?.User);
-            context.Services.AddScoped<ICurrentUser, CurrentUser>();
             context.Services.AddResponseCompression(x =>
             {
                 // todo: 此处可能有安全风险
@@ -205,6 +205,12 @@ namespace Geex
             app.UseResponseCompression();
 
             return base.OnPreApplicationInitializationAsync(context);
+        }
+
+        /// <inheritdoc />
+        public override void InterceptTypes(ITypeCompletionContext completionContext, DefinitionBase definition)
+        {
+            base.InterceptTypes(completionContext, definition);
         }
     }
 }

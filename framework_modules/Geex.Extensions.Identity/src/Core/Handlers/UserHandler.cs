@@ -26,7 +26,6 @@ using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
 using Volo.Abp;
-
 using Role = Geex.Extensions.Identity.Core.Entities.Role;
 
 namespace Geex.Extensions.Identity.Core.Handlers

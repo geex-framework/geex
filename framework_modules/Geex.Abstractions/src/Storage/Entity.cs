@@ -8,7 +8,7 @@ using MongoDB.Entities;
 
 namespace Geex.Storage
 {
-    public interface IEntity
+    public interface IEntity:IEntityBase
     {
 
         public void AddDomainEvent(params INotification[] events);

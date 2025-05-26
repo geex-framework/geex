@@ -1,5 +1,5 @@
 ﻿using Geex.Abstractions;
-using Geex.Entities;
+
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 

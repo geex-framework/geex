@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Authorization;
-using Geex.Entities;
+
 using Geex.MultiTenant;
 using Geex.Storage;
 using HotChocolate.Types;

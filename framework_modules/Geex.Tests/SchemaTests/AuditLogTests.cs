@@ -1,22 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Geex.ApprovalFlows;
-using Geex.Common;
-using Geex.Extensions.ApprovalFlows;
+﻿using Geex.ApprovalFlows;
 using Geex.Extensions.AuditLogs;
 using Geex.Gql.Types;
 using Geex.Tests.TestEntities;
+
 using HotChocolate;
-using HotChocolate.Execution;
 using HotChocolate.Types;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using Shouldly;
 
-namespace Geex.Tests
+namespace Geex.Tests.SchemaTests
 {
     public class AuditLogTests : IClassFixture<GeexWebApplicationFactory>
     {
@@ -31,6 +25,7 @@ namespace Geex.Tests
 
             public bool AuditLogMutationField1(string arg1) => throw new NotImplementedException();
         }
+
         private readonly GeexWebApplicationFactory _factory;
 
         public AuditLogTests(GeexWebApplicationFactory factory)
@@ -45,10 +40,22 @@ namespace Geex.Tests
             var service = _factory.Services;
             var schema = service.GetService<ISchema>();
             schema.MutationType.Fields.TryGetField("auditLogMutationField1", out var field1).ShouldBeTrue();
-            field1.Directives.Any(x=>x.Type.RuntimeType == typeof(AuditDirectiveType)).ShouldBeTrue();
+            field1.Directives.Any(x => x.Type.RuntimeType == typeof(AuditDirectiveType)).ShouldBeTrue();
+        }
 
-            schema.MutationType.Fields.TryGetField("approveApproveEntity", out var field2).ShouldBeTrue();
-            field2.Directives.Any(x=>x.Type.RuntimeType == typeof(AuditDirectiveType)).ShouldBeTrue();
+        [Fact]
+        public async Task AuthenticationMutationShouldBePatched()
+        {
+            // Arrange
+            var service = _factory.Services;
+            var schema = service.GetService<ISchema>();
+            var toBePatchFieldNames = AuditLogsTypeInterceptor.ToBePatchedBuiltInOperations.SelectMany(x => x.Value);
+            foreach (var fieldName in toBePatchFieldNames)
+            {
+                var field1 = schema.MutationType.Fields.FirstOrDefault(x => x.Name.Equals(fieldName, StringComparison.InvariantCultureIgnoreCase));
+                var match = field1.Directives.FirstOrDefault(x => x.Type.Name == AuditDirectiveType.DirectiveName);
+                match.ShouldNotBeNull();
+            }
         }
     }
 }

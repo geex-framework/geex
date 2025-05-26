@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Abstractions;
-using Geex.Entities;
+
 using Geex.Extensions.BlobStorage.Requests;
 using Geex.Storage;
 using HotChocolate.Types;

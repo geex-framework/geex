@@ -2,7 +2,7 @@
 using System.Linq;
 using Geex.MultiTenant;
 
-namespace Geex.Entities
+namespace Geex.Extensions.Identity
 {
     public interface IRole : ITenantFilteredEntity
     {

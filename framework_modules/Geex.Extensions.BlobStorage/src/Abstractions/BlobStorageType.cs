@@ -1,4 +1,4 @@
-﻿namespace Geex.Entities
+﻿namespace Geex.Extensions.BlobStorage
 {
     public class BlobStorageType : Enumeration<BlobStorageType>
     {

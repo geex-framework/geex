@@ -1,5 +1,4 @@
 ﻿using System;
-using Geex.Extensions.Authorization;
 
 namespace Geex.Extensions.MultiTenant.Api
 {

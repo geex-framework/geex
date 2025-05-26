@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Entities;
 
-namespace Geex.Entities
+namespace Geex.Extensions.BlobStorage
 {
     /// <summary>
     /// Represents a blob object in the storage system

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Geex.Extensions.Requests;
+using Geex.Common.Requests;
+using Geex.Requests;
 
 namespace Geex.Extensions.Settings.Requests
 {

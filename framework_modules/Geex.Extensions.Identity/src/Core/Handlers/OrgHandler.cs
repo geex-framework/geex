@@ -5,15 +5,15 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Extensions.Notifications;
 using Geex.Extensions.Requests;
 using Geex.Abstractions;
 using Geex.ClientNotification;
-using Geex.Entities;
+
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Messaging.Api.GqlSchemas.Messages;
-
+using Geex.Notifications;
+using Geex.Requests;
 using HotChocolate.Subscriptions;
 
 using MediatR;

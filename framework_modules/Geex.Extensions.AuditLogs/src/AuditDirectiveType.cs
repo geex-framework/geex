@@ -23,12 +23,13 @@ namespace Geex.Extensions.AuditLogs
 {
     public class AuditDirectiveType
     {
+        public const string DirectiveName = "audit";
         public class Config : GqlConfig.Directive<AuditDirectiveType>
         {
             /// <inheritdoc />
             protected override void Configure(IDirectiveTypeDescriptor<AuditDirectiveType> descriptor)
             {
-                descriptor.Name("audit");
+                descriptor.Name(DirectiveName);
                 descriptor.Location(DirectiveLocation.FieldDefinition);
                 descriptor.Use((next, directive) => async context =>
                 {

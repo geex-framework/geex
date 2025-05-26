@@ -2,13 +2,14 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Entities;
+
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Requests;
 using MediatR;
 
 using MongoDB.Entities;
 using Geex.Extensions.Identity.Requests;
+using Geex.Requests;
 
 namespace Geex.Extensions.Identity.Core.Handlers
 {

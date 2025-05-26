@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 using Geex.Abstractions;
 using Geex.Authorization;
-using Geex.Entities;
+
 using Geex.Events;
 using Geex.Extensions.Authorization.Events;
 using Geex.Extensions.Requests.Authorization;
@@ -38,7 +38,7 @@ namespace Geex.Extensions.Authorization.Handlers
         /// <returns>Response from the request</returns>
         public async Task<IEnumerable<string>> Handle(GetSubjectPermissionsRequest request, CancellationToken cancellationToken)
         {
-            if (request.Subject == IUser.SuperAdminId)
+            if (request.Subject == GeexConstants.SuperAdminId)
             {
                 return AppPermission.DynamicValues.Select(x=>x.Value);
             }

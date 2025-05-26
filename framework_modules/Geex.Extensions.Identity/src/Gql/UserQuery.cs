@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Abstractions.Authentication;
-using Geex.Entities;
+
 using Geex.Gql.Types;
 using HotChocolate.Types;
 

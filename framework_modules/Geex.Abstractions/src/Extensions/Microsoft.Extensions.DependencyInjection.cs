@@ -202,7 +202,7 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             var geexModuleTypes = assembly.GetExportedTypes().Where(x => x.IsAssignableTo<GeexModule>() && !x.IsAbstract).ToList();
-            GeexModule.LoadedModules.AddIfNotContains(geexModuleTypes);
+            GeexModule.ModuleTypes.AddIfNotContains(geexModuleTypes);
 
             return schemaBuilder;
         }

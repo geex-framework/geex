@@ -57,11 +57,6 @@ namespace HotChocolate.Types
         {
             @this.IgnoreMethods();
             @this.AuthorizeFieldsImplicitly();
-            //if (typeof(T).IsAssignableTo<IApproveEntity>())
-            //{
-            //    @this.Field(x => ((IApproveEntity)x).ApproveStatus);
-            //    @this.Field(x => ((IApproveEntity)x).Submittable);
-            //}
 
             var properties = typeof(T).GetProperties();
             var lazyGetters = properties.Where(x => x.PropertyType.Name == "ResettableLazy`1" || x.PropertyType.Name == "Lazy`1");
@@ -192,27 +187,27 @@ namespace HotChocolate.Types
             var module = prefixMatchModules.OrderByDescending(x => x.Name.Length).FirstOrDefault();
             var moduleName = module.Namespace.Split(".").ToList().Last(x => !x.IsIn("Gql", "Api", "Core", "Tests")).ToCamelCase();
             var className = callerDeclaringType.Name;
-            var prefix = "";
+            var operationTypePrefix = "";
             var logger = (@this as IHasDescriptorContext)!.Context.Services.GetService<ILogger<IObjectTypeDescriptor<T>>>();
             if (className.Contains("Query"))
             {
-                prefix = $"{moduleName}_query";
+                operationTypePrefix = $"{moduleName}_query";
 
             }
             else if (className.Contains("Mutation"))
             {
-                prefix = $"{moduleName}_mutation";
+                operationTypePrefix = $"{moduleName}_mutation";
 
             }
             else if (className.Contains("Subscription"))
             {
-                prefix = $"{moduleName}_subscription";
+                operationTypePrefix = $"{moduleName}_subscription";
             }
 
             var propertyList = typeof(T).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (var item in propertyList)
             {
-                var policy = $"{prefix}_{item.Name.RemovePreFix("Get").ToCamelCase()}";
+                var policy = $"{operationTypePrefix}_{item.Name.RemovePreFix("Get").ToCamelCase()}";
                 if (AppPermission.List.Any(x => x.Value == policy) && AppPermission.List.Any(x => x.Value == policy))
                 {
                     @this.Field(item).Authorize(policy);
@@ -225,50 +220,7 @@ namespace HotChocolate.Types
                 }
             }
 
-            //// 判断是否继承了审核基类
-            //if (typeof(T).GetInterfaces().Contains(typeof(IHasApproveMutation)))
-            //{
-            //    var approveMutationType = typeof(T).GetInterfaces().First(x => x.Name.StartsWith(nameof(IHasApproveMutation) + "`1"));
-            //    var approvePropertyList = approveMutationType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-            //    var entityType = approveMutationType.GenericTypeArguments[0];
-            //    foreach (var item in approvePropertyList)
-            //    {
-            //        var policy = $"{prefix}_{item.Name.ToCamelCase()}{entityType.Name.RemovePreFix("I")}";
-
-            //        if (AppPermission.List.Any(x => x.Value == policy) && AppPermission.List.Any(x => x.Value == policy))
-            //        {
-            //            // gql版本限制, 重写resolve的字段需要重新指定类型
-            //            @this.Field(policy.Split('_').Last()).Type<BooleanType>().Authorize(policy);
-            //            logger.LogInformation($@"成功匹配权限规则:{policy} for {typeof(T).Name}.{item.Name}");
-            //        }
-            //        else
-            //        {
-            //            @this.Field(policy.Split('_').Last()).Type<BooleanType>().Authorize();
-            //            logger.LogWarning($@"跳过匹配权限规则:{typeof(T).Name}.{item.Name}");
-            //        }
-            //    }
-            //}
             return @this;
-        }
-
-        public static IObjectFieldDescriptor FieldWithDefaultAuthorize<T>(this IObjectTypeDescriptor<T> @this, IObjectFieldDescriptor fieldDescriptor)
-        {
-            var propertyOrMethod = ((ObjectFieldDefinition)fieldDescriptor.GetPropertyValue("Definition")).Member.DeclaringType;
-            var prefix = @this.GetAggregateAuthorizePrefix();
-            var logger = (@this as IHasDescriptorContext)!.Context.Services.GetService<ILogger<IObjectTypeDescriptor<T>>>();
-            var policy = $"{prefix}_{propertyOrMethod.Name.ToCamelCase()}";
-            if (AppPermission.List.Any(x => x.Value == policy) && AppPermission.List.Any(x => x.Value == policy))
-            {
-                fieldDescriptor = fieldDescriptor.Authorize(policy);
-                logger.LogInformation($@"成功匹配权限规则:{policy} for {propertyOrMethod.DeclaringType?.Name}.{propertyOrMethod.Name}");
-            }
-            else
-            {
-                fieldDescriptor = fieldDescriptor.Authorize();
-                logger.LogDebug($@"跳过匹配权限规则:{propertyOrMethod.DeclaringType?.Name}.{propertyOrMethod.Name}");
-            }
-
-            return fieldDescriptor;
         }
 
         public static IObjectFieldDescriptor FieldWithDefaultAuthorize<T, TValue>(this IObjectTypeDescriptor<T> @this, Expression<Func<T, TValue>> propertyOrMethod)

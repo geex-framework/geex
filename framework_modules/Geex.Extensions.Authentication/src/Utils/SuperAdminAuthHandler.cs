@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-using Geex.Entities;
+
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
@@ -60,12 +60,11 @@ namespace Geex.Extensions.Authentication.Utils
                 return AuthenticateResult.Fail("Invalid auth parameter.");
             }
 
-
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, IUser.SuperAdminId),
-                new Claim(GeexClaimType.FullName, IUser.SuperAdminName),
-                new Claim(GeexClaimType.Sub, IUser.SuperAdminId),
+                new Claim(ClaimTypes.Name, GeexConstants.SuperAdminId),
+                new Claim(GeexClaimType.FullName, GeexConstants.SuperAdminName),
+                new Claim(GeexClaimType.Sub, GeexConstants.SuperAdminId),
             };
             var identity = new ClaimsIdentity(claims, SchemeName);
             var principal = new ClaimsPrincipal(identity);

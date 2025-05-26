@@ -46,15 +46,6 @@ namespace Geex.Gql
                     }
                 }
             }
-            foreach (var module in GeexModule.LoadedModules)
-            {
-                // ITypeDefinition
-                if (definition is InputObjectTypeDefinition inputObjectTypeDefinition)
-                {
-
-                }
-                module.InterceptTypes(completionContext, definition);
-            }
             base.OnBeforeCompleteType(completionContext, definition);
         }
     }

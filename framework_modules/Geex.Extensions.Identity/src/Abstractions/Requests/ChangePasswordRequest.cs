@@ -1,8 +1,7 @@
-﻿using Geex.Entities;
+﻿
 using MediatR;
 
-// ReSharper disable once CheckNamespace
-namespace Geex.Extensions.Requests.Accounting
+namespace Geex.Extensions.Identity.Requests
 {
     public record ChangePasswordRequest : IRequest<IUser>
     {

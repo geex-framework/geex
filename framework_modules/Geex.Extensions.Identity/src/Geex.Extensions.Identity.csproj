@@ -8,6 +8,8 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
+        <PackageReference Include="OpenIddict.MongoDb" Version="5.8.0" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Analyzer\src\Geex.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />

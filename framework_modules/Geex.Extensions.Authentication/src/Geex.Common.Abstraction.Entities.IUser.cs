@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using Geex.Entities;
+using Geex.Extensions.Authentication;
 using Geex.MultiTenant;
 using MongoDB.Bson;
 using MongoDB.Entities.Utilities;
@@ -9,9 +9,9 @@ namespace Geex
 {
     public static class GeexCommonAbstractionEntitiesIUserExtensions
     {
-         public static IUser? MatchUserIdentifier(this IQueryable<IUser> users, string userIdentifier)
+         public static IAuthUser? MatchUserIdentifier(this IQueryable<IAuthUser> users, string userIdentifier)
         {
-            if (userIdentifier == IUser.SuperAdminId || userIdentifier == IUser.SuperAdminName)
+            if (userIdentifier is GeexConstants.SuperAdminId or GeexConstants.SuperAdminName)
             {
                 users.Provider.As<ICachedDbContextQueryProvider>().DbContext.DisableDataFilters(typeof(ITenantFilteredEntity));
             }

@@ -1,9 +1,10 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Entities;
+
 using Geex.Extensions.Requests;
 using Geex.Gql.Types;
+using Geex.Requests;
 using HotChocolate.Types;
 
 namespace Geex.Extensions.Identity.Gql

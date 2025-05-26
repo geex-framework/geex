@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 using Geex.Abstractions;
 using Geex.Abstractions;
-using Geex.Entities;
+using Geex.Abstractions.Authentication;
 using Geex.Extensions.Authentication.Domain;
 using Geex.Extensions.Authentication.Utils;
 
@@ -45,7 +45,7 @@ namespace Geex.Extensions.Authentication
             IdentityModelEventSource.ShowPII = true;
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
             var services = context.Services;
-            services.AddTransient<IPasswordHasher<IUser>, PasswordHasher<IUser>>();
+            services.AddTransient<IPasswordHasher<IAuthUser>, PasswordHasher<IAuthUser>>();
             var geexCoreModuleOptions = services.GetSingletonInstance<GeexCoreModuleOptions>();
             var moduleOptions = services.GetSingletonInstance<AuthenticationModuleOptions>();
 
@@ -214,6 +214,7 @@ namespace Geex.Extensions.Authentication
                         // Register the ASP.NET Core host.
                         options.UseAspNetCore();
                     });
+                services.AddScoped<ICurrentUser, CurrentUser>();
                 services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
 
                 var tokenValidationParameters = new TokenValidationParameters();

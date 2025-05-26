@@ -5,6 +5,7 @@ using Geex.Abstractions;
 using Geex.ApprovalFlows;
 using Geex.Extensions.ApprovalFlows.Requests;
 using MediatR;
+using MongoDB.Entities;
 
 namespace Geex.Extensions.ApprovalFlows;
 
@@ -14,7 +15,7 @@ public interface IApproveRequestHandler<TInterface, TEntity> :
     IRequestHandler<ApproveRequest<TInterface>>,
     IRequestHandler<UnSubmitRequest<TInterface>>,
     IRequestHandler<UnApproveRequest<TInterface>>
-    where TInterface : IApproveEntity where TEntity : TInterface
+    where TInterface : IApproveEntity, IEntityBase where TEntity : TInterface
 {
 
     async Task IRequestHandler<SubmitRequest<TInterface>>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)

@@ -30,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
     <ProjectReference Include="Abstractions\Geex.Extensions.Settings.Abstractions.csproj" />
   </ItemGroup>
   <ItemGroup>

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Entities;
 using Geex.Events;
+using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Requests;
 using Geex.Storage;
 using Microsoft.AspNetCore.Identity;

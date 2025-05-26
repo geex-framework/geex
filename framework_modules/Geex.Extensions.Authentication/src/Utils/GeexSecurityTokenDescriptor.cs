@@ -6,7 +6,7 @@ using System.Text;
 
 using Geex.Abstractions;
 using Geex.Abstractions;
-using Geex.Entities;
+
 using Geex.Extensions.Authentication.Domain;
 
 using Microsoft.IdentityModel.Tokens;
@@ -15,7 +15,7 @@ namespace Geex.Extensions.Authentication.Utils
 {
     public class GeexSecurityTokenDescriptor : SecurityTokenDescriptor, IHasId
     {
-        public GeexSecurityTokenDescriptor(IUser user, LoginProviderEnum provider, UserTokenGenerateOptions options, IEnumerable<Claim> customClaims = default)
+        public GeexSecurityTokenDescriptor(IAuthUser user, LoginProviderEnum provider, UserTokenGenerateOptions options, IEnumerable<Claim> customClaims = default)
         {
             if (options.Issuer != null) Issuer = options.Issuer;
             if (options.SigningCredentials != null) this.SigningCredentials = options.SigningCredentials;
@@ -30,10 +30,6 @@ namespace Geex.Extensions.Authentication.Utils
                 new GeexClaim(GeexClaimType.Sub, user.Id),
                 new GeexClaim(GeexClaimType.Provider, provider),
             });
-            if (user.TenantCode != null)
-            {
-                Subject.AddClaim(new GeexClaim(GeexClaimType.Tenant, user.TenantCode));
-            }
             if (customClaims?.Any() == true)
             {
                 Subject.AppendClaims(customClaims);

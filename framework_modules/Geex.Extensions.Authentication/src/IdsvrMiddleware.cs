@@ -5,7 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Geex.Extensions.Requests;
 using Geex.Abstractions;
-using Geex.Entities;
+
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
@@ -155,21 +155,9 @@ namespace Geex.Extensions.Authentication
             }
 
             var claims = claimsPrincipal.Claims;
-            var users = HttpContext.RequestServices.GetService<IUnitOfWork>().Query<IUser>();
-            var user = users.FirstOrDefault(x => x.Id == claimsPrincipal.FindUserId());
-            if (user != null)
-            {
-                claims = claims.Concat(new[]
-                {
-                    new GeexClaim(GeexClaimType.Nickname, user.Nickname??user.Username),
-                    new GeexClaim(GeexClaimType.Org, user.OrgCodes.JoinAsString(",")),
-                    new GeexClaim(GeexClaimType.Role, user.RoleIds.JoinAsString(",")),
-                    new GeexClaim(GeexClaimType.Tenant, user.TenantCode??""),
-                    new GeexClaim(GeexClaimType.Provider, user.LoginProvider),
-                });
-            }
+            claimsPrincipal = await HttpContext.RequestServices.GetService<IClaimsTransformation>().TransformAsync(claimsPrincipal);
 
-            await HttpContext.Response.WriteAsJsonAsync(claims.GroupBy(x => x.Type).ToDictionary(x => x.Key, x => string.Join(',', x.Select(y => y.Value))));
+            await HttpContext.Response.WriteAsJsonAsync(claimsPrincipal.Claims.GroupBy(x => x.Type).ToDictionary(x => x.Key, x => string.Join(',', x.Select(y => y.Value))));
         }
 
         private async Task Token(HttpContext HttpContext, RequestDelegate requestDelegate)

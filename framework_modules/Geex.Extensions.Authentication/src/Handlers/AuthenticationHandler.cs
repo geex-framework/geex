@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Geex.Extensions.Requests;
 using Geex.Abstractions;
 using Geex.Authorization;
-using Geex.Entities;
 using Geex.Extensions.Authentication.Domain;
 using Geex.Extensions.Authentication.Utils;
 
@@ -40,7 +39,7 @@ namespace Geex.Extensions.Authentication.Handlers
         /// <inheritdoc />
         public async Task<UserToken> Handle(AuthenticateRequest request, CancellationToken cancellationToken)
         {
-            var users = _uow.Query<IUser>();
+            var users = _uow.Query<IAuthUser>();
             var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
             if (user == default || !user.CheckPassword(request.Password))
             {
@@ -59,7 +58,7 @@ namespace Geex.Extensions.Authentication.Handlers
         {
             if (request.LoginProvider == LoginProviderEnum.Local)
             {
-                var userQuery = _uow.Query<IUser>();
+                var userQuery = _uow.Query<IAuthUser>();
                 var sub = _tokenHandler.ReadJwtToken(request.Code).Subject;
                 var user = userQuery.MatchUserIdentifier(sub);
                 var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user, LoginProviderEnum.Local, _userTokenGenerateOptions)));

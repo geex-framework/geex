@@ -6,6 +6,7 @@ using Geex.Extensions.Messaging.Api.Aggregates.Messages;
 using Geex.Extensions.Messaging.Core.Aggregates.Messages;
 using Geex.Extensions.Requests.Messaging;
 using Geex.Gql.Types;
+using Geex.Requests;
 using HotChocolate.Types;
 using MediatR;
 

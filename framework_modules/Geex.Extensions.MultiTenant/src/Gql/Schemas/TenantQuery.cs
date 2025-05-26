@@ -4,6 +4,7 @@ using Geex.Abstractions;
 using Geex.Extensions.Requests;
 using Geex.Gql.Types;
 using Geex.MultiTenant;
+using Geex.Requests;
 using HotChocolate.Types;
 
 using MediatR;

@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Requests;
+using Geex.Requests;
 using MediatR;
 using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
