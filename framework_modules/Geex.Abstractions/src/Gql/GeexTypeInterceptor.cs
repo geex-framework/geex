@@ -27,22 +27,33 @@ namespace Geex.Gql
         /// <inheritdoc />
         public override void OnBeforeCompleteType(ITypeCompletionContext completionContext, DefinitionBase definition)
         {
-            // 只处理InputObjectTypes
-            if (definition is InputObjectTypeDefinition inputObjectTypeDefinition)
+            // fix oneOf input object type, add sub types as fields
             {
-                if (OneOfConfigsDictionary.TryGetValue(inputObjectTypeDefinition.RuntimeType, out var subTypes))
+                if (definition is InputObjectTypeDefinition inputObjectTypeDefinition)
                 {
-                    foreach (var subType in subTypes)
+                    if (OneOfConfigsDictionary.TryGetValue(inputObjectTypeDefinition.RuntimeType, out var subTypes))
                     {
-                        // 在现有字段上增加一个新的字段
-                        var newField = new InputFieldDefinition(
-                            subType.Name.ToCamelCase(),
-                            type: completionContext.TypeInspector.GetInputTypeRef(subType));
-                        inputObjectTypeDefinition.Fields.Add(newField);
-                    }
+                        foreach (var subType in subTypes)
+                        {
+                            // 在现有字段上增加一个新的字段
+                            var newField = new InputFieldDefinition(
+                                subType.Name.ToCamelCase(),
+                                type: completionContext.TypeInspector.GetInputTypeRef(subType));
+                            inputObjectTypeDefinition.Fields.Add(newField);
+                        }
 
-                    inputObjectTypeDefinition.AddDirective("oneOf", completionContext.TypeInspector);
+                        inputObjectTypeDefinition.AddDirective("oneOf", completionContext.TypeInspector);
+                    }
                 }
+            }
+            foreach (var module in GeexModule.LoadedModules)
+            {
+                // ITypeDefinition
+                if (definition is InputObjectTypeDefinition inputObjectTypeDefinition)
+                {
+
+                }
+                module.InterceptTypes(completionContext, definition);
             }
             base.OnBeforeCompleteType(completionContext, definition);
         }

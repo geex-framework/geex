@@ -41,6 +41,7 @@
         <PackageReference Include="Volo.Abp.Core" Version="5.2.0" />
     </ItemGroup>
     <ItemGroup>
+        <Folder Include="ApprovalFlows\" />
         <Folder Include="Desensitization\" />
         <Folder Include="Enumerations\" />
         <Folder Include="Gql\Interceptors\" />

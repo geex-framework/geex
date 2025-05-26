@@ -3,19 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+
 using Geex.Migrations;
 using Geex.Storage;
+
+using HotChocolate;
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Voyager;
 using HotChocolate.Execution.Configuration;
+
 using MediatX;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.WebSockets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+
 using MongoDB.Entities;
+
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -84,6 +91,7 @@ namespace Geex
                 x.AutoRegisterRequestProcessors = true;
             });
             this.SchemaBuilder.TryAddGeexAssembly(assembly);
+            GeexModule.LoadedModules.AddIfNotContains(this);
             base.ConfigureServices(context);
         }
 
@@ -101,12 +109,14 @@ namespace Geex
         public IRequestExecutorBuilder SchemaBuilder => this.ServiceConfigurationContext.Services.GetSingletonInstance<IRequestExecutorBuilder>();
         public static HashSet<Assembly> KnownModuleAssembly { get; } = new HashSet<Assembly>();
         public static HashSet<Type> RootTypes { get; } = new HashSet<Type>();
-        public static HashSet<Type> Modules { get; } = new HashSet<Type>();
+        public static HashSet<GeexModule> LoadedModules { get; } = new HashSet<GeexModule>();
+        public static HashSet<Type> ModuleTypes => LoadedModules.Select(x=>x.GetType()).ToHashSet();
         public static HashSet<Type> ClassEnumTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> DirectiveTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> ObjectTypes { get; } = new HashSet<Type>();
         public static Dictionary<Type, Type[]> RemoteNotificationHandlerTypes { get; } = new Dictionary<Type, Type[]>();
         public static HashSet<Type> RequestHandlerTypes { get; } = new HashSet<Type>();
+        public virtual
     }
 
     public abstract class GeexEntryModule<T> : GeexModule<T> where T : GeexModule

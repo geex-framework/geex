@@ -11,7 +11,6 @@ using Fasterflect;
 using Geex;
 using Geex.Common;
 using Geex.Abstractions;
-using Geex.ApprovalFlows;
 using Geex.Gql;
 using Geex.Gql.Types;
 using Geex.Gql.Types.Scalars;
@@ -58,11 +57,11 @@ namespace HotChocolate.Types
         {
             @this.IgnoreMethods();
             @this.AuthorizeFieldsImplicitly();
-            if (typeof(T).IsAssignableTo<IApproveEntity>())
-            {
-                @this.Field(x => ((IApproveEntity)x).ApproveStatus);
-                @this.Field(x => ((IApproveEntity)x).Submittable);
-            }
+            //if (typeof(T).IsAssignableTo<IApproveEntity>())
+            //{
+            //    @this.Field(x => ((IApproveEntity)x).ApproveStatus);
+            //    @this.Field(x => ((IApproveEntity)x).Submittable);
+            //}
 
             var properties = typeof(T).GetProperties();
             var lazyGetters = properties.Where(x => x.PropertyType.Name == "ResettableLazy`1" || x.PropertyType.Name == "Lazy`1");
@@ -189,7 +188,7 @@ namespace HotChocolate.Types
             //获取是哪个类来调用的
             var caller = trace.GetFrame(1).GetMethod();
             var callerDeclaringType = caller.DeclaringType;
-            var prefixMatchModules = GeexModule.Modules.Where(x => callerDeclaringType.Namespace.Contains(x.Namespace.RemovePostFix("Gql", "Api", "Core", "Tests"), StringComparison.InvariantCultureIgnoreCase));
+            var prefixMatchModules = GeexModule.ModuleTypes.Where(x => callerDeclaringType.Namespace.Contains(x.Namespace.RemovePostFix("Gql", "Api", "Core", "Tests"), StringComparison.InvariantCultureIgnoreCase));
             var module = prefixMatchModules.OrderByDescending(x => x.Name.Length).FirstOrDefault();
             var moduleName = module.Namespace.Split(".").ToList().Last(x => !x.IsIn("Gql", "Api", "Core", "Tests")).ToCamelCase();
             var className = callerDeclaringType.Name;
@@ -226,29 +225,29 @@ namespace HotChocolate.Types
                 }
             }
 
-            // 判断是否继承了审核基类
-            if (typeof(T).GetInterfaces().Contains(typeof(IHasApproveMutation)))
-            {
-                var approveMutationType = typeof(T).GetInterfaces().First(x => x.Name.StartsWith(nameof(IHasApproveMutation) + "`1"));
-                var approvePropertyList = approveMutationType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                var entityType = approveMutationType.GenericTypeArguments[0];
-                foreach (var item in approvePropertyList)
-                {
-                    var policy = $"{prefix}_{item.Name.ToCamelCase()}{entityType.Name.RemovePreFix("I")}";
+            //// 判断是否继承了审核基类
+            //if (typeof(T).GetInterfaces().Contains(typeof(IHasApproveMutation)))
+            //{
+            //    var approveMutationType = typeof(T).GetInterfaces().First(x => x.Name.StartsWith(nameof(IHasApproveMutation) + "`1"));
+            //    var approvePropertyList = approveMutationType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            //    var entityType = approveMutationType.GenericTypeArguments[0];
+            //    foreach (var item in approvePropertyList)
+            //    {
+            //        var policy = $"{prefix}_{item.Name.ToCamelCase()}{entityType.Name.RemovePreFix("I")}";
 
-                    if (AppPermission.List.Any(x => x.Value == policy) && AppPermission.List.Any(x => x.Value == policy))
-                    {
-                        // gql版本限制, 重写resolve的字段需要重新指定类型
-                        @this.Field(policy.Split('_').Last()).Type<BooleanType>().Authorize(policy);
-                        logger.LogInformation($@"成功匹配权限规则:{policy} for {typeof(T).Name}.{item.Name}");
-                    }
-                    else
-                    {
-                        @this.Field(policy.Split('_').Last()).Type<BooleanType>().Authorize();
-                        logger.LogWarning($@"跳过匹配权限规则:{typeof(T).Name}.{item.Name}");
-                    }
-                }
-            }
+            //        if (AppPermission.List.Any(x => x.Value == policy) && AppPermission.List.Any(x => x.Value == policy))
+            //        {
+            //            // gql版本限制, 重写resolve的字段需要重新指定类型
+            //            @this.Field(policy.Split('_').Last()).Type<BooleanType>().Authorize(policy);
+            //            logger.LogInformation($@"成功匹配权限规则:{policy} for {typeof(T).Name}.{item.Name}");
+            //        }
+            //        else
+            //        {
+            //            @this.Field(policy.Split('_').Last()).Type<BooleanType>().Authorize();
+            //            logger.LogWarning($@"跳过匹配权限规则:{typeof(T).Name}.{item.Name}");
+            //        }
+            //    }
+            //}
             return @this;
         }
 
