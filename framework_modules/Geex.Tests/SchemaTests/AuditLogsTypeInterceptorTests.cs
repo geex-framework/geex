@@ -14,7 +14,7 @@ namespace Geex.Tests.SchemaTests
 {
     public class AuditLogsTypeInterceptorTests : IClassFixture<GeexWebApplicationFactory>
     {
-        public class AuditLogMutation : MutationExtension<AuditLogMutation>, IHasApproveMutation<ApproveEntity>
+        public class AuditLogMutation : MutationExtension<AuditLogMutation>
         {
             /// <inheritdoc />
             protected override void Configure(IObjectTypeDescriptor<AuditLogMutation> descriptor)

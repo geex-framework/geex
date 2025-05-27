@@ -23,9 +23,6 @@ namespace Geex.Tests
         /// <inheritdoc />
         public override async ValueTask DisposeAsync()
         {
-            var uow = this.Services.GetService<IUnitOfWork>();
-            await uow.DeleteAsync<TestEntity>();
-            await uow.SaveChanges();
             await base.DisposeAsync();
         }
     }

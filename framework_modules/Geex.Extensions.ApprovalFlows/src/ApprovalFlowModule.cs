@@ -25,6 +25,7 @@ public class ApprovalFlowModule : GeexModule<ApprovalFlowModule, ApprovalFlowMod
                     x.Field(y => y.Submittable);
                 })
                 .AddEnumType<ApproveStatus>();
+        SchemaBuilder.TryAddTypeInterceptor<ApproveEntityTypeInterceptor>();
         base.ConfigureServices(context);
     }
 

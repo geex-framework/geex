@@ -38,15 +38,7 @@ namespace Geex
 
         public virtual void ConfigureModuleOptions(Action<GeexModuleOption> optionsAction)
         {
-            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<TModuleOptions>());
-            if (type == default)
-            {
-                throw new InvalidOperationException($"{nameof(TModuleOptions)} of {nameof(TModule)} is not declared, cannot be configured.");
-            }
-            var options = (TModuleOptions)(this.ServiceConfigurationContext.Services
-              .GetSingletonInstanceOrNull(type) ?? Activator.CreateInstance(type));
-            optionsAction.Invoke(options);
-            this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(type, options));
+            optionsAction.Invoke(_moduleOptions);
         }
         public override void PreConfigureServices(ServiceConfigurationContext context)
         {
@@ -67,6 +59,7 @@ namespace Geex
             Configuration.GetSection(type.Name).Bind(options);
             this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(type, options));
             this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(typeof(TModuleOptions), options));
+            this._moduleOptions = options;
             //this.ServiceConfigurationContext.Services.GetRequiredServiceLazy<ILogger<GeexModule>>().Value.LogInformation($"Module loaded with options:{Environment.NewLine}{options.ToJson()}");
         }
 

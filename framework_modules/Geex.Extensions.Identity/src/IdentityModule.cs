@@ -49,6 +49,7 @@ namespace Geex.Extensions.Identity
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             context.Services.AddScoped<IDataFilter<IOrgFilteredEntity>, OrgDataFilter>(x => new OrgDataFilter(x.GetService<ICurrentUser>()));
+            context.Services.AddTransient<IPasswordHasher<IUser>, PasswordHasher<IUser>>();
             context.Services.AddTransient<IUserCreationValidator, UserCreationValidator>();
             context.Services.AddTransient<UserHandler>();
             context.Services.AddTransient<OrgHandler>();
