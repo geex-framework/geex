@@ -15,17 +15,6 @@ namespace Geex.Tests.SchemaTests
 {
     public class ApproveEntityTypeInterceptorTests : IClassFixture<GeexWebApplicationFactory>
     {
-        public class ApproveMutation : MutationExtension<ApproveMutation>, IHasApproveMutation<ApproveEntity>
-        {
-            /// <inheritdoc />
-            protected override void Configure(IObjectTypeDescriptor<ApproveMutation> descriptor)
-            {
-                base.Configure(descriptor);
-            }
-            public ApproveEntity TestMutation(string arg1) => throw new NotImplementedException();
-
-        }
-
         private readonly GeexWebApplicationFactory _factory;
 
         public ApproveEntityTypeInterceptorTests(GeexWebApplicationFactory factory)

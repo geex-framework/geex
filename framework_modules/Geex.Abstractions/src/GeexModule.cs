@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -24,6 +25,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using MongoDB.Entities;
+
+using Open.Collections;
 
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -66,6 +69,11 @@ namespace Geex
     }
     public abstract class GeexModule<TModule> : GeexModule where TModule : GeexModule
     {
+        /// <summary>
+        /// module name in simple display format
+        /// XxxModule => xxx
+        /// </summary>
+        public new static string ModuleDisplayName { get; } = typeof(TModule).Name.RemovePostFix("Module").ToCamelCase();
         public IConfiguration Configuration { get; protected set; }
         public IWebHostEnvironment Env { get; protected set; }
 
@@ -100,16 +108,21 @@ namespace Geex
     }
     public class GeexModule : AbpModule
     {
+        /// <summary>
+        /// module name in simple display format
+        /// XxxModule => xxx
+        /// </summary>
+        public virtual string ModuleDisplayName => this.GetType().Name.RemovePostFix("Module").ToCamelCase();
         public IRequestExecutorBuilder SchemaBuilder => this.ServiceConfigurationContext.Services.GetSingletonInstance<IRequestExecutorBuilder>();
-        public static HashSet<Assembly> KnownModuleAssembly { get; } = new HashSet<Assembly>();
-        public static HashSet<Type> RootTypes { get; } = new HashSet<Type>();
-        public static HashSet<GeexModule> LoadedModules { get; } = new HashSet<GeexModule>();
-        public static HashSet<Type> ModuleTypes => LoadedModules.Select(x => x.GetType()).ToHashSet();
-        public static HashSet<Type> ClassEnumTypes { get; } = new HashSet<Type>();
-        public static HashSet<Type> DirectiveTypes { get; } = new HashSet<Type>();
-        public static HashSet<Type> ObjectTypes { get; } = new HashSet<Type>();
-        public static Dictionary<Type, Type[]> RemoteNotificationHandlerTypes { get; } = new Dictionary<Type, Type[]>();
-        public static HashSet<Type> RequestHandlerTypes { get; } = new HashSet<Type>();
+        public static ConcurrentHashSet<Assembly> KnownModuleAssembly { get; } = new ConcurrentHashSet<Assembly>();
+        public static ConcurrentHashSet<Type> RootTypes { get; } = new ConcurrentHashSet<Type>();
+        public static ConcurrentHashSet<GeexModule> LoadedModules { get; } = new ConcurrentHashSet<GeexModule>();
+        public static ConcurrentHashSet<Type> ModuleTypes { get; } = new ConcurrentHashSet<Type>();
+        public static ConcurrentHashSet<Type> ClassEnumTypes { get; } = new ConcurrentHashSet<Type>();
+        public static ConcurrentHashSet<Type> DirectiveTypes { get; } = new ConcurrentHashSet<Type>();
+        public static ConcurrentHashSet<Type> ObjectTypes { get; } = new ConcurrentHashSet<Type>();
+        public static ConcurrentDictionary<Type, Type[]> RemoteNotificationHandlerTypes { get; } = new ConcurrentDictionary<Type, Type[]>();
+        public static ConcurrentHashSet<Type> RequestHandlerTypes { get; } = new ConcurrentHashSet<Type>();
     }
 
     public abstract class GeexEntryModule<T> : GeexModule<T> where T : GeexModule

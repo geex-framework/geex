@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+
 using JetBrains.Annotations;
+
 using MongoDB.Entities.Utilities;
 
 namespace Geex
@@ -31,31 +34,33 @@ namespace Geex
         IComparable<Enumeration<TEnum>>
         where TEnum : IEnumeration
     {
+        static List<Type>? enumTypes;
         public static List<TEnum> DynamicValues => GetAllOptions().ToList();
-        static readonly Lazy<Dictionary<string, TEnum>> _fromName =
-            new Lazy<Dictionary<string, TEnum>>(() => GetAllOptions().ToDictionary(item => item.Name));
+        public static ConcurrentDictionary<string, TEnum> ValueCacheDictionary { get; } = new ConcurrentDictionary<string, TEnum>();
+        static readonly Lazy<ConcurrentDictionary<string, TEnum>> _fromName =
+            new Lazy<ConcurrentDictionary<string, TEnum>>(() => new ConcurrentDictionary<string, TEnum>(GetAllOptions().ToDictionary(item => item.Name)));
 
-        static readonly Lazy<Dictionary<string, TEnum>> _fromNameIgnoreCase =
-            new Lazy<Dictionary<string, TEnum>>(() => GetAllOptions().ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase));
+        static readonly Lazy<ConcurrentDictionary<string, TEnum>> _fromNameIgnoreCase =
+            new Lazy<ConcurrentDictionary<string, TEnum>>(() => new ConcurrentDictionary<string, TEnum>(GetAllOptions().ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase)));
 
-        static readonly Lazy<Dictionary<string, TEnum>> _fromValue =
-            new Lazy<Dictionary<string, TEnum>>(() =>
+        static readonly Lazy<ConcurrentDictionary<string, TEnum>> _fromValue =
+            new Lazy<ConcurrentDictionary<string, TEnum>>(() =>
             {
                 // multiple enums with same value are allowed but store only one per value
-                var dictionary = new Dictionary<string, TEnum>();
+                var dictionary = ValueCacheDictionary;
                 foreach (var item in GetAllOptions())
                 {
                     if (!dictionary.ContainsKey(item.Value))
-                        dictionary.Add(item.Value, item);
+                        dictionary.TryAdd(item.Value, item);
                 }
                 return dictionary;
             });
 
         private static IEnumerable<TEnum> GetAllOptions()
         {
-            IEnumerable<Type> enumTypes = GeexModule.KnownModuleAssembly
+            enumTypes ??= GeexModule.KnownModuleAssembly
         .Distinct()
-        .SelectMany(x => x.DefinedTypes).Where(x => x.IsAssignableTo(typeof(TEnum)) && !x.IsAbstract).Concat(new[] { typeof(TEnum) }).Distinct();
+        .SelectMany(x => x.DefinedTypes).Where(x => x.IsAssignableTo(typeof(TEnum)) && !x.IsAbstract).Concat(new[] { typeof(TEnum) }).Distinct().ToList();
 
             List<TEnum> options = new List<TEnum>();
             foreach (Type enumType in enumTypes)
@@ -180,7 +185,7 @@ namespace Geex
             else
                 return FromName(_fromName.Value);
 
-            TEnum FromName(Dictionary<string, TEnum> dictionary)
+            TEnum FromName(ConcurrentDictionary<string, TEnum> dictionary)
             {
                 if (!dictionary.TryGetValue(name, out var result))
                 {

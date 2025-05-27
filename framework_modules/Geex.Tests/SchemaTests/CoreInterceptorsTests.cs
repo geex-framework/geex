@@ -19,19 +19,6 @@ namespace Geex.Tests.SchemaTests
 {
     public class CoreInterceptorsTests : IClassFixture<GeexWebApplicationFactory>
     {
-        public class TestMutation : MutationExtension<TestMutation>
-        {
-            /// <inheritdoc />
-            protected override void Configure(IObjectTypeDescriptor<TestMutation> descriptor)
-            {
-                base.Configure(descriptor);
-            }
-
-            public TestEntity DirectMutation(string arg1) => throw new NotImplementedException();
-            public Lazy<TestEntity> LazyMutation(string arg1) => throw new NotImplementedException();
-            public IQueryable<TestEntity> IQueryableMutation(string arg1) => throw new NotImplementedException();
-        }
-
         public class TestOneOfConfig
         {
             public string CommonField { get; set; }

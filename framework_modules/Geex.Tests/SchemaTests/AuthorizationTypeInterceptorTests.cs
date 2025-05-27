@@ -4,6 +4,7 @@ using Geex.Storage;
 using Geex.Tests.TestEntities;
 
 using HotChocolate;
+using HotChocolate.Authorization;
 using HotChocolate.Types;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -14,37 +15,6 @@ namespace Geex.Tests.SchemaTests
 {
     public class AuthorizationTypeInterceptorTests : IClassFixture<GeexWebApplicationFactory>
     {
-        public class TestAuthQuery : QueryExtension<TestAuthQuery>
-        {
-            /// <inheritdoc />
-            protected override void Configure(IObjectTypeDescriptor<TestAuthQuery> descriptor)
-            {
-                base.Configure(descriptor);
-            }
-
-            public TestEntity GetTestEntity(string id) => throw new NotImplementedException();
-        }
-
-        public class TestAuthMutation : MutationExtension<TestAuthMutation>
-        {
-            /// <inheritdoc />
-            protected override void Configure(IObjectTypeDescriptor<TestAuthMutation> descriptor)
-            {
-                base.Configure(descriptor);
-            }
-
-            public bool CreateTestEntity(TestEntity entity) => throw new NotImplementedException();
-        }
-
-        // Test aggregate entity
-        public class TestAggregateEntity : Entity<TestAggregateEntity>
-        {
-            public string Name { get; set; }
-            public string Description { get; set; }
-            public DateTime CreatedOn { get; set; }
-            public string TestField { get; set; }
-        }
-
         private readonly GeexWebApplicationFactory _factory;
 
         public AuthorizationTypeInterceptorTests(GeexWebApplicationFactory factory)
@@ -60,25 +30,24 @@ namespace Geex.Tests.SchemaTests
             var schema = service.GetService<ISchema>();
 
             // Get the schema type for our test aggregate entity
-            var aggregateType = schema.GetType<ObjectType>(nameof(TestAggregateEntity));
+            var aggregateType = schema.GetType<ObjectType>(nameof(AuthTestEntity));
             aggregateType.ShouldNotBeNull();
+            var entityName = typeof(AuthTestEntity).Name.ToCamelCase();
+
+            var queryType = schema.GetType<ObjectType>(nameof(Query));
+            TestPermissions.Query.Value.ShouldEndWith(queryType.Fields.First(x => x.Name == entityName).Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>().Policy);
+
+            var mutationType = schema.GetType<ObjectType>(nameof(Mutation));
+            TestPermissions.Create.Value.ShouldEndWith(mutationType.Fields.First(x => x.Name == nameof(TestAuthMutation.CreateAuthTestEntity).ToCamelCase()).Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>().Policy);
 
             // Check if permission-based field authorization is applied to fields
-            var moduleName = typeof(TestAggregateEntity).DomainName();
-            var entityName = typeof(TestAggregateEntity).Name.ToCamelCase();
-            var prefix = $"{moduleName}_query_{entityName}";
+            var authFields = aggregateType.Fields.Where(x => x.Directives.Any(y => y.Type.Name == "authorize")).ToList();
+            authFields.ShouldNotBeEmpty();
+            var authTestField = authFields.FirstOrDefault(x => x.Name == nameof(AuthTestEntity.AuthorizedField).ToCamelCase());
+            var authorizeDirective = authTestField.Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>();
+            TestPermissions.QueryAuthorizedField.Value.ShouldEndWith(authorizeDirective.Policy);
 
-            // Check if directives are applied for fields with matching permissions
-            foreach (var field in aggregateType.Fields)
-            {
-                var policy = $"{prefix}_{field.Name.ToCamelCase()}";
 
-                // If a permission with this name exists, it should have an authorize directive
-                if (AppPermission.List.Any(x => x.Value == policy))
-                {
-                    field.Directives.Any(d => d.Type.Name == "authorize").ShouldBeTrue();
-                }
-            }
         }
 
         [Fact]
@@ -89,7 +58,7 @@ namespace Geex.Tests.SchemaTests
             var schema = service.GetService<ISchema>();
 
             // Check mutation type
-            var mutationType = schema.GetType<ObjectType>("TestAuthMutation");
+            var mutationType = schema.GetType<ObjectType>(nameof(Mutation));
             if (mutationType != null)
             {
                 var operationPrefix = typeof(TestAuthMutation).DomainName().ToCamelCase() + "_mutation";
@@ -105,7 +74,7 @@ namespace Geex.Tests.SchemaTests
             }
 
             // Check query type
-            var queryType = schema.GetType<ObjectType>("TestAuthQuery");
+            var queryType = schema.GetType<ObjectType>(nameof(Query));
             if (queryType != null)
             {
                 var operationPrefix = typeof(TestAuthQuery).DomainName().ToCamelCase() + "_query";
@@ -129,7 +98,7 @@ namespace Geex.Tests.SchemaTests
             var schema = service.GetService<ISchema>();
 
             // Get test aggregate type
-            var aggregateType = schema.GetType<ObjectType>(nameof(TestAggregateEntity));
+            var aggregateType = schema.GetType<ObjectType>(nameof(AuthTestEntity));
             aggregateType.ShouldNotBeNull();
 
             // Common fields that should not get automatic authorization

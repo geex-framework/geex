@@ -90,13 +90,13 @@ m = (p.sub == ""*"" || g(r.sub, p.sub)) && (r.mod == p.mod) && (p.obj == ""*"" |
         /// <inheritdoc />
         public async Task<bool> EnforceAsync(string sub, AppPermission permission)
         {
-            return await this.EnforceAsync(sub, permission.Mod, permission.Act, permission.Obj, permission.Field);
+            return await this.EnforceAsync(sub, permission.Mod, permission.Obj, permission.Field, permission.Field);
         }
 
         /// <inheritdoc />
         public bool Enforce(string sub, AppPermission permission)
         {
-            return this.Enforce(sub, permission.Mod, permission.Act, permission.Obj, permission.Field);
+            return this.Enforce(sub, permission.Mod, permission.Obj, permission.Field, permission.Field);
         }
 
         public async Task SetRoles(string sub, List<string> roles)

@@ -14,18 +14,6 @@ namespace Geex.Tests.SchemaTests
 {
     public class AuditLogsTypeInterceptorTests : IClassFixture<GeexWebApplicationFactory>
     {
-        public class AuditLogMutation : MutationExtension<AuditLogMutation>
-        {
-            /// <inheritdoc />
-            protected override void Configure(IObjectTypeDescriptor<AuditLogMutation> descriptor)
-            {
-                descriptor.AuditFieldsImplicitly();
-                base.Configure(descriptor);
-            }
-
-            public bool AuditLogMutationField1(string arg1) => throw new NotImplementedException();
-        }
-
         private readonly GeexWebApplicationFactory _factory;
 
         public AuditLogsTypeInterceptorTests(GeexWebApplicationFactory factory)

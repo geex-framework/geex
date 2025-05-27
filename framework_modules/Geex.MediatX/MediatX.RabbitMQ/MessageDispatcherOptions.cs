@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text.Json;
 
@@ -93,7 +94,7 @@ namespace MediatX.RabbitMQ
         /// </summary>
         public JsonSerializerOptions SerializerSettings { get; set; }
 
-        public Dictionary<Type, Type[]> NotificationHandlerTypes { get; set; } = new Dictionary<Type, Type[]>();
+        public ConcurrentDictionary<Type, Type[]> NotificationHandlerTypes { get; set; } = new ConcurrentDictionary<Type, Type[]>();
 
         /// Represents the options for message dispatcher.
         /// /

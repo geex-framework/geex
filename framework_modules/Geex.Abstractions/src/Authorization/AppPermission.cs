@@ -8,16 +8,13 @@ namespace Geex
         {
             var split = value.Split('_');
             this.Mod = split[0];
-            this.Act = split[1];
-            this.Obj = split[2];
-            this.Field = split.ElementAtOrDefault(3) ?? "";
+            this.Obj = split[1];
+            this.Field = split[2];
         }
 
         public string Field { get; set; }
 
         public string Obj { get; set; }
-
-        public string Act { get; set; }
 
         public string Mod { get; set; }
     }

@@ -53,7 +53,7 @@ namespace Geex.Extensions.BlobStorage.Aggregates.BlobObjects
             this.Md5 = request.Md5;
             this.StorageType = request.StorageType;
             // 保存到存储
-            this.StreamToStorage(readStream).ConfigureAwait(true).GetAwaiter().GetResult();
+            this.StreamToStorage(readStream).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
 

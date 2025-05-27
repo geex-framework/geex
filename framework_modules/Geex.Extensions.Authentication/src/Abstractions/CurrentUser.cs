@@ -40,7 +40,7 @@ namespace Geex.Abstractions.Authentication
                 if (!_userId.IsNullOrEmpty())
                 {
                     var user = _uow.Query<IAuthUser>().FirstOrDefault(x => x.Id == _userId);
-                    var claimsPrincipal = _uow.ServiceProvider.GetService<IUserClaimsPrincipalFactory<IAuthUser>>().CreateAsync(user).ConfigureAwait(true).GetAwaiter().GetResult();
+                    var claimsPrincipal = _uow.ServiceProvider.GetService<IUserClaimsPrincipalFactory<IAuthUser>>().CreateAsync(user).ConfigureAwait(false).GetAwaiter().GetResult();
                     _claimsIdentity = claimsPrincipal.Identity as ClaimsIdentity;
                 }
                 else
