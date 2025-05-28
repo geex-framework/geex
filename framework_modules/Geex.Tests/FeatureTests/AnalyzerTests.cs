@@ -1,6 +1,6 @@
 using System.Reflection;
 using Geex.Common;
-using Geex.Tests.TestEntities;
+using Geex.Tests.FeatureTests;
 using HotChocolate.Types;
 
 using MediatR;
@@ -10,11 +10,12 @@ using Shouldly;
 
 namespace Geex.Tests
 {
-    public class AnalyzerTests : IClassFixture<GeexWebApplicationFactory>
+    [Collection(nameof(FeatureTestsCollection))]
+    public class AnalyzerTests
     {
-        private readonly GeexWebApplicationFactory _factory;
+        private readonly FeatureTestApplicationFactory _factory;
 
-        public AnalyzerTests(GeexWebApplicationFactory factory)
+        public AnalyzerTests(FeatureTestApplicationFactory factory)
         {
             _factory = factory;
         }

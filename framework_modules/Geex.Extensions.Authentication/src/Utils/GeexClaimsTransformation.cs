@@ -66,7 +66,7 @@ namespace Geex.Extensions.Authentication.Utils
                 claimsIdentity.AppendClaims(claimsPrincipal.Claims);
             }
 
-            var tokenDescriptor = new GeexSecurityTokenDescriptor(user, LoginProviderEnum.Local, _options, claimsIdentity.Claims);
+            var tokenDescriptor = new GeexSecurityTokenDescriptor(userId, LoginProviderEnum.Local, _options, claimsIdentity.Claims);
             // 设置用户session, 缓存数据10分钟, 避免大量的组织架构和权限查询
             await this._redis.SetNamedAsync(new UserSessionCache { userId = userId, token = _tokenHandler.CreateEncodedJwt(tokenDescriptor) }, expireIn: TimeSpan.FromMinutes(10));
             principal.AddIdentity(claimsIdentity);

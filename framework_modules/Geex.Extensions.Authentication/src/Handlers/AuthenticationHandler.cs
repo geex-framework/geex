@@ -50,7 +50,7 @@ namespace Geex.Extensions.Authentication.Handlers
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "用户未激活无法登陆, 如有疑问, 请联系管理员.");
             }
 
-            return UserToken.New(user, LoginProviderEnum.Local, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user, LoginProviderEnum.Local, _userTokenGenerateOptions)));
+            return UserToken.New(user, LoginProviderEnum.Local, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
         }
 
         /// <inheritdoc />
@@ -61,7 +61,7 @@ namespace Geex.Extensions.Authentication.Handlers
                 var userQuery = _uow.Query<IAuthUser>();
                 var sub = _tokenHandler.ReadJwtToken(request.Code).Subject;
                 var user = userQuery.MatchUserIdentifier(sub);
-                var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user, LoginProviderEnum.Local, _userTokenGenerateOptions)));
+                var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
                 return token;
             }
             else
@@ -72,7 +72,7 @@ namespace Geex.Extensions.Authentication.Handlers
                     throw new BusinessException(GeexExceptionType.NotFound, message: "不存在的登陆提供方.");
                 }
                 var user = await externalLoginProvider.ExternalLogin(request.Code);
-                var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user, LoginProviderEnum.Local, _userTokenGenerateOptions)));
+                var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, request.LoginProvider, _userTokenGenerateOptions)));
                 return token;
             }
 

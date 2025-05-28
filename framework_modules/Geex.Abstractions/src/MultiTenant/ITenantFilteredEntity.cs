@@ -17,7 +17,7 @@ namespace Geex.MultiTenant
 
         void IAttachIntercepted.InterceptOnAttached()
         {
-            (this as ITenantFilteredEntity).SetTenant(this.DbContext.ServiceProvider.GetService<LazyService<ICurrentTenant>>().Value?.Code);
+            (this as ITenantFilteredEntity).SetTenant(this.DbContext.ServiceProvider.GetService<ICurrentTenant>()?.Code);
         }
 
         /// <summary>

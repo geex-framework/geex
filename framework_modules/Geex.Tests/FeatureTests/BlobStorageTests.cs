@@ -1,21 +1,20 @@
+using Geex.Extensions.BlobStorage;
 using Geex.Extensions.BlobStorage.Requests;
+
 using HotChocolate.Types;
 
-using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 using Shouldly;
-using Geex.Abstractions;
-using Geex.Extensions.BlobStorage;
 
-
-namespace Geex.Tests
+namespace Geex.Tests.FeatureTests
 {
-    public class BlobStorageTests : IClassFixture<GeexWebApplicationFactory>
+    [Collection(nameof(FeatureTestsCollection))]
+    public class BlobStorageTests
     {
-        private readonly GeexWebApplicationFactory _factory;
+        private readonly FeatureTestApplicationFactory _factory;
 
-        public BlobStorageTests(GeexWebApplicationFactory factory)
+        public BlobStorageTests(FeatureTestApplicationFactory factory)
         {
             _factory = factory;
         }

@@ -6,7 +6,7 @@ namespace Geex.Extensions.Settings
 {
     public class SettingsPermission : AppPermission<SettingsPermission>
     {
-        public SettingsPermission([NotNull] string value) : base($"{typeof(SettingsPermission).DomainName()}_{value}")
+        public SettingsPermission([NotNull] string value) : base($"settings_{value}")
         {
         }
         // 取消setting的权限控制, 只限制登录即可

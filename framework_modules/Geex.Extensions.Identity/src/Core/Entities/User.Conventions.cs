@@ -1,5 +1,6 @@
 using Geex.Abstractions;
 using Geex.Entities;
+using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
@@ -12,6 +13,7 @@ public partial class User
     {
         protected override void Map(BsonClassMap<User> map, BsonIndexConfig<User> indexConfig)
         {
+            map.Inherit<IAuthUser>();
             map.Inherit<IUser>();
             map.SetIsRootClass(true);
             map.AutoMap();

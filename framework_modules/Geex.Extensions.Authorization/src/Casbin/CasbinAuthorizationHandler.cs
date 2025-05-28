@@ -33,8 +33,8 @@ namespace Geex.Extensions.Authorization.Casbin
         protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, CasbinRequirement requirement,
             IMiddlewareContext resource)
         {
-            var mod = requirement.Mod ?? "*"; // the module.
-            var act = requirement.Act ?? "*"; // the operation that the user performs on the resource.
+            var mod = "*"; // the module.
+            var act = "*"; // the operation that the user performs on the resource.
             var obj = requirement.Obj ?? "*"; // the resource that is going to be accessed.
             var fields = requirement.Field ?? "*"; // the fields that the user is going to retrieve from the resource.
             var sub = context.User.FindUserId();

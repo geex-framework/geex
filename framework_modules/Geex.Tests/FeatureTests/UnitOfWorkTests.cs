@@ -1,5 +1,4 @@
-using Geex.Abstractions;
-using Geex.Tests.TestEntities;
+using Geex.Tests.FeatureTests.TestEntities;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,13 +8,14 @@ using MongoDB.Entities;
 
 using Shouldly;
 
-namespace Geex.Tests
+namespace Geex.Tests.FeatureTests
 {
-    public class UnitOfWorkTests : IClassFixture<GeexWebApplicationFactory>
+    [Collection(nameof(FeatureTestsCollection))]
+    public class UnitOfWorkTests
     {
-        private readonly GeexWebApplicationFactory _factory;
+        private readonly FeatureTestApplicationFactory _factory;
 
-        public UnitOfWorkTests(GeexWebApplicationFactory factory)
+        public UnitOfWorkTests(FeatureTestApplicationFactory factory)
         {
             _factory = factory;
         }
@@ -66,6 +66,7 @@ namespace Geex.Tests
             var service = _factory.Services;
             var scopedProvider1 = service.CreateScope().ServiceProvider;
             var scopedProvider2 = service.CreateScope().ServiceProvider;
+            await DB.DefaultDb.DropCollectionAsync(nameof(TestEntity));
             var uow1 = scopedProvider1.GetService<IUnitOfWork>();
             var uow2 = scopedProvider2.GetService<IUnitOfWork>();
 
@@ -99,6 +100,7 @@ namespace Geex.Tests
             service.CreateScope().ServiceProvider.GetService<IRepository>().Query<TestEntity>().Count().ShouldBe(2);
             // Assert
             uow1.GetHashCode().ShouldNotBeSameAs(uow2.GetHashCode());
+            await DB.DefaultDb.DropCollectionAsync(nameof(TestEntity));
         }
     }
 }

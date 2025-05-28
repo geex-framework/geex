@@ -53,9 +53,7 @@ namespace MongoDB.Bson.Serialization
 
         public static void Inherit<T>(this BsonClassMap bsonClassMap)
         {
-            //var parentType = typeof(T);
-            //bsonClassMap.Inherit(parentType);
-            bsonClassMap.MapInheritance();
+            bsonClassMap.MapInheritance<T>();
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Geex.Extensions.Authentication.Utils
 {
     public class GeexSecurityTokenDescriptor : SecurityTokenDescriptor, IHasId
     {
-        public GeexSecurityTokenDescriptor(IAuthUser user, LoginProviderEnum provider, UserTokenGenerateOptions options, IEnumerable<Claim> customClaims = default)
+        public GeexSecurityTokenDescriptor(string sub, LoginProviderEnum provider, UserTokenGenerateOptions options, IEnumerable<Claim> customClaims = default)
         {
             if (options.Issuer != null) Issuer = options.Issuer;
             if (options.SigningCredentials != null) this.SigningCredentials = options.SigningCredentials;
@@ -27,7 +27,7 @@ namespace Geex.Extensions.Authentication.Utils
             IssuedAt = DateTime.Now;
             Subject = new ClaimsIdentity(new Claim[]
             {
-                new GeexClaim(GeexClaimType.Sub, user.Id),
+                new GeexClaim(GeexClaimType.Sub, sub),
                 new GeexClaim(GeexClaimType.Provider, provider),
             });
             if (customClaims?.Any() == true)

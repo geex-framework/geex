@@ -31,7 +31,7 @@ public class TestModule : GeexEntryModule<TestModule>
     {
         var builder = this.SchemaBuilder;
         context.Services.AddSingleton<IRequestExecutorBuilder>((sp) => builder);
-        context.Services.AddSingleton<ISchema>((sp) => builder.BuildSchemaAsync().Result);
+        context.Services.AddSingleton<ISchema>((sp) => builder.BuildSchemaAsync().GetAwaiter().GetResult());
         base.ConfigureServices(context);
     }
 }

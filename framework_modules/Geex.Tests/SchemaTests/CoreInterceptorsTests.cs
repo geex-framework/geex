@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 using Geex.Gql;
 using Geex.Gql.Types;
+using Geex.Tests.FeatureTests;
 using Geex.Tests.SchemaTests.TestEntities;
+
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -46,9 +48,9 @@ namespace Geex.Tests.SchemaTests
             public string Type2Field { get; set; }
         }
 
-        private readonly GeexWebApplicationFactory _factory;
+        private readonly SchemaTestApplicationFactory _factory;
 
-        public CoreInterceptorsTests(GeexWebApplicationFactory factory)
+        public CoreInterceptorsTests(SchemaTestApplicationFactory factory)
         {
             _factory = factory;
         }

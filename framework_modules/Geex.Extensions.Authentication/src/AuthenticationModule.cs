@@ -246,6 +246,9 @@ namespace Geex.Extensions.Authentication
 
                 authenticationBuilder
                     .AddScheme<JwtBearerOptions, LocalAuthHandler>("Bearer", "Bearer", ConfigJwtBearerOptions)
+                    .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>("SuperAdmin", "SuperAdmin", x =>
+                    {
+                    })
                     .AddCookie();
                 services.AddSingleton(new UserTokenGenerateOptions(cert?.Issuer, moduleOptions.ValidAudience, signCredentials, TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds)));
 

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Entities;
 using Geex.Events;
+using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Requests;
 using Geex.Storage;
@@ -14,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Geex.Extensions.Identity.Core.Entities
 {
-    public partial class User : Entity<User>, IUser
+    public partial class User : Entity<User>, IUser, IAuthUser
     {
         [JsonConstructor]
         protected User()

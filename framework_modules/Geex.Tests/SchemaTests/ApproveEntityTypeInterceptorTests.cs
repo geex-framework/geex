@@ -2,9 +2,8 @@ using Geex.ApprovalFlows;
 using Geex.Extensions.ApprovalFlows;
 using Geex.Gql;
 using Geex.Gql.Types;
+using Geex.Tests.FeatureTests;
 using Geex.Tests.SchemaTests.TestEntities;
-using Geex.Tests.TestEntities;
-
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -27,9 +26,9 @@ namespace Geex.Tests.SchemaTests
     [Collection(nameof(SchemaTestsCollection))]
     public class ApproveEntityTypeInterceptorTests
     {
-        private readonly GeexWebApplicationFactory _factory;
+        private readonly SchemaTestApplicationFactory _factory;
 
-        public ApproveEntityTypeInterceptorTests(GeexWebApplicationFactory factory)
+        public ApproveEntityTypeInterceptorTests(SchemaTestApplicationFactory factory)
         {
             _factory = factory;
         }

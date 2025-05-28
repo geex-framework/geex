@@ -1,8 +1,7 @@
 ﻿using Geex.ApprovalFlows;
 using Geex.Extensions.AuditLogs;
 using Geex.Gql.Types;
-using Geex.Tests.TestEntities;
-
+using Geex.Tests.FeatureTests;
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -28,9 +27,9 @@ namespace Geex.Tests.SchemaTests
     {
 
 
-        private readonly GeexWebApplicationFactory _factory;
+        private readonly SchemaTestApplicationFactory _factory;
 
-        public AuditLogsTypeInterceptorTests(GeexWebApplicationFactory factory)
+        public AuditLogsTypeInterceptorTests(SchemaTestApplicationFactory factory)
         {
             _factory = factory;
         }

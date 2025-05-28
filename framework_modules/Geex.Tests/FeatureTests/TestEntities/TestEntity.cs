@@ -1,8 +1,6 @@
-﻿using MongoDB.Entities;
-using Geex.Abstractions;
-using Geex.Storage;
+﻿using Geex.Storage;
 
-namespace Geex.Tests.TestEntities
+namespace Geex.Tests.FeatureTests.TestEntities
 {
     public class TestEntity : Entity<TestEntity>, ITestEntity
     {

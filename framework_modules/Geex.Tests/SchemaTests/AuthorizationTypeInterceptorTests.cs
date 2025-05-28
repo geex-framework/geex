@@ -1,9 +1,8 @@
 using Geex.Gql;
 using Geex.Gql.Types;
 using Geex.Storage;
+using Geex.Tests.FeatureTests;
 using Geex.Tests.SchemaTests.TestEntities;
-using Geex.Tests.TestEntities;
-
 using HotChocolate;
 using HotChocolate.Authorization;
 using HotChocolate.Types;
@@ -37,9 +36,9 @@ namespace Geex.Tests.SchemaTests
     [Collection(nameof(SchemaTestsCollection))]
     public class AuthorizationTypeInterceptorTests
     {
-        private readonly GeexWebApplicationFactory _factory;
+        private readonly SchemaTestApplicationFactory _factory;
 
-        public AuthorizationTypeInterceptorTests(GeexWebApplicationFactory factory)
+        public AuthorizationTypeInterceptorTests(SchemaTestApplicationFactory factory)
         {
             _factory = factory;
         }

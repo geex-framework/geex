@@ -1,31 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
+﻿using Shouldly;
 
-using Geex.Common;
-using Geex.Extensions.Settings;
-using Geex.Tests.TestEntities;
-
-using HotChocolate;
-using HotChocolate.Execution;
-using HotChocolate.Execution.Configuration;
-using HotChocolate.Types;
-
-using Microsoft.Extensions.DependencyInjection;
-
-using Shouldly;
-
-namespace Geex.Tests
+namespace Geex.Tests.FeatureTests
 {
-    public class SettingsTests : IClassFixture<GeexWebApplicationFactory>
+    [Collection(nameof(FeatureTestsCollection))]
+    public class SettingsTests
     {
-        private readonly GeexWebApplicationFactory _factory;
+        private readonly FeatureTestApplicationFactory _factory;
 
-        public SettingsTests(GeexWebApplicationFactory factory)
+        public SettingsTests(FeatureTestApplicationFactory factory)
         {
             _factory = factory;
         }
