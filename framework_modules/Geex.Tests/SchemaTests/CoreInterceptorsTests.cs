@@ -17,7 +17,20 @@ using Shouldly;
 
 namespace Geex.Tests.SchemaTests
 {
-    public class CoreInterceptorsTests : IClassFixture<GeexWebApplicationFactory>
+    public class CoreTestMutation : MutationExtension<CoreTestMutation>
+    {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<CoreTestMutation> descriptor)
+        {
+            base.Configure(descriptor);
+        }
+
+        public TestEntity CoreTestDirectMutation(string arg1) => throw new NotImplementedException();
+        public Lazy<TestEntity> CoreTestLazyMutation(string arg1) => throw new NotImplementedException();
+        public IQueryable<TestEntity> CoreTestIQueryableMutation(string arg1) => throw new NotImplementedException();
+    }
+    [Collection(nameof(SchemaTestsCollection))]
+    public class CoreInterceptorsTests
     {
         public class TestOneOfConfig
         {
@@ -49,7 +62,7 @@ namespace Geex.Tests.SchemaTests
             var schema = service.GetService<ISchema>();
 
             // Act & Assert
-            schema.MutationType.Fields.TryGetField("lazyMutation", out var lazyField).ShouldBeTrue();
+            schema.MutationType.Fields.TryGetField(nameof(CoreTestMutation.CoreTestLazyMutation).ToCamelCase(), out var lazyField).ShouldBeTrue();
             lazyField.ShouldNotBeNull();
             lazyField.Type.NamedType().Name.ShouldBe($"LazyOf{nameof(TestEntity)}");
 
@@ -65,7 +78,7 @@ namespace Geex.Tests.SchemaTests
             var schema = service.GetService<ISchema>();
 
             // Act & Assert
-            schema.MutationType.Fields.TryGetField("iQueryableMutation", out var queryableField).ShouldBeTrue();
+            schema.MutationType.Fields.TryGetField(nameof(CoreTestMutation.CoreTestIQueryableMutation).ToCamelCase(), out var queryableField).ShouldBeTrue();
             queryableField.ShouldNotBeNull();
             (queryableField.Type as NonNullType).Type.ShouldBeOfType<ListType>();
             (((queryableField.Type as NonNullType).Type as ListType).ElementType as NonNullType).Type.TypeName().ShouldBe(nameof(TestEntity));

@@ -51,4 +51,7 @@
         <ProjectReference Include="..\Geex.Extensions.Settings\src\Geex.Extensions.Settings.csproj" />
         <ProjectReference Include="..\Geex.Common\src\Geex.Common.csproj" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="TestGqls\" />
+    </ItemGroup>
 </Project>

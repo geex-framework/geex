@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Geex.ApprovalFlows;
-using Geex.Extensions.ApprovalFlows;
+﻿using Geex.ApprovalFlows;
 using Geex.Storage;
 
-namespace Geex.Tests.TestEntities
+namespace Geex.Tests.SchemaTests.TestEntities
 {
     public class ApproveEntity : Entity<ApproveEntity>, IApproveEntity
     {

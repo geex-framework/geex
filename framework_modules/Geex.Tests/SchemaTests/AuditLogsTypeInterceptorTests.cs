@@ -12,8 +12,22 @@ using Shouldly;
 
 namespace Geex.Tests.SchemaTests
 {
-    public class AuditLogsTypeInterceptorTests : IClassFixture<GeexWebApplicationFactory>
+    public class AuditLogTestMutation : MutationExtension<AuditLogTestMutation>
     {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<AuditLogTestMutation> descriptor)
+        {
+            descriptor.AuditFieldsImplicitly();
+            base.Configure(descriptor);
+        }
+
+        public bool AuditLogTestMutationField(string arg1) => throw new NotImplementedException();
+    }
+    [Collection(nameof(SchemaTestsCollection))]
+    public class AuditLogsTypeInterceptorTests
+    {
+
+
         private readonly GeexWebApplicationFactory _factory;
 
         public AuditLogsTypeInterceptorTests(GeexWebApplicationFactory factory)
@@ -27,7 +41,7 @@ namespace Geex.Tests.SchemaTests
             // Arrange
             var service = _factory.Services;
             var schema = service.GetService<ISchema>();
-            schema.MutationType.Fields.TryGetField("auditLogMutationField1", out var field1).ShouldBeTrue();
+            schema.MutationType.Fields.TryGetField(nameof(AuditLogTestMutation.AuditLogTestMutationField).ToCamelCase(), out var field1).ShouldBeTrue();
             field1.Directives.Any(x => x.Type.RuntimeType == typeof(AuditDirectiveType)).ShouldBeTrue();
         }
 

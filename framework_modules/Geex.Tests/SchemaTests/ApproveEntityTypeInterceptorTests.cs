@@ -2,6 +2,7 @@ using Geex.ApprovalFlows;
 using Geex.Extensions.ApprovalFlows;
 using Geex.Gql;
 using Geex.Gql.Types;
+using Geex.Tests.SchemaTests.TestEntities;
 using Geex.Tests.TestEntities;
 
 using HotChocolate;
@@ -13,7 +14,18 @@ using Shouldly;
 
 namespace Geex.Tests.SchemaTests
 {
-    public class ApproveEntityTypeInterceptorTests : IClassFixture<GeexWebApplicationFactory>
+    public class ApproveEntityMutation : MutationExtension<ApproveEntityMutation>, IHasApproveMutation<ApproveEntity>
+    {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<ApproveEntityMutation> descriptor)
+        {
+            base.Configure(descriptor);
+        }
+        public ApproveEntity ApproveEntityTestMutationField(string arg1) => throw new NotImplementedException();
+
+    }
+    [Collection(nameof(SchemaTestsCollection))]
+    public class ApproveEntityTypeInterceptorTests
     {
         private readonly GeexWebApplicationFactory _factory;
 
@@ -89,7 +101,7 @@ namespace Geex.Tests.SchemaTests
             schema.MutationType.Fields.TryGetField($"approve{approveEntityName}", out var approveField).ShouldBeTrue();
 
             // Verify audit directives are added when the type is in GeexTypeInterceptor.AuditTypes
-            if (GeexTypeInterceptor.AuditTypes.Contains(typeof(ApproveMutation)))
+            if (GeexTypeInterceptor.AuditTypes.Contains(typeof(ApproveEntityMutation)))
             {
                 submitField.Directives.Any(x => x.Type.Name == "audit").ShouldBeTrue();
                 approveField.Directives.Any(x => x.Type.Name == "audit").ShouldBeTrue();

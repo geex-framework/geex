@@ -1,6 +1,7 @@
 using Geex.Gql;
 using Geex.Gql.Types;
 using Geex.Storage;
+using Geex.Tests.SchemaTests.TestEntities;
 using Geex.Tests.TestEntities;
 
 using HotChocolate;
@@ -13,7 +14,28 @@ using Shouldly;
 
 namespace Geex.Tests.SchemaTests
 {
-    public class AuthorizationTypeInterceptorTests : IClassFixture<GeexWebApplicationFactory>
+    public class AuthTestQuery : QueryExtension<AuthTestQuery>
+    {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<AuthTestQuery> descriptor)
+        {
+            base.Configure(descriptor);
+        }
+
+        public AuthTestEntity AuthTestQueryField(string id) => throw new NotImplementedException();
+    }
+    public class AuthTestMutation : MutationExtension<AuthTestMutation>
+    {
+        /// <inheritdoc />
+        protected override void Configure(IObjectTypeDescriptor<AuthTestMutation> descriptor)
+        {
+            base.Configure(descriptor);
+        }
+
+        public bool AuthTestMutationField(string name) => throw new NotImplementedException();
+    }
+    [Collection(nameof(SchemaTestsCollection))]
+    public class AuthorizationTypeInterceptorTests
     {
         private readonly GeexWebApplicationFactory _factory;
 
@@ -35,17 +57,17 @@ namespace Geex.Tests.SchemaTests
             var entityName = typeof(AuthTestEntity).Name.ToCamelCase();
 
             var queryType = schema.GetType<ObjectType>(nameof(Query));
-            TestPermissions.Query.Value.ShouldEndWith(queryType.Fields.First(x => x.Name == entityName).Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>().Policy);
+            TestPermissions.AuthTestQueryField.Value.ShouldEndWith(queryType.Fields.First(x => x.Name == nameof(AuthTestQuery.AuthTestQueryField).ToCamelCase()).Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>().Policy);
 
             var mutationType = schema.GetType<ObjectType>(nameof(Mutation));
-            TestPermissions.Create.Value.ShouldEndWith(mutationType.Fields.First(x => x.Name == nameof(TestAuthMutation.CreateAuthTestEntity).ToCamelCase()).Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>().Policy);
+            TestPermissions.AuthTestMutationField.Value.ShouldEndWith(mutationType.Fields.First(x => x.Name == nameof(AuthTestMutation.AuthTestMutationField).ToCamelCase()).Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>().Policy);
 
             // Check if permission-based field authorization is applied to fields
             var authFields = aggregateType.Fields.Where(x => x.Directives.Any(y => y.Type.Name == "authorize")).ToList();
             authFields.ShouldNotBeEmpty();
             var authTestField = authFields.FirstOrDefault(x => x.Name == nameof(AuthTestEntity.AuthorizedField).ToCamelCase());
             var authorizeDirective = authTestField.Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>();
-            TestPermissions.QueryAuthorizedField.Value.ShouldEndWith(authorizeDirective.Policy);
+            TestPermissions.AuthTestEntityAuthorizedField.Value.ShouldEndWith(authorizeDirective.Policy);
 
 
         }
@@ -61,7 +83,7 @@ namespace Geex.Tests.SchemaTests
             var mutationType = schema.GetType<ObjectType>(nameof(Mutation));
             if (mutationType != null)
             {
-                var operationPrefix = typeof(TestAuthMutation).DomainName().ToCamelCase() + "_mutation";
+                var operationPrefix = typeof(AuthTestMutation).DomainName().ToCamelCase() + "_mutation";
 
                 foreach (var field in mutationType.Fields)
                 {
@@ -77,7 +99,7 @@ namespace Geex.Tests.SchemaTests
             var queryType = schema.GetType<ObjectType>(nameof(Query));
             if (queryType != null)
             {
-                var operationPrefix = typeof(TestAuthQuery).DomainName().ToCamelCase() + "_query";
+                var operationPrefix = typeof(AuthTestQuery).DomainName().ToCamelCase() + "_query";
 
                 foreach (var field in queryType.Fields)
                 {
