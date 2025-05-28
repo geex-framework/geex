@@ -1,21 +1,11 @@
-using System.Reflection;
-using Geex.Common;
-using Geex.Tests.FeatureTests;
-using HotChocolate.Types;
-
-using MediatR;
-using Microsoft.Extensions.DependencyInjection;
-
-using Shouldly;
-
-namespace Geex.Tests
+namespace Geex.Tests.FeatureTests
 {
-    [Collection(nameof(FeatureTestsCollection))]
+    [Collection(nameof(TestsCollection))]
     public class AnalyzerTests
     {
-        private readonly FeatureTestApplicationFactory _factory;
+        private readonly TestApplicationFactory _factory;
 
-        public AnalyzerTests(FeatureTestApplicationFactory factory)
+        public AnalyzerTests(TestApplicationFactory factory)
         {
             _factory = factory;
         }

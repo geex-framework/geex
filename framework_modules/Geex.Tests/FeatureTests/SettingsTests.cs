@@ -2,12 +2,12 @@
 
 namespace Geex.Tests.FeatureTests
 {
-    [Collection(nameof(FeatureTestsCollection))]
+    [Collection(nameof(TestsCollection))]
     public class SettingsTests
     {
-        private readonly FeatureTestApplicationFactory _factory;
+        private readonly TestApplicationFactory _factory;
 
-        public SettingsTests(FeatureTestApplicationFactory factory)
+        public SettingsTests(TestApplicationFactory factory)
         {
             _factory = factory;
         }

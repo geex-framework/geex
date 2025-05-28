@@ -22,14 +22,14 @@ namespace Geex.Tests.SchemaTests
 
         public bool AuditLogTestMutationField(string arg1) => throw new NotImplementedException();
     }
-    [Collection(nameof(SchemaTestsCollection))]
+    [Collection(nameof(TestsCollection))]
     public class AuditLogsTypeInterceptorTests
     {
 
 
-        private readonly SchemaTestApplicationFactory _factory;
+        private readonly TestApplicationFactory _factory;
 
-        public AuditLogsTypeInterceptorTests(SchemaTestApplicationFactory factory)
+        public AuditLogsTypeInterceptorTests(TestApplicationFactory factory)
         {
             _factory = factory;
         }

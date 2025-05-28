@@ -1,18 +1,24 @@
 ﻿using Autofac.Extensions.DependencyInjection;
-
 using Geex.Extensions.Authentication.Utils;
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-
 using Volo.Abp.DependencyInjection;
 
-namespace Geex.Tests.SchemaTests;
+namespace Geex.Tests;
 
-public class SchemaTestApplicationFactory : WebApplicationFactory<Program>
+public class TestApplicationFactory : WebApplicationFactory<Program>
 {
+    /// <inheritdoc />
+    protected override void ConfigureClient(HttpClient client)
+    {
+        _ = this.Services.GetService<SuperAdminAuthHandler>();
+        var token = SuperAdminAuthHandler.AdminToken;
+        client.DefaultRequestHeaders.Add("Authorization", $"SuperAdmin {token}");
+        base.ConfigureClient(client);
+    }
+
     protected override IHostBuilder CreateHostBuilder()
     {
         return Program.CreateHostBuilder();

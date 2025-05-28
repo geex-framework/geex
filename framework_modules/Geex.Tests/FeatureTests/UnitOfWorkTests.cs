@@ -10,12 +10,12 @@ using Shouldly;
 
 namespace Geex.Tests.FeatureTests
 {
-    [Collection(nameof(FeatureTestsCollection))]
+    [Collection(nameof(TestsCollection))]
     public class UnitOfWorkTests
     {
-        private readonly FeatureTestApplicationFactory _factory;
+        private readonly TestApplicationFactory _factory;
 
-        public UnitOfWorkTests(FeatureTestApplicationFactory factory)
+        public UnitOfWorkTests(TestApplicationFactory factory)
         {
             _factory = factory;
         }

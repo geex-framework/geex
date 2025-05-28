@@ -23,12 +23,12 @@ namespace Geex.Tests.SchemaTests
         public ApproveEntity ApproveEntityTestMutationField(string arg1) => throw new NotImplementedException();
 
     }
-    [Collection(nameof(SchemaTestsCollection))]
+    [Collection(nameof(TestsCollection))]
     public class ApproveEntityTypeInterceptorTests
     {
-        private readonly SchemaTestApplicationFactory _factory;
+        private readonly TestApplicationFactory _factory;
 
-        public ApproveEntityTypeInterceptorTests(SchemaTestApplicationFactory factory)
+        public ApproveEntityTypeInterceptorTests(TestApplicationFactory factory)
         {
             _factory = factory;
         }

@@ -33,12 +33,12 @@ namespace Geex.Tests.SchemaTests
 
         public bool AuthTestMutationField(string name) => throw new NotImplementedException();
     }
-    [Collection(nameof(SchemaTestsCollection))]
+    [Collection(nameof(TestsCollection))]
     public class AuthorizationTypeInterceptorTests
     {
-        private readonly SchemaTestApplicationFactory _factory;
+        private readonly TestApplicationFactory _factory;
 
-        public AuthorizationTypeInterceptorTests(SchemaTestApplicationFactory factory)
+        public AuthorizationTypeInterceptorTests(TestApplicationFactory factory)
         {
             _factory = factory;
         }

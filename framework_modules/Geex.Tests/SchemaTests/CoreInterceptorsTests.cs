@@ -30,7 +30,7 @@ namespace Geex.Tests.SchemaTests
         public Lazy<TestEntity> CoreTestLazyMutation(string arg1) => throw new NotImplementedException();
         public IQueryable<TestEntity> CoreTestIQueryableMutation(string arg1) => throw new NotImplementedException();
     }
-    [Collection(nameof(SchemaTestsCollection))]
+    [Collection(nameof(TestsCollection))]
     public class CoreInterceptorsTests
     {
         public class TestOneOfConfig
@@ -48,9 +48,9 @@ namespace Geex.Tests.SchemaTests
             public string Type2Field { get; set; }
         }
 
-        private readonly SchemaTestApplicationFactory _factory;
+        private readonly TestApplicationFactory _factory;
 
-        public CoreInterceptorsTests(SchemaTestApplicationFactory factory)
+        public CoreInterceptorsTests(TestApplicationFactory factory)
         {
             _factory = factory;
         }
