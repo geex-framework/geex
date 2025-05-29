@@ -1,7 +1,7 @@
 <!--EXTERNAL_PROPERTIES: TargetFramework-->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <NoWarn>$(NoWarn);CS1591;CS0618</NoWarn>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -20,8 +20,8 @@
     <None Remove="Casbin.csproj.DotSettings" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="DynamicExpresso.Core" Version="2.4.1" />
     <PackageReference Include="DotNet.Glob" Version="3.1.3" />
+    <PackageReference Include="DynamicExpresso.Core" Version="2.19.2" />
     <PackageReference Include="System.Memory" Version="4.6.3" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
     <PackageReference Include="Microsoft.SourceLink.Github" Version="8.0.0" PrivateAssets="All" />

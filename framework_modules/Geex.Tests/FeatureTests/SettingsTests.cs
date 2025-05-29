@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 using Newtonsoft.Json;
@@ -192,7 +192,7 @@ namespace Geex.Tests.FeatureTests
             // Arrange
             var client = _factory.CreateClient();
             string testSettingName = "BlobStorageModuleName";
-            string testValue = Guid.NewGuid().ToString();            // 1. 编辑设置
+            string testValue = ObjectId.GenerateNewId().ToString();            // 1. 编辑设置
             var editRequest = new
             {
                 operationName = "editSetting",
@@ -267,7 +267,7 @@ namespace Geex.Tests.FeatureTests
             // Arrange
             var client = _factory.CreateClient();
             string testSettingName = "BlobStorageModuleName";
-            string globalValue = "GlobalValue_" + Guid.NewGuid().ToString();            // 1. 编辑全局设置
+            string globalValue = "GlobalValue_" + ObjectId.GenerateNewId();            // 1. 编辑全局设置
             var editGlobalRequest = new
             {
                 operationName = "editSetting",
