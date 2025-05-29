@@ -8,7 +8,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
-        <ProjectReference Include="..\..\Geex.Analyzer\src\Geex.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <PackageReference Include="Geex.Analyzer" Version="8.1.0.4" />
         <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
         <PackageReference Include="OpenIddict.MongoDb" Version="5.8.0" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />

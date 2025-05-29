@@ -11,7 +11,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="DeepCloner" Version="0.10.3" />
-        <PackageReference Include="FastExpressionCompiler" Version="3.3.4" />
+        <PackageReference Include="FastExpressionCompiler" Version="5.2.0" />
         <PackageReference Include="LinqToAnything" Version="2.1.28" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.5" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />

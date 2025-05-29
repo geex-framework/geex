@@ -8,8 +8,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="AutoEquality" Version="0.5.4" />
-        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.1.0" />
-        <PackageReference Include="Autofac.Extras.DynamicProxy" Version="6.0.0" />
+        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
         <PackageReference Include="fasterflect" Version="3.0.0" />
         <PackageReference Include="Flurl.Http" Version="3.2.3" />
         <PackageReference Include="HonkSharp" Version="1.0.3" />

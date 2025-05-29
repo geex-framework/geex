@@ -31,14 +31,14 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="3.1.2">
+        <PackageReference Include="coverlet.collector" Version="6.0.4">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
-        <ProjectReference Include="..\Geex.Analyzer\src\Geex.Analyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <PackageReference Include="Geex.Analyzer" Version="8.1.0.4" />
         <ProjectReference Include="..\Geex.Extensions.ApprovalFlows\src\Geex.Extensions.ApprovalFlows.csproj" />
         <ProjectReference Include="..\Geex.Extensions.AuditLogs\src\Geex.Extensions.AuditLogs.csproj" />
         <ProjectReference Include="..\Geex.Extensions.Authorization\src\Geex.Extensions.Authorization.csproj" />
@@ -52,6 +52,6 @@
         <ProjectReference Include="..\Geex.Common\src\Geex.Common.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <Folder Include="TestGqls\" />
+        <Folder Include="TestGqls\" />
     </ItemGroup>
 </Project>
