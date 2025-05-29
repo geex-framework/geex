@@ -5,6 +5,9 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+
+using Elastic.Apm.Api;
+
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -26,13 +29,6 @@ namespace Geex.Tests.FeatureTests
             _factory = factory;
         }
 
-        /// <summary>
-        /// 解析GraphQL响应并返回dynamic对象，方便访问结果
-        /// </summary>
-        private dynamic ParseGraphQLResponse(string responseContent)
-        {
-            return JsonConvert.DeserializeObject<dynamic>(responseContent);
-        }
         [Fact]
         public async Task DynamicSettingMutationShouldWork()
         {
@@ -50,7 +46,7 @@ namespace Geex.Tests.FeatureTests
                 i18n = (string)null,
                 group = true,
                 hideInBreadcrumb = true
-            };            var request = new
+            }; var request = new
             {
                 operationName = "editSetting",
                 variables = new
@@ -70,20 +66,19 @@ namespace Geex.Tests.FeatureTests
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
-            var responseString = await response.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            dynamic responseData = ParseGraphQLResponse(responseString);
+            var responseData = await response.ParseGraphQLResponse();
 
             // Assert
             ((string)responseData.data.editSetting.name).ShouldBe("BlobStorageModuleName");
-            response.EnsureSuccessStatusCode();
+
         }
         [Fact]
         public async Task QuerySettingsShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();            var request = new
+            var client = _factory.CreateClient(); var request = new
             {
                 operationName = "settings",
                 variables = new
@@ -103,7 +98,7 @@ namespace Geex.Tests.FeatureTests
             var responseString = await response.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            dynamic responseData = ParseGraphQLResponse(responseString);
+            var responseData = await response.ParseGraphQLResponse();
 
             // Assert
             int itemCount = ((Newtonsoft.Json.Linq.JArray)responseData.data.settings.items).Count;
@@ -112,7 +107,7 @@ namespace Geex.Tests.FeatureTests
             itemCount.ShouldBeGreaterThan(0);
             totalCount.ShouldBeGreaterThan(0);
 
-            response.EnsureSuccessStatusCode();
+
         }
         [Fact]
         public async Task QueryInitSettingsShouldWork()
@@ -133,20 +128,20 @@ namespace Geex.Tests.FeatureTests
             var responseString = await response.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            dynamic responseData = ParseGraphQLResponse(responseString);
+            var responseData = await response.ParseGraphQLResponse();
 
             // Assert
             int settingsCount = ((Newtonsoft.Json.Linq.JArray)responseData.data.initSettings).Count;
             settingsCount.ShouldBeGreaterThan(0);
 
-            response.EnsureSuccessStatusCode();
+
         }
         [Fact]
         public async Task FilterSettingsByNameShouldWork()
         {
             // Arrange
             var client = _factory.CreateClient();
-            var targetSettingName = "BlobStorageModuleName";            var request = new
+            var targetSettingName = "BlobStorageModuleName"; var request = new
             {
                 operationName = "settings",
                 variables = new
@@ -173,7 +168,7 @@ namespace Geex.Tests.FeatureTests
             var responseString = await response.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            dynamic responseData = ParseGraphQLResponse(responseString);
+            var responseData = await response.ParseGraphQLResponse();
 
             // Assert
             var items = responseData.data.settings.items;
@@ -184,7 +179,7 @@ namespace Geex.Tests.FeatureTests
                 ((string)item.name).ShouldBe(targetSettingName);
             }
 
-            response.EnsureSuccessStatusCode();
+
         }
         [Fact]
         public async Task EditAndVerifySettingShouldWork()
@@ -213,15 +208,14 @@ namespace Geex.Tests.FeatureTests
 
             // Act - 编辑设置
             var editResponse = await client.PostAsync(_graphqlEndpoint, editContent);
-            var editResponseString = await editResponse.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            dynamic editResponseData = ParseGraphQLResponse(editResponseString);
+            var editResponseData = await editResponse.ParseGraphQLResponse();
 
             // Assert - 编辑成功
             ((string)editResponseData.data.editSetting.name).ShouldBe(testSettingName);
             ((string)editResponseData.data.editSetting.value).ShouldBe(testValue);
-            editResponse.EnsureSuccessStatusCode();            // 2. 查询设置以验证
+
             var queryRequest = new
             {
                 operationName = "settings",
@@ -246,10 +240,9 @@ namespace Geex.Tests.FeatureTests
 
             // Act - 查询设置
             var queryResponse = await client.PostAsync(_graphqlEndpoint, queryContent);
-            var queryResponseString = await queryResponse.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            dynamic queryResponseData = ParseGraphQLResponse(queryResponseString);
+            var queryResponseData = await queryResponse.ParseGraphQLResponse();
 
             // Assert - 查询成功并且值已更新
             var items = queryResponseData.data.settings.items;
@@ -259,7 +252,7 @@ namespace Geex.Tests.FeatureTests
             ((string)item.name).ShouldBe(testSettingName);
             ((string)item.value).ShouldBe(testValue);
 
-            queryResponse.EnsureSuccessStatusCode();
+
         }
         [Fact]
         public async Task EditSettingWithDifferentScopesShouldWork()
@@ -288,17 +281,16 @@ namespace Geex.Tests.FeatureTests
 
             // Act - 编辑全局设置
             var editGlobalResponse = await client.PostAsync(_graphqlEndpoint, editGlobalContent);
-            var editGlobalResponseString = await editGlobalResponse.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            dynamic editGlobalResponseData = ParseGraphQLResponse(editGlobalResponseString);
+            var editGlobalResponseData = await editGlobalResponse.ParseGraphQLResponse();
 
             // Assert - 编辑全局设置成功
             var editSetting = editGlobalResponseData.data.editSetting;
             ((string)editSetting.name).ShouldBe(testSettingName);
             ((string)editSetting.scope).ShouldBe("Global");
             ((string)editSetting.value).ShouldBe(globalValue);
-            editGlobalResponse.EnsureSuccessStatusCode();            // 2. 查询全局设置以验证
+
             var queryGlobalRequest = new
             {
                 operationName = "settings",
@@ -323,10 +315,9 @@ namespace Geex.Tests.FeatureTests
 
             // Act - 查询全局设置
             var queryGlobalResponse = await client.PostAsync(_graphqlEndpoint, queryGlobalContent);
-            var queryGlobalResponseString = await queryGlobalResponse.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            dynamic queryGlobalResponseData = ParseGraphQLResponse(queryGlobalResponseString);
+            var queryGlobalResponseData = await queryGlobalResponse.ParseGraphQLResponse();
 
             // Assert - 查询全局设置成功
             var items = queryGlobalResponseData.data.settings.items;
@@ -337,7 +328,7 @@ namespace Geex.Tests.FeatureTests
             ((string)item.scope).ShouldBe("Global");
             ((string)item.value).ShouldBe(globalValue);
 
-            queryGlobalResponse.EnsureSuccessStatusCode();
+
         }
     }
 }
