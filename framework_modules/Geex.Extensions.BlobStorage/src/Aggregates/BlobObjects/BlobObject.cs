@@ -29,7 +29,7 @@ namespace Geex.Extensions.BlobStorage.Aggregates.BlobObjects
     {
         const long MaxCacheSize = 2048L * 1024 * 1024; // 2GB
 
-        public BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow = default):this()
+        public BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow = default)
         {
             uow?.Attach(this);
             var file = request.File;
