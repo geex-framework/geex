@@ -67,7 +67,6 @@ jobs:
           dotnet pack ./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Extensions.AuditLogs/src/Geex.Extensions.AuditLogs.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
-          dotnet pack ./framework_modules/Geex.Extensions.Accounting/src/Geex.Extensions.Accounting.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Extensions.Authentication/src/Geex.Extensions.Authentication.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}}
@@ -92,7 +91,6 @@ jobs:
           dotnet pack ./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Extensions.AuditLogs/src/Geex.Extensions.AuditLogs.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
-          dotnet pack ./framework_modules/Geex.Extensions.Accounting/src/Geex.Extensions.Accounting.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Extensions.Authentication/src/Geex.Extensions.Authentication.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}
           dotnet pack ./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}}

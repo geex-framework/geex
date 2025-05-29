@@ -20,7 +20,6 @@ framework_modules/         # 核心框架模块
 ├── Geex.Casbin/           # 基于Casbin的授权系统
 ├── Geex.Common/           # 框架通用组件
 ├── Geex.Abstractions/ # 抽象层和接口定义
-├── Geex.Extensions.Accounting/ # 账户功能
 ├── Geex.Extensions.Authentication/ # 认证模块
 ├── Geex.Extensions.Authorization/ # 授权模块
 ├── Geex.Extensions.BackgroundJob/ # 后台任务处理
