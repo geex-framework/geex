@@ -35,53 +35,7 @@ namespace Geex.Common.Captcha.Domain
         public MemoryStream Bitmap => CreateCaptchaBitmap(Code);
         private static MemoryStream CreateCaptchaBitmap(string code)
         {
-            Random random = new Random();
-            Color[] colorArray = new Color[8]
-            {
-                Color.Black,
-                Color.Red,
-                Color.DarkBlue,
-                Color.Green,
-                Color.Orange,
-                Color.Brown,
-                Color.DarkCyan,
-                Color.Purple
-            };
-            string[] strArray = new string[5]
-            {
-                "Verdana",
-                "Microsoft Sans Serif",
-                "Comic Sans MS",
-                "Arial",
-                "宋体"
-            };
-            Bitmap bitmap = new Bitmap(code.Length * 18, 32);
-            Graphics graphics = Graphics.FromImage((Image)bitmap);
-            graphics.Clear(Color.White);
-            for (int index = 0; index < 100; ++index)
-            {
-                int x = random.Next(bitmap.Width);
-                int y = random.Next(bitmap.Height);
-                graphics.DrawRectangle(new Pen(Color.LightGray, 0.0f), x, y, 1, 1);
-            }
-
-            for (int startIndex = 0; startIndex < code.Length; ++startIndex)
-            {
-                int index1 = random.Next(7);
-                int index2 = random.Next(5);
-                Font font = new Font(strArray[index2], 15f, FontStyle.Bold);
-                Brush brush = (Brush)new SolidBrush(colorArray[index1]);
-                int num = 4;
-                if ((startIndex + 1) % 2 == 0)
-                    num = 2;
-                graphics.DrawString(code.Substring(startIndex, 1), font, brush, (float)(3 + startIndex * 12), (float)num);
-            }
-
-            MemoryStream memoryStream = new MemoryStream();
-            bitmap.Save((Stream)memoryStream, ImageFormat.Png);
-            graphics.Dispose();
-            bitmap.Dispose();
-            return memoryStream;
+           throw new NotImplementedException();
         }
     }
 

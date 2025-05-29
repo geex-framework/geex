@@ -11,7 +11,7 @@
     <PackageReference Include="Elastic.Apm.AspNetCore" Version="1.18.0" />
     <PackageReference Include="HotChocolate.Diagnostics" Version="13.9.12" />
     <PackageReference Include="Elasticsearch.Net" Version="7.8.2" />
-    <PackageReference Include="System.ServiceModel.Primitives" Version="4.10.0" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="8.1.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />

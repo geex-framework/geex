@@ -34,7 +34,6 @@ namespace Geex.Common.Captcha.Handlers
         {
             if (request.CaptchaProvider == CaptchaProvider.Sms)
             {
-                IRedisCacheClient a;
                 var captcha = new SmsCaptcha();
                 await _cache.SetNamedAsync(captcha, token: cancellationToken);
                 await this._uow.Request(new SendSmsCaptchaRequest(request.SmsCaptchaPhoneNumber, captcha), cancellationToken);

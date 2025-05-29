@@ -31,14 +31,14 @@ namespace StackExchange.Redis.Extensions.Core
         public static IServiceCollection AddStackExchangeRedisExtensions(this IServiceCollection services)
         {
             var redisConfiguration = services.GetSingletonInstance<GeexCoreModuleOptions>();
-            services.AddSingleton<IRedisCacheClient, RedisCacheClient>();
-            services.AddSingleton<IRedisDatabase>(x => x.GetService<IRedisCacheClient>().Db0);
-            services.AddSingleton<IRedisCacheConnectionPoolManager, RedisCacheConnectionPoolManager>();
+            services.AddSingleton<IRedisClient, RedisClient>();
+            services.AddSingleton<IRedisDatabase>(x => x.GetService<IRedisClient>().Db0);
+            services.AddSingleton<IRedisConnectionPoolManager, RedisConnectionPoolManager>();
             services.AddSingleton<ISerializer, SystemTextJsonSerializer>(x => new SystemTextJsonSerializer(Json.DefaultSerializeSettings));
 
             services.AddSingleton((provider) =>
             {
-                return provider.GetRequiredService<IRedisCacheClient>().GetDbFromConfiguration();
+                return provider.GetRequiredService<IRedisClient>().GetDefaultDatabase();
             });
 
             services.AddSingleton(redisConfiguration.Redis);
@@ -87,7 +87,7 @@ namespace StackExchange.Redis.Extensions.Core
                 prefix = $"{@namespace}:{prefix}";
             }
             var keys = await service.SearchKeysAsync($"{prefix}:{searchPattern ?? "*"}");
-            var result = (await service.GetAllAsync<T>(keys));
+            var result = (await service.GetAllAsync<T>(keys.ToHashSet()));
             return result;
         }
 

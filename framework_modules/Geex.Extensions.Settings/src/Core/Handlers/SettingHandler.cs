@@ -184,8 +184,8 @@ namespace Geex.Extensions.Settings.Core.Handlers
             {
                 return;
             }
-            await _redisClient.RemoveAllAsync(cachedSettings.Keys);
-            _ = await _redisClient.AddAllAsync(dbSettings.Select(x => new Tuple<string, Setting>(x.GetRedisKey(), x)).ToList());
+            await _redisClient.RemoveAllAsync(cachedSettings.Keys.ToArray());
+            _ = await _redisClient.AddAllAsync(dbSettings.Select(x => new Tuple<string, Setting>(x.GetRedisKey(), x)).ToArray());
         }
 
         public virtual async Task<ISetting> Handle(EditSettingRequest request, CancellationToken cancellationToken)

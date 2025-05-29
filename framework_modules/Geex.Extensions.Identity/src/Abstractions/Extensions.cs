@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 
-using Castle.Core.Internal;
 
 using Geex.Abstractions.Authentication;
 using Geex.MultiTenant;
@@ -21,17 +20,13 @@ namespace Geex.Extensions.Identity
         {
             Check.NotNull(principal, nameof(principal));
             IEnumerable<Claim> claims = principal.Claims.Where((Func<Claim, bool>)(c => c.Type == GeexClaimType.Org));
-            if (claims.IsNullOrEmpty())
-                return Array.Empty<string>();
-            return claims.Select(x => x.Value).ToArray();
+            return claims?.Select(x => x.Value).ToArray();
         }
 
         public static string[]? GetOrgCodes(this ICurrentUser currentUser)
         {
             Check.NotNull(currentUser, nameof(currentUser));
             IEnumerable<Claim> claims = currentUser.ClaimsIdentity.Claims.Where((Func<Claim, bool>)(c => c.Type == GeexClaimType.Org));
-            if (claims.IsNullOrEmpty())
-                return Array.Empty<string>();
             return claims.Select(x => x.Value).ToArray();
         }
 
