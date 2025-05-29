@@ -1,172 +1,172 @@
 ﻿using System;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 using System.Collections.Generic;
-using System.IO;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using System.Diagnostics;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-[Generator]
-public class IUnitOfWorkCreateMethodGenerator : ISourceGenerator
+namespace Geex.Analyzer.SourceGenerator
 {
-    public void Initialize(GeneratorInitializationContext context)
+    [Generator]
+    public class IUnitOfWorkCreateMethodGenerator : IIncrementalGenerator
     {
-
-        // 注册语法接收器
-        context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
-    }
-
-    public void Execute(GeneratorExecutionContext context)
-    {
-        // 获取语法接收器
-        if (context.SyntaxReceiver is not SyntaxReceiver receiver)
-            return;
-
-        // 获取编译器中的类型信息
-        var compilation = context.Compilation;
-
-        // 过滤出需要的类型
-        var entityTypes = new List<INamedTypeSymbol>();
-        var debugSource = new StringBuilder("");
-        foreach (var classDeclaration in receiver.CandidateClasses)
+        public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var model = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-            var symbol = model.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+            // Register the syntax provider to collect all class declarations
+            IncrementalValuesProvider<ClassDeclarationSyntax> classDeclarations = context.SyntaxProvider
+                .CreateSyntaxProvider(
+                    predicate: static (s, _) => s is ClassDeclarationSyntax,
+                    transform: static (ctx, _) => (ClassDeclarationSyntax)ctx.Node
+                );
 
-            if (symbol == null)
-                continue;
-            // 判断是否是 Entity 基类的子类
-            if (IsEntity(symbol, debugSource))
+            // Combine the class declarations with the compilation
+            IncrementalValueProvider<(Compilation, ImmutableArray<ClassDeclarationSyntax>)> compilationAndClasses =
+                context.CompilationProvider.Combine(classDeclarations.Collect());
+
+            // Register the source output
+            context.RegisterSourceOutput(compilationAndClasses, 
+                static (spc, source) => Execute(source.Item1, source.Item2, spc));
+        }
+
+        private static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classes, SourceProductionContext context)
+        {
+            if (classes.IsDefaultOrEmpty)
             {
-                entityTypes.Add(symbol);
+                return;
             }
-        }
-        //context.AddSource($"IUnitOfWorkExtensions.g.log", debugSource.ToString());
 
-        entityTypes = entityTypes.Distinct(new Comparer()).ToList();
-        // 为每个实体生成扩展方法
-        foreach (var entityType in entityTypes)
-        {
-            var source = GenerateExtensionMethod(entityType);
-            if (!string.IsNullOrEmpty(source))
+            // Filter and process entity types
+            var entityTypes = new List<INamedTypeSymbol>();
+            var debugSource = new StringBuilder("");
+
+            foreach (var classDeclaration in classes)
             {
-                context.AddSource($"{entityType.Name}_IUnitOfWorkExtensions.g", source);
-            }
-        }
-    }
+                var model = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
+                var symbol = model.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
 
-    class Comparer : EqualityComparer<INamedTypeSymbol>
-    {
-        /// <inheritdoc />
-        public override bool Equals(INamedTypeSymbol x, INamedTypeSymbol y)
-        {
-            return x.Name == y.Name;
-        }
-
-        /// <inheritdoc />
-        public override int GetHashCode(INamedTypeSymbol obj)
-        {
-            return obj.Name.GetHashCode();
-        }
-    }
-    private bool IsEntity(INamedTypeSymbol symbol, StringBuilder debugSource)
-    {
-        // 判断是否继承自 Entity<T>，根据您的基类修改判断逻辑
-        var baseType = symbol.BaseType;
-        debugSource.Append(symbol.Name + ":");
-        while (baseType != null)
-        {
-            debugSource.Append(baseType.Name + ":");
-            if (baseType.Name == "Entity")
-                return true;
-            baseType = baseType.BaseType;
-        }
-        debugSource.AppendLine();
-        return false;
-    }
-
-    private string GenerateExtensionMethod(INamedTypeSymbol entityType)
-    {
-        var namespaceName = entityType.ContainingNamespace.ToDisplayString();
-        var entityName = entityType.Name;
-
-        // Get public instance constructors
-        var constructors = entityType.Constructors
-            .Where(x => x.Parameters.LastOrDefault()?.Type?.Name == "IUnitOfWork")
-            .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic);
-
-        constructors = constructors.ToList();
-        // If no public constructors, try to use any parameterless constructor
-        if (!constructors.Any())
-        {
-            return String.Empty;
-        }
-
-        var methods = new StringBuilder();
-
-        foreach (var constructor in constructors)
-        {
-            var parameters = constructor.Parameters.Slice(0, constructor.Parameters.Length - 1);
-
-            var parameterList = string.Join(", ", parameters.Select(p =>
-            {
-                var type = p.Type.ToDisplayString();
-                var name = p.Name;
-
-                if (p.HasExplicitDefaultValue)
+                if (symbol == null)
+                    continue;
+                
+                // Check if the class inherits from Entity
+                if (IsEntity(symbol, debugSource))
                 {
-                    var defaultValue = p.ExplicitDefaultValue;
+                    entityTypes.Add(symbol);
+                }
+            }
 
-                    string defaultValueCode;
-                    if (defaultValue == default)
+            // Use distinct entities
+            entityTypes = entityTypes.Distinct(new SymbolComparer()).ToList();
+
+            // Generate extension methods for each entity type
+            foreach (var entityType in entityTypes)
+            {
+                var source = GenerateExtensionMethod(entityType);
+                if (!string.IsNullOrEmpty(source))
+                {
+                    context.AddSource($"{entityType.Name}_IUnitOfWorkExtensions.g.cs", source);
+                }
+            }
+        }
+
+        private static bool IsEntity(INamedTypeSymbol symbol, StringBuilder debugSource)
+        {
+            // Check if the class inherits from Entity
+            var baseType = symbol.BaseType;
+            debugSource.Append(symbol.Name + ":");
+            while (baseType != null)
+            {
+                debugSource.Append(baseType.Name + ":");
+                if (baseType.Name == "Entity")
+                    return true;
+                baseType = baseType.BaseType;
+            }
+            debugSource.AppendLine();
+            return false;
+        }
+
+        private static string GenerateExtensionMethod(INamedTypeSymbol entityType)
+        {
+            var namespaceName = entityType.ContainingNamespace.ToDisplayString();
+            var entityName = entityType.Name;
+
+            // Get public instance constructors that have IUnitOfWork as the last parameter
+            var constructors = entityType.Constructors
+                .Where(x => x.Parameters.LastOrDefault()?.Type?.Name == "IUnitOfWork")
+                .Where(c => c.DeclaredAccessibility == Accessibility.Public && !c.IsStatic)
+                .ToList();
+
+            // If no matching constructors, return empty string
+            if (!constructors.Any())
+            {
+                return string.Empty;
+            }
+
+            var methods = new StringBuilder();
+
+            foreach (var constructor in constructors)
+            {
+                var parameters = constructor.Parameters.Slice(0, constructor.Parameters.Length - 1);
+
+                var parameterList = string.Join(", ", parameters.Select(p =>
+                {
+                    var type = p.Type.ToDisplayString();
+                    var name = p.Name;
+
+                    if (p.HasExplicitDefaultValue)
                     {
-                        defaultValueCode = "default";
-                    }
-                    else if (defaultValue is string)
-                    {
-                        defaultValueCode = $"\"{defaultValue}\"";
-                    }
-                    else if (defaultValue is char)
-                    {
-                        defaultValueCode = $"'{defaultValue}'";
-                    }
-                    else if (defaultValue is bool)
-                    {
-                        defaultValueCode = defaultValue.ToString().ToLower();
-                    }
-                    else if (p.Type.TypeKind == TypeKind.Enum)
-                    {
-                        defaultValueCode = $"{type}.{defaultValue}";
+                        var defaultValue = p.ExplicitDefaultValue;
+
+                        string defaultValueCode;
+                        if (defaultValue == default)
+                        {
+                            defaultValueCode = "default";
+                        }
+                        else if (defaultValue is string)
+                        {
+                            defaultValueCode = $"\"{defaultValue}\"";
+                        }
+                        else if (defaultValue is char)
+                        {
+                            defaultValueCode = $"'{defaultValue}'";
+                        }
+                        else if (defaultValue is bool)
+                        {
+                            defaultValueCode = defaultValue.ToString().ToLower();
+                        }
+                        else if (p.Type.TypeKind == TypeKind.Enum)
+                        {
+                            defaultValueCode = $"{type}.{defaultValue}";
+                        }
+                        else
+                        {
+                            defaultValueCode = defaultValue.ToString();
+                        }
+
+                        return $"{type} {name} = {defaultValueCode}";
                     }
                     else
                     {
-                        defaultValueCode = defaultValue.ToString();
+                        return $"{type} {name}";
                     }
+                }));
 
-                    return $"{type} {name} = {defaultValueCode}";
-                }
-                else
+                var argumentList = string.Join(", ", parameters.Select(p =>
                 {
-                    return $"{type} {name}";
-                }
-            }));
+                    var type = p.Type.ToDisplayString();
+                    return $"({type}){p.Name}";
+                }));
 
-            var argumentList = string.Join(", ", parameters.Select(p =>
-            {
-                var type = p.Type.ToDisplayString();
-                return $"({type}){p.Name}";
-            }));
-
-            methods.AppendLine($@"
+                methods.AppendLine($@"
     public static {entityName} Create(this IUnitOfWork _{(string.IsNullOrEmpty(parameterList) ? "" : ", " + parameterList)})
     {{
         return ActivatorUtilities.CreateInstance<{entityName}>(_.ServiceProvider{(string.IsNullOrEmpty(argumentList) ? "" : ", " + argumentList)}, _);
     }}");
-        }
+            }
 
-        var source = $@"
+            var source = $@"
+// <auto-generated />
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Geex;
@@ -177,18 +177,19 @@ namespace {namespaceName} {{
     }}
 }}
 ";
-        return source;
-    }
+            return source;
+        }
 
-    class SyntaxReceiver : ISyntaxReceiver
-    {
-        public List<ClassDeclarationSyntax> CandidateClasses { get; } = new();
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+        private class SymbolComparer : EqualityComparer<INamedTypeSymbol>
         {
-            // 查找所有的类声明
-            if (syntaxNode is ClassDeclarationSyntax classDeclaration)
+            public override bool Equals(INamedTypeSymbol x, INamedTypeSymbol y)
             {
-                CandidateClasses.Add(classDeclaration);
+                return x.Name == y.Name;
+            }
+
+            public override int GetHashCode(INamedTypeSymbol obj)
+            {
+                return obj.Name.GetHashCode();
             }
         }
     }
