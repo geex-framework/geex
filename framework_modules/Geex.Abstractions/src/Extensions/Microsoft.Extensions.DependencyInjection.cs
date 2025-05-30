@@ -61,7 +61,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 };
             }
             mongoSettings.ApplicationName = commonModuleOptions.AppName;
-            DB.InitAsync(mongoUrl.DatabaseName ?? commonModuleOptions.AppName, mongoSettings).Wait();
+            DB.InitAsync(mongoUrl.DatabaseName ?? commonModuleOptions.AppName, mongoSettings).GetAwaiter().GetResult();;
             // todo: 这里需要在以后取消直接的db注入
             builder.AddScoped<DbContext>(x => x.GetService<IRepository>() as DbContext);
             builder.AddScoped<IUnitOfWork>(x => new GeexDbContext(x));

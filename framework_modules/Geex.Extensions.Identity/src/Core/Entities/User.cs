@@ -41,7 +41,7 @@ namespace Geex.Extensions.Identity.Core.Entities
             uow?.Attach(this);
         }
 
-        public string Password { get; set; }
+        public string Password { get; internal set; }
         public string? TenantCode { get; set; }
 
         public virtual async Task AddOrg(IOrg entity)

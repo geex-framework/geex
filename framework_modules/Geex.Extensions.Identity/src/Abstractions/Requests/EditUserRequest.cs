@@ -15,5 +15,6 @@ namespace Geex.Extensions.Identity.Requests
         public List<UserClaim>? Claims { get; set; } = new List<UserClaim>();
         public string? PhoneNumber { get; set; }
         public string? Username { get; set; }
+        public string Nickname { get; set; }
     }
 }

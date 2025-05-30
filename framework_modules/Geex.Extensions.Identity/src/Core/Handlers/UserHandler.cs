@@ -112,6 +112,11 @@ namespace Geex.Extensions.Identity.Core.Handlers
                 user.Username = request.Username;
             }
 
+            if (request.Nickname != default)
+            {
+                user.Nickname = request.Nickname;
+            }
+
             if (request.RoleIds != null) await user.AssignRoles(request.RoleIds);
             if (request.OrgCodes != null) await user.AssignOrgs(request.OrgCodes);
             return user;

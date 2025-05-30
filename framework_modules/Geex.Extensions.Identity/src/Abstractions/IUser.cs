@@ -31,7 +31,7 @@ namespace Geex.Extensions.Identity
         Task AddOrg(IOrg entity);
         new IUser SetPassword(string? password);
         // 显式实现父接口方法，委托给子接口的实现
-        Authentication.IAuthUser Authentication.IAuthUser.SetPassword(string? password)
+        IAuthUser IAuthUser.SetPassword(string? password)
         {
             return SetPassword(password); // 调用子接口的实现
         }

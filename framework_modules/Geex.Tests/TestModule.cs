@@ -8,7 +8,7 @@ using HotChocolate.Execution;
 using HotChocolate.Execution.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-
+using MongoDB.Entities;
 using Volo.Abp;
 using Volo.Abp.Modularity;
 
@@ -23,6 +23,10 @@ public class TestModule : GeexEntryModule<TestModule>
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         Console.WriteLine(Env.EnvironmentName);
+        foreach (var collectionName in DB.DefaultDb.ListCollectionNames().Current)
+        {
+            DB.DefaultDb.DropCollection(collectionName);
+        }
         base.OnApplicationInitialization(context);
     }
 
