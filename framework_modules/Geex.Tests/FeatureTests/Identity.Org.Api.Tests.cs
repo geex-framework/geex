@@ -70,17 +70,18 @@ namespace Geex.Tests.FeatureTests
             var client = _factory.CreateClient();
             var targetOrgCode = $"testorg_{ObjectId.GenerateNewId()}";
 
-            // First create an org with specific code
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
-
-            var org = await uow.Request(new CreateOrgRequest
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                Code = targetOrgCode,
-                Name = $"Test Org {ObjectId.GenerateNewId()}",
-                OrgType = OrgTypeEnum.Default
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.Request(new CreateOrgRequest
+                {
+                    Code = targetOrgCode,
+                    Name = $"Test Org {ObjectId.GenerateNewId()}",
+                    OrgType = OrgTypeEnum.Default
+                });
+                await setupUow.SaveChanges();
+            }
 
             var request = new
             {
@@ -118,17 +119,18 @@ namespace Geex.Tests.FeatureTests
             var targetOrgName = $"Unique Org Name {ObjectId.GenerateNewId()}";
             var orgCode = $"uniqueorg_{ObjectId.GenerateNewId()}";
 
-            // First create an org with specific name
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
-
-            var org = await uow.Request(new CreateOrgRequest
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                Code = orgCode,
-                Name = targetOrgName,
-                OrgType = OrgTypeEnum.Default
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.Request(new CreateOrgRequest
+                {
+                    Code = orgCode,
+                    Name = targetOrgName,
+                    OrgType = OrgTypeEnum.Default
+                });
+                await setupUow.SaveChanges();
+            }
 
             var request = new
             {
@@ -201,18 +203,20 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
-
-            // First create a parent org
             var parentOrgCode = $"parentorg_{ObjectId.GenerateNewId()}";
-            var parentOrg = await uow.Request(new CreateOrgRequest
+            
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                Code = parentOrgCode,
-                Name = $"Parent Org {ObjectId.GenerateNewId()}",
-                OrgType = OrgTypeEnum.Default
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.Request(new CreateOrgRequest
+                {
+                    Code = parentOrgCode,
+                    Name = $"Parent Org {ObjectId.GenerateNewId()}",
+                    OrgType = OrgTypeEnum.Default
+                });
+                await setupUow.SaveChanges();
+            }
 
             var subOrgCode = $"{parentOrgCode}.suborg_{ObjectId.GenerateNewId()}";
             var subOrgName = $"Sub Organization {ObjectId.GenerateNewId()}";
@@ -252,24 +256,28 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
+            var testOrgCode = $"deleteapi_{ObjectId.GenerateNewId()}";
+            string orgId;
 
-            // First create an org to delete
-            var testOrgCode = $"deleteorg_{ObjectId.GenerateNewId()}";
-            var org = await uow.Request(new CreateOrgRequest
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                Code = testOrgCode,
-                Name = $"Delete Test Org {ObjectId.GenerateNewId()}",
-                OrgType = OrgTypeEnum.Default
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var org = await setupUow.Request(new CreateOrgRequest
+                {
+                    Code = testOrgCode,
+                    Name = $"Delete API Test Org {ObjectId.GenerateNewId()}",
+                    OrgType = OrgTypeEnum.Default
+                });
+                await setupUow.SaveChanges();
+                orgId = org.Id;
+            }
 
             var request = new
             {
                 query = $$$"""
                     mutation {
-                        deleteOrg(id: "{{{org.Id}}}")
+                        deleteOrg(id: "{{{orgId}}}")
                     }
                     """
             };
@@ -316,26 +324,27 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
-
-            // Create parent and sub org
             var parentCode = $"parent_{ObjectId.GenerateNewId()}";
-            var parentOrg = await uow.Request(new CreateOrgRequest
-            {
-                Code = parentCode,
-                Name = $"Parent Org {ObjectId.GenerateNewId()}",
-                OrgType = OrgTypeEnum.Default
-            });
-
             var subCode = $"{parentCode}.sub_{ObjectId.GenerateNewId()}";
-            var subOrg = await uow.Request(new CreateOrgRequest
+
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                Code = subCode,
-                Name = $"Sub Org {ObjectId.GenerateNewId()}",
-                OrgType = OrgTypeEnum.Default
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.Request(new CreateOrgRequest
+                {
+                    Code = parentCode,
+                    Name = $"Parent Org {ObjectId.GenerateNewId()}",
+                    OrgType = OrgTypeEnum.Default
+                });
+                await setupUow.Request(new CreateOrgRequest
+                {
+                    Code = subCode,
+                    Name = $"Sub Org {ObjectId.GenerateNewId()}",
+                    OrgType = OrgTypeEnum.Default
+                });
+                await setupUow.SaveChanges();
+            }
 
             var request = new
             {

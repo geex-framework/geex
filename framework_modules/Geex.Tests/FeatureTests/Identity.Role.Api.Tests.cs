@@ -69,18 +69,19 @@ namespace Geex.Tests.FeatureTests
             var targetRoleName = $"Test Role {ObjectId.GenerateNewId()}";
             var targetRoleCode = $"testrole_{ObjectId.GenerateNewId()}";
 
-            // First create a role with specific name
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
-
-            var role = await uow.Request(new CreateRoleRequest
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                RoleCode = targetRoleCode,
-                RoleName = targetRoleName,
-                IsStatic = false,
-                IsDefault = false
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.Request(new CreateRoleRequest
+                {
+                    RoleCode = targetRoleCode,
+                    RoleName = targetRoleName,
+                    IsStatic = false,
+                    IsDefault = false
+                });
+                await setupUow.SaveChanges();
+            }
 
             var request = new
             {
@@ -158,25 +159,29 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
+            var testRoleCode = $"defaultapi_{ObjectId.GenerateNewId()}";
+            string roleId;
 
-            // First create a role to set as default
-            var testRoleCode = $"defaultrole_{ObjectId.GenerateNewId()}";
-            var role = await uow.Request(new CreateRoleRequest
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                RoleCode = testRoleCode,
-                RoleName = $"Default Role {ObjectId.GenerateNewId()}",
-                IsStatic = false,
-                IsDefault = false
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var role = await setupUow.Request(new CreateRoleRequest
+                {
+                    RoleCode = testRoleCode,
+                    RoleName = $"Default API Role {ObjectId.GenerateNewId()}",
+                    IsStatic = false,
+                    IsDefault = false
+                });
+                await setupUow.SaveChanges();
+                roleId = role.Id;
+            }
 
             var request = new
             {
                 query = $$$"""
                     mutation {
-                        setRoleDefault(request: { roleId: "{{{role.Id}}}" })
+                        setRoleDefault(request: { roleId: "{{{roleId}}}" })
                     }
                     """
             };

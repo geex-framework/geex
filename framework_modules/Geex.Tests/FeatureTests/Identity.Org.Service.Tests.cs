@@ -170,6 +170,8 @@ namespace Geex.Tests.FeatureTests
             var uow = service.GetService<IUnitOfWork>();
             var oldCode = $"oldcode_{ObjectId.GenerateNewId()}";
             var newCode = $"newcode_{ObjectId.GenerateNewId()}";
+            
+            // Create fresh orgs for this test
             var org = await CreateTestOrg(uow, oldCode);
             await CreateTestOrg(uow, $"{oldCode}.sub");
             await uow.SaveChanges();
@@ -193,7 +195,8 @@ namespace Geex.Tests.FeatureTests
             // Arrange
             var service = _factory.Services;
             var uow = service.GetService<IUnitOfWork>();
-            var org = await CreateTestOrg(uow);
+            var orgCode = $"deletetest_{ObjectId.GenerateNewId()}";
+            var org = await CreateTestOrg(uow, orgCode, $"Delete Test Org {ObjectId.GenerateNewId()}");
             await uow.SaveChanges();
             var orgId = org.Id;
 
@@ -215,14 +218,15 @@ namespace Geex.Tests.FeatureTests
             // Arrange
             var service = _factory.Services;
             var uow = service.GetService<IUnitOfWork>();
-            var user = await CreateTestUser(uow);
+            var userUsername = $"orguser_{ObjectId.GenerateNewId()}";
+            var user = await CreateTestUser(uow, userUsername);
             await uow.SaveChanges();
             
-            var orgCode = $"testorg_{ObjectId.GenerateNewId()}";
+            var orgCode = $"assigntest_{ObjectId.GenerateNewId()}";
             var request = new CreateOrgRequest
             {
                 Code = orgCode,
-                Name = "Test Organization",
+                Name = $"Assign Test Organization {ObjectId.GenerateNewId()}",
                 OrgType = OrgTypeEnum.Default,
                 CreateUserId = user.Id
             };
@@ -244,8 +248,9 @@ namespace Geex.Tests.FeatureTests
             // Arrange
             var service = _factory.Services;
             var uow = service.GetService<IUnitOfWork>();
-            var user = await CreateTestUser(uow);
-            var parentCode = $"parent_{ObjectId.GenerateNewId()}";
+            var userUsername = $"autouser_{ObjectId.GenerateNewId()}";
+            var user = await CreateTestUser(uow, userUsername);
+            var parentCode = $"autoparent_{ObjectId.GenerateNewId()}";
             var parentOrg = await CreateTestOrg(uow, parentCode);
             await uow.SaveChanges();
             
@@ -256,7 +261,7 @@ namespace Geex.Tests.FeatureTests
             var request = new CreateOrgRequest
             {
                 Code = $"{parentCode}.sub",
-                Name = "Sub Organization",
+                Name = $"Auto Sub Organization {ObjectId.GenerateNewId()}",
                 OrgType = OrgTypeEnum.Default
             };
 
@@ -277,7 +282,8 @@ namespace Geex.Tests.FeatureTests
             // Arrange
             var service = _factory.Services;
             var uow = service.GetService<IUnitOfWork>();
-            var user = await CreateTestUser(uow);
+            var userUsername = $"fixuser_{ObjectId.GenerateNewId()}";
+            var user = await CreateTestUser(uow, userUsername);
             await uow.SaveChanges();
             
             user.OrgCodes.Clear(); // Remove all orgs

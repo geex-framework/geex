@@ -70,21 +70,22 @@ namespace Geex.Tests.FeatureTests
             var client = _factory.CreateClient();
             var targetUsername = $"testuser_{ObjectId.GenerateNewId()}";
 
-            // First create a user with specific username
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
-
-            var user = await uow.Request(new CreateUserRequest
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                Username = targetUsername,
-                Email = $"{targetUsername}@test.com",
-                Password = "Password123!",
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.Request(new CreateUserRequest
+                {
+                    Username = targetUsername,
+                    Email = $"{targetUsername}@test.com",
+                    Password = "Password123!",
+                    Nickname = "Test User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await setupUow.SaveChanges();
+            }
 
             var request = new
             {
@@ -192,31 +193,36 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
+            var testUsername = $"editapi_{ObjectId.GenerateNewId()}";
+            var uniquePhoneNumber = $"156{ObjectId.GenerateNewId().ToString().Substring(0, 8)}";
+            string userId;
 
-            // First create a user to edit
-            var testUsername = $"edituser_{ObjectId.GenerateNewId()}";
-            var user = await uow.Request(new CreateUserRequest
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = "Password123!",
-                Nickname = "Original Nickname",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var user = await setupUow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = "Password123!",
+                    Nickname = "Original API Nickname",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await setupUow.SaveChanges();
+                userId = user.Id;
+            }
 
             var request = new
             {
                 query = $$$"""
                     mutation {
                         editUser(request: {
-                            id: "{{{user.Id}}}"
-                            nickname: "Updated Nickname"
-                            phoneNumber: "9876543210"
+                            id: "{{{userId}}}"
+                            nickname: "Updated API Nickname"
+                            phoneNumber: "{{{uniquePhoneNumber}}}"
                             isEnable: false
                         }) {
                             id
@@ -236,8 +242,8 @@ namespace Geex.Tests.FeatureTests
 
             // Assert
             var editedUser = responseData["data"]["editUser"];
-            ((string)editedUser["nickname"]).ShouldBe("Updated Nickname");
-            ((string)editedUser["phoneNumber"]).ShouldBe("9876543210");
+            ((string)editedUser["nickname"]).ShouldBe("Updated API Nickname");
+            ((string)editedUser["phoneNumber"]).ShouldBe(uniquePhoneNumber);
             ((bool)editedUser["isEnable"]).ShouldBe(false);
         }
 
@@ -247,27 +253,32 @@ namespace Geex.Tests.FeatureTests
             // Arrange
             var client = _factory.CreateClient();
             var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
+            var testUsername = $"deleteapi_{ObjectId.GenerateNewId()}";
+            string userId;
 
-            // First create a user to delete
-            var testUsername = $"deleteuser_{ObjectId.GenerateNewId()}";
-            var user = await uow.Request(new CreateUserRequest
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = "Password123!",
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var user = await setupUow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = "Password123!",
+                    Nickname = "Delete API User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await setupUow.SaveChanges();
+                userId = user.Id;
+            }
 
             var request = new
             {
                 query = $$$"""
                     mutation {
-                        deleteUser(request: { id: "{{{user.Id}}}" })
+                        deleteUser(request: { id: "{{{userId}}}" })
                     }
                     """
             };
@@ -285,7 +296,7 @@ namespace Geex.Tests.FeatureTests
             // Verify the user is actually deleted
             using var verifyService = service.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
-            var deletedUser = verifyUow.Query<IUser>().FirstOrDefault(x => x.Id == user.Id);
+            var deletedUser = verifyUow.Query<IUser>().FirstOrDefault(x => x.Id == userId);
             deletedUser.ShouldBeNull();
         }
 
@@ -294,13 +305,32 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
+            var testUsername = $"changeapi_{ObjectId.GenerateNewId()}";
+            var originalPassword = "OriginalPass123!";
+
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = originalPassword,
+                    Nickname = "Change Password User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await setupUow.SaveChanges();
+            }
 
             var request = new
             {
                 query = $$"""
                     mutation {
                         changePassword(request: {
-                            originPassword: "admin"
+                            originPassword: "{{originalPassword}}"
                             newPassword: "NewPassword123!"
                         })
                     }

@@ -178,6 +178,10 @@ namespace Geex.Tests.FeatureTests
             var service = _factory.Services;
             var uow = service.GetService<IUnitOfWork>();
             var testUsername = $"edituser_{ObjectId.GenerateNewId()}";
+            var uniquePhoneNumber = $"155{ObjectId.GenerateNewId().ToString().Substring(0, 8)}";
+
+            // Clean up any existing users with this phone number
+            await uow.DbContext.Query<User>().Where(x => x.PhoneNumber == uniquePhoneNumber).DeleteAsync();
 
             var user = await uow.Request(new CreateUserRequest
             {
@@ -196,7 +200,7 @@ namespace Geex.Tests.FeatureTests
                 Id = user.Id,
                 Nickname = "Updated Nickname",
                 Email = "updated@test.com",
-                PhoneNumber = "15555555556",
+                PhoneNumber = uniquePhoneNumber,
                 IsEnable = false
             };
 
@@ -207,7 +211,7 @@ namespace Geex.Tests.FeatureTests
             // Assert
             editedUser.Nickname.ShouldBe("Updated Nickname");
             editedUser.Email.ShouldBe("updated@test.com");
-            editedUser.PhoneNumber.ShouldBe("9876543210");
+            editedUser.PhoneNumber.ShouldBe(uniquePhoneNumber);
             editedUser.IsEnable.ShouldBe(false);
         }
 

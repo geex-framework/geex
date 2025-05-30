@@ -76,18 +76,20 @@ namespace Geex.Tests.FeatureTests
             var client = _factory.CreateClient();
             var targetFileName = $"specific_file_{ObjectId.GenerateNewId()}.txt";
 
-            // First create a blob with specific filename
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
-            var testData = "test content for filtering";
-            var fileBytes = Encoding.UTF8.GetBytes(testData);
-
-            var blob = await uow.Request(new CreateBlobObjectRequest()
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                File = new StreamFile(targetFileName, () => new MemoryStream(fileBytes)),
-                StorageType = BlobStorageType.Db
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var testData = "test content for filtering";
+                var fileBytes = Encoding.UTF8.GetBytes(testData);
+
+                await setupUow.Request(new CreateBlobObjectRequest()
+                {
+                    File = new StreamFile(targetFileName, () => new MemoryStream(fileBytes)),
+                    StorageType = BlobStorageType.Db
+                });
+                await setupUow.SaveChanges();
+            }
 
             var request = new
             {
@@ -128,26 +130,30 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
+            var testFileName = $"deleteapi_{ObjectId.GenerateNewId()}.txt";
+            string blobId;
 
-            // First create a blob to delete
-            var testFileName = $"delete_test_{ObjectId.GenerateNewId()}.txt";
-            var testData = "content to be deleted";
-            var fileBytes = Encoding.UTF8.GetBytes(testData);
-
-            var blob = await uow.Request(new CreateBlobObjectRequest()
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
-                StorageType = BlobStorageType.Db
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var testData = "API content to be deleted";
+                var fileBytes = Encoding.UTF8.GetBytes(testData);
+
+                var blob = await setupUow.Request(new CreateBlobObjectRequest()
+                {
+                    File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
+                    StorageType = BlobStorageType.Db
+                });
+                await setupUow.SaveChanges();
+                blobId = blob.Id;
+            }
 
             var request = new
             {
                 query = $$"""
                     mutation {
-                        deleteBlobObject(request: { ids: ["{{blob.Id}}"], storageType: Db })
+                        deleteBlobObject(request: { ids: ["{{blobId}}"], storageType: Db })
                     }
                     """
             };
@@ -164,9 +170,9 @@ namespace Geex.Tests.FeatureTests
             deleteResult.ShouldBeTrue();
 
             // Verify the blob is actually deleted
-            using var verifyService = service.CreateScope();
+            using var verifyService = _factory.Services.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
-            var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blob.Id);
+            var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blobId);
             deletedBlob.ShouldBeNull();
         }
 
@@ -175,20 +181,22 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var service = _factory.Services;
-            var uow = service.GetService<IUnitOfWork>();
-
-            // Create a blob with specific storage type
             var testFileName = $"storage_filter_test_{ObjectId.GenerateNewId()}.txt";
-            var testData = "test content for storage type filtering";
-            var fileBytes = Encoding.UTF8.GetBytes(testData);
 
-            var blob = await uow.Request(new CreateBlobObjectRequest()
+            // Prepare data using separate scope
+            using (var scope = _factory.Services.CreateScope())
             {
-                File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
-                StorageType = BlobStorageType.Db
-            });
-            await uow.SaveChanges();
+                var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var testData = "test content for storage type filtering";
+                var fileBytes = Encoding.UTF8.GetBytes(testData);
+
+                await setupUow.Request(new CreateBlobObjectRequest()
+                {
+                    File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
+                    StorageType = BlobStorageType.Db
+                });
+                await setupUow.SaveChanges();
+            }
 
             var request = new
             {

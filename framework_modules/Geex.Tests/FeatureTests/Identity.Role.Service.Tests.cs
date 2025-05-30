@@ -133,18 +133,22 @@ namespace Geex.Tests.FeatureTests
             var service = _factory.Services;
             var uow = service.GetService<IUnitOfWork>();
 
+            // Create fresh roles for this test
+            var role1Code = $"role1_{ObjectId.GenerateNewId()}";
+            var role2Code = $"role2_{ObjectId.GenerateNewId()}";
+
             var role1 = await uow.Request(new CreateRoleRequest
             {
-                RoleCode = $"role1_{ObjectId.GenerateNewId()}",
-                RoleName = "Role 1",
+                RoleCode = role1Code,
+                RoleName = $"Role 1 {ObjectId.GenerateNewId()}",
                 IsStatic = false,
                 IsDefault = true
             });
 
             var role2 = await uow.Request(new CreateRoleRequest
             {
-                RoleCode = $"role2_{ObjectId.GenerateNewId()}",
-                RoleName = "Role 2",
+                RoleCode = role2Code,
+                RoleName = $"Role 2 {ObjectId.GenerateNewId()}",
                 IsStatic = false,
                 IsDefault = false
             });
