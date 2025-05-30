@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Geex.Extensions.Logging.Commom;
 using Microsoft.Extensions.Logging;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Geex.Extensions.Logging.Elasticsearch
 {
@@ -14,7 +13,7 @@ namespace Geex.Extensions.Logging.Elasticsearch
         private readonly string _serviceName;
         private readonly string _serverIp;
         private readonly string _env;
-        private readonly JsonSerializerOptions _serializerSettings = new JsonSerializerOptions(System.Text.Json.Json.DefaultSerializeSettings)
+        private readonly JsonSerializerOptions _serializerSettings = new JsonSerializerOptions(JsonExtension.DefaultSerializeSettings)
         {
             IgnoreNullValues = true,
             WriteIndented = false

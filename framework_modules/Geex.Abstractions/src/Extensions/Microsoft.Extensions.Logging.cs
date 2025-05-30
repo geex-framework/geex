@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using Geex;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.Logging

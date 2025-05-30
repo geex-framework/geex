@@ -147,7 +147,7 @@ namespace Geex
                     x.AutoDelete = false;
                     x.QueueName = coreModuleOptions.AppName;
                     x.DeDuplicationEnabled = true;
-                    x.SerializerSettings = System.Text.Json.Json.InternalSerializeSettings;
+                    x.SerializerSettings = JsonExtension.InternalSerializeSettings;
                     x.NotificationHandlerTypes = RemoteNotificationHandlerTypes;
                 });
             }

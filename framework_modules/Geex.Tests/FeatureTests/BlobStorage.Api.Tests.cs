@@ -1,0 +1,226 @@
+using Geex.Extensions.BlobStorage;
+using Geex.Extensions.BlobStorage.Requests;
+
+using Microsoft.Extensions.DependencyInjection;
+
+using Shouldly;
+
+using System;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json.Nodes;
+using System.Threading.Tasks;
+using HotChocolate.Types;
+using MongoDB.Bson;
+
+using Newtonsoft.Json;
+
+namespace Geex.Tests.FeatureTests
+{
+    [Collection(nameof(TestsCollection))]
+    public class BlobStorageApiTests
+    {
+        private readonly TestApplicationFactory _factory;
+        private readonly string _graphqlEndpoint = "/graphql";
+
+        public BlobStorageApiTests(TestApplicationFactory factory)
+        {
+            _factory = factory;
+        }
+
+        [Fact]
+        public async Task QueryBlobObjectsShouldWork()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            var request = new
+            {
+                query = $$"""
+                    query {
+                        blobObjects(skip: 0, take: 10) {
+                            items {
+                                id
+                                fileName
+                                fileSize
+                                storageType
+                                url
+                            }
+                            pageInfo {
+                                hasPreviousPage
+                                hasNextPage
+                            }
+                            totalCount
+                        }
+                    }
+                    """
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await client.PostAsync(_graphqlEndpoint, content);
+
+            var (responseData, responseString) = await response.ParseGraphQLResponse();
+
+            // Assert
+            int totalCount = responseData["data"]["blobObjects"]["totalCount"].GetValue<int>();
+            totalCount.ShouldBeGreaterThanOrEqualTo(0);
+        }
+
+        [Fact]
+        public async Task FilterBlobObjectsByFileNameShouldWork()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            var targetFileName = $"specific_file_{ObjectId.GenerateNewId()}.txt";
+
+            // First create a blob with specific filename
+            var service = _factory.Services;
+            var uow = service.GetService<IUnitOfWork>();
+            var testData = "test content for filtering";
+            var fileBytes = Encoding.UTF8.GetBytes(testData);
+
+            var blob = await uow.Request(new CreateBlobObjectRequest()
+            {
+                File = new StreamFile(targetFileName, () => new MemoryStream(fileBytes)),
+                StorageType = BlobStorageType.Db
+            });
+            await uow.SaveChanges();
+
+            var request = new
+            {
+                query = $$$"""
+                    query {
+                        blobObjects(skip: 0, take: 10, filter: { fileName: { eq: "{{{targetFileName}}}" }}) {
+                            items {
+                                id
+                                fileName
+                                fileSize
+                                storageType
+                            }
+                            totalCount
+                        }
+                    }
+                    """
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await client.PostAsync(_graphqlEndpoint, content);
+
+            var (responseData, responseString) = await response.ParseGraphQLResponse();
+
+            // Assert
+            var items = responseData["data"]["blobObjects"]["items"].AsArray();
+            (items).Count.ShouldBeGreaterThan(0);
+
+            foreach (var item in items)
+            {
+                ((string)item["fileName"]).ShouldBe(targetFileName);
+            }
+        }
+
+        [Fact]
+        public async Task DeleteBlobObjectMutationShouldWork()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            var service = _factory.Services;
+            var uow = service.GetService<IUnitOfWork>();
+
+            // First create a blob to delete
+            var testFileName = $"delete_test_{ObjectId.GenerateNewId()}.txt";
+            var testData = "content to be deleted";
+            var fileBytes = Encoding.UTF8.GetBytes(testData);
+
+            var blob = await uow.Request(new CreateBlobObjectRequest()
+            {
+                File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
+                StorageType = BlobStorageType.Db
+            });
+            await uow.SaveChanges();
+
+            var request = new
+            {
+                query = $$"""
+                    mutation {
+                        deleteBlobObject(request: { ids: ["{{blob.Id}}"], storageType: Db })
+                    }
+                    """
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await client.PostAsync(_graphqlEndpoint, content);
+
+            var (responseData, _) = await response.ParseGraphQLResponse();
+
+            // Assert
+            bool deleteResult = (bool)responseData["data"]["deleteBlobObject"];
+            deleteResult.ShouldBeTrue();
+
+            // Verify the blob is actually deleted
+            using var verifyService = service.CreateScope();
+            var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
+            var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blob.Id);
+            deletedBlob.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task FilterBlobObjectsByStorageTypeShouldWork()
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            var service = _factory.Services;
+            var uow = service.GetService<IUnitOfWork>();
+
+            // Create a blob with specific storage type
+            var testFileName = $"storage_filter_test_{ObjectId.GenerateNewId()}.txt";
+            var testData = "test content for storage type filtering";
+            var fileBytes = Encoding.UTF8.GetBytes(testData);
+
+            var blob = await uow.Request(new CreateBlobObjectRequest()
+            {
+                File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
+                StorageType = BlobStorageType.Db
+            });
+            await uow.SaveChanges();
+
+            var request = new
+            {
+                query = $$"""
+                    query {
+                        blobObjects(skip: 0, take: 10, filter: { storageType: { eq: Db } }) {
+                            items {
+                                id
+                                fileName
+                                storageType
+                            }
+                            totalCount
+                        }
+                    }
+                    """
+            };
+
+            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await client.PostAsync(_graphqlEndpoint, content);
+
+            var (responseData, responseString) = await response.ParseGraphQLResponse();
+
+            // Assert
+            var items = responseData["data"]["blobObjects"]["items"].AsArray();
+            (items).Count.ShouldBeGreaterThan(0);
+
+            foreach (var item in items)
+            {
+                ((string)item["storageType"]).ShouldBe("Db");
+            }
+        }
+    }
+}

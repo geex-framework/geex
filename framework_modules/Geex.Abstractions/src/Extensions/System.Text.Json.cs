@@ -1,16 +1,15 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Force.DeepCloner;
-using Geex;
-using Geex.Abstractions;
 using Geex.Json;
 
-// ReSharper disable once CheckNamespace
-namespace System.Text.Json
+namespace Geex
 {
-    public static class Json
+    public static class JsonExtension
     {
         private static readonly ConcurrentDictionary<string, JsonSerializerOptions> CustomOptionsCache = new ConcurrentDictionary<string, JsonSerializerOptions>();
         public static void WriteRaw(this Utf8JsonWriter writer, string jsonRaw)
@@ -18,7 +17,7 @@ namespace System.Text.Json
             using JsonDocument document = JsonDocument.Parse(jsonRaw);
             document.RootElement.WriteTo(writer);
         }
-        static Json()
+        static JsonExtension()
         {
             DefaultSerializeSettings.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
             DefaultSerializeSettings.PropertyNameCaseInsensitive = true;

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Geex;
 using Geex.Abstractions;
 using Geex.Abstractions;
-
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Entities;
@@ -34,7 +33,7 @@ namespace StackExchange.Redis.Extensions.Core
             services.AddSingleton<IRedisClient, RedisClient>();
             services.AddSingleton<IRedisDatabase>(x => x.GetService<IRedisClient>().Db0);
             services.AddSingleton<IRedisConnectionPoolManager, RedisConnectionPoolManager>();
-            services.AddSingleton<ISerializer, SystemTextJsonSerializer>(x => new SystemTextJsonSerializer(Json.DefaultSerializeSettings));
+            services.AddSingleton<ISerializer, SystemTextJsonSerializer>(x => new SystemTextJsonSerializer(JsonExtension.DefaultSerializeSettings));
 
             services.AddSingleton((provider) =>
             {

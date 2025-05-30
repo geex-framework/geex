@@ -68,10 +68,10 @@ namespace Geex.Tests.FeatureTests
             var response = await client.PostAsync(_graphqlEndpoint, content);
 
             // Parse response as dynamic
-            var responseData = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
-            ((string)responseData.data.editSetting.name).ShouldBe("BlobStorageModuleName");
+            ((string)responseData["data"]["editSetting"]["name"]).ShouldBe("BlobStorageModuleName");
 
         }
         [Fact]
@@ -95,14 +95,14 @@ namespace Geex.Tests.FeatureTests
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
-            var responseString = await response.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            var responseData = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
-            int itemCount = ((Newtonsoft.Json.Linq.JArray)responseData.data.settings.items).Count;
-            int totalCount = (int)responseData.data.settings.totalCount;
+            var items = responseData["data"]["settings"]["items"].AsArray();
+            int itemCount = items.Count;
+            int totalCount = responseData["data"]["settings"]["totalCount"].GetValue<int>();
 
             itemCount.ShouldBeGreaterThan(0);
             totalCount.ShouldBeGreaterThan(0);
@@ -125,13 +125,13 @@ namespace Geex.Tests.FeatureTests
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
-            var responseString = await response.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            var responseData = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
-            int settingsCount = ((Newtonsoft.Json.Linq.JArray)responseData.data.initSettings).Count;
+            var initSettings = responseData["data"]["initSettings"].AsArray();
+            int settingsCount = initSettings.Count;
             settingsCount.ShouldBeGreaterThan(0);
 
 
@@ -165,18 +165,17 @@ namespace Geex.Tests.FeatureTests
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
-            var responseString = await response.Content.ReadAsStringAsync();
 
             // Parse response as dynamic
-            var responseData = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
-            var items = responseData.data.settings.items;
-            ((Newtonsoft.Json.Linq.JArray)items).Count.ShouldBeGreaterThan(0);
+            var items = responseData["data"]["settings"]["items"].AsArray();
+            items.Count.ShouldBeGreaterThan(0);
 
             foreach (var item in items)
             {
-                ((string)item.name).ShouldBe(targetSettingName);
+                ((string)item["name"]).ShouldBe(targetSettingName);
             }
 
 
@@ -210,11 +209,11 @@ namespace Geex.Tests.FeatureTests
             var editResponse = await client.PostAsync(_graphqlEndpoint, editContent);
 
             // Parse response as dynamic
-            var editResponseData = await editResponse.ParseGraphQLResponse();
+            var (editResponseData,_) = await editResponse.ParseGraphQLResponse();
 
             // Assert - 编辑成功
-            ((string)editResponseData.data.editSetting.name).ShouldBe(testSettingName);
-            ((string)editResponseData.data.editSetting.value).ShouldBe(testValue);
+            ((string)editResponseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName);
+            ((string)editResponseData["data"]["editSetting"]["value"]).ShouldBe(testValue);
 
             var queryRequest = new
             {
@@ -242,15 +241,15 @@ namespace Geex.Tests.FeatureTests
             var queryResponse = await client.PostAsync(_graphqlEndpoint, queryContent);
 
             // Parse response as dynamic
-            var queryResponseData = await queryResponse.ParseGraphQLResponse();
+            var (queryResponseData, responseString) = await queryResponse.ParseGraphQLResponse();
 
             // Assert - 查询成功并且值已更新
-            var items = queryResponseData.data.settings.items;
-            ((Newtonsoft.Json.Linq.JArray)items).Count.ShouldBe(1);
+            var items = queryResponseData["data"]["settings"]["items"].AsArray();
+            items.Count.ShouldBe(1);
 
             var item = items[0];
-            ((string)item.name).ShouldBe(testSettingName);
-            ((string)item.value).ShouldBe(testValue);
+            ((string)item["name"]).ShouldBe(testSettingName);
+            ((string)item["value"]).ShouldBe(testValue);
 
 
         }
@@ -283,13 +282,13 @@ namespace Geex.Tests.FeatureTests
             var editGlobalResponse = await client.PostAsync(_graphqlEndpoint, editGlobalContent);
 
             // Parse response as dynamic
-            var editGlobalResponseData = await editGlobalResponse.ParseGraphQLResponse();
+            var (editGlobalResponseData, responseString) = await editGlobalResponse.ParseGraphQLResponse();
 
             // Assert - 编辑全局设置成功
-            var editSetting = editGlobalResponseData.data.editSetting;
-            ((string)editSetting.name).ShouldBe(testSettingName);
-            ((string)editSetting.scope).ShouldBe("Global");
-            ((string)editSetting.value).ShouldBe(globalValue);
+            var editSetting = editGlobalResponseData["data"]["editSetting"];
+            ((string)editSetting["name"]).ShouldBe(testSettingName);
+            ((string)editSetting["scope"]).ShouldBe("Global");
+            ((string)editSetting["value"]).ShouldBe(globalValue);
 
             var queryGlobalRequest = new
             {
@@ -317,16 +316,16 @@ namespace Geex.Tests.FeatureTests
             var queryGlobalResponse = await client.PostAsync(_graphqlEndpoint, queryGlobalContent);
 
             // Parse response as dynamic
-            var queryGlobalResponseData = await queryGlobalResponse.ParseGraphQLResponse();
+            var (queryGlobalResponseData, responseString1) = await queryGlobalResponse.ParseGraphQLResponse();
 
             // Assert - 查询全局设置成功
-            var items = queryGlobalResponseData.data.settings.items;
-            ((Newtonsoft.Json.Linq.JArray)items).Count.ShouldBe(1);
+            var items = queryGlobalResponseData["data"]["settings"]["items"].AsArray();
+            items.Count.ShouldBe(1);
 
             var item = items[0];
-            ((string)item.name).ShouldBe(testSettingName);
-            ((string)item.scope).ShouldBe("Global");
-            ((string)item.value).ShouldBe(globalValue);
+            ((string)item["name"]).ShouldBe(testSettingName);
+            ((string)item["scope"]).ShouldBe("Global");
+            ((string)item["value"]).ShouldBe(globalValue);
 
 
         }
