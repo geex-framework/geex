@@ -28,9 +28,7 @@ namespace Geex.Tests.FeatureTests
         public SettingsServiceTests(TestApplicationFactory factory)
         {
             _factory = factory;
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task EditSettingServiceShouldWork()
         {
             // Arrange
@@ -38,6 +36,10 @@ namespace Geex.Tests.FeatureTests
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
+
+            // Ensure we're in host context for global settings
+            var currentTenant = uow.ServiceProvider.GetService<ICurrentTenant>();
+            currentTenant.Change(null);
 
             // Act
             var setting = await uow.Request(new EditSettingRequest
@@ -54,9 +56,7 @@ namespace Geex.Tests.FeatureTests
             setting.Name.ShouldBe(testSettingName);
             setting.Value.GetValue<string>().ShouldBe(testValue);
             setting.Scope.ShouldBe(SettingScopeEnumeration.Global);
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task GetSettingsServiceShouldWork()
         {
             // Arrange
@@ -64,6 +64,10 @@ namespace Geex.Tests.FeatureTests
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
+
+            // Ensure we're in host context for global settings
+            var currentTenant = uow.ServiceProvider.GetService<ICurrentTenant>();
+            currentTenant.Change(null);
 
             // Create test setting
             await uow.Request(new EditSettingRequest
@@ -84,9 +88,7 @@ namespace Geex.Tests.FeatureTests
             settings.ShouldNotBeEmpty();
             settings.First().Name.ShouldBe(testSettingName);
             settings.First().Value.GetValue<string>().ShouldBe(testValue);
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task SettingWithDifferentScopesShouldWork()
         {
             // Arrange
@@ -94,6 +96,10 @@ namespace Geex.Tests.FeatureTests
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var globalValue = "GlobalValue_" + ObjectId.GenerateNewId();
+
+            // Ensure we're in host context for global settings
+            var currentTenant = uow.ServiceProvider.GetService<ICurrentTenant>();
+            currentTenant.Change(null);
 
             // Act - Create global setting
             var globalSetting = await uow.Request(new EditSettingRequest
@@ -117,9 +123,7 @@ namespace Geex.Tests.FeatureTests
                 .FirstOrDefault(x => x.Name == testSettingName && x.Scope == SettingScopeEnumeration.Global);
             retrievedSetting.ShouldNotBeNull();
             retrievedSetting.Value.GetValue<string>().ShouldBe(globalValue);
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task ComplexSettingValueShouldWork()
         {
             // Arrange
@@ -140,6 +144,10 @@ namespace Geex.Tests.FeatureTests
                 hideInBreadcrumb = true
             };
 
+            // Ensure we're in host context for global settings
+            var currentTenant = uow.ServiceProvider.GetService<ICurrentTenant>();
+            currentTenant.Change(null);
+
             // Act
             var setting = await uow.Request(new EditSettingRequest
             {
@@ -154,9 +162,7 @@ namespace Geex.Tests.FeatureTests
             setting.ShouldNotBeNull();
             setting.Name.ShouldBe(testSettingName);
             setting.Value.ShouldNotBeNull();
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task UpdateExistingSettingServiceShouldWork()
         {
             // Arrange
@@ -165,6 +171,10 @@ namespace Geex.Tests.FeatureTests
             var testSettingName = TestModuleSettings.GlobalSetting;
             var originalValue = ObjectId.GenerateNewId().ToString();
             var updatedValue = ObjectId.GenerateNewId().ToString();
+
+            // Ensure we're in host context for global settings
+            var currentTenant = uow.ServiceProvider.GetService<ICurrentTenant>();
+            currentTenant.Change(null);
 
             // Create initial setting
             await uow.Request(new EditSettingRequest
