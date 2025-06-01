@@ -2,6 +2,7 @@
 using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows;
 using Geex.Extensions.AuditLogs;
+using Geex.Extensions.MultiTenant;
 using Geex.Extensions.Settings;
 using HotChocolate;
 using HotChocolate.Execution;
@@ -16,6 +17,7 @@ namespace Geex.Tests;
 
 [DependsOn(typeof(GeexCoreModule),
     typeof(GeexCommonModule),
+    typeof(MultiTenantModule),
     typeof(ApprovalFlowModule))]
 public class TestModule : GeexEntryModule<TestModule>
 {

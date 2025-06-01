@@ -3,9 +3,15 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
+using Geex.Extensions.ApprovalFlows.Core.Entities;
+using Geex.Extensions.MultiTenant.Core.Aggregates.Tenants;
+using Geex.Extensions.Requests.MultiTenant;
 using Geex.Extensions.Settings;
 using Geex.Extensions.Settings.Requests;
+using Geex.MultiTenant;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using MongoDB.Bson;
 
 using Shouldly;
@@ -46,7 +52,7 @@ namespace Geex.Tests.FeatureTests
             // Assert
             setting.ShouldNotBeNull();
             setting.Name.ShouldBe(testSettingName);
-            setting.Value.ShouldBe(testValue);
+            setting.Value.GetValue<string>().ShouldBe(testValue);
             setting.Scope.ShouldBe(SettingScopeEnumeration.Global);
         }
 
@@ -77,7 +83,7 @@ namespace Geex.Tests.FeatureTests
             // Assert
             settings.ShouldNotBeEmpty();
             settings.First().Name.ShouldBe(testSettingName);
-            settings.First().Value.ShouldBe(testValue);
+            settings.First().Value.GetValue<string>().ShouldBe(testValue);
         }
 
         [Fact]
@@ -102,7 +108,7 @@ namespace Geex.Tests.FeatureTests
             // Assert
             globalSetting.ShouldNotBeNull();
             globalSetting.Scope.ShouldBe(SettingScopeEnumeration.Global);
-            globalSetting.Value.ShouldBe(globalValue);
+            globalSetting.Value.GetValue<string>().ShouldBe(globalValue);
 
             // Verify retrieval
             using var service1 = service.CreateScope();
@@ -110,7 +116,7 @@ namespace Geex.Tests.FeatureTests
             var retrievedSetting = verifyUow.Query<ISetting>()
                 .FirstOrDefault(x => x.Name == testSettingName && x.Scope == SettingScopeEnumeration.Global);
             retrievedSetting.ShouldNotBeNull();
-            retrievedSetting.Value.ShouldBe(globalValue);
+            retrievedSetting.Value.GetValue<string>().ShouldBe(globalValue);
         }
 
         [Fact]
@@ -183,14 +189,14 @@ namespace Geex.Tests.FeatureTests
             // Assert
             updatedSetting.ShouldNotBeNull();
             updatedSetting.Name.ShouldBe(testSettingName);
-            updatedSetting.Value.ShouldBe(updatedValue);
+            updatedSetting.Value.GetValue<string>().ShouldBe(updatedValue);
 
             // Verify only one setting exists with this name
             using var verifyService = service.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
             var allSettings = verifyUow.Query<ISetting>().Where(x => x.Name == testSettingName).ToList();
             allSettings.Count.ShouldBe(1);
-            allSettings.First().Value.ShouldBe(updatedValue);
+            allSettings.First().Value.GetValue<string>().ShouldBe(updatedValue);
         }
 
         [Fact]
@@ -200,14 +206,24 @@ namespace Geex.Tests.FeatureTests
             var service = _factory.Services;
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.TenantSetting;
-            var scopedKey = ObjectId.GenerateNewId().ToString();
+            var tenantCode = "test";
             var testValue = ObjectId.GenerateNewId().ToString();
+
+            var newTenant = uow.Create(new CreateTenantRequest()
+            {
+                Code = tenantCode,
+                ExternalInfo = null,
+                Name = "testName"
+            });
+
+            var currentTenant = uow.ServiceProvider.GetService<ICurrentTenant>();
+            currentTenant.Change(tenantCode);
 
             // Act
             var setting = await uow.Request(new EditSettingRequest
             {
                 Scope = SettingScopeEnumeration.Tenant,
-                ScopedKey = scopedKey,
+                ScopedKey = tenantCode,
                 Name = testSettingName,
                 Value = testValue
             });
@@ -216,17 +232,17 @@ namespace Geex.Tests.FeatureTests
             // Assert
             setting.ShouldNotBeNull();
             setting.Name.ShouldBe(testSettingName);
-            setting.ScopedKey.ShouldBe(scopedKey);
+            setting.ScopedKey.ShouldBe(tenantCode);
             setting.Scope.ShouldBe(SettingScopeEnumeration.Tenant);
-            setting.Value.ShouldBe(testValue);
+            setting.Value.GetValue<string>().ShouldBe(testValue);
 
             // Verify retrieval
             using var service1 = service.CreateScope();
             var verifyUow = service1.ServiceProvider.GetService<IUnitOfWork>();
             var retrievedSetting = verifyUow.Query<ISetting>()
-                .FirstOrDefault(x => x.Name == testSettingName && x.ScopedKey == scopedKey);
+                .FirstOrDefault(x => x.Name == testSettingName && x.ScopedKey == tenantCode);
             retrievedSetting.ShouldNotBeNull();
-            retrievedSetting.Value.ShouldBe(testValue);
+            retrievedSetting.Value.GetValue<string>().ShouldBe(testValue);
         }
     }
 }

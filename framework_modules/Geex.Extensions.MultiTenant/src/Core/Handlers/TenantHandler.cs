@@ -30,8 +30,7 @@ namespace Geex.Extensions.MultiTenant.Core.Handlers
         /// <inheritdoc />
         public async Task<ITenant> Handle(CreateTenantRequest request, CancellationToken cancellationToken)
         {
-            var tenant = Tenant.Create(request.Code, request.Name, request.ExternalInfo);
-            Uow.Attach(tenant);
+            var tenant = Uow.Create(request);
             return tenant;
         }
 

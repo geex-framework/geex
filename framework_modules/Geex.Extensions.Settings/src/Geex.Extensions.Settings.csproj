@@ -1,36 +1,37 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
-  </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="Abstractions\**" />
-    <EmbeddedResource Remove="Abstractions\**" />
-    <None Remove="Abstractions\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="AutoEquality" Version="0.5.4" />
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
-    <PackageReference Include="CSharpRecordEnabler" Version="1.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Humanizer.Core" Version="2.14.1" />
-    <PackageReference Include="ImpromptuInterface" Version="8.0.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="3.1.32" />
-    <PackageReference Include="Volo.Abp.Core" Version="9.1.3" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
-    <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
-    <ProjectReference Include="Abstractions\Geex.Extensions.Settings.Abstractions.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Gql\Types\" />
-    <Folder Include="Migrations\" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Remove="Abstractions\**" />
+        <EmbeddedResource Remove="Abstractions\**" />
+        <None Remove="Abstractions\**" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="AutoEquality" Version="0.5.4" />
+        <PackageReference Include="Geex.Analyzer" Version="8.1.0.4" />
+        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
+        <PackageReference Include="CSharpRecordEnabler" Version="1.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Humanizer.Core" Version="2.14.1" />
+        <PackageReference Include="ImpromptuInterface" Version="8.0.6" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
+        <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="3.1.32" />
+        <PackageReference Include="Volo.Abp.Core" Version="9.1.3" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+        <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
+        <ProjectReference Include="Abstractions\Geex.Extensions.Settings.Abstractions.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Gql\Types\" />
+        <Folder Include="Migrations\" />
+    </ItemGroup>
 </Project>

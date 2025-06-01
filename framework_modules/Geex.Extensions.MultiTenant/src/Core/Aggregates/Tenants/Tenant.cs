@@ -5,30 +5,31 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Abstractions;
+using Geex.Extensions.Requests.MultiTenant;
 using Geex.MultiTenant;
 using Geex.Storage;
+
 using HotChocolate.Types;
+
 using MongoDB.Bson.Serialization;
 
 namespace Geex.Extensions.MultiTenant.Core.Aggregates.Tenants
 {
     public class Tenant : Entity<Tenant>, ITenant
     {
+        public Tenant(CreateTenantRequest request, IUnitOfWork uow = default)
+        {
+            Code = request.Code;
+            Name = request.Name;
+            ExternalInfo = request.ExternalInfo;
+            IsEnabled = true;
+            uow?.Attach(this);
+        }
+
         public string Code { get; set; }
         /// <inheritdoc />
         public string Name { get; set; }
         public bool IsEnabled { get; set; }
-
-        internal static Tenant Create(string code, string name, JsonNode externalInfo = default)
-        {
-            return new Tenant()
-            {
-                Code = code,
-                Name = name,
-                IsEnabled = true,
-                ExternalInfo = externalInfo
-            };
-        }
 
         public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
         {
