@@ -24,7 +24,7 @@ namespace Geex.Tests.FeatureTests
         public async Task ScopedService_ShouldHaveDifferentUnitOfWorkInstances()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var scopedProvider1 = service.CreateScope().ServiceProvider;
             var scopedProvider2 = scopedProvider1.CreateScope().ServiceProvider;
 
@@ -63,7 +63,7 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = new MongoClient();
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var scopedProvider1 = service.CreateScope().ServiceProvider;
             var scopedProvider2 = service.CreateScope().ServiceProvider;
             await DB.DefaultDb.DropCollectionAsync(nameof(TestEntity));

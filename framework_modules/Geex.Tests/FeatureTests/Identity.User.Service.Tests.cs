@@ -27,7 +27,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateUserServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             await uow.DbContext.Query<User>().Where(x=>x.PhoneNumber == "15555555556").DeleteAsync();
             var testUsername = $"testuser_{ObjectId.GenerateNewId()}";
@@ -62,7 +62,7 @@ namespace Geex.Tests.FeatureTests
         public async Task PasswordHashingShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var passwordHasher = service.GetService<IPasswordHasher<IUser>>();
             var plainPassword = "Password123!";
@@ -93,7 +93,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CheckPasswordShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var password = "Password123!";
             var testUsername = $"checkpwd_{ObjectId.GenerateNewId()}";
@@ -119,7 +119,7 @@ namespace Geex.Tests.FeatureTests
         public async Task ChangePasswordServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var originalPassword = "Password123!";
             var newPassword = "NewPassword123!";
@@ -150,7 +150,7 @@ namespace Geex.Tests.FeatureTests
         public async Task ChangePasswordWithInvalidOriginShouldThrow()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testUsername = $"invalidpwd_{ObjectId.GenerateNewId()}";
 
@@ -175,7 +175,7 @@ namespace Geex.Tests.FeatureTests
         public async Task EditUserServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testUsername = $"edituser_{ObjectId.GenerateNewId()}";
             var uniquePhoneNumber = $"155{ObjectId.GenerateNewId().ToString().Substring(0, 8)}";
@@ -219,7 +219,7 @@ namespace Geex.Tests.FeatureTests
         public async Task DeleteUserServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testUsername = $"deleteuser_{ObjectId.GenerateNewId()}";
 
@@ -254,7 +254,7 @@ namespace Geex.Tests.FeatureTests
         public async Task ResetUserPasswordServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testUsername = $"resetpwd_{ObjectId.GenerateNewId()}";
 
@@ -289,7 +289,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SetPasswordShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testUsername = $"setpwd_{ObjectId.GenerateNewId()}";
 

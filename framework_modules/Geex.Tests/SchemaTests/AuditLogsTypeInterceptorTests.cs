@@ -38,7 +38,7 @@ namespace Geex.Tests.SchemaTests
         public async Task AuditFieldsImplicitlyShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var schema = service.GetService<ISchema>();
             schema.MutationType.Fields.TryGetField(nameof(AuditLogTestMutation.AuditLogTestMutationField).ToCamelCase(), out var field1).ShouldBeTrue();
             field1.Directives.Any(x => x.Type.RuntimeType == typeof(AuditDirectiveType)).ShouldBeTrue();
@@ -48,7 +48,7 @@ namespace Geex.Tests.SchemaTests
         public async Task AuthenticationMutationShouldBePatched()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var schema = service.GetService<ISchema>();
             var toBePatchFieldNames = AuditLogsTypeInterceptor.ToBePatchedBuiltInOperations.SelectMany(x => x.Value);
             foreach (var fieldName in toBePatchFieldNames)

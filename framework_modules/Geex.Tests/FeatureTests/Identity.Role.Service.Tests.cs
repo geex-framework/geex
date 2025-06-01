@@ -23,7 +23,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateRoleServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testRoleCode = $"testrole_{ObjectId.GenerateNewId()}";
 
@@ -52,7 +52,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateStaticRoleShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testRoleCode = $"staticrole_{ObjectId.GenerateNewId()}";
 
@@ -76,7 +76,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateDefaultRoleShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testRoleCode = $"defaultrole_{ObjectId.GenerateNewId()}";
 
@@ -100,7 +100,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SetRoleAsDefaultShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testRoleCode = $"setdefault_{ObjectId.GenerateNewId()}";
 
@@ -130,7 +130,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SetDefaultShouldUnsetPreviousDefaultRole()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
 
             // Create fresh roles for this test
@@ -174,7 +174,7 @@ namespace Geex.Tests.FeatureTests
         public async Task QueryRolesShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
 
             await uow.Request(new CreateRoleRequest
@@ -205,7 +205,7 @@ namespace Geex.Tests.FeatureTests
         public async Task RoleValidationShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var duplicateCode = $"duplicate_{ObjectId.GenerateNewId()}";
 

@@ -47,7 +47,7 @@ namespace Geex.Tests.SchemaTests
         public async Task ImplicitAuthorizationShouldBeApplied()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var schema = service.GetService<ISchema>();
 
             // Get the schema type for our test aggregate entity
@@ -75,7 +75,7 @@ namespace Geex.Tests.SchemaTests
         public async Task ExtensionTypeAuthorizationShouldBeApplied()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var schema = service.GetService<ISchema>();
 
             // Check mutation type
@@ -115,7 +115,7 @@ namespace Geex.Tests.SchemaTests
         public async Task SpecialFieldsShouldNotBeAuthorized()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var schema = service.GetService<ISchema>();
 
             // Get test aggregate type

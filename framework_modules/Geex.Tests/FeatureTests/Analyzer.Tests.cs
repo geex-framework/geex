@@ -14,7 +14,7 @@ namespace Geex.Tests.FeatureTests
         //public async Task UowCreateShouldWork()
         //{
         //    // Arrange
-        //    var service = _factory.Services;
+        //    using var scope = _factory.StartTestScope(out var service);
         //    var uow = service.GetService<IUnitOfWork>();
         //    var dateTime = DateTime.Now;
         //    var data = new int[1024];

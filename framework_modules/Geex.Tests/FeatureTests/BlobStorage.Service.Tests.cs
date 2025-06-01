@@ -29,7 +29,7 @@ namespace Geex.Tests.FeatureTests
         public async Task MemoryFileUploadShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var dateTime = DateTime.Now;
             var data = new byte[1024 * 2048];
@@ -57,7 +57,7 @@ namespace Geex.Tests.FeatureTests
             var md5Hash = System.Security.Cryptography.MD5.HashData(fileBytes);
             var md5String = Convert.ToHexString(md5Hash).ToLower();
 
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
 
             // Act
@@ -81,7 +81,7 @@ namespace Geex.Tests.FeatureTests
         public async Task DeleteBlobObjectServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
 
             var testFileName = $"delete_test_{ObjectId.GenerateNewId()}.txt";
@@ -110,7 +110,7 @@ namespace Geex.Tests.FeatureTests
         public async Task FileSystemStorageTypeShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testFileName = $"filesystem_test_{ObjectId.GenerateNewId()}.txt";
             var testData = "test content for filesystem storage";
@@ -140,7 +140,7 @@ namespace Geex.Tests.FeatureTests
         public async Task BlobObjectUrlShouldBeGenerated()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testFileName = $"url_test_{ObjectId.GenerateNewId()}.txt";
             var testData = "test content for url generation";
@@ -164,7 +164,7 @@ namespace Geex.Tests.FeatureTests
         public async Task LargeFileUploadShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testFileName = $"large_file_{ObjectId.GenerateNewId()}.txt";
 

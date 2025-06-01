@@ -25,7 +25,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateOrgServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testOrgCode = $"testorg_{ObjectId.GenerateNewId()}";
 
@@ -51,7 +51,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateSubOrganizationShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var parentOrgCode = $"parent_{ObjectId.GenerateNewId()}";
             var parentOrg = await CreateTestOrg(uow, parentOrgCode);
@@ -77,7 +77,7 @@ namespace Geex.Tests.FeatureTests
         public async Task GetParentOrgShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var parentOrgCode = $"parent_{ObjectId.GenerateNewId()}";
             var parentOrg = await CreateTestOrg(uow, parentOrgCode);
@@ -99,7 +99,7 @@ namespace Geex.Tests.FeatureTests
         public async Task GetAllParentOrgCodesShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var level1Code = $"level1_{ObjectId.GenerateNewId()}";
             await CreateTestOrg(uow, level1Code);
@@ -120,7 +120,7 @@ namespace Geex.Tests.FeatureTests
         public async Task GetDirectSubOrgsShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var parentCode = $"parent_{ObjectId.GenerateNewId()}";
             var parentOrg = await CreateTestOrg(uow, parentCode);
@@ -143,7 +143,7 @@ namespace Geex.Tests.FeatureTests
         public async Task GetAllSubOrgsShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var parentCode = $"parent_{ObjectId.GenerateNewId()}";
             var parentOrg = await CreateTestOrg(uow, parentCode);
@@ -166,7 +166,7 @@ namespace Geex.Tests.FeatureTests
         public async Task ChangeOrgCodeShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var oldCode = $"oldcode_{ObjectId.GenerateNewId()}";
             var newCode = $"newcode_{ObjectId.GenerateNewId()}";
@@ -193,7 +193,7 @@ namespace Geex.Tests.FeatureTests
         public async Task DeleteOrgShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var orgCode = $"deletetest_{ObjectId.GenerateNewId()}";
             var org = await CreateTestOrg(uow, orgCode, $"Delete Test Org {ObjectId.GenerateNewId()}");
@@ -216,7 +216,7 @@ namespace Geex.Tests.FeatureTests
         public async Task AssignUserToOrgWhenCreatingOrgShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var userUsername = $"orguser_{ObjectId.GenerateNewId()}";
             var user = await CreateTestUser(uow, userUsername);
@@ -246,7 +246,7 @@ namespace Geex.Tests.FeatureTests
         public async Task AutoAssignParentOrgUsersToSubOrgShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var userUsername = $"autouser_{ObjectId.GenerateNewId()}";
             var user = await CreateTestUser(uow, userUsername);
@@ -280,7 +280,7 @@ namespace Geex.Tests.FeatureTests
         public async Task FixUserOrgShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var userUsername = $"fixuser_{ObjectId.GenerateNewId()}";
             var user = await CreateTestUser(uow, userUsername);
@@ -303,7 +303,7 @@ namespace Geex.Tests.FeatureTests
         public async Task QueryOrgsShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             await CreateTestOrg(uow, $"org1_{ObjectId.GenerateNewId()}");
             await CreateTestOrg(uow, $"org2_{ObjectId.GenerateNewId()}");
@@ -320,7 +320,7 @@ namespace Geex.Tests.FeatureTests
         public async Task ValidateOrgShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var org = await CreateTestOrg(uow);
             await uow.SaveChanges();

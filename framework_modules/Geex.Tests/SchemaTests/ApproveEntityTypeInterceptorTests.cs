@@ -37,7 +37,7 @@ namespace Geex.Tests.SchemaTests
         public async Task ApproveEntityFieldsShouldBeAdded()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var schema = service.GetService<ISchema>();
 
             // Act & Assert
@@ -52,7 +52,7 @@ namespace Geex.Tests.SchemaTests
         public async Task ApproveMutationMethodsShouldBeAdded()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var schema = service.GetService<ISchema>();
 
             // Act & Assert
@@ -89,7 +89,7 @@ namespace Geex.Tests.SchemaTests
         public async Task AuditDirectiveShouldBeAddedToApproveMethods()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var schema = service.GetService<ISchema>();
 
             // Act & Assert

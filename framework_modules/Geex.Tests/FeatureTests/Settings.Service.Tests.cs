@@ -28,11 +28,12 @@ namespace Geex.Tests.FeatureTests
         public SettingsServiceTests(TestApplicationFactory factory)
         {
             _factory = factory;
-        }        [Fact]
+        }
+        [Fact]
         public async Task EditSettingServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
@@ -56,11 +57,12 @@ namespace Geex.Tests.FeatureTests
             setting.Name.ShouldBe(testSettingName);
             setting.Value.GetValue<string>().ShouldBe(testValue);
             setting.Scope.ShouldBe(SettingScopeEnumeration.Global);
-        }        [Fact]
+        }
+        [Fact]
         public async Task GetSettingsServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
@@ -88,11 +90,12 @@ namespace Geex.Tests.FeatureTests
             settings.ShouldNotBeEmpty();
             settings.First().Name.ShouldBe(testSettingName);
             settings.First().Value.GetValue<string>().ShouldBe(testValue);
-        }        [Fact]
+        }
+        [Fact]
         public async Task SettingWithDifferentScopesShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var globalValue = "GlobalValue_" + ObjectId.GenerateNewId();
@@ -123,11 +126,12 @@ namespace Geex.Tests.FeatureTests
                 .FirstOrDefault(x => x.Name == testSettingName && x.Scope == SettingScopeEnumeration.Global);
             retrievedSetting.ShouldNotBeNull();
             retrievedSetting.Value.GetValue<string>().ShouldBe(globalValue);
-        }        [Fact]
+        }
+        [Fact]
         public async Task ComplexSettingValueShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var navItem = new
@@ -162,11 +166,12 @@ namespace Geex.Tests.FeatureTests
             setting.ShouldNotBeNull();
             setting.Name.ShouldBe(testSettingName);
             setting.Value.ShouldNotBeNull();
-        }        [Fact]
+        }
+        [Fact]
         public async Task UpdateExistingSettingServiceShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var originalValue = ObjectId.GenerateNewId().ToString();
@@ -213,7 +218,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SettingWithScopedKeyShouldWork()
         {
             // Arrange
-            var service = _factory.Services;
+            using var scope = _factory.StartTestScope(out var service);
             var uow = service.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.TenantSetting;
             var tenantCode = "test";

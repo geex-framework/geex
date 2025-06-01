@@ -255,7 +255,7 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var service = _factory.Services;
+            using var _ = _factory.StartTestScope(out var service);
             var testUsername = $"deleteapi_{ObjectId.GenerateNewId()}";
             string userId;
 

@@ -19,6 +19,13 @@ public class TestApplicationFactory : WebApplicationFactory<Program>
         base.ConfigureClient(client);
     }
 
+    public IServiceScope StartTestScope(out IServiceProvider service)
+    {
+        var scope = this.Services.CreateScope();
+        service = scope.ServiceProvider;
+        return scope;
+    }
+
     protected override IHostBuilder CreateHostBuilder()
     {
         return Program.CreateHostBuilder();
