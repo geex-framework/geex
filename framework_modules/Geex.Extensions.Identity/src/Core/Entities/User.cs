@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Entities;
 using Geex.Events;
 using Geex.Extensions.Authentication;
@@ -93,6 +92,7 @@ namespace Geex.Extensions.Identity.Core.Entities
         public virtual bool CheckPassword(string password)
         {
             var passwordHasher = this.ServiceProvider.GetService<IPasswordHasher<IUser>>();
+            //passwordHasher.HashPassword(this, password)
             return passwordHasher!.VerifyHashedPassword(this, Password, password) != PasswordVerificationResult.Failed;
         }
 

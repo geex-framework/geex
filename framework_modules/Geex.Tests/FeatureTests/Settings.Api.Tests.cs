@@ -4,9 +4,13 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
+using Elastic.Apm.Api;
+
 using Geex.Extensions.Settings;
 using Geex.Extensions.Settings.Requests;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using MongoDB.Bson;
 
 using Newtonsoft.Json;
@@ -33,20 +37,13 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var request = new
-            {
-                operationName = "settings",
-                variables = new
+            var requestBody = """
                 {
-                    request = new
-                    {
-                        scope = "Global"
-                    }
-                },
-                query = "query settings($request: GetSettingsRequest!) {  settings(request: $request) {    items {      id      name      scope      scopedKey      value      __typename    }    totalCount    __typename  }}"
-            };
+                    "query": "query { settings(request: { scope: Global }) { items { id name scope scopedKey value __typename } totalCount __typename } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
@@ -63,14 +60,13 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var request = new
-            {
-                operationName = "initSettings",
-                variables = new { },
-                query = "query initSettings {  initSettings {    id    name    scope    scopedKey    value    __typename  }}"
-            };
+            var requestBody = """
+                {
+                    "query": "query { initSettings { id name scope scopedKey value __typename } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
@@ -88,26 +84,16 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var testSettingName = $"ApiEditTest_{ObjectId.GenerateNewId()}";
+            var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
 
-            var request = new
-            {
-                operationName = "editSetting",
-                variables = new
+            var requestBody = $$"""
                 {
-                    request = new
-                    {
-                        scope = "Global",
-                        scopedKey = (string)null,
-                        name = testSettingName,
-                        value = testValue
-                    }
-                },
-                query = "mutation editSetting($request: EditSettingRequest!) {  editSetting(request: $request) {    id    name    scope    scopedKey    value    __typename  }}"
-            };
+                    "query": "mutation { editSetting(request: { scope: Global, scopedKey: null, name: {{testSettingName}}, value: \"{{testValue}}\" }) { id name scope scopedKey value __typename } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
@@ -141,27 +127,13 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
-            var request = new
-            {
-                operationName = "settings",
-                variables = new
+            var requestBody = $$"""
                 {
-                    request = new
-                    {
-                        scope = "Global"
-                    },
-                    filter = new
-                    {
-                        name = new
-                        {
-                            eq = targetSettingName
-                        }
-                    }
-                },
-                query = "query settings($request: GetSettingsRequest!, $filter: ISettingFilterInput) {  settings(request: $request, filter: $filter) {    items {      id      name      scope      scopedKey      value      __typename    }    totalCount    __typename  }}"
-            };
+                    "query": "query { settings(request: { scope: Global }, filter: { name: { eq: {{targetSettingName}} } }) { items { id name scope scopedKey value __typename } totalCount __typename } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
@@ -183,27 +155,17 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var testSettingName = $"EditVerifyTest_{ObjectId.GenerateNewId()}";
+            var testSettingName = TestModuleSettings.GlobalSetting;
             string testValue = ObjectId.GenerateNewId().ToString();
 
             // 1. Edit setting
-            var editRequest = new
-            {
-                operationName = "editSetting",
-                variables = new
+            var editRequestBody = $$"""
                 {
-                    request = new
-                    {
-                        scope = "Global",
-                        scopedKey = (string)null,
-                        name = testSettingName,
-                        value = testValue
-                    }
-                },
-                query = "mutation editSetting($request: EditSettingRequest!) {  editSetting(request: $request) {    id    name    scope    scopedKey    value    __typename  }}"
-            };
+                    "query": "mutation { editSetting(request: { scope: Global, scopedKey: null, name: {{testSettingName}}, value: \"{{testValue}}\" }) { id name scope scopedKey value __typename } }"
+                }
+                """;
 
-            var editContent = new StringContent(JsonConvert.SerializeObject(editRequest), Encoding.UTF8, "application/json");
+            var editContent = new StringContent(editRequestBody, Encoding.UTF8, "application/json");
 
             // Act - Edit setting
             var editResponse = await client.PostAsync(_graphqlEndpoint, editContent);
@@ -215,27 +177,13 @@ namespace Geex.Tests.FeatureTests
             ((string)editResponseData["data"]["editSetting"]["value"]).ShouldBe(testValue);
 
             // 2. Query to verify
-            var queryRequest = new
-            {
-                operationName = "settings",
-                variables = new
+            var queryRequestBody = $$"""
                 {
-                    request = new
-                    {
-                        scope = "Global"
-                    },
-                    filter = new
-                    {
-                        name = new
-                        {
-                            eq = testSettingName
-                        }
-                    }
-                },
-                query = "query settings($request: GetSettingsRequest!, $filter: ISettingFilterInput) {  settings(request: $request, filter: $filter) {    items {      id      name      scope      scopedKey      value      __typename    }    totalCount    __typename  }}"
-            };
+                    "query": "query { settings(request: { scope: Global }, filter: { name: { eq: {{testSettingName}} } }) { items { id name scope scopedKey value __typename } totalCount __typename } }"
+                }
+                """;
 
-            var queryContent = new StringContent(JsonConvert.SerializeObject(queryRequest), Encoding.UTF8, "application/json");
+            var queryContent = new StringContent(queryRequestBody, Encoding.UTF8, "application/json");
 
             // Act - Query setting
             var queryResponse = await client.PostAsync(_graphqlEndpoint, queryContent);
@@ -256,38 +204,17 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var testSettingName = $"ComplexValueTest_{ObjectId.GenerateNewId()}";
-            var navItem = new
-            {
-                text = "<span class=\"nav-group-text\">系统及配置</span>",
-                icon = (string)null,
-                shortcutRoot = false,
-                link = (string)null,
-                badge = 0,
-                acl = new[] { "identity_query_orgs" },
-                shortcut = false,
-                i18n = (string)null,
-                group = true,
-                hideInBreadcrumb = true
-            };
+            var testSettingName = TestModuleSettings.GlobalSetting;
+            //<span class=\"nav-group-text\">系统及配置</span>
+            var complexValue = """[{text:"<span class=\"nav-group-text\">系统及配置</span>",icon:null,shortcutRoot:false,link:null,badge:0,acl:["identity_query_orgs"],shortcut:false,i18n:null,group:true,hideInBreadcrumb:true}]""".Replace("\\","\\\\").Replace("\"","\\\"");
 
-            var request = new
-            {
-                operationName = "editSetting",
-                variables = new
+            var requestBody = $$"""
                 {
-                    request = new
-                    {
-                        scope = "Global",
-                        scopedKey = (string)null,
-                        name = testSettingName,
-                        value = new[] { navItem }
-                    }
-                },
-                query = "mutation editSetting($request: EditSettingRequest!) {  editSetting(request: $request) {    name    value    __typename  }}"
-            };
+                    "query": "mutation { editSetting(request: { scope: Global, scopedKey: null, name: {{testSettingName}}, value: {{complexValue}} }) { name value __typename } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
@@ -320,25 +247,13 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        settings(request: { scope: Global }, filter: { scope: { eq: Global } }) {
-                            items {
-                                id
-                                name
-                                scope
-                                scopedKey
-                                value
-                            }
-                            totalCount
-                        }
-                    }
-                    """
-            };
+            var requestBody = """
+                {
+                    "query": "query { settings(request: { scope: Global }, filter: { scope: { eq: Global } }) { items { id name scope scopedKey value } totalCount } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);

@@ -41,13 +41,7 @@ namespace Geex.Extensions.Settings.Core.Handlers
             _currentTenant = currentTenant;
             if (_settingDefinitions == default)
             {
-                var definitionTypes = modules
-                   .Select(y => y.GetType().Assembly).Distinct()
-                   .SelectMany(y => y.DefinedTypes
-                   .Where(z => z.BaseType == typeof(SettingDefinition)));
-                var settingDefinitions =
-                    definitionTypes.SelectMany(x => x.GetProperties(BindingFlags.Static | BindingFlags.Public).Where(y => y.DeclaringType.IsAssignableTo(x))).Select(x => x.GetValue(null)).Cast<SettingDefinition>();
-                _settingDefinitions = new ReadOnlyCollection<SettingDefinition>(settingDefinitions.ToArray());
+                _settingDefinitions = new ReadOnlyCollection<SettingDefinition>(SettingDefinition.List.ToArray());
             }
 
         }

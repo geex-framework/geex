@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Geex.Notifications;
+using Geex.Storage;
 using MongoDB.Driver;
 
 
@@ -15,13 +16,13 @@ namespace Geex.Abstractions
         /// Deletes a single entity from MongoDB.
         /// <para>HINT: If this entity is referenced by one-to-many/many-to-many relationships, those references are also deleted.</para>
         /// </summary>
-        public static async Task<long> DeleteAsync<T>(this T entity) where T : Storage.Entity<T>
+        public static async Task<long> DeleteAsync<T>(this T entity) where T : IEntity
         {
             entity.AddDomainEvent(new EntityDeletedNotification<T>(entity.Id));
             return await entity.DeleteAsync();
         }
 
-        public static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities) where T : Storage.Entity<T>
+        public static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities) where T : IEntity
         {
             var enumerable = entities.ToList();
             foreach (var entity in enumerable)

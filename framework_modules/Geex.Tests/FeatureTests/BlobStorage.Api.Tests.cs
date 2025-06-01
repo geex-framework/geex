@@ -35,29 +35,13 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        blobObjects(skip: 0, take: 10) {
-                            items {
-                                id
-                                fileName
-                                fileSize
-                                storageType
-                                url
-                            }
-                            pageInfo {
-                                hasPreviousPage
-                                hasNextPage
-                            }
-                            totalCount
-                        }
-                    }
-                    """
-            };
+            var requestBody = """
+                {
+                    "query": "query { blobObjects(skip: 0, take: 10) { items { id fileName fileSize storageType url } pageInfo { hasPreviousPage hasNextPage } totalCount } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
@@ -91,24 +75,13 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
-            var request = new
-            {
-                query = $$$"""
-                    query {
-                        blobObjects(skip: 0, take: 10, filter: { fileName: { eq: "{{{targetFileName}}}" }}) {
-                            items {
-                                id
-                                fileName
-                                fileSize
-                                storageType
-                            }
-                            totalCount
-                        }
-                    }
-                    """
-            };
+            var requestBody = $$"""
+                {
+                    "query": "query { blobObjects(skip: 0, take: 10, filter: { fileName: { eq: \"{{targetFileName}}\" } }) { items { id fileName fileSize storageType } totalCount } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
@@ -149,16 +122,13 @@ namespace Geex.Tests.FeatureTests
                 blobId = blob.Id;
             }
 
-            var request = new
-            {
-                query = $$"""
-                    mutation {
-                        deleteBlobObject(request: { ids: ["{{blobId}}"], storageType: Db })
-                    }
-                    """
-            };
+            var requestBody = $$"""
+                {
+                    "query": "mutation { deleteBlobObject(request: { ids: [\"{{blobId}}\"], storageType: Db }) }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);
@@ -198,23 +168,13 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        blobObjects(skip: 0, take: 10, filter: { storageType: { eq: Db } }) {
-                            items {
-                                id
-                                fileName
-                                storageType
-                            }
-                            totalCount
-                        }
-                    }
-                    """
-            };
+            var requestBody = """
+                {
+                    "query": "query { blobObjects(skip: 0, take: 10, filter: { storageType: { eq: Db } }) { items { id fileName storageType } totalCount } }"
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
             var response = await client.PostAsync(_graphqlEndpoint, content);

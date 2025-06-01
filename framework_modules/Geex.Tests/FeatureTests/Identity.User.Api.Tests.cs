@@ -5,8 +5,11 @@ using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using Geex.Abstractions;
+using Geex.Extensions.Requests.Authentication;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 
@@ -307,11 +310,12 @@ namespace Geex.Tests.FeatureTests
             var client = _factory.CreateClient();
             var testUsername = $"changeapi_{ObjectId.GenerateNewId()}";
             var originalPassword = "OriginalPass123!";
-
+            var newUserToken = string.Empty;
             // Prepare data using separate scope
             using (var scope = _factory.Services.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.Query<IUser>().Where(x=>x.Username == testUsername).DeleteAsync();
                 await setupUow.Request(new CreateUserRequest
                 {
                     Username = testUsername,
@@ -323,8 +327,14 @@ namespace Geex.Tests.FeatureTests
                     OrgCodes = new List<string>()
                 });
                 await setupUow.SaveChanges();
+                var token = await setupUow.Request(new AuthenticateRequest()
+                {
+                    Password = originalPassword,
+                    UserIdentifier = testUsername
+                });
+                newUserToken = token.Value;
             }
-
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", newUserToken);
             var request = new
             {
                 query = $$"""

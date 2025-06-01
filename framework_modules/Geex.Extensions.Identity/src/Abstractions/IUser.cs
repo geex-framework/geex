@@ -7,12 +7,12 @@ using Geex.Entities;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;
 using Geex.MultiTenant;
-
+using Geex.Storage;
 using MongoDB.Entities;
 
 namespace Geex.Extensions.Identity
 {
-    public interface IUser : IAuthUser, IEntityBase, ITenantFilteredEntity
+    public interface IUser : IAuthUser, IEntity, ITenantFilteredEntity
     {
         List<string> RoleIds { get; }
         List<string> OrgCodes { get; set; }
