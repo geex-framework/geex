@@ -21,5 +21,22 @@ namespace Geex.Tests
             var result = JsonNode.Parse(responseString);
             return (result, responseString);
         }
+
+        public static async Task<(JsonNode responseData, string responseString)> PostGqlRequest(
+            this HttpClient client,
+            string endpoint,
+            string query,
+            object variables = null)
+        {
+            var request = new
+            {
+                query = query,
+                variables = variables
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var response = await client.PostAsync(endpoint, content);
+            return await response.ParseGraphQLResponse();
+        }
     }
 }

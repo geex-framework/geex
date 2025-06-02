@@ -24,35 +24,29 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange & Act & Assert - GraphQL queries don't need separate scopes
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        orgs(skip: 0, take: 10) {
-                            items {
-                                id
-                                code
-                                name
-                                orgType
-                                parentOrgCode
-                                allParentOrgCodes
-                                allSubOrgCodes
-                                directSubOrgCodes
-                            }
-                            pageInfo {
-                                hasPreviousPage
-                                hasNextPage
-                            }
-                            totalCount
+            var query = """
+                query {
+                    orgs(skip: 0, take: 10) {
+                        items {
+                            id
+                            code
+                            name
+                            orgType
+                            parentOrgCode
+                            allParentOrgCodes
+                            allSubOrgCodes
+                            directSubOrgCodes
                         }
+                        pageInfo {
+                            hasPreviousPage
+                            hasNextPage
+                        }
+                        totalCount
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             responseData["data"]["orgs"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
         }
@@ -77,26 +71,20 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - Query using GraphQL
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$$"""
-                    query {
-                        orgs(skip: 0, take: 10, filter: { code: { eq: "{{{targetOrgCode}}}" }}) {
-                            items {
-                                id
-                                code
-                                name
-                            }
-                            totalCount
+            var query = """
+                query($code: String!) {
+                    orgs(skip: 0, take: 10, filter: { code: { eq: $code }}) {
+                        items {
+                            id
+                            code
+                            name
                         }
+                        totalCount
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { code = targetOrgCode });
 
             var items = responseData["data"]["orgs"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
@@ -124,26 +112,20 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - Query using GraphQL
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$$"""
-                    query {
-                        orgs(skip: 0, take: 10, filter: { name: { eq: "{{{targetOrgName}}}" }}) {
-                            items {
-                                id
-                                code
-                                name
-                            }
-                            totalCount
+            var query = """
+                query($name: String!) {
+                    orgs(skip: 0, take: 10, filter: { name: { eq: $name }}) {
+                        items {
+                            id
+                            code
+                            name
                         }
+                        totalCount
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = targetOrgName });
 
             var items = responseData["data"]["orgs"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
@@ -159,28 +141,22 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - GraphQL mutation
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$$"""
-                    mutation {
-                        createOrg(request: {
-                            code: "{{{testOrgCode}}}"
-                            name: "{{{testOrgName}}}"
-                            orgType: Default
-                        }) {
-                            id
-                            code
-                            name
-                            orgType
-                        }
+            var query = """
+                mutation($code: String!, $name: String!) {
+                    createOrg(request: {
+                        code: $code
+                        name: $name
+                        orgType: Default
+                    }) {
+                        id
+                        code
+                        name
+                        orgType
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { code = testOrgCode, name = testOrgName });
 
             var createdOrg = responseData["data"]["createOrg"];
             ((string)createdOrg["code"]).ShouldBe(testOrgCode);
@@ -210,28 +186,22 @@ namespace Geex.Tests.FeatureTests
             var subOrgName = $"Sub Organization {ObjectId.GenerateNewId()}";
 
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$$"""
-                    mutation {
-                        createOrg(request: {
-                            code: "{{{subOrgCode}}}"
-                            name: "{{{subOrgName}}}"
-                            orgType: Default
-                        }) {
-                            id
-                            code
-                            name
-                            parentOrgCode
-                        }
+            var query = """
+                mutation($code: String!, $name: String!) {
+                    createOrg(request: {
+                        code: $code
+                        name: $name
+                        orgType: Default
+                    }) {
+                        id
+                        code
+                        name
+                        parentOrgCode
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { code = subOrgCode, name = subOrgName });
 
             var createdOrg = responseData["data"]["createOrg"];
             ((string)createdOrg["code"]).ShouldBe(subOrgCode);
@@ -260,19 +230,13 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - Delete using GraphQL
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$$"""
-                    mutation {
-                        deleteOrg(id: "{{{orgId}}}")
-                    }
-                    """
-            };
+            var query = """
+                mutation($id: String!) {
+                    deleteOrg(id: $id)
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { id = orgId });
 
             bool deleteResult = (bool)responseData["data"]["deleteOrg"];
             deleteResult.ShouldBeTrue();
@@ -283,19 +247,13 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange & Act & Assert - GraphQL mutation
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    mutation {
-                        fixUserOrg
-                    }
-                    """
-            };
+            var query = """
+                mutation {
+                    fixUserOrg
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             bool fixResult = (bool)responseData["data"]["fixUserOrg"];
             fixResult.ShouldBeTrue();
@@ -328,29 +286,23 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - Query hierarchy using GraphQL
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        orgs(skip: 0, take: 100) {
-                            items {
-                                id
-                                code
-                                name
-                                parentOrgCode
-                                allParentOrgCodes
-                                directSubOrgCodes
-                                allSubOrgCodes
-                            }
+            var query = """
+                query {
+                    orgs(skip: 0, take: 100) {
+                        items {
+                            id
+                            code
+                            name
+                            parentOrgCode
+                            allParentOrgCodes
+                            directSubOrgCodes
+                            allSubOrgCodes
                         }
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             var items = responseData["data"]["orgs"]["items"].AsArray();
 
