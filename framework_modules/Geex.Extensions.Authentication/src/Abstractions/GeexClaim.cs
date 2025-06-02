@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 
-namespace Geex
+namespace Geex.Extensions.Authentication
 {
     public class GeexClaim : Claim
     {

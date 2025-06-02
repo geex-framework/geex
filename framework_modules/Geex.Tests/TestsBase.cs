@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-using Geex.Extensions.Authentication.Domain;
-using Geex.Extensions.Authentication.Utils;
+using Geex.Extensions.Authentication;
+using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Identity;
 
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -47,7 +46,7 @@ namespace Geex.Tests
         {
             var tokenHandler = this.ScopedService.GetService<GeexJwtSecurityTokenHandler>();
             var tokenGenerateOptions = this.ScopedService.GetService<UserTokenGenerateOptions>();
-            var user = this.ScopedService.GetService<IUnitOfWork>().Query<IUser>().MatchUserIdentifier(userIdentifier);
+            var user = GeexCommonAbstractionEntitiesIUserExtensions.MatchUserIdentifier(this.ScopedService.GetService<IUnitOfWork>().Query<IUser>(), userIdentifier);
             var token = tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, tokenGenerateOptions));
             var client = this.Factory.CreateClient();
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");

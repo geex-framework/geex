@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Amazon.Auth.AccessControlPolicy;
 
 using Geex.Extensions.Authentication;
+using Geex.Extensions.Authentication.Core.Utils;
 
 namespace Geex.Extensions.Identity.Utils
 {

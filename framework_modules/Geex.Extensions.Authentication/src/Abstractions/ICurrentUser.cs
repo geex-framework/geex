@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Security.Claims;
-using Geex.Extensions.Authentication;
 
-namespace Geex.Abstractions.Authentication;
+namespace Geex.Extensions.Authentication;
 
 public interface ICurrentUser
 {

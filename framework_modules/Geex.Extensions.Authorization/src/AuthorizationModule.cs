@@ -2,7 +2,8 @@
 
 using Geex.Abstractions;
 using Geex.Extensions.Authentication;
-using Geex.Extensions.Authorization.Casbin;
+using Geex.Extensions.Authorization.Core.Casbin;
+using Geex.Extensions.Authorization.Core.Utils;
 using Geex.Gql;
 
 using HotChocolate;

@@ -1,4 +1,4 @@
-﻿namespace Geex.Authorization
+﻿namespace Geex.Extensions.Authentication
 {
     public class UserSessionCache : IHasId
     {

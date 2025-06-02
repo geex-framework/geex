@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Geex.Extensions.ApprovalFlows.Notifications;
 using Geex.Storage;
 using MediatR;
 
-namespace Geex.ApprovalFlows;
+namespace Geex.Extensions.ApprovalFlows;
 
 public interface IApproveEntity : IEntity
 {

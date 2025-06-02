@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Geex.Entities;
+using Geex.Extensions.Authentication;
 using MediatR;
 
 namespace Geex.Extensions.Identity.Requests

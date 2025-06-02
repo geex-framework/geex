@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Geex.Entities;
 using Geex.Events;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;

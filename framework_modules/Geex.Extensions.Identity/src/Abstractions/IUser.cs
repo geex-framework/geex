@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
-using Geex.Entities;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;
 using Geex.MultiTenant;

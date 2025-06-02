@@ -5,9 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Abstractions;
-using Geex.Abstractions.Authentication;
-using Geex.Authorization;
-using Geex.Entities;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;

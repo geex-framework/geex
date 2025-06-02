@@ -2,7 +2,7 @@
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 
-namespace Geex.Authorization
+namespace Geex.Extensions.Authorization
 {
     public class PolicyItem : IAuthorizationRequirement
     {

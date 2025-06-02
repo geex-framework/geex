@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Linq;
-using Geex.Extensions.Authentication;
 using Geex.MultiTenant;
 using MongoDB.Bson;
 using MongoDB.Entities.Utilities;
 
-namespace Geex
+namespace Geex.Extensions.Authentication
 {
     public static class GeexCommonAbstractionEntitiesIUserExtensions
     {

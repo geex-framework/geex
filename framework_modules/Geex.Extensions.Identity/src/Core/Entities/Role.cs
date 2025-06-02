@@ -5,8 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Authorization;
-
+using Geex.Extensions.Authorization;
 using Geex.MultiTenant;
 using Geex.Storage;
 using HotChocolate.Types;

@@ -12,7 +12,4 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="GqlSchemas\" />
-  </ItemGroup>
 </Project>

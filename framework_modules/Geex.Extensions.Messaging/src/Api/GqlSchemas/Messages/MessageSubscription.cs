@@ -1,6 +1,5 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
-using Geex.Abstractions.Authentication;
 using Geex.Abstractions;
 using Geex.Gql.Types;
 using HotChocolate;

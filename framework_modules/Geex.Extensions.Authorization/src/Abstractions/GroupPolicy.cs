@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Geex.Authorization
+namespace Geex.Extensions.Authorization
 {
     public class GroupPolicy
     {

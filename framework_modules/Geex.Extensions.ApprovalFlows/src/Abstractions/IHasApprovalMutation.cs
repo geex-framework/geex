@@ -1,7 +1,8 @@
 ﻿using System.Threading.Tasks;
+using Geex.Extensions.ApprovalFlows.Requests;
 using HotChocolate;
 
-namespace Geex.ApprovalFlows;
+namespace Geex.Extensions.ApprovalFlows;
 
 public interface IHasApproveMutation
 {

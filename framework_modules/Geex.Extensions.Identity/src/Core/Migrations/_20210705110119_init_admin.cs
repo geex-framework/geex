@@ -5,8 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Geex.Abstractions;
-using Geex.Authorization;
-
 using Geex.Extensions.Authorization;
 using Geex.Extensions.Authorization.Events;
 using Geex.Extensions.Identity;

@@ -1,4 +1,4 @@
-namespace Geex.Entities
+namespace Geex.Extensions.Authentication
 {
     public class UserClaim
     {

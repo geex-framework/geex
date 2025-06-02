@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-
-
-using Geex.Abstractions.Authentication;
+using Geex.Extensions.Authentication;
 using Geex.MultiTenant;
 
 using MongoDB.Bson;

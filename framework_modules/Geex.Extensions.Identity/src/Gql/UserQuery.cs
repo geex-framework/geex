@@ -1,8 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Abstractions.Authentication;
-
+using Geex.Extensions.Authentication;
 using Geex.Gql.Types;
 using HotChocolate.Types;
 

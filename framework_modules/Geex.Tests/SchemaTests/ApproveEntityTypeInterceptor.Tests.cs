@@ -1,4 +1,3 @@
-using Geex.ApprovalFlows;
 using Geex.Extensions.ApprovalFlows;
 using Geex.Gql;
 using Geex.Gql.Types;

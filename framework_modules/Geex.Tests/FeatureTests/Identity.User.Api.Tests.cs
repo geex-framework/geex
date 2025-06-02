@@ -9,7 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Extensions.Requests.Authentication;
+using Geex.Extensions.Authentication.Requests;
 using MongoDB.Bson;
 using Newtonsoft.Json;
 

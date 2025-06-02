@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Abstractions.Authentication;
+using Geex.Extensions.Authentication;
 using Geex.Extensions.Messaging.Api.Aggregates.Messages;
 using Geex.Extensions.Messaging.Api.GqlSchemas.Messages;
 using Geex.Extensions.Messaging.Core.Aggregates.Messages;

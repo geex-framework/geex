@@ -1,4 +1,4 @@
-﻿namespace Geex.ApprovalFlows;
+﻿namespace Geex.Extensions.ApprovalFlows;
 
 public enum ApproveStatus
 {

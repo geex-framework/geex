@@ -15,7 +15,6 @@
         <ProjectReference Include="..\..\Geex.Extensions.Settings\src\Geex.Extensions.Settings.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Abstractions\" />
-        <Folder Include="GqlSchemas\BlobObjects\Types\" />
+        <Folder Include="Gql\Types\" />
     </ItemGroup>
 </Project>

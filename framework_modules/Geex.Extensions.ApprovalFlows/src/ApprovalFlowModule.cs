@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 
 using Geex.Abstractions;
-using Geex.ApprovalFlows;
 using Microsoft.Extensions.DependencyInjection;
 
 using Volo.Abp;

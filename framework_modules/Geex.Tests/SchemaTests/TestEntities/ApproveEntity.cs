@@ -1,4 +1,4 @@
-﻿using Geex.ApprovalFlows;
+﻿using Geex.Extensions.ApprovalFlows;
 using Geex.Storage;
 
 namespace Geex.Tests.SchemaTests.TestEntities

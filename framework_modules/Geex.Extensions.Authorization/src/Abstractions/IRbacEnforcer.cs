@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Geex.Authorization
+namespace Geex.Extensions.Authorization
 {
     public interface IRbacEnforcer
     {

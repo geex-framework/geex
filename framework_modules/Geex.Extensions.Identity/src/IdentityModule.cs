@@ -8,11 +8,7 @@ using System.Threading.Tasks;
 using Autofac.Core;
 
 using Geex.Abstractions;
-using Geex.Abstractions.Authentication;
-
 using Geex.Extensions.Authentication;
-using Geex.Extensions.Authentication.Domain;
-using Geex.Extensions.Authentication.Utils;
 using Geex.Extensions.Authorization;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Core;

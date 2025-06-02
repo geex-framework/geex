@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Geex.Abstractions;
-using Geex.Entities;
+using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity.Core.Entities;
 using MediatR;
 
