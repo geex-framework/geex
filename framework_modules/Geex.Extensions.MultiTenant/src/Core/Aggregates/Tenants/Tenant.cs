@@ -31,7 +31,7 @@ namespace Geex.Extensions.MultiTenant.Core.Aggregates.Tenants
         public string Name { get; set; }
         public bool IsEnabled { get; set; }
 
-        public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
+        public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
         {
             return ValidationResult.Success;
         }

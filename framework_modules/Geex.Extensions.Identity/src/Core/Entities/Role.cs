@@ -51,13 +51,13 @@ namespace Geex.Extensions.Identity.Core.Entities
         public bool IsStatic { get; set; }
         public bool IsEnabled { get; set; } = true;
 
-        public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
+        public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
         {
             var duplicateRole = this.DbContext.Query<Role>()
                 .FirstOrDefault(x => x.Code == this.Code && x.TenantCode == this.TenantCode && x.Id != this.Id);
             if (duplicateRole != default)
             {
-                return new ValidationResult($"当前租户[{sp.GetService<ICurrentTenant>()?.Code}]下角色重复:{this.Code}, [{this.Id} != {duplicateRole.Id}]");
+                return new ValidationResult($"当前租户[{this.ServiceProvider.GetService<ICurrentTenant>()?.Code}]下角色重复:{this.Code}, [{this.Id} != {duplicateRole.Id}]");
             }
             return ValidationResult.Success;
         }

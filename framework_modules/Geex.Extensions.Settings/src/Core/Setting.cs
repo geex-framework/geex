@@ -36,7 +36,7 @@ public partial class Setting : Entity<Setting>, ISetting
         Value = value;
     }
 
-    public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
+    public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
     {
         return ValidationResult.Success;
     }

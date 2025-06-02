@@ -84,7 +84,7 @@ public class Message : Entity<Message>, IMessage
         else
             Logger.LogWarning("试图标记不存在的消息分配记录已读.");
     }
-    public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
+    public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
     {
         return ValidationResult.Success;
     }

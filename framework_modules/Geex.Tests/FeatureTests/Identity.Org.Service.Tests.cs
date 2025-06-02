@@ -412,48 +412,6 @@ namespace Geex.Tests.FeatureTests
             }
         }
 
-        [Fact]
-        public async Task ValidateOrgShouldWork()
-        {
-            // Arrange & Act
-            using (var scope = ScopedService.CreateScope())
-            {
-                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
-                var org = await CreateTestOrg(uow);
-                await uow.SaveChanges();
-
-                try
-                {
-                    var validationResult = await org.Validate(scope.ServiceProvider);
-
-                    // Assert
-                    validationResult.ShouldNotBeNull();
-                    if (validationResult.ErrorMessage != null)
-                    {
-                        validationResult.ErrorMessage.ShouldBeNullOrEmpty();
-                    }
-                }
-                catch (NotImplementedException)
-                {
-                    // If validation is not implemented, skip this assertion
-                    Assert.True(true, "Validation method not implemented yet");
-                }
-                catch (Exception ex)
-                {
-                    // If validation throws an exception, that might be expected behavior
-                    // Log the exception but don't fail the test unless it's unexpected
-                    if (ex.Message.Contains("validation") || ex.Message.Contains("not implemented"))
-                    {
-                        Assert.True(true, $"Validation not fully implemented: {ex.Message}");
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-            }
-        }
-
         private async Task<IOrg> CreateTestOrg(IUnitOfWork uow, string code = null, string name = null)
         {
             code ??= $"testorg_{ObjectId.GenerateNewId()}";

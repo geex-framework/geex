@@ -21,7 +21,7 @@ namespace Geex.Extensions.Messaging.Core.Aggregates.Messages
         /// bug: 未读消息最好放入redis, 避免全表遍历
         /// </summary>
         public bool IsRead { get; set; }
-        public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
+        public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
         {
             return ValidationResult.Success;
         }

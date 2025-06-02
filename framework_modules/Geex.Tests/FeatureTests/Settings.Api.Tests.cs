@@ -158,7 +158,7 @@ namespace Geex.Tests.FeatureTests
 
             // Act - Query to verify using GraphQL
             var queryQuery = """
-                query($name: String!) {
+                query testQuery($name: SettingDefinition!) {
                     settings(request: { scope: Global }, filter: { name: { eq: $name } }) {
                         items { id name scope scopedKey value __typename }
                         totalCount __typename

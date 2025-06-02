@@ -81,7 +81,7 @@ namespace Geex.Storage
             var entities = Local.TypedCacheDictionary.Values.SelectMany(y => y.Values).OfType<IEntity>();
             foreach (var entity in entities)
             {
-                entity.Validate().WaitAndUnwrapException(cancellation);
+                entity.ValidateOnAttach().WaitAndUnwrapException(cancellation);
             }
 
             if (this.DomainEvents.Any())

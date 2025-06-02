@@ -110,7 +110,7 @@ public partial class Org : Entity<Org>, ITenantFilteredEntity, IOrg
         return base.DeleteAsync();
     }
 
-    public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
+    public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
     {
         return ValidationResult.Success;
     }

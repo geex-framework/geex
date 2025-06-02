@@ -347,7 +347,7 @@ namespace Geex.Extensions.BlobStorage.Aggregates.BlobObjects
             throw new BusinessException("File is corrupted, please try upload again.");
         }
 
-        public override async Task<ValidationResult> Validate(IServiceProvider sp, CancellationToken cancellation = default)
+        public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
         {
             return ValidationResult.Success;
         }
