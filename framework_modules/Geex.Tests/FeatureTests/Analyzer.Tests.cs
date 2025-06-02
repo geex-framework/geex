@@ -1,21 +1,18 @@
 namespace Geex.Tests.FeatureTests
 {
     [Collection(nameof(TestsCollection))]
-    public class AnalyzerTests
+    public class AnalyzerTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-
-        public AnalyzerTests(TestApplicationFactory factory)
+        public AnalyzerTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         //[Fact]
         //public async Task UowCreateShouldWork()
         //{
         //    // Arrange
-        //    using var scope = _factory.StartTestScope(out var service);
-        //    var uow = service.GetService<IUnitOfWork>();
+        //    
+        //    var uow = Service.GetService<IUnitOfWork>();
         //    var dateTime = DateTime.Now;
         //    var data = new int[1024];
         //    Array.Fill<int>(data, 1);

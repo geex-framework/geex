@@ -21,20 +21,16 @@ using Xunit;
 namespace Geex.Tests.FeatureTests
 {
     [Collection(nameof(TestsCollection))]
-    public class SettingsServiceTests
+    public class SettingsServiceTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-
-        public SettingsServiceTests(TestApplicationFactory factory)
+        public SettingsServiceTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
         [Fact]
         public async Task EditSettingServiceShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
 
@@ -62,8 +58,7 @@ namespace Geex.Tests.FeatureTests
         public async Task GetSettingsServiceShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
 
@@ -82,7 +77,7 @@ namespace Geex.Tests.FeatureTests
             await uow.SaveChanges();
 
             // Act
-            using var service1 = service.CreateScope();
+            using var service1 = ScopedService.CreateScope();
             var verifyUow = service1.ServiceProvider.GetService<IUnitOfWork>();
             var settings = verifyUow.Query<ISetting>().Where(x => x.Name == testSettingName).ToList();
 
@@ -95,8 +90,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SettingWithDifferentScopesShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var globalValue = "GlobalValue_" + ObjectId.GenerateNewId();
 
@@ -120,7 +114,7 @@ namespace Geex.Tests.FeatureTests
             globalSetting.Value.GetValue<string>().ShouldBe(globalValue);
 
             // Verify retrieval
-            using var service1 = service.CreateScope();
+            using var service1 = ScopedService.CreateScope();
             var verifyUow = service1.ServiceProvider.GetService<IUnitOfWork>();
             var retrievedSetting = verifyUow.Query<ISetting>()
                 .FirstOrDefault(x => x.Name == testSettingName && x.Scope == SettingScopeEnumeration.Global);
@@ -131,8 +125,7 @@ namespace Geex.Tests.FeatureTests
         public async Task ComplexSettingValueShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var navItem = new
             {
@@ -171,8 +164,7 @@ namespace Geex.Tests.FeatureTests
         public async Task UpdateExistingSettingServiceShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.GlobalSetting;
             var originalValue = ObjectId.GenerateNewId().ToString();
             var updatedValue = ObjectId.GenerateNewId().ToString();
@@ -207,7 +199,7 @@ namespace Geex.Tests.FeatureTests
             updatedSetting.Value.GetValue<string>().ShouldBe(updatedValue);
 
             // Verify only one setting exists with this name
-            using var verifyService = service.CreateScope();
+            using var verifyService = ScopedService.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
             var allSettings = verifyUow.Query<ISetting>().Where(x => x.Name == testSettingName).ToList();
             allSettings.Count.ShouldBe(1);
@@ -218,8 +210,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SettingWithScopedKeyShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testSettingName = TestModuleSettings.TenantSetting;
             var tenantCode = "test";
             var testValue = ObjectId.GenerateNewId().ToString();
@@ -252,7 +243,7 @@ namespace Geex.Tests.FeatureTests
             setting.Value.GetValue<string>().ShouldBe(testValue);
 
             // Verify retrieval
-            using var service1 = service.CreateScope();
+            using var service1 = ScopedService.CreateScope();
             var verifyUow = service1.ServiceProvider.GetService<IUnitOfWork>();
             var retrievedSetting = verifyUow.Query<ISetting>()
                 .FirstOrDefault(x => x.Name == testSettingName && x.ScopedKey == tenantCode);

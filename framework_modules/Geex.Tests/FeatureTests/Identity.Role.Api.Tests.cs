@@ -12,21 +12,17 @@ using Newtonsoft.Json;
 namespace Geex.Tests.FeatureTests
 {
     [Collection(nameof(TestsCollection))]
-    public class IdentityRoleApiTests
+    public class IdentityRoleApiTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-        private readonly string _graphqlEndpoint = "/graphql";
-
-        public IdentityRoleApiTests(TestApplicationFactory factory)
+        public IdentityRoleApiTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task QueryRolesShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$"""
@@ -54,7 +50,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -65,12 +61,12 @@ namespace Geex.Tests.FeatureTests
         public async Task FilterRolesByNameShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var targetRoleName = $"Test Role {ObjectId.GenerateNewId()}";
             var targetRoleCode = $"testrole_{ObjectId.GenerateNewId()}";
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 await setupUow.Request(new CreateRoleRequest
@@ -102,7 +98,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -115,10 +111,10 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateRoleMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testRoleCode = $"newrole_{ObjectId.GenerateNewId()}";
             var testRoleName = $"New Role {ObjectId.GenerateNewId()}";
-            
+
             var request = new
             {
                 query = $$$"""
@@ -143,7 +139,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -158,12 +154,12 @@ namespace Geex.Tests.FeatureTests
         public async Task SetRoleDefaultMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testRoleCode = $"defaultapi_{ObjectId.GenerateNewId()}";
             string roleId;
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 var role = await setupUow.Request(new CreateRoleRequest
@@ -189,7 +185,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -201,7 +197,7 @@ namespace Geex.Tests.FeatureTests
         public async Task QueryRoleUsersShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$"""
@@ -223,7 +219,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -238,7 +234,7 @@ namespace Geex.Tests.FeatureTests
         public async Task QueryRolePermissionsShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$"""
@@ -257,7 +253,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert

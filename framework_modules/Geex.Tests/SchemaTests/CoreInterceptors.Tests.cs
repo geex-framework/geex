@@ -24,14 +24,13 @@ namespace Geex.Tests.SchemaTests
         protected override void Configure(IObjectTypeDescriptor<CoreTestMutation> descriptor)
         {
             base.Configure(descriptor);
-        }
-
-        public TestEntity CoreTestDirectMutation(string arg1) => throw new NotImplementedException();
+        }        public TestEntity CoreTestDirectMutation(string arg1) => throw new NotImplementedException();
         public Lazy<TestEntity> CoreTestLazyMutation(string arg1) => throw new NotImplementedException();
         public IQueryable<TestEntity> CoreTestIQueryableMutation(string arg1) => throw new NotImplementedException();
     }
+
     [Collection(nameof(TestsCollection))]
-    public class CoreInterceptorsTests
+    public class CoreInterceptorsTests : TestsBase
     {
         public class TestOneOfConfig
         {
@@ -46,21 +45,16 @@ namespace Geex.Tests.SchemaTests
         public class TestOneOfType2
         {
             public string Type2Field { get; set; }
-        }
-
-        private readonly TestApplicationFactory _factory;
-
-        public CoreInterceptorsTests(TestApplicationFactory factory)
+        }        public CoreInterceptorsTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task LazyPropertiesShouldBeResolved()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+
+            var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
             schema.MutationType.Fields.TryGetField(nameof(CoreTestMutation.CoreTestLazyMutation).ToCamelCase(), out var lazyField).ShouldBeTrue();
@@ -75,8 +69,8 @@ namespace Geex.Tests.SchemaTests
         public async Task QueryablePropertiesShouldBeResolved()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+
+            var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
             schema.MutationType.Fields.TryGetField(nameof(CoreTestMutation.CoreTestIQueryableMutation).ToCamelCase(), out var queryableField).ShouldBeTrue();
@@ -92,8 +86,8 @@ namespace Geex.Tests.SchemaTests
         public async Task SpecialFieldsShouldBeIgnored()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+
+            var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
             var queryType = schema.QueryType;
@@ -111,8 +105,8 @@ namespace Geex.Tests.SchemaTests
         public async Task OneOfConfigsShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+
+            var schema = ScopedService.GetService<ISchema>();
 
             // Act
             var inputTypes = schema.Types.OfType<InputObjectType>().ToList();

@@ -20,21 +20,15 @@ using Newtonsoft.Json;
 namespace Geex.Tests.FeatureTests
 {
     [Collection(nameof(TestsCollection))]
-    public class BlobStorageApiTests
+    public class BlobStorageApiTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-        private readonly string _graphqlEndpoint = "/graphql";
-
-        public BlobStorageApiTests(TestApplicationFactory factory)
+        public BlobStorageApiTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task QueryBlobObjectsShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var requestBody = """
                 {
                     "query": "query { blobObjects(skip: 0, take: 10) { items { id fileName fileSize storageType url } pageInfo { hasPreviousPage hasNextPage } totalCount } }"
@@ -44,24 +38,22 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
             int totalCount = responseData["data"]["blobObjects"]["totalCount"].GetValue<int>();
             totalCount.ShouldBeGreaterThanOrEqualTo(0);
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task FilterBlobObjectsByFileNameShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var targetFileName = $"specific_file_{ObjectId.GenerateNewId()}.txt";
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 var testData = "test content for filtering";
@@ -84,7 +76,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
@@ -98,16 +90,15 @@ namespace Geex.Tests.FeatureTests
             }
         }
 
-        [Fact]
-        public async Task DeleteBlobObjectMutationShouldWork()
+        [Fact]        public async Task DeleteBlobObjectMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testFileName = $"deleteapi_{ObjectId.GenerateNewId()}.txt";
             string blobId;
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 var testData = "API content to be deleted";
@@ -131,30 +122,26 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, _) = await response.ParseGraphQLResponse();
 
             // Assert
             bool deleteResult = (bool)responseData["data"]["deleteBlobObject"];
-            deleteResult.ShouldBeTrue();
-
-            // Verify the blob is actually deleted
-            using var verifyService = _factory.Services.CreateScope();
+            deleteResult.ShouldBeTrue();            // Verify the blob is actually deleted
+            using var verifyService = ScopedService.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
             var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blobId);
             deletedBlob.ShouldBeNull();
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task FilterBlobObjectsByStorageTypeShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testFileName = $"storage_filter_test_{ObjectId.GenerateNewId()}.txt";
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 var testData = "test content for storage type filtering";
@@ -177,7 +164,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 

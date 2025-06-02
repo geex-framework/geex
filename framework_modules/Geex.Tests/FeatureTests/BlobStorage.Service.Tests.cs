@@ -16,21 +16,15 @@ using MongoDB.Bson;
 namespace Geex.Tests.FeatureTests
 {
     [Collection(nameof(TestsCollection))]
-    public class BlobStorageServiceTests
+    public class BlobStorageServiceTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-
-        public BlobStorageServiceTests(TestApplicationFactory factory)
+        public BlobStorageServiceTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task MemoryFileUploadShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var dateTime = DateTime.Now;
             var data = new byte[1024 * 2048];
             Array.Fill<byte>(data, 1);
@@ -40,14 +34,12 @@ namespace Geex.Tests.FeatureTests
             await uow.SaveChanges();
 
             // Assert
-            using var service1 = service.CreateScope();
+            using var service1 = ScopedService.CreateScope();
             var file = service1.ServiceProvider.GetService<IUnitOfWork>().Query<IBlobObject>().GetById(blob.Id);
             var dataStream = await file.StreamFromStorage();
             dataStream.Length.ShouldBe(data.Length);
             file.FileSize.ShouldBe(data.Length);
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task CreateBlobObjectServiceShouldWork()
         {
             // Arrange
@@ -57,8 +49,7 @@ namespace Geex.Tests.FeatureTests
             var md5Hash = System.Security.Cryptography.MD5.HashData(fileBytes);
             var md5String = Convert.ToHexString(md5Hash).ToLower();
 
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
 
             // Act
             var blob = await uow.Request(new CreateBlobObjectRequest()
@@ -75,14 +66,11 @@ namespace Geex.Tests.FeatureTests
             blob.FileSize.ShouldBe(fileBytes.Length);
             blob.Md5.ShouldBe(md5String);
             blob.StorageType.ShouldBe(BlobStorageType.Db);
-        }
-
-        [Fact]
+        }        [Fact]
         public async Task DeleteBlobObjectServiceShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
 
             var testFileName = $"delete_test_{ObjectId.GenerateNewId()}.txt";
             var testData = "content to be deleted";
@@ -97,10 +85,8 @@ namespace Geex.Tests.FeatureTests
 
             // Act
             await uow.Request(new DeleteBlobObjectRequest() { Ids = [blob.Id], StorageType = BlobStorageType.Db });
-            await uow.SaveChanges();
-
-            // Assert
-            using var verifyService = service.CreateScope();
+            await uow.SaveChanges();            // Assert
+            using var verifyService = ScopedService.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
             var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blob.Id);
             deletedBlob.ShouldBeNull();
@@ -110,8 +96,7 @@ namespace Geex.Tests.FeatureTests
         public async Task FileSystemStorageTypeShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testFileName = $"filesystem_test_{ObjectId.GenerateNewId()}.txt";
             var testData = "test content for filesystem storage";
             var fileBytes = Encoding.UTF8.GetBytes(testData);
@@ -130,7 +115,7 @@ namespace Geex.Tests.FeatureTests
             blob.FileSize.ShouldBe(fileBytes.Length);
 
             // Verify we can read the content back
-            using var service1 = service.CreateScope();
+            using var service1 = ScopedService.CreateScope();
             var file = service1.ServiceProvider.GetService<IUnitOfWork>().Query<IBlobObject>().GetById(blob.Id);
             var dataStream = await file.StreamFromStorage();
             dataStream.Length.ShouldBe(fileBytes.Length);
@@ -140,8 +125,7 @@ namespace Geex.Tests.FeatureTests
         public async Task BlobObjectUrlShouldBeGenerated()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testFileName = $"url_test_{ObjectId.GenerateNewId()}.txt";
             var testData = "test content for url generation";
             var fileBytes = Encoding.UTF8.GetBytes(testData);
@@ -164,8 +148,7 @@ namespace Geex.Tests.FeatureTests
         public async Task LargeFileUploadShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var uow = service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testFileName = $"large_file_{ObjectId.GenerateNewId()}.txt";
 
             // Create a larger file (5MB)
@@ -185,7 +168,7 @@ namespace Geex.Tests.FeatureTests
             blob.FileSize.ShouldBe(largeData.Length);
 
             // Verify we can read the content back
-            using var service1 = service.CreateScope();
+            using var service1 = ScopedService.CreateScope();
             var file = service1.ServiceProvider.GetService<IUnitOfWork>().Query<IBlobObject>().GetById(blob.Id);
             var dataStream = await file.StreamFromStorage();
             dataStream.Length.ShouldBe(largeData.Length);

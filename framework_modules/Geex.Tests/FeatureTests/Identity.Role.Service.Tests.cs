@@ -20,7 +20,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateRoleServiceShouldWork()
         {
             // Arrange
-            var uow = Service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testRoleCode = $"testrole_{ObjectId.GenerateNewId()}";
 
             var request = new CreateRoleRequest
@@ -48,7 +48,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateStaticRoleShouldWork()
         {
             // Arrange
-            var uow = Service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testRoleCode = $"staticrole_{ObjectId.GenerateNewId()}";
 
             var request = new CreateRoleRequest
@@ -71,7 +71,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateDefaultRoleShouldWork()
         {
             // Arrange
-            var uow = Service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testRoleCode = $"defaultrole_{ObjectId.GenerateNewId()}";
 
             var request = new CreateRoleRequest
@@ -94,7 +94,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SetRoleAsDefaultShouldWork()
         {
             // Arrange
-            var uow = Service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var testRoleCode = $"setdefault_{ObjectId.GenerateNewId()}";
 
             var role = await uow.Request(new CreateRoleRequest
@@ -113,7 +113,7 @@ namespace Geex.Tests.FeatureTests
             await uow.SaveChanges();
 
             // Assert
-            using var verifyService = Service.CreateScope();
+            using var verifyService = ScopedService.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
             var updatedRole = verifyUow.Query<IRole>().First(x => x.Id == role.Id);
             updatedRole.IsDefault.ShouldBe(true);
@@ -123,7 +123,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SetDefaultShouldUnsetPreviousDefaultRole()
         {
             // Arrange
-            var uow = Service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
 
             // Create fresh roles for this test
             var role1Code = $"role1_{ObjectId.GenerateNewId()}";
@@ -153,7 +153,7 @@ namespace Geex.Tests.FeatureTests
             await uow.SaveChanges();
 
             // Assert
-            using var verifyService = Service.CreateScope();
+            using var verifyService = ScopedService.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
             var updatedRole1 = verifyUow.Query<IRole>().First(x => x.Id == role1.Id);
             var updatedRole2 = verifyUow.Query<IRole>().First(x => x.Id == role2.Id);
@@ -166,7 +166,7 @@ namespace Geex.Tests.FeatureTests
         public async Task QueryRolesShouldWork()
         {
             // Arrange
-            var uow = Service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
 
             await uow.Request(new CreateRoleRequest
             {
@@ -196,7 +196,7 @@ namespace Geex.Tests.FeatureTests
         public async Task RoleValidationShouldWork()
         {
             // Arrange
-            var uow = Service.GetService<IUnitOfWork>();
+            var uow = ScopedService.GetService<IUnitOfWork>();
             var duplicateCode = $"duplicate_{ObjectId.GenerateNewId()}";
 
             await uow.Request(new CreateRoleRequest

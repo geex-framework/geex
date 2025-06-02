@@ -1,4 +1,4 @@
-﻿using Geex.ApprovalFlows;
+using Geex.ApprovalFlows;
 using Geex.Extensions.AuditLogs;
 using Geex.Gql.Types;
 using Geex.Tests.FeatureTests;
@@ -23,23 +23,18 @@ namespace Geex.Tests.SchemaTests
         public bool AuditLogTestMutationField(string arg1) => throw new NotImplementedException();
     }
     [Collection(nameof(TestsCollection))]
-    public class AuditLogsTypeInterceptorTests
+    public class AuditLogsTypeInterceptorTests : TestsBase
     {
-
-
-        private readonly TestApplicationFactory _factory;
-
-        public AuditLogsTypeInterceptorTests(TestApplicationFactory factory)
+        public AuditLogsTypeInterceptorTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task AuditFieldsImplicitlyShouldWork()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+            
+            var schema = ScopedService.GetService<ISchema>();
             schema.MutationType.Fields.TryGetField(nameof(AuditLogTestMutation.AuditLogTestMutationField).ToCamelCase(), out var field1).ShouldBeTrue();
             field1.Directives.Any(x => x.Type.RuntimeType == typeof(AuditDirectiveType)).ShouldBeTrue();
         }
@@ -48,8 +43,8 @@ namespace Geex.Tests.SchemaTests
         public async Task AuthenticationMutationShouldBePatched()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+            
+            var schema = ScopedService.GetService<ISchema>();
             var toBePatchFieldNames = AuditLogsTypeInterceptor.ToBePatchedBuiltInOperations.SelectMany(x => x.Value);
             foreach (var fieldName in toBePatchFieldNames)
             {

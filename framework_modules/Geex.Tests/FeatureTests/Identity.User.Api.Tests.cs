@@ -16,21 +16,17 @@ using Newtonsoft.Json;
 namespace Geex.Tests.FeatureTests
 {
     [Collection(nameof(TestsCollection))]
-    public class IdentityUserApiTests
+    public class IdentityUserApiTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-        private readonly string _graphqlEndpoint = "/graphql";
-
-        public IdentityUserApiTests(TestApplicationFactory factory)
+        public IdentityUserApiTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task QueryUsersShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$"""
@@ -59,7 +55,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -70,11 +66,11 @@ namespace Geex.Tests.FeatureTests
         public async Task FilterUsersByUsernameShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var targetUsername = $"testuser_{ObjectId.GenerateNewId()}";
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 await setupUow.Request(new CreateUserRequest
@@ -110,7 +106,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -123,7 +119,7 @@ namespace Geex.Tests.FeatureTests
         public async Task QueryCurrentUserShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$"""
@@ -141,7 +137,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -152,7 +148,7 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateUserMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testUsername = $"newuser_{ObjectId.GenerateNewId()}";
 
             var request = new
@@ -181,7 +177,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -195,13 +191,13 @@ namespace Geex.Tests.FeatureTests
         public async Task EditUserMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testUsername = $"editapi_{ObjectId.GenerateNewId()}";
             var uniquePhoneNumber = $"156{ObjectId.GenerateNewId().ToString().Substring(0, 8)}";
             string userId;
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 var user = await setupUow.Request(new CreateUserRequest
@@ -240,7 +236,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -254,13 +250,12 @@ namespace Geex.Tests.FeatureTests
         public async Task DeleteUserMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
-            using var _ = _factory.StartTestScope(out var service);
+            var client = this.SuperAdminClient;
             var testUsername = $"deleteapi_{ObjectId.GenerateNewId()}";
             string userId;
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 var user = await setupUow.Request(new CreateUserRequest
@@ -289,7 +284,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -297,7 +292,7 @@ namespace Geex.Tests.FeatureTests
             deleteResult.ShouldBeTrue();
 
             // Verify the user is actually deleted
-            using var verifyService = service.CreateScope();
+            using var verifyService = ScopedService.CreateScope();
             var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
             var deletedUser = verifyUow.Query<IUser>().FirstOrDefault(x => x.Id == userId);
             deletedUser.ShouldBeNull();
@@ -307,12 +302,12 @@ namespace Geex.Tests.FeatureTests
         public async Task ChangePasswordMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testUsername = $"changeapi_{ObjectId.GenerateNewId()}";
             var originalPassword = "OriginalPass123!";
             var newUserToken = string.Empty;
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 await setupUow.Query<IUser>().Where(x=>x.Username == testUsername).DeleteAsync();
@@ -350,7 +345,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert
@@ -362,7 +357,7 @@ namespace Geex.Tests.FeatureTests
         public async Task FilterUsersByIsEnableShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$"""
@@ -382,7 +377,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
             // Assert

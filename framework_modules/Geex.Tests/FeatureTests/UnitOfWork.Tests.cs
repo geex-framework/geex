@@ -11,21 +11,17 @@ using Shouldly;
 namespace Geex.Tests.FeatureTests
 {
     [Collection(nameof(TestsCollection))]
-    public class UnitOfWorkTests
+    public class UnitOfWorkTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-
-        public UnitOfWorkTests(TestApplicationFactory factory)
+        public UnitOfWorkTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task ScopedService_ShouldHaveDifferentUnitOfWorkInstances()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var scopedProvider1 = service.CreateScope().ServiceProvider;
+            var scopedProvider1 = ScopedService.CreateScope().ServiceProvider;
             var scopedProvider2 = scopedProvider1.CreateScope().ServiceProvider;
 
             // Act
@@ -63,9 +59,9 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = new MongoClient();
-            using var scope = _factory.StartTestScope(out var service);
-            var scopedProvider1 = service.CreateScope().ServiceProvider;
-            var scopedProvider2 = service.CreateScope().ServiceProvider;
+            
+            var scopedProvider1 = ScopedService.CreateScope().ServiceProvider;
+            var scopedProvider2 = ScopedService.CreateScope().ServiceProvider;
             await DB.DefaultDb.DropCollectionAsync(nameof(TestEntity));
             var uow1 = scopedProvider1.GetService<IUnitOfWork>();
             var uow2 = scopedProvider2.GetService<IUnitOfWork>();
@@ -97,7 +93,7 @@ namespace Geex.Tests.FeatureTests
             uow1.Query<TestEntity>().Count().ShouldBe(2);
             uow2.Query<TestEntity>().Count().ShouldBe(2);
             client.GetDatabase("tests").GetCollection<TestEntity>(nameof(TestEntity)).Find(new BsonDocument()).ToList().Count.ShouldBe(2);
-            service.CreateScope().ServiceProvider.GetService<IRepository>().Query<TestEntity>().Count().ShouldBe(2);
+            ScopedService.CreateScope().ServiceProvider.GetService<IRepository>().Query<TestEntity>().Count().ShouldBe(2);
             // Assert
             uow1.GetHashCode().ShouldNotBeSameAs(uow2.GetHashCode());
             await DB.DefaultDb.DropCollectionAsync(nameof(TestEntity));

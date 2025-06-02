@@ -20,23 +20,18 @@ using Shouldly;
 using Xunit;
 
 namespace Geex.Tests.FeatureTests
-{
-    [Collection(nameof(TestsCollection))]
-    public class SettingsApiTests
+{    [Collection(nameof(TestsCollection))]
+    public class SettingsApiTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-        private readonly string _graphqlEndpoint = "/graphql";
-
-        public SettingsApiTests(TestApplicationFactory factory)
+        public SettingsApiTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task QuerySettingsShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var requestBody = """
                 {
                     "query": "query { settings(request: { scope: Global }) { items { id name scope scopedKey value __typename } totalCount __typename } }"
@@ -46,7 +41,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
@@ -59,7 +54,7 @@ namespace Geex.Tests.FeatureTests
         public async Task QueryInitSettingsShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var requestBody = """
                 {
                     "query": "query { initSettings { id name scope scopedKey value __typename } }"
@@ -69,7 +64,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
@@ -83,7 +78,7 @@ namespace Geex.Tests.FeatureTests
         public async Task EditSettingMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
 
@@ -96,7 +91,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
@@ -109,12 +104,12 @@ namespace Geex.Tests.FeatureTests
         public async Task FilterSettingsByNameShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var targetSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 await setupUow.Request(new EditSettingRequest
@@ -136,7 +131,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
@@ -154,7 +149,7 @@ namespace Geex.Tests.FeatureTests
         public async Task EditAndVerifySettingShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testSettingName = TestModuleSettings.GlobalSetting;
             string testValue = ObjectId.GenerateNewId().ToString();
 
@@ -168,7 +163,7 @@ namespace Geex.Tests.FeatureTests
             var editContent = new StringContent(editRequestBody, Encoding.UTF8, "application/json");
 
             // Act - Edit setting
-            var editResponse = await client.PostAsync(_graphqlEndpoint, editContent);
+            var editResponse = await client.PostAsync(GqlEndpoint, editContent);
 
             var (editResponseData, _) = await editResponse.ParseGraphQLResponse();
 
@@ -186,7 +181,7 @@ namespace Geex.Tests.FeatureTests
             var queryContent = new StringContent(queryRequestBody, Encoding.UTF8, "application/json");
 
             // Act - Query setting
-            var queryResponse = await client.PostAsync(_graphqlEndpoint, queryContent);
+            var queryResponse = await client.PostAsync(GqlEndpoint, queryContent);
 
             var (queryResponseData, responseString) = await queryResponse.ParseGraphQLResponse();
 
@@ -203,7 +198,7 @@ namespace Geex.Tests.FeatureTests
         public async Task ComplexSettingValueMutationShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testSettingName = TestModuleSettings.GlobalSetting;
             //<span class=\"nav-group-text\">系统及配置</span>
             var complexValue = """[{text:"<span class=\"nav-group-text\">系统及配置</span>",icon:null,shortcutRoot:false,link:null,badge:0,acl:["identity_query_orgs"],shortcut:false,i18n:null,group:true,hideInBreadcrumb:true}]""".Replace("\\","\\\\").Replace("\"","\\\"");
@@ -217,7 +212,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
@@ -229,12 +224,12 @@ namespace Geex.Tests.FeatureTests
         public async Task FilterSettingsByScopeShouldWork()
         {
             // Arrange
-            var client = _factory.CreateClient();
+            var client = this.SuperAdminClient;
             var testSettingName = TestModuleSettings.GlobalSetting;
             var testValue = ObjectId.GenerateNewId().ToString();
 
             // Prepare data using separate scope
-            using (var scope = _factory.Services.CreateScope())
+            using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 await setupUow.Request(new EditSettingRequest
@@ -256,7 +251,7 @@ namespace Geex.Tests.FeatureTests
             var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await client.PostAsync(_graphqlEndpoint, content);
+            var response = await client.PostAsync(GqlEndpoint, content);
 
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 

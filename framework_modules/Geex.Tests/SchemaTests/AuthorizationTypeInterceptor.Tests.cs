@@ -34,21 +34,18 @@ namespace Geex.Tests.SchemaTests
         public bool AuthTestMutationField(string name) => throw new NotImplementedException();
     }
     [Collection(nameof(TestsCollection))]
-    public class AuthorizationTypeInterceptorTests
+    public class AuthorizationTypeInterceptorTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-
-        public AuthorizationTypeInterceptorTests(TestApplicationFactory factory)
+        public AuthorizationTypeInterceptorTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task ImplicitAuthorizationShouldBeApplied()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+            
+            var schema = ScopedService.GetService<ISchema>();
 
             // Get the schema type for our test aggregate entity
             var aggregateType = schema.GetType<ObjectType>(nameof(AuthTestEntity));
@@ -75,8 +72,8 @@ namespace Geex.Tests.SchemaTests
         public async Task ExtensionTypeAuthorizationShouldBeApplied()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+            
+            var schema = ScopedService.GetService<ISchema>();
 
             // Check mutation type
             var mutationType = schema.GetType<ObjectType>(nameof(Mutation));
@@ -115,8 +112,8 @@ namespace Geex.Tests.SchemaTests
         public async Task SpecialFieldsShouldNotBeAuthorized()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+            
+            var schema = ScopedService.GetService<ISchema>();
 
             // Get test aggregate type
             var aggregateType = schema.GetType<ObjectType>(nameof(AuthTestEntity));

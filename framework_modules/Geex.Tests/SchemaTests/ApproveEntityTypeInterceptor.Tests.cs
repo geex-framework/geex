@@ -24,21 +24,18 @@ namespace Geex.Tests.SchemaTests
 
     }
     [Collection(nameof(TestsCollection))]
-    public class ApproveEntityTypeInterceptorTests
+    public class ApproveEntityTypeInterceptorTests : TestsBase
     {
-        private readonly TestApplicationFactory _factory;
-
-        public ApproveEntityTypeInterceptorTests(TestApplicationFactory factory)
+        public ApproveEntityTypeInterceptorTests(TestApplicationFactory factory) : base(factory)
         {
-            _factory = factory;
         }
 
         [Fact]
         public async Task ApproveEntityFieldsShouldBeAdded()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+            
+            var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
             // Check if ApproveStatus field is configured for IApproveEntity types
@@ -52,8 +49,8 @@ namespace Geex.Tests.SchemaTests
         public async Task ApproveMutationMethodsShouldBeAdded()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+            
+            var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
             // Check if the mutation type has the approve methods added
@@ -89,8 +86,8 @@ namespace Geex.Tests.SchemaTests
         public async Task AuditDirectiveShouldBeAddedToApproveMethods()
         {
             // Arrange
-            using var scope = _factory.StartTestScope(out var service);
-            var schema = service.GetService<ISchema>();
+            
+            var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
             // Check if GeexTypeInterceptor.AuditTypes applies audit directive to methods
