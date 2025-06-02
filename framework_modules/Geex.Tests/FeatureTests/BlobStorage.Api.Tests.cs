@@ -29,18 +29,18 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = this.SuperAdminClient;
-            var requestBody = """
-                {
-                    "query": "query { blobObjects(skip: 0, take: 10) { items { id fileName fileSize storageType url } pageInfo { hasPreviousPage hasNextPage } totalCount } }"
+            var query = """
+                query { 
+                    blobObjects(skip: 0, take: 10) { 
+                        items { id fileName fileSize storageType url } 
+                        pageInfo { hasPreviousPage hasNextPage } 
+                        totalCount 
+                    } 
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             // Assert
             int totalCount = responseData["data"]["blobObjects"]["totalCount"].GetValue<int>();
@@ -67,18 +67,17 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
-            var requestBody = $$"""
-                {
-                    "query": "query { blobObjects(skip: 0, take: 10, filter: { fileName: { eq: \"{{targetFileName}}\" } }) { items { id fileName fileSize storageType } totalCount } }"
+            var query = """
+                query($fileName: String!) { 
+                    blobObjects(skip: 0, take: 10, filter: { fileName: { eq: $fileName } }) { 
+                        items { id fileName fileSize storageType } 
+                        totalCount 
+                    } 
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { fileName = targetFileName });
 
             // Assert
             var items = responseData["data"]["blobObjects"]["items"].AsArray();
@@ -113,18 +112,14 @@ namespace Geex.Tests.FeatureTests
                 blobId = blob.Id;
             }
 
-            var requestBody = $$"""
-                {
-                    "query": "mutation { deleteBlobObject(request: { ids: [\"{{blobId}}\"], storageType: Db }) }"
+            var query = """
+                mutation($blobId: String!) { 
+                    deleteBlobObject(request: { ids: [$blobId], storageType: Db }) 
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-
-            var (responseData, _) = await response.ParseGraphQLResponse();
+            var (responseData, _) = await client.PostGqlRequest(GqlEndpoint, query, new { blobId });
 
             // Assert
             bool deleteResult = (bool)responseData["data"]["deleteBlobObject"];
@@ -157,18 +152,17 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
-            var requestBody = """
-                {
-                    "query": "query { blobObjects(skip: 0, take: 10, filter: { storageType: { eq: Db } }) { items { id fileName storageType } totalCount } }"
+            var query = """
+                query { 
+                    blobObjects(skip: 0, take: 10, filter: { storageType: { eq: Db } }) { 
+                        items { id fileName storageType } 
+                        totalCount 
+                    } 
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             // Assert
             var items = responseData["data"]["blobObjects"]["items"].AsArray();

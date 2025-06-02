@@ -23,34 +23,28 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange & Act & Assert - GraphQL queries don't need separate scopes
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        roles(skip: 0, take: 10) {
-                            items {
-                                id
-                                code
-                                name
-                                isStatic
-                                isDefault
-                                isEnabled
-                                permissions
-                            }
-                            pageInfo {
-                                hasPreviousPage
-                                hasNextPage
-                            }
-                            totalCount
+            var query = """
+                query {
+                    roles(skip: 0, take: 10) {
+                        items {
+                            id
+                            code
+                            name
+                            isStatic
+                            isDefault
+                            isEnabled
+                            permissions
                         }
+                        pageInfo {
+                            hasPreviousPage
+                            hasNextPage
+                        }
+                        totalCount
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             responseData["data"]["roles"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
         }
@@ -77,26 +71,20 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - Query using GraphQL
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$$"""
-                    query {
-                        roles(skip: 0, take: 10, filter: { name: { eq: "{{{targetRoleName}}}" }}) {
-                            items {
-                                id
-                                code
-                                name
-                            }
-                            totalCount
+            var query = """
+                query($name: String!) {
+                    roles(skip: 0, take: 10, filter: { name: { eq: $name }}) {
+                        items {
+                            id
+                            code
+                            name
                         }
+                        totalCount
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = targetRoleName });
 
             var items = responseData["data"]["roles"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
@@ -112,31 +100,25 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - GraphQL mutation
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$$"""
-                    mutation {
-                        createRole(request: {
-                            roleCode: "{{{testRoleCode}}}"
-                            roleName: "{{{testRoleName}}}"
-                            isStatic: false
-                            isDefault: false
-                        }) {
-                            id
-                            code
-                            name
-                            isStatic
-                            isDefault
-                            isEnabled
-                        }
+            var query = """
+                mutation($roleCode: String!, $roleName: String!) {
+                    createRole(request: {
+                        roleCode: $roleCode
+                        roleName: $roleName
+                        isStatic: false
+                        isDefault: false
+                    }) {
+                        id
+                        code
+                        name
+                        isStatic
+                        isDefault
+                        isEnabled
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { roleCode = testRoleCode, roleName = testRoleName });
 
             var createdRole = responseData["data"]["createRole"];
             ((string)createdRole["code"]).ShouldBe(testRoleCode);
@@ -168,19 +150,13 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - GraphQL mutation
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$$"""
-                    mutation {
-                        setRoleDefault(request: { roleId: "{{{roleId}}}" })
-                    }
-                    """
-            };
+            var query = """
+                mutation($roleId: String!) {
+                    setRoleDefault(request: { roleId: $roleId })
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { roleId });
 
             bool setDefaultResult = (bool)responseData["data"]["setRoleDefault"];
             setDefaultResult.ShouldBeTrue();
@@ -191,28 +167,22 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange & Act & Assert - GraphQL queries don't need separate scopes
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        roles(skip: 0, take: 10) {
-                            items {
+            var query = """
+                query {
+                    roles(skip: 0, take: 10) {
+                        items {
+                            id
+                            code
+                            users {
                                 id
-                                code
-                                users {
-                                    id
-                                    username
-                                }
+                                username
                             }
                         }
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             var items = responseData["data"]["roles"]["items"].AsArray();
             foreach (var role in items)
@@ -226,25 +196,19 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange & Act & Assert - GraphQL queries don't need separate scopes
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        roles(skip: 0, take: 10) {
-                            items {
-                                id
-                                code
-                                permissions
-                            }
+            var query = """
+                query {
+                    roles(skip: 0, take: 10) {
+                        items {
+                            id
+                            code
+                            permissions
                         }
                     }
-                    """
-            };
+                }
+                """;
 
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             var items = responseData["data"]["roles"]["items"].AsArray();
             foreach (var role in items)

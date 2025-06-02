@@ -22,11 +22,11 @@ namespace Geex.Tests
             return (result, responseString);
         }
 
-        public static async Task<(JsonNode responseData, string responseString)> PostGqlRequest(
+        public static async Task<(JsonNode responseData, string responseString)> PostGqlRequest<T>(
             this HttpClient client,
             string endpoint,
             string query,
-            object variables = null)
+            T variables = default)
         {
             var request = new
             {
@@ -37,6 +37,14 @@ namespace Geex.Tests
             var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
             var response = await client.PostAsync(endpoint, content);
             return await response.ParseGraphQLResponse();
+        }
+
+        public static async Task<(JsonNode responseData, string responseString)> PostGqlRequest(
+            this HttpClient client,
+            string endpoint,
+            string query)
+        {
+            return await client.PostGqlRequest(endpoint, query, default(object));
         }
     }
 }

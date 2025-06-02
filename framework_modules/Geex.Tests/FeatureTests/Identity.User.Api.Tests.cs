@@ -27,36 +27,30 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        users(skip: 0, take: 10) {
-                            items {
-                                id
-                                username
-                                email
-                                nickname
-                                isEnable
-                                phoneNumber
-                                orgCodes
-                                roleIds
-                            }
-                            pageInfo {
-                                hasPreviousPage
-                                hasNextPage
-                            }
-                            totalCount
+            var query = """
+                query {
+                    users(skip: 0, take: 10) {
+                        items {
+                            id
+                            username
+                            email
+                            nickname
+                            isEnable
+                            phoneNumber
+                            orgCodes
+                            roleIds
                         }
+                        pageInfo {
+                            hasPreviousPage
+                            hasNextPage
+                        }
+                        totalCount
                     }
-                    """
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                }
+                """;
 
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             // Assert
             responseData["data"]["users"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
@@ -86,28 +80,22 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
-            var request = new
-            {
-                query = $$$"""
-                    query {
-                        users(skip: 0, take: 10, filter: { username: { eq: "{{{targetUsername}}}" }}) {
-                            items {
-                                id
-                                username
-                                email
-                                nickname
-                            }
-                            totalCount
+            var query = """
+                query($username: String!) {
+                    users(skip: 0, take: 10, filter: { username: { eq: $username }}) {
+                        items {
+                            id
+                            username
+                            email
+                            nickname
                         }
+                        totalCount
                     }
-                    """
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                }
+                """;
 
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { username = targetUsername });
 
             // Assert
             var items = responseData["data"]["users"]["items"].AsArray();
@@ -120,25 +108,19 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        currentUser {
-                            id
-                            username
-                            email
-                            nickname
-                        }
+            var query = """
+                query {
+                    currentUser {
+                        id
+                        username
+                        email
+                        nickname
                     }
-                    """
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                }
+                """;
 
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             // Assert
             responseData["data"]["currentUser"].ShouldNotBeNull();
@@ -151,34 +133,28 @@ namespace Geex.Tests.FeatureTests
             var client = this.SuperAdminClient;
             var testUsername = $"newuser_{ObjectId.GenerateNewId()}";
 
-            var request = new
-            {
-                query = $$$"""
-                    mutation {
-                        createUser(request: {
-                            username: "{{{testUsername}}}"
-                            email: "{{{testUsername}}}@test.com"
-                            password: "Password123!"
-                            nickname: "New User"
-                            isEnable: true
-                            roleIds: []
-                            orgCodes: []
-                        }) {
-                            id
-                            username
-                            email
-                            nickname
-                            isEnable
-                        }
+            var query = """
+                mutation($username: String!, $email: String!) {
+                    createUser(request: {
+                        username: $username
+                        email: $email
+                        password: "Password123!"
+                        nickname: "New User"
+                        isEnable: true
+                        roleIds: []
+                        orgCodes: []
+                    }) {
+                        id
+                        username
+                        email
+                        nickname
+                        isEnable
                     }
-                    """
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                }
+                """;
 
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { username = testUsername, email = $"{testUsername}@test.com" });
 
             // Assert
             var createdUser = responseData["data"]["createUser"];
@@ -214,30 +190,24 @@ namespace Geex.Tests.FeatureTests
                 userId = user.Id;
             }
 
-            var request = new
-            {
-                query = $$$"""
-                    mutation {
-                        editUser(request: {
-                            id: "{{{userId}}}"
-                            nickname: "Updated API Nickname"
-                            phoneNumber: "{{{uniquePhoneNumber}}}"
-                            isEnable: false
-                        }) {
-                            id
-                            nickname
-                            phoneNumber
-                            isEnable
-                        }
+            var query = """
+                mutation($id: String!, $nickname: String!, $phoneNumber: String!) {
+                    editUser(request: {
+                        id: $id
+                        nickname: $nickname
+                        phoneNumber: $phoneNumber
+                        isEnable: false
+                    }) {
+                        id
+                        nickname
+                        phoneNumber
+                        isEnable
                     }
-                    """
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                }
+                """;
 
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { id = userId, nickname = "Updated API Nickname", phoneNumber = uniquePhoneNumber });
 
             // Assert
             var editedUser = responseData["data"]["editUser"];
@@ -272,20 +242,14 @@ namespace Geex.Tests.FeatureTests
                 userId = user.Id;
             }
 
-            var request = new
-            {
-                query = $$$"""
-                    mutation {
-                        deleteUser(request: { id: "{{{userId}}}" })
-                    }
-                    """
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var query = """
+                mutation($id: String!) {
+                    deleteUser(request: { id: $id })
+                }
+                """;
 
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { id = userId });
 
             // Assert
             bool deleteResult = (bool)responseData["data"]["deleteUser"];
@@ -340,23 +304,17 @@ namespace Geex.Tests.FeatureTests
             }
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", newUserToken);
-            var request = new
-            {
-                query = $$"""
-                    mutation {
-                        changePassword(request: {
-                            originPassword: "{{originalPassword}}"
-                            newPassword: "NewPassword123!"
-                        })
-                    }
-                    """
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+            var query = """
+                mutation($originPassword: String!) {
+                    changePassword(request: {
+                        originPassword: $originPassword
+                        newPassword: "NewPassword123!"
+                    })
+                }
+                """;
 
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { originPassword = originalPassword });
 
             // Assert
             bool changeResult = (bool)responseData["data"]["changePassword"];
@@ -368,27 +326,21 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = this.SuperAdminClient;
-            var request = new
-            {
-                query = $$"""
-                    query {
-                        users(skip: 0, take: 10, filter: { isEnable: { eq: true } }) {
-                            items {
-                                id
-                                username
-                                isEnable
-                            }
-                            totalCount
+            var query = """
+                query {
+                    users(skip: 0, take: 10, filter: { isEnable: { eq: true } }) {
+                        items {
+                            id
+                            username
+                            isEnable
                         }
+                        totalCount
                     }
-                    """
-            };
-
-            var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+                }
+                """;
 
             // Act
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             // Assert
             var items = responseData["data"]["users"]["items"].AsArray();

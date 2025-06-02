@@ -33,16 +33,16 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange & Act & Assert - GraphQL queries don't need separate scopes
             var client = this.SuperAdminClient;
-            var requestBody = """
-                {
-                    "query": "query { settings(request: { scope: Global }) { items { id name scope scopedKey value __typename } totalCount __typename } }"
+            var query = """
+                query {
+                    settings(request: { scope: Global }) {
+                        items { id name scope scopedKey value __typename }
+                        totalCount __typename
+                    }
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             int totalCount = responseData["data"]["settings"]["totalCount"].GetValue<int>();
             totalCount.ShouldBeGreaterThanOrEqualTo(0);
@@ -53,16 +53,15 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange & Act & Assert - GraphQL queries don't need separate scopes
             var client = this.SuperAdminClient;
-            var requestBody = """
-                {
-                    "query": "query { initSettings { id name scope scopedKey value __typename } }"
+            var query = """
+                query {
+                    initSettings {
+                        id name scope scopedKey value __typename
+                    }
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             var initSettings = responseData["data"]["initSettings"].AsArray();
             int settingsCount = initSettings.Count;
@@ -78,18 +77,17 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - GraphQL mutations are handled by the framework's scope management
             var client = this.SuperAdminClient;
-            var requestBody = $$"""
-                {
-                    "query": "mutation { editSetting(request: { scope: Global, scopedKey: null, name: {{testSettingName}}, value: \"{{testValue}}\" }) { id name scope scopedKey value __typename } }"
+            var query = """
+                mutation($name: SettingDefinition!, $value: Any!) {
+                    editSetting(request: { scope: Global, scopedKey: null, name: $name, value: $value }) {
+                        id name scope scopedKey value __typename
+                    }
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = testSettingName.Name, value = testValue });
 
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
-
-            ((string)responseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName);
+            ((string)responseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName.Name);
             ((string)responseData["data"]["editSetting"]["value"]).ShouldBe(testValue);
         }
 
@@ -115,23 +113,23 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - Query using GraphQL
             var client = this.SuperAdminClient;
-            var requestBody = $$"""
-                {
-                    "query": "query { settings(request: { scope: Global }, filter: { name: { eq: {{targetSettingName}} } }) { items { id name scope scopedKey value __typename } totalCount __typename } }"
+            var query = """
+                query($name: SettingDefinition!) {
+                    settings(request: { scope: Global }, filter: { name: { eq: $name } }) {
+                        items { id name scope scopedKey value __typename }
+                        totalCount __typename
+                    }
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = targetSettingName.Name });
 
             var items = responseData["data"]["settings"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
 
             foreach (var item in items)
             {
-                ((string)item["name"]).ShouldBe(targetSettingName);
+                ((string)item["name"]).ShouldBe(targetSettingName.Name);
             }
         }
 
@@ -144,39 +142,38 @@ namespace Geex.Tests.FeatureTests
 
             // Act - Edit setting using GraphQL
             var client = this.SuperAdminClient;
-            var editRequestBody = $$"""
-                {
-                    "query": "mutation { editSetting(request: { scope: Global, scopedKey: null, name: {{testSettingName}}, value: \"{{testValue}}\" }) { id name scope scopedKey value __typename } }"
+            var editQuery = """
+                mutation($name: SettingDefinition!, $value: Any!) {
+                    editSetting(request: { scope: Global, scopedKey: null, name: $name, value: $value }) {
+                        id name scope scopedKey value __typename
+                    }
                 }
                 """;
 
-            var editContent = new StringContent(editRequestBody, Encoding.UTF8, "application/json");
-
-            var editResponse = await client.PostAsync(GqlEndpoint, editContent);
-            var (editResponseData, _) = await editResponse.ParseGraphQLResponse();
+            var (editResponseData, _) = await client.PostGqlRequest(GqlEndpoint, editQuery, new { name = testSettingName.Name, value = testValue });
 
             // Assert - Edit successful
-            ((string)editResponseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName);
+            ((string)editResponseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName.Name);
             ((string)editResponseData["data"]["editSetting"]["value"]).ShouldBe(testValue);
 
             // Act - Query to verify using GraphQL
-            var queryRequestBody = $$"""
-                {
-                    "query": "query { settings(request: { scope: Global }, filter: { name: { eq: {{testSettingName}} } }) { items { id name scope scopedKey value __typename } totalCount __typename } }"
+            var queryQuery = """
+                query($name: String!) {
+                    settings(request: { scope: Global }, filter: { name: { eq: $name } }) {
+                        items { id name scope scopedKey value __typename }
+                        totalCount __typename
+                    }
                 }
                 """;
 
-            var queryContent = new StringContent(queryRequestBody, Encoding.UTF8, "application/json");
-
-            var queryResponse = await client.PostAsync(GqlEndpoint, queryContent);
-            var (queryResponseData, responseString) = await queryResponse.ParseGraphQLResponse();
+            var (queryResponseData, responseString) = await client.PostGqlRequest(GqlEndpoint, queryQuery, new { name = testSettingName.Name });
 
             // Assert - Query successful and value updated
             var items = queryResponseData["data"]["settings"]["items"].AsArray();
             items.Count.ShouldBe(1);
 
             var item = items[0];
-            ((string)item["name"]).ShouldBe(testSettingName);
+            ((string)item["name"]).ShouldBe(testSettingName.Name);
             ((string)item["value"]).ShouldBe(testValue);
         }
 
@@ -185,20 +182,18 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var testSettingName = TestModuleSettings.GlobalSetting;
-            var complexValue = """[{text:"<span class=\"nav-group-text\">系统及配置</span>",icon:null,shortcutRoot:false,link:null,badge:0,acl:["identity_query_orgs"],shortcut:false,i18n:null,group:true,hideInBreadcrumb:true}]""".Replace("\\","\\\\").Replace("\"","\\\"");
-
+            object[] complexValue = [new { text = "<span class=\"nav-group-text\">系统及配置</span>", icon = default(object), shortcutRoot = false, link = default(object), badge = 0, acl = (string[])["identity_query_orgs"], shortcut = false, i18n = default(object), group = true, hideInBreadcrumb = true }];
             // Act & Assert - GraphQL mutation
             var client = this.SuperAdminClient;
-            var requestBody = $$"""
-                {
-                    "query": "mutation { editSetting(request: { scope: Global, scopedKey: null, name: {{testSettingName}}, value: {{complexValue}} }) { name value __typename } }"
+            var query = """
+                mutation($name: SettingDefinition!, $value: Any!) {
+                    editSetting(request: { scope: Global, scopedKey: null, name: $name, value: $value }) {
+                        name value __typename
+                    }
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = testSettingName.Name, value = complexValue });
 
             ((string)responseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName);
         }
@@ -225,16 +220,16 @@ namespace Geex.Tests.FeatureTests
 
             // Act & Assert - Query using GraphQL
             var client = this.SuperAdminClient;
-            var requestBody = """
-                {
-                    "query": "query { settings(request: { scope: Global }, filter: { scope: { eq: Global } }) { items { id name scope scopedKey value } totalCount } }"
+            var query = """
+                query {
+                    settings(request: { scope: Global }, filter: { scope: { eq: Global } }) {
+                        items { id name scope scopedKey value }
+                        totalCount
+                    }
                 }
                 """;
 
-            var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
-
-            var response = await client.PostAsync(GqlEndpoint, content);
-            var (responseData, responseString) = await response.ParseGraphQLResponse();
+            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
 
             var items = responseData["data"]["settings"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
