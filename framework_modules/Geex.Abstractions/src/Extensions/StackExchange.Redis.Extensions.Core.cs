@@ -31,14 +31,10 @@ namespace StackExchange.Redis.Extensions.Core
         {
             var redisConfiguration = services.GetSingletonInstance<GeexCoreModuleOptions>();
             services.AddSingleton<IRedisClient, RedisClient>();
-            services.AddSingleton<IRedisDatabase>(x => x.GetService<IRedisClient>().Db0);
             services.AddSingleton<IRedisConnectionPoolManager, RedisConnectionPoolManager>();
             services.AddSingleton<ISerializer, SystemTextJsonSerializer>(x => new SystemTextJsonSerializer(JsonExtension.DefaultSerializeSettings));
 
-            services.AddSingleton((provider) =>
-            {
-                return provider.GetRequiredService<IRedisClient>().GetDefaultDatabase();
-            });
+            services.AddSingleton<IRedisDatabase>((provider) => provider.GetRequiredService<IRedisClient>().GetDefaultDatabase());
 
             services.AddSingleton(redisConfiguration.Redis);
 

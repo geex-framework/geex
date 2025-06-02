@@ -24,18 +24,20 @@ namespace Geex.Tests.FeatureTests
     {
         public BlobStorageApiTests(TestApplicationFactory factory) : base(factory)
         {
-        }        [Fact]
+        }
+
+        [Fact]
         public async Task QueryBlobObjectsShouldWork()
         {
             // Arrange
             var client = this.SuperAdminClient;
             var query = """
-                query { 
-                    blobObjects(skip: 0, take: 10) { 
-                        items { id fileName fileSize storageType url } 
-                        pageInfo { hasPreviousPage hasNextPage } 
-                        totalCount 
-                    } 
+                query {
+                    blobObjects(skip: 0, take: 10) {
+                        items { id fileName fileSize storageType url }
+                        pageInfo { hasPreviousPage hasNextPage }
+                        totalCount
+                    }
                 }
                 """;
 
@@ -45,7 +47,9 @@ namespace Geex.Tests.FeatureTests
             // Assert
             int totalCount = responseData["data"]["blobObjects"]["totalCount"].GetValue<int>();
             totalCount.ShouldBeGreaterThanOrEqualTo(0);
-        }        [Fact]
+        }
+
+        [Fact]
         public async Task FilterBlobObjectsByFileNameShouldWork()
         {
             // Arrange
@@ -68,11 +72,11 @@ namespace Geex.Tests.FeatureTests
             }
 
             var query = """
-                query($fileName: String!) { 
-                    blobObjects(skip: 0, take: 10, filter: { fileName: { eq: $fileName } }) { 
-                        items { id fileName fileSize storageType } 
-                        totalCount 
-                    } 
+                query($fileName: String!) {
+                    blobObjects(skip: 0, take: 10, filter: { fileName: { eq: $fileName } }) {
+                        items { id fileName fileSize storageType }
+                        totalCount
+                    }
                 }
                 """;
 
@@ -89,7 +93,8 @@ namespace Geex.Tests.FeatureTests
             }
         }
 
-        [Fact]        public async Task DeleteBlobObjectMutationShouldWork()
+        [Fact]
+        public async Task DeleteBlobObjectMutationShouldWork()
         {
             // Arrange
             var client = this.SuperAdminClient;
@@ -113,8 +118,8 @@ namespace Geex.Tests.FeatureTests
             }
 
             var query = """
-                mutation($blobId: String!) { 
-                    deleteBlobObject(request: { ids: [$blobId], storageType: Db }) 
+                mutation($blobId: String!) {
+                    deleteBlobObject(request: { ids: [$blobId], storageType: Db })
                 }
                 """;
 
@@ -130,7 +135,9 @@ namespace Geex.Tests.FeatureTests
                 var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blobId);
                 deletedBlob.ShouldBeNull();
             }
-        }        [Fact]
+        }
+
+        [Fact]
         public async Task FilterBlobObjectsByStorageTypeShouldWork()
         {
             // Arrange
@@ -153,11 +160,11 @@ namespace Geex.Tests.FeatureTests
             }
 
             var query = """
-                query { 
-                    blobObjects(skip: 0, take: 10, filter: { storageType: { eq: Db } }) { 
-                        items { id fileName storageType } 
-                        totalCount 
-                    } 
+                query {
+                    blobObjects(skip: 0, take: 10, filter: { storageType: { eq: Db } }) {
+                        items { id fileName storageType }
+                        totalCount
+                    }
                 }
                 """;
 
