@@ -23,7 +23,7 @@ namespace Geex.Tests.FeatureTests
             // Arrange & Act & Assert
             using var scope1 = ScopedService.CreateScope();
             using var scope2 = ScopedService.CreateScope();
-            
+
             var uow1 = scope1.ServiceProvider.GetService<IUnitOfWork>();
             var uow2 = scope2.ServiceProvider.GetService<IUnitOfWork>();
 
@@ -72,7 +72,7 @@ namespace Geex.Tests.FeatureTests
                     Data = new[] { 1 }
                 });
                 entity1Id = entity1.Id;
-                
+
                 uow1.Query<TestEntity>().Count().ShouldBe(1);
                 await uow1.SaveChanges();
             }
@@ -87,10 +87,13 @@ namespace Geex.Tests.FeatureTests
                     Data = new[] { 2 }
                 });
                 entity2Id = entity2.Id;
-                
-                uow2.Query<TestEntity>().Count().ShouldBe(1);
+
+                uow2.Query<TestEntity>().Count().ShouldBe(2);
+                // entity attached but not saved to db
                 client.GetDatabase("tests").GetCollection<TestEntity>(nameof(TestEntity)).Find(new BsonDocument()).ToList().Count.ShouldBe(1);
                 await uow2.SaveChanges();
+                // entity saved to db
+                client.GetDatabase("tests").GetCollection<TestEntity>(nameof(TestEntity)).Find(new BsonDocument()).ToList().Count.ShouldBe(2);
             }
 
             // Verify final state

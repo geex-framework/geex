@@ -166,7 +166,7 @@ namespace MongoDB.Entities.Tests
             //await dbContext.DeleteAsync<TestEntity>();
             //dbContext.Dispose();
             //dbContext = new DbContext();
-            dbContext.Local[typeof(TestEntity)].Clear();
+            dbContext.OriginLocal[typeof(TestEntity)].Clear();
             var testEntity = new TestEntity()
             {
                 Name = "test"
@@ -174,14 +174,14 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
             await dbContext.SaveChanges();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.OriginLocal[typeof(TestEntity)].ShouldBeEmpty();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.OriginLocal[typeof(TestEntity)].ShouldBeEmpty();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
-            dbContext.Local[typeof(TestEntity)].Count.ShouldBe(1);
+            dbContext.OriginLocal[typeof(TestEntity)].Count.ShouldBe(1);
             await result.DeleteAsync();
-            dbContext.Local[typeof(TestEntity)].Count.ShouldBe(0);
+            dbContext.OriginLocal[typeof(TestEntity)].Count.ShouldBe(0);
             dbContext.Dispose();
         }
 

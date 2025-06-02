@@ -4,11 +4,14 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Abstractions;
 
 using Geex.MultiTenant;
 using Geex.Storage;
+
 using HotChocolate.Types;
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 
@@ -29,8 +32,7 @@ public partial class Org : Entity<Org>, ITenantFilteredEntity, IOrg
 
     private IQueryable<Org> _allSubOrgsQuery => DbContext.Query<Org>().Where(x => x.Code.StartsWith(Code + "."));
 
-    private IEnumerable<IOrg> _directSubOrgsQuery =>
-        DbContext.Find<Org>().Match(builder => builder.Regex(x=>x.Code, BsonRegularExpression.Create($@"^{Code}\.\w+(?!\.)$"))).ExecuteAsync().GetAwaiter().GetResult();
+    private IEnumerable<IOrg> _directSubOrgsQuery => _allSubOrgsQuery.AsEnumerable().Where(x => x.Code.Count(y => y == '.') == this.Code.Count(y => y == '.') + 1);
 
     /// <summary>
     ///     所有父组织编码
@@ -98,8 +100,8 @@ public partial class Org : Entity<Org>, ITenantFilteredEntity, IOrg
         var originCode = Code;
 
         var subOrgs = DirectSubOrgs.ToList();
-        foreach (var subOrg in subOrgs) subOrg.SetCode(subOrg.Code.Replace(Code, newOrgCode));
-
+        this.Code = newOrgCode;
+        foreach (var subOrg in subOrgs) subOrg.SetCode(subOrg.Code.Replace(originCode, newOrgCode));
     }
 
     /// <inheritdoc />

@@ -166,23 +166,29 @@ namespace Geex.Tests.FeatureTests
             var testData = "test content for url generation";
             var fileBytes = Encoding.UTF8.GetBytes(testData);
 
+            string blobId;
             // Act
-            IBlobObject blob;
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
-                blob = await uow.Request(new CreateBlobObjectRequest()
+                var blob = await uow.Request(new CreateBlobObjectRequest()
                 {
                     File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
                     StorageType = BlobStorageType.Db
                 });
+                blobId = blob.Id;
                 await uow.SaveChanges();
             }
 
             // Assert
-            blob.Url.ShouldNotBeNullOrEmpty();
-            blob.Url.ShouldContain(blob.Id);
-            blob.Url.ShouldContain("/download");
+            using (var scope = ScopedService.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var blob = uow.Query<IBlobObject>().First(x=>x.Id == blobId);
+                blob.Url.ShouldNotBeNullOrEmpty();
+                blob.Url.ShouldContain(blob.Id);
+                blob.Url.ShouldContain("/download");
+            }
         }
 
         [Fact]

@@ -644,7 +644,7 @@ namespace MongoDB.Entities
                 }
             }
 
-            this.Local.TypedCacheDictionary.Clear();
+            //this.Local.TypedCacheDictionary.Clear();
             this.OriginLocal.TypedCacheDictionary.Clear();
             if (this.PostSaveChanges != default)
             {
