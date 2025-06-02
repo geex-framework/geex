@@ -167,7 +167,7 @@ namespace Geex.Tests.FeatureTests
             var client = _factory.CreateClient();
             var testOrgCode = $"neworg_{ObjectId.GenerateNewId()}";
             var testOrgName = $"New Organization {ObjectId.GenerateNewId()}";
-            
+
             var request = new
             {
                 query = $$$"""
@@ -204,7 +204,7 @@ namespace Geex.Tests.FeatureTests
             // Arrange
             var client = _factory.CreateClient();
             var parentOrgCode = $"parentorg_{ObjectId.GenerateNewId()}";
-            
+
             // Prepare data using separate scope
             using (var scope = _factory.Services.CreateScope())
             {
@@ -298,7 +298,7 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = _factory.CreateClient();
-            
+
             var request = new
             {
                 query = $$"""
@@ -373,16 +373,16 @@ namespace Geex.Tests.FeatureTests
 
             // Assert
             var items = responseData["data"]["orgs"]["items"].AsArray();
-            
+
             var parentOrgResult = items.FirstOrDefault(o => ((string)o["code"]) == parentCode);
             var subOrgResult = items.FirstOrDefault(o => ((string)o["code"]) == subCode);
-            
+
             parentOrgResult.ShouldNotBeNull();
             subOrgResult.ShouldNotBeNull();
-            
+
             var directSubCodes = parentOrgResult["directSubOrgCodes"].AsArray();
             directSubCodes.Any(x => ((string)x) == subCode).ShouldBeTrue();
-            
+
             ((string)subOrgResult["parentOrgCode"]).ShouldBe(parentCode);
         }
     }
