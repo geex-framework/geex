@@ -11,7 +11,8 @@ using MongoDB.Bson;
 using Newtonsoft.Json;
 
 namespace Geex.Tests.FeatureTests
-{    [Collection(nameof(TestsCollection))]
+{
+    [Collection(nameof(TestsCollection))]
     public class IdentityOrgApiTests : TestsBase
     {
         public IdentityOrgApiTests(TestApplicationFactory factory) : base(factory)
@@ -21,7 +22,7 @@ namespace Geex.Tests.FeatureTests
         [Fact]
         public async Task QueryOrgsShouldWork()
         {
-            // Arrange
+            // Arrange & Act & Assert - GraphQL queries don't need separate scopes
             var client = this.SuperAdminClient;
             var request = new
             {
@@ -50,22 +51,18 @@ namespace Geex.Tests.FeatureTests
 
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            // Act
             var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
-            // Assert
             responseData["data"]["orgs"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
         }
 
         [Fact]
         public async Task FilterOrgsByCodeShouldWork()
         {
-            // Arrange
-            var client = this.SuperAdminClient;
+            // Arrange - Prepare data using separate scope
             var targetOrgCode = $"testorg_{ObjectId.GenerateNewId()}";
 
-            // Prepare data using separate scope
             using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
@@ -78,6 +75,8 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
+            // Act & Assert - Query using GraphQL
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$$"""
@@ -96,11 +95,9 @@ namespace Geex.Tests.FeatureTests
 
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            // Act
             var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
-            // Assert
             var items = responseData["data"]["orgs"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
             ((string)items[0]["code"]).ShouldBe(targetOrgCode);
@@ -109,12 +106,10 @@ namespace Geex.Tests.FeatureTests
         [Fact]
         public async Task FilterOrgsByNameShouldWork()
         {
-            // Arrange
-            var client = this.SuperAdminClient;
+            // Arrange - Prepare data using separate scope
             var targetOrgName = $"Unique Org Name {ObjectId.GenerateNewId()}";
             var orgCode = $"uniqueorg_{ObjectId.GenerateNewId()}";
 
-            // Prepare data using separate scope
             using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
@@ -127,6 +122,8 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
+            // Act & Assert - Query using GraphQL
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$$"""
@@ -145,11 +142,9 @@ namespace Geex.Tests.FeatureTests
 
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            // Act
             var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
-            // Assert
             var items = responseData["data"]["orgs"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
             ((string)items[0]["name"]).ShouldBe(targetOrgName);
@@ -159,10 +154,11 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateOrgMutationShouldWork()
         {
             // Arrange
-            var client = this.SuperAdminClient;
             var testOrgCode = $"neworg_{ObjectId.GenerateNewId()}";
             var testOrgName = $"New Organization {ObjectId.GenerateNewId()}";
 
+            // Act & Assert - GraphQL mutation
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$$"""
@@ -183,11 +179,9 @@ namespace Geex.Tests.FeatureTests
 
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            // Act
             var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
-            // Assert
             var createdOrg = responseData["data"]["createOrg"];
             ((string)createdOrg["code"]).ShouldBe(testOrgCode);
             ((string)createdOrg["name"]).ShouldBe(testOrgName);
@@ -196,11 +190,9 @@ namespace Geex.Tests.FeatureTests
         [Fact]
         public async Task CreateSubOrgMutationShouldWork()
         {
-            // Arrange
-            var client = this.SuperAdminClient;
+            // Arrange - Prepare parent org data using separate scope
             var parentOrgCode = $"parentorg_{ObjectId.GenerateNewId()}";
 
-            // Prepare data using separate scope
             using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
@@ -213,9 +205,11 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
+            // Act & Assert - Create sub org using GraphQL
             var subOrgCode = $"{parentOrgCode}.suborg_{ObjectId.GenerateNewId()}";
             var subOrgName = $"Sub Organization {ObjectId.GenerateNewId()}";
 
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$$"""
@@ -236,11 +230,9 @@ namespace Geex.Tests.FeatureTests
 
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            // Act
             var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
-            // Assert
             var createdOrg = responseData["data"]["createOrg"];
             ((string)createdOrg["code"]).ShouldBe(subOrgCode);
             ((string)createdOrg["parentOrgCode"]).ShouldBe(parentOrgCode);
@@ -249,12 +241,10 @@ namespace Geex.Tests.FeatureTests
         [Fact]
         public async Task DeleteOrgMutationShouldWork()
         {
-            // Arrange
-            var client = this.SuperAdminClient;
+            // Arrange - Prepare data using separate scope
             var testOrgCode = $"deleteapi_{ObjectId.GenerateNewId()}";
             string orgId;
 
-            // Prepare data using separate scope
             using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
@@ -268,6 +258,8 @@ namespace Geex.Tests.FeatureTests
                 orgId = org.Id;
             }
 
+            // Act & Assert - Delete using GraphQL
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$$"""
@@ -279,11 +271,9 @@ namespace Geex.Tests.FeatureTests
 
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            // Act
             var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
-            // Assert
             bool deleteResult = (bool)responseData["data"]["deleteOrg"];
             deleteResult.ShouldBeTrue();
         }
@@ -291,9 +281,8 @@ namespace Geex.Tests.FeatureTests
         [Fact]
         public async Task FixUserOrgMutationShouldWork()
         {
-            // Arrange
+            // Arrange & Act & Assert - GraphQL mutation
             var client = this.SuperAdminClient;
-
             var request = new
             {
                 query = $$"""
@@ -305,11 +294,9 @@ namespace Geex.Tests.FeatureTests
 
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            // Act
             var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
-            // Assert
             bool fixResult = (bool)responseData["data"]["fixUserOrg"];
             fixResult.ShouldBeTrue();
         }
@@ -317,12 +304,10 @@ namespace Geex.Tests.FeatureTests
         [Fact]
         public async Task QueryOrgHierarchyShouldWork()
         {
-            // Arrange
-            var client = this.SuperAdminClient;
+            // Arrange - Prepare hierarchy data using separate scope
             var parentCode = $"parent_{ObjectId.GenerateNewId()}";
             var subCode = $"{parentCode}.sub_{ObjectId.GenerateNewId()}";
 
-            // Prepare data using separate scope
             using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
@@ -341,6 +326,8 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
+            // Act & Assert - Query hierarchy using GraphQL
+            var client = this.SuperAdminClient;
             var request = new
             {
                 query = $$"""
@@ -362,11 +349,9 @@ namespace Geex.Tests.FeatureTests
 
             var content = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
 
-            // Act
             var response = await client.PostAsync(GqlEndpoint, content);
             var (responseData, responseString) = await response.ParseGraphQLResponse();
 
-            // Assert
             var items = responseData["data"]["orgs"]["items"].AsArray();
 
             var parentOrgResult = items.FirstOrDefault(o => ((string)o["code"]) == parentCode);

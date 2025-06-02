@@ -129,10 +129,12 @@ namespace Geex.Tests.FeatureTests
             // Assert
             bool deleteResult = (bool)responseData["data"]["deleteBlobObject"];
             deleteResult.ShouldBeTrue();            // Verify the blob is actually deleted
-            using var verifyService = ScopedService.CreateScope();
-            var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
-            var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blobId);
-            deletedBlob.ShouldBeNull();
+            using (var verifyScope = ScopedService.CreateScope())
+            {
+                var verifyUow = verifyScope.ServiceProvider.GetService<IUnitOfWork>();
+                var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blobId);
+                deletedBlob.ShouldBeNull();
+            }
         }        [Fact]
         public async Task FilterBlobObjectsByStorageTypeShouldWork()
         {

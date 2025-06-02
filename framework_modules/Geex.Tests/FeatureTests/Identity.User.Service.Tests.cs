@@ -24,283 +24,342 @@ namespace Geex.Tests.FeatureTests
         public async Task CreateUserServiceShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
-            await uow.DbContext.Query<User>().Where(x => x.PhoneNumber == "15555555556").DeleteAsync();
             var testUsername = $"testuser_{ObjectId.GenerateNewId()}";
-
             var password = "Password123!";
-            var request = new CreateUserRequest
-            {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = password,
-                Nickname = "Test User",
-                PhoneNumber = "15555555556",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            };
 
             // Act
-            var user = await uow.Request(request);
-            await uow.SaveChanges();
+            using (var scope = ScopedService.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                await uow.DbContext.Query<User>().Where(x => x.PhoneNumber == "15555555556").DeleteAsync();
+                
+                var request = new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = password,
+                    Nickname = "Test User",
+                    PhoneNumber = "15555555556",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                };
 
-            // Assert
-            user.ShouldNotBeNull();
-            user.Username.ShouldBe(testUsername);
-            user.Email.ShouldBe($"{testUsername}@test.com");
-            user.Nickname.ShouldBe("Test User");
-            user.IsEnable.ShouldBe(true);
-            user.CheckPassword(password).ShouldBeTrue();
+                var user = await uow.Request(request);
+                await uow.SaveChanges();
+
+                // Assert
+                user.ShouldNotBeNull();
+                user.Username.ShouldBe(testUsername);
+                user.Email.ShouldBe($"{testUsername}@test.com");
+                user.Nickname.ShouldBe("Test User");
+                user.IsEnable.ShouldBe(true);
+                user.CheckPassword(password).ShouldBeTrue();
+            }
         }
+        
         [Fact]
         public async Task PasswordHashingShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
-            var passwordHasher = ScopedService.GetService<IPasswordHasher<IUser>>();
             var plainPassword = "Password123!";
             var testUsername = $"hashtest_{ObjectId.GenerateNewId()}";
 
-            var request = new CreateUserRequest
-            {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = plainPassword,
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            };
-
             // Act
-            var user = await uow.Request(request);
-            await uow.SaveChanges();
+            using (var scope = ScopedService.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var passwordHasher = scope.ServiceProvider.GetService<IPasswordHasher<IUser>>();
+                
+                var request = new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = plainPassword,
+                    Nickname = "Test User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                };
 
-            // Assert
-            (user as User).Password.ShouldNotBe(plainPassword);
-            var verificationResult = passwordHasher.VerifyHashedPassword(user, (user as User).Password, plainPassword);
-            verificationResult.ShouldNotBe(PasswordVerificationResult.Failed);
+                var user = await uow.Request(request);
+                await uow.SaveChanges();
+
+                // Assert
+                (user as User).Password.ShouldNotBe(plainPassword);
+                var verificationResult = passwordHasher.VerifyHashedPassword(user, (user as User).Password, plainPassword);
+                verificationResult.ShouldNotBe(PasswordVerificationResult.Failed);
+            }
         }
 
         [Fact]
         public async Task CheckPasswordShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var password = "Password123!";
             var testUsername = $"checkpwd_{ObjectId.GenerateNewId()}";
 
-            var user = await uow.Request(new CreateUserRequest
-            {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = password,
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
-
             // Act & Assert
-            user.CheckPassword(password).ShouldBe(true);
-            user.CheckPassword("WrongPassword").ShouldBe(false);
+            using (var scope = ScopedService.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var user = await uow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = password,
+                    Nickname = "Test User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await uow.SaveChanges();
+
+                user.CheckPassword(password).ShouldBe(true);
+                user.CheckPassword("WrongPassword").ShouldBe(false);
+            }
         }
 
         [Fact]
         public async Task ChangePasswordServiceShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var originalPassword = "Password123!";
             var newPassword = "NewPassword123!";
             var testUsername = $"changepwd_{ObjectId.GenerateNewId()}";
 
-            var user = await uow.Request(new CreateUserRequest
-            {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = originalPassword,
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
-
             // Act
-            user.ChangePassword(originalPassword, newPassword);
-            await uow.SaveChanges();
+            using (var scope = ScopedService.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var user = await uow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = originalPassword,
+                    Nickname = "Test User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await uow.SaveChanges();
 
-            // Assert
-            user.CheckPassword(newPassword).ShouldBe(true);
-            user.CheckPassword(originalPassword).ShouldBe(false);
+                user.ChangePassword(originalPassword, newPassword);
+                await uow.SaveChanges();
+
+                // Assert
+                user.CheckPassword(newPassword).ShouldBe(true);
+                user.CheckPassword(originalPassword).ShouldBe(false);
+            }
         }
 
         [Fact]
         public async Task ChangePasswordWithInvalidOriginShouldThrow()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var testUsername = $"invalidpwd_{ObjectId.GenerateNewId()}";
 
-            var user = await uow.Request(new CreateUserRequest
-            {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = "Password123!",
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
-
             // Act & Assert
-            Should.Throw<BusinessException>(() =>
-                user.ChangePassword("WrongPassword", "NewPassword123!"));
+            using (var scope = ScopedService.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var user = await uow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = "Password123!",
+                    Nickname = "Test User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await uow.SaveChanges();
+
+                Should.Throw<BusinessException>(() =>
+                    user.ChangePassword("WrongPassword", "NewPassword123!"));
+            }
         }
 
         [Fact]
         public async Task EditUserServiceShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var testUsername = $"edituser_{ObjectId.GenerateNewId()}";
             var uniquePhoneNumber = $"155{ObjectId.GenerateNewId().ToString().Substring(0, 8)}";
+            string userId;
 
-            // Clean up any existing users with this phone number
-            await uow.DbContext.Query<User>().Where(x => x.PhoneNumber == uniquePhoneNumber).DeleteAsync();
-
-            var user = await uow.Request(new CreateUserRequest
+            // Create user
+            using (var setupScope = ScopedService.CreateScope())
             {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = "Password123!",
-                Nickname = "Original Nickname",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
+                var setupUow = setupScope.ServiceProvider.GetService<IUnitOfWork>();
+                await setupUow.DbContext.Query<User>().Where(x => x.PhoneNumber == uniquePhoneNumber).DeleteAsync();
+                
+                var user = await setupUow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = "Password123!",
+                    Nickname = "Original Nickname",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await setupUow.SaveChanges();
+                userId = user.Id;
+            }
 
-            var editRequest = new EditUserRequest
+            // Act - Edit user
+            using (var editScope = ScopedService.CreateScope())
             {
-                Id = user.Id,
-                Nickname = "Updated Nickname",
-                Email = "updated@test.com",
-                PhoneNumber = uniquePhoneNumber,
-                IsEnable = false
-            };
+                var editUow = editScope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var editRequest = new EditUserRequest
+                {
+                    Id = userId,
+                    Nickname = "Updated Nickname",
+                    Email = "updated@test.com",
+                    PhoneNumber = uniquePhoneNumber,
+                    IsEnable = false
+                };
 
-            // Act
-            var editedUser = await uow.Request(editRequest);
-            await uow.SaveChanges();
+                var editedUser = await editUow.Request(editRequest);
+                await editUow.SaveChanges();
 
-            // Assert
-            editedUser.Nickname.ShouldBe("Updated Nickname");
-            editedUser.Email.ShouldBe("updated@test.com");
-            editedUser.PhoneNumber.ShouldBe(uniquePhoneNumber);
-            editedUser.IsEnable.ShouldBe(false);
+                // Assert
+                editedUser.Nickname.ShouldBe("Updated Nickname");
+                editedUser.Email.ShouldBe("updated@test.com");
+                editedUser.PhoneNumber.ShouldBe(uniquePhoneNumber);
+                editedUser.IsEnable.ShouldBe(false);
+            }
         }
 
         [Fact]
         public async Task DeleteUserServiceShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var testUsername = $"deleteuser_{ObjectId.GenerateNewId()}";
+            string userId;
 
-            var user = await uow.Request(new CreateUserRequest
+            // Create user
+            using (var setupScope = ScopedService.CreateScope())
             {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = "Password123!",
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
-            var userId = user.Id;
+                var setupUow = setupScope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var user = await setupUow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = "Password123!",
+                    Nickname = "Test User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await setupUow.SaveChanges();
+                userId = user.Id;
+            }
 
-            var deleteRequest = new DeleteUserRequest { Id = userId };
-
-            // Act
-            var result = await uow.Request(deleteRequest);
-            await uow.SaveChanges();
+            // Act - Delete user
+            bool result;
+            using (var deleteScope = ScopedService.CreateScope())
+            {
+                var deleteUow = deleteScope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var deleteRequest = new DeleteUserRequest { Id = userId };
+                result = await deleteUow.Request(deleteRequest);
+                await deleteUow.SaveChanges();
+            }
 
             // Assert
             result.ShouldBe(true);
-            using var verifyService = ScopedService.CreateScope();
-            var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
-            var deletedUser = verifyUow.Query<IUser>().FirstOrDefault(x => x.Id == userId);
-            deletedUser.ShouldBeNull();
+            using (var verifyScope = ScopedService.CreateScope())
+            {
+                var verifyUow = verifyScope.ServiceProvider.GetService<IUnitOfWork>();
+                var deletedUser = verifyUow.Query<IUser>().FirstOrDefault(x => x.Id == userId);
+                deletedUser.ShouldBeNull();
+            }
         }
 
         [Fact]
         public async Task ResetUserPasswordServiceShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var testUsername = $"resetpwd_{ObjectId.GenerateNewId()}";
-
-            var user = await uow.Request(new CreateUserRequest
-            {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = "Password123!",
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
-
             var newPassword = "ResetPassword123!";
-            var resetRequest = new ResetUserPasswordRequest
+            string userId;
+
+            // Create user
+            using (var setupScope = ScopedService.CreateScope())
             {
-                UserId = user.Id,
-                Password = newPassword
-            };
+                var setupUow = setupScope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var user = await setupUow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = "Password123!",
+                    Nickname = "Test User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await setupUow.SaveChanges();
+                userId = user.Id;
+            }
 
             // Act
-            var resetUser = await uow.Request(resetRequest);
-            await uow.SaveChanges();
+            using (var resetScope = ScopedService.CreateScope())
+            {
+                var resetUow = resetScope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var resetRequest = new ResetUserPasswordRequest
+                {
+                    UserId = userId,
+                    Password = newPassword
+                };
 
-            // Assert
-            resetUser.CheckPassword(newPassword).ShouldBe(true);
+                var resetUser = await resetUow.Request(resetRequest);
+                await resetUow.SaveChanges();
+
+                // Assert
+                resetUser.CheckPassword(newPassword).ShouldBe(true);
+            }
         }
 
         [Fact]
         public async Task SetPasswordShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var testUsername = $"setpwd_{ObjectId.GenerateNewId()}";
-
-            var user = await uow.Request(new CreateUserRequest
-            {
-                Username = testUsername,
-                Email = $"{testUsername}@test.com",
-                Password = "Password123!",
-                Nickname = "Test User",
-                IsEnable = true,
-                RoleIds = new List<string>(),
-                OrgCodes = new List<string>()
-            });
-            await uow.SaveChanges();
-
             var newPassword = "NewTestPassword123!";
 
             // Act
-            user.SetPassword(newPassword);
-            await uow.SaveChanges();
+            using (var scope = ScopedService.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                
+                var user = await uow.Request(new CreateUserRequest
+                {
+                    Username = testUsername,
+                    Email = $"{testUsername}@test.com",
+                    Password = "Password123!",
+                    Nickname = "Test User",
+                    IsEnable = true,
+                    RoleIds = new List<string>(),
+                    OrgCodes = new List<string>()
+                });
+                await uow.SaveChanges();
 
-            // Assert
-            (user as User).Password.ShouldNotBe(newPassword);
-            user.CheckPassword(newPassword).ShouldBe(true);
+                user.SetPassword(newPassword);
+                await uow.SaveChanges();
+
+                // Assert
+                (user as User).Password.ShouldNotBe(newPassword);
+                user.CheckPassword(newPassword).ShouldBe(true);
+            }
         }
     }
 }

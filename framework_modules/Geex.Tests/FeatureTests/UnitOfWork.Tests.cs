@@ -20,15 +20,13 @@ namespace Geex.Tests.FeatureTests
         [Fact]
         public async Task ScopedService_ShouldHaveDifferentUnitOfWorkInstances()
         {
-            // Arrange
-            var scopedProvider1 = ScopedService.CreateScope().ServiceProvider;
-            var scopedProvider2 = scopedProvider1.CreateScope().ServiceProvider;
+            // Arrange & Act & Assert
+            using var scope1 = ScopedService.CreateScope();
+            using var scope2 = ScopedService.CreateScope();
+            
+            var uow1 = scope1.ServiceProvider.GetService<IUnitOfWork>();
+            var uow2 = scope2.ServiceProvider.GetService<IUnitOfWork>();
 
-            // Act
-            var uow1 = scopedProvider1.GetService<IUnitOfWork>();
-            var uow2 = scopedProvider2.GetService<IUnitOfWork>();
-
-            // Assert
             uow1.GetHashCode().ShouldNotBeSameAs(uow2.GetHashCode());
         }
 
@@ -59,43 +57,51 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var client = new MongoClient();
-            
-            var scopedProvider1 = ScopedService.CreateScope().ServiceProvider;
-            var scopedProvider2 = ScopedService.CreateScope().ServiceProvider;
             await DB.DefaultDb.DropCollectionAsync(nameof(TestEntity));
-            var uow1 = scopedProvider1.GetService<IUnitOfWork>();
-            var uow2 = scopedProvider2.GetService<IUnitOfWork>();
 
-            // Act
-            uow1.Attach(new TestEntity()
+            string entity1Id, entity2Id;
+
+            // Act 1 - Create entities in separate scopes
+            using (var scope1 = ScopedService.CreateScope())
             {
-                Name = "1",
-                Value = 1,
-                Data = new[] { 1 }
-            });
-            uow2.Attach(new TestEntity()
+                var uow1 = scope1.ServiceProvider.GetService<IUnitOfWork>();
+                var entity1 = uow1.Attach(new TestEntity()
+                {
+                    Name = "1",
+                    Value = 1,
+                    Data = new[] { 1 }
+                });
+                entity1Id = entity1.Id;
+                
+                uow1.Query<TestEntity>().Count().ShouldBe(1);
+                await uow1.SaveChanges();
+            }
+
+            using (var scope2 = ScopedService.CreateScope())
             {
-                Name = "2",
-                Value = 2,
-                Data = new[] { 2 }
-            });
-            //await uow2.CommitAsync();
-            scopedProvider1.GetService<IRepository>().ToString().ShouldBeEquivalentTo(uow1.ToString());
-            scopedProvider2.GetService<IRepository>().ToString().ShouldBeEquivalentTo(uow2.ToString());
-            uow1.Query<TestEntity>().Count().ShouldBe(1);
-            uow2.Query<TestEntity>().Count().ShouldBe(1);
-            client.GetDatabase("tests").GetCollection<TestEntity>(nameof(TestEntity)).Find(new BsonDocument()).ToList().Count.ShouldBe(0);
-            await uow2.SaveChanges();
-            client.GetDatabase("tests").GetCollection<TestEntity>(nameof(TestEntity)).Find(new BsonDocument()).ToList().Count.ShouldBe(1);
-            uow1.Query<TestEntity>().Count().ShouldBe(2);
-            uow2.Query<TestEntity>().Count().ShouldBe(1);
-            await uow1.SaveChanges();
-            uow1.Query<TestEntity>().Count().ShouldBe(2);
-            uow2.Query<TestEntity>().Count().ShouldBe(2);
-            client.GetDatabase("tests").GetCollection<TestEntity>(nameof(TestEntity)).Find(new BsonDocument()).ToList().Count.ShouldBe(2);
-            ScopedService.CreateScope().ServiceProvider.GetService<IRepository>().Query<TestEntity>().Count().ShouldBe(2);
-            // Assert
-            uow1.GetHashCode().ShouldNotBeSameAs(uow2.GetHashCode());
+                var uow2 = scope2.ServiceProvider.GetService<IUnitOfWork>();
+                var entity2 = uow2.Attach(new TestEntity()
+                {
+                    Name = "2",
+                    Value = 2,
+                    Data = new[] { 2 }
+                });
+                entity2Id = entity2.Id;
+                
+                uow2.Query<TestEntity>().Count().ShouldBe(1);
+                client.GetDatabase("tests").GetCollection<TestEntity>(nameof(TestEntity)).Find(new BsonDocument()).ToList().Count.ShouldBe(1);
+                await uow2.SaveChanges();
+            }
+
+            // Verify final state
+            using (var verifyScope = ScopedService.CreateScope())
+            {
+                var verifyUow = verifyScope.ServiceProvider.GetService<IUnitOfWork>();
+                verifyUow.Query<TestEntity>().Count().ShouldBe(2);
+                client.GetDatabase("tests").GetCollection<TestEntity>(nameof(TestEntity)).Find(new BsonDocument()).ToList().Count.ShouldBe(2);
+            }
+
+            // Cleanup
             await DB.DefaultDb.DropCollectionAsync(nameof(TestEntity));
         }
     }

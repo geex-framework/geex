@@ -20,26 +20,38 @@ namespace Geex.Tests.FeatureTests
     {
         public BlobStorageServiceTests(TestApplicationFactory factory) : base(factory)
         {
-        }        [Fact]
+        }
+
+        [Fact]
         public async Task MemoryFileUploadShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var dateTime = DateTime.Now;
             var data = new byte[1024 * 2048];
             Array.Fill<byte>(data, 1);
+            string blobId;
 
             // Act
-            var blob = await uow.Request(new CreateBlobObjectRequest() { File = new StreamFile($"{dateTime}.txt", () => new MemoryStream(data)), StorageType = BlobStorageType.Db });
-            await uow.SaveChanges();
+            using (var scope = ScopedService.CreateScope())
+            {
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var blob = await uow.Request(new CreateBlobObjectRequest() { File = new StreamFile($"{dateTime}.txt", () => new MemoryStream(data)), StorageType = BlobStorageType.Db });
+                await uow.SaveChanges();
+                blobId = blob.Id;
+            }
 
             // Assert
-            using var service1 = ScopedService.CreateScope();
-            var file = service1.ServiceProvider.GetService<IUnitOfWork>().Query<IBlobObject>().GetById(blob.Id);
-            var dataStream = await file.StreamFromStorage();
-            dataStream.Length.ShouldBe(data.Length);
-            file.FileSize.ShouldBe(data.Length);
-        }        [Fact]
+            using (var verifyScope = ScopedService.CreateScope())
+            {
+                var verifyUow = verifyScope.ServiceProvider.GetService<IUnitOfWork>();
+                var file = verifyUow.Query<IBlobObject>().GetById(blobId);
+                var dataStream = await file.StreamFromStorage();
+                dataStream.Length.ShouldBe(data.Length);
+                file.FileSize.ShouldBe(data.Length);
+            }
+        }
+
+        [Fact]
         public async Task CreateBlobObjectServiceShouldWork()
         {
             // Arrange
@@ -49,16 +61,19 @@ namespace Geex.Tests.FeatureTests
             var md5Hash = System.Security.Cryptography.MD5.HashData(fileBytes);
             var md5String = Convert.ToHexString(md5Hash).ToLower();
 
-            var uow = ScopedService.GetService<IUnitOfWork>();
-
             // Act
-            var blob = await uow.Request(new CreateBlobObjectRequest()
+            IBlobObject blob;
+            using (var scope = ScopedService.CreateScope())
             {
-                File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
-                StorageType = BlobStorageType.Db,
-                Md5 = md5String
-            });
-            await uow.SaveChanges();
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                blob = await uow.Request(new CreateBlobObjectRequest()
+                {
+                    File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
+                    StorageType = BlobStorageType.Db,
+                    Md5 = md5String
+                });
+                await uow.SaveChanges();
+            }
 
             // Assert
             blob.ShouldNotBeNull();
@@ -66,77 +81,103 @@ namespace Geex.Tests.FeatureTests
             blob.FileSize.ShouldBe(fileBytes.Length);
             blob.Md5.ShouldBe(md5String);
             blob.StorageType.ShouldBe(BlobStorageType.Db);
-        }        [Fact]
+        }
+
+        [Fact]
         public async Task DeleteBlobObjectServiceShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
-
             var testFileName = $"delete_test_{ObjectId.GenerateNewId()}.txt";
             var testData = "content to be deleted";
             var fileBytes = Encoding.UTF8.GetBytes(testData);
+            string blobId;
 
-            var blob = await uow.Request(new CreateBlobObjectRequest()
+            using (var scope = ScopedService.CreateScope())
             {
-                File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
-                StorageType = BlobStorageType.Db
-            });
-            await uow.SaveChanges();
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var blob = await uow.Request(new CreateBlobObjectRequest()
+                {
+                    File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
+                    StorageType = BlobStorageType.Db
+                });
+                await uow.SaveChanges();
+                blobId = blob.Id;
+            }
 
             // Act
-            await uow.Request(new DeleteBlobObjectRequest() { Ids = [blob.Id], StorageType = BlobStorageType.Db });
-            await uow.SaveChanges();            // Assert
-            using var verifyService = ScopedService.CreateScope();
-            var verifyUow = verifyService.ServiceProvider.GetService<IUnitOfWork>();
-            var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blob.Id);
-            deletedBlob.ShouldBeNull();
+            using (var deleteScope = ScopedService.CreateScope())
+            {
+                var deleteUow = deleteScope.ServiceProvider.GetService<IUnitOfWork>();
+                await deleteUow.Request(new DeleteBlobObjectRequest() { Ids = [blobId], StorageType = BlobStorageType.Db });
+                await deleteUow.SaveChanges();
+            }
+
+            // Assert
+            using (var verifyScope = ScopedService.CreateScope())
+            {
+                var verifyUow = verifyScope.ServiceProvider.GetService<IUnitOfWork>();
+                var deletedBlob = verifyUow.Query<IBlobObject>().FirstOrDefault(x => x.Id == blobId);
+                deletedBlob.ShouldBeNull();
+            }
         }
 
         [Fact]
         public async Task FileSystemStorageTypeShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var testFileName = $"filesystem_test_{ObjectId.GenerateNewId()}.txt";
             var testData = "test content for filesystem storage";
             var fileBytes = Encoding.UTF8.GetBytes(testData);
+            string blobId;
 
             // Act
-            var blob = await uow.Request(new CreateBlobObjectRequest()
+            using (var scope = ScopedService.CreateScope())
             {
-                File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
-                StorageType = BlobStorageType.FileSystem
-            });
-            await uow.SaveChanges();
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var blob = await uow.Request(new CreateBlobObjectRequest()
+                {
+                    File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
+                    StorageType = BlobStorageType.FileSystem
+                });
+                await uow.SaveChanges();
+                blobId = blob.Id;
+            }
 
             // Assert
-            blob.ShouldNotBeNull();
-            blob.StorageType.ShouldBe(BlobStorageType.FileSystem);
-            blob.FileSize.ShouldBe(fileBytes.Length);
+            using (var verifyScope = ScopedService.CreateScope())
+            {
+                var verifyUow = verifyScope.ServiceProvider.GetService<IUnitOfWork>();
+                var file = verifyUow.Query<IBlobObject>().GetById(blobId);
+                file.ShouldNotBeNull();
+                file.StorageType.ShouldBe(BlobStorageType.FileSystem);
+                file.FileSize.ShouldBe(fileBytes.Length);
 
-            // Verify we can read the content back
-            using var service1 = ScopedService.CreateScope();
-            var file = service1.ServiceProvider.GetService<IUnitOfWork>().Query<IBlobObject>().GetById(blob.Id);
-            var dataStream = await file.StreamFromStorage();
-            dataStream.Length.ShouldBe(fileBytes.Length);
+                // Verify we can read the content back
+                var dataStream = await file.StreamFromStorage();
+                dataStream.Length.ShouldBe(fileBytes.Length);
+            }
         }
 
         [Fact]
         public async Task BlobObjectUrlShouldBeGenerated()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var testFileName = $"url_test_{ObjectId.GenerateNewId()}.txt";
             var testData = "test content for url generation";
             var fileBytes = Encoding.UTF8.GetBytes(testData);
 
             // Act
-            var blob = await uow.Request(new CreateBlobObjectRequest()
+            IBlobObject blob;
+            using (var scope = ScopedService.CreateScope())
             {
-                File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
-                StorageType = BlobStorageType.Db
-            });
-            await uow.SaveChanges();
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                blob = await uow.Request(new CreateBlobObjectRequest()
+                {
+                    File = new StreamFile(testFileName, () => new MemoryStream(fileBytes)),
+                    StorageType = BlobStorageType.Db
+                });
+                await uow.SaveChanges();
+            }
 
             // Assert
             blob.Url.ShouldNotBeNullOrEmpty();
@@ -148,30 +189,37 @@ namespace Geex.Tests.FeatureTests
         public async Task LargeFileUploadShouldWork()
         {
             // Arrange
-            var uow = ScopedService.GetService<IUnitOfWork>();
             var testFileName = $"large_file_{ObjectId.GenerateNewId()}.txt";
-
             // Create a larger file (5MB)
             var largeData = new byte[5 * 1024 * 1024];
             Array.Fill<byte>(largeData, 42);
+            string blobId;
 
             // Act
-            var blob = await uow.Request(new CreateBlobObjectRequest()
+            using (var scope = ScopedService.CreateScope())
             {
-                File = new StreamFile(testFileName, () => new MemoryStream(largeData)),
-                StorageType = BlobStorageType.Db
-            });
-            await uow.SaveChanges();
+                var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+                var blob = await uow.Request(new CreateBlobObjectRequest()
+                {
+                    File = new StreamFile(testFileName, () => new MemoryStream(largeData)),
+                    StorageType = BlobStorageType.Db
+                });
+                await uow.SaveChanges();
+                blobId = blob.Id;
+            }
 
             // Assert
-            blob.ShouldNotBeNull();
-            blob.FileSize.ShouldBe(largeData.Length);
+            using (var verifyScope = ScopedService.CreateScope())
+            {
+                var verifyUow = verifyScope.ServiceProvider.GetService<IUnitOfWork>();
+                var file = verifyUow.Query<IBlobObject>().GetById(blobId);
+                file.ShouldNotBeNull();
+                file.FileSize.ShouldBe(largeData.Length);
 
-            // Verify we can read the content back
-            using var service1 = ScopedService.CreateScope();
-            var file = service1.ServiceProvider.GetService<IUnitOfWork>().Query<IBlobObject>().GetById(blob.Id);
-            var dataStream = await file.StreamFromStorage();
-            dataStream.Length.ShouldBe(largeData.Length);
+                // Verify we can read the content back
+                var dataStream = await file.StreamFromStorage();
+                dataStream.Length.ShouldBe(largeData.Length);
+            }
         }
     }
 }
