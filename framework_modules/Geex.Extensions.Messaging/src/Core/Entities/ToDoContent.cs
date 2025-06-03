@@ -1,6 +1,4 @@
-﻿using KuanFang.Rms.MessageManagement.Messages;
-
-namespace Geex.Extensions.Messaging.Core.Aggregates.Messages
+﻿namespace Geex.Extensions.Messaging.Core.Entities
 {
     public class ToDoContent : IMessageContent
     {

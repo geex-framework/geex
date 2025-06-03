@@ -1,9 +1,6 @@
-using Geex.Extensions.Messaging.Api.Aggregates.Messages;
-using KuanFang.Rms.MessageManagement.Messages;
-
 using MediatR;
 
-namespace Geex.Extensions.Requests.Messaging
+namespace Geex.Extensions.Messaging.Requests
 {
     public record EditMessageRequest : IRequest
     {

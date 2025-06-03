@@ -7,9 +7,9 @@ using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity;
-using Geex.Extensions.Requests.Messaging;
+using Geex.Extensions.Messaging;
+using Geex.Extensions.Messaging.Requests;
 using Geex.Storage;
-using KuanFang.Rms.MessageManagement.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 

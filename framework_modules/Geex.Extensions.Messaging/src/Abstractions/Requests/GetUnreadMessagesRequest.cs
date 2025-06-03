@@ -1,8 +1,7 @@
 using System.Linq;
-using Geex.Extensions.Messaging.Api.Aggregates.Messages;
 using MediatR;
 
-namespace Geex.Extensions.Requests.Messaging
+namespace Geex.Extensions.Messaging.Requests
 {
     public record GetUnreadMessagesRequest : IRequest<IQueryable<IMessage>>
     {

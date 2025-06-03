@@ -7,8 +7,8 @@ using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Core.Entities;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.Identity;
-using Geex.Extensions.Requests.Messaging;
-using KuanFang.Rms.MessageManagement.Messages;
+using Geex.Extensions.Messaging;
+using Geex.Extensions.Messaging.Requests;
 using MediatR;
 using Volo.Abp.DependencyInjection;
 

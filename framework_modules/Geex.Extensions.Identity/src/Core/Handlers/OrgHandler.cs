@@ -11,7 +11,6 @@ using Geex.ClientNotification;
 
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
-using Geex.Extensions.Messaging.Api.GqlSchemas.Messages;
 using Geex.Notifications;
 using Geex.Requests;
 using HotChocolate.Subscriptions;

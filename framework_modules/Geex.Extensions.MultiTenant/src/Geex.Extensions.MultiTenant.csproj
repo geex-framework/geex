@@ -11,8 +11,7 @@
         <PackageReference Include="Geex.Analyzer" Version="8.1.0.4" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Api\Aggregates\Tenants\" />
         <Folder Include="Core\Migrations\" />
-        <Folder Include="Gql\Schemas\Types\" />
+        <Folder Include="Gql\Types\" />
     </ItemGroup>
 </Project>

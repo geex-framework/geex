@@ -7,10 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Extensions.Authentication;
-using Geex.Extensions.Messaging.Api.Aggregates.Messages;
-using Geex.Extensions.Messaging.Api.GqlSchemas.Messages;
-using Geex.Extensions.Messaging.Core.Aggregates.Messages;
-using Geex.Extensions.Requests.Messaging;
+using Geex.Extensions.Messaging.Core.Entities;
+using Geex.Extensions.Messaging.Requests;
 using HotChocolate.Subscriptions;
 
 using MediatR;

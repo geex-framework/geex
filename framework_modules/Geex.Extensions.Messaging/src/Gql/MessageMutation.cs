@@ -1,14 +1,8 @@
 using System.Threading.Tasks;
-
-using Geex.Abstractions;
-using Geex.Extensions.Messaging.Api.Aggregates.Messages;
-using Geex.Extensions.Requests.Messaging;
+using Geex.Extensions.Messaging.Requests;
 using Geex.Gql.Types;
-using HotChocolate.Types;
 
-using MediatR;
-
-namespace Geex.Extensions.Messaging.Api.GqlSchemas.Messages
+namespace Geex.Extensions.Messaging.Gql
 {
     public sealed class MessageMutation : MutationExtension<MessageMutation>
     {

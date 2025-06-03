@@ -4,20 +4,13 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Geex.Abstractions;
-using Geex.Extensions.Messaging.Api.Aggregates.Messages;
 using Geex.Storage;
 using HotChocolate.Types;
-
-using KuanFang.Rms.MessageManagement.Messages;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
 using MongoDB.Bson.Serialization;
 
-namespace Geex.Extensions.Messaging.Core.Aggregates.Messages;
+namespace Geex.Extensions.Messaging.Core.Entities;
 
 /// <summary>
 ///     普通message

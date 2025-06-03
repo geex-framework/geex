@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Geex.Abstractions;
-using Geex.ClientNotification;
+﻿using Geex.ClientNotification;
 using HotChocolate.Types;
 
-namespace Geex.Extensions.Messaging.Core.Aggregates.Messages
+namespace Geex.Extensions.Messaging.Core.Entities
 {
     public class NewMessageClientNotify : ClientNotify
     {

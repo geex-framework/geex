@@ -6,6 +6,7 @@ using Geex.Extensions.BackgroundJob;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Logging;
+using Geex.Extensions.Messaging;
 using Geex.Extensions.Messaging.Core;
 using Geex.Extensions.Settings;
 using Volo.Abp.Modularity;
@@ -18,7 +19,7 @@ namespace Geex.Common
         typeof(AuthorizationModule),
         typeof(IdentityModule),
         typeof(LoggingModule),
-        typeof(MessagingCoreModule),
+        typeof(MessagingModule),
         typeof(BlobStorageModule),
         typeof(BackgroundJobModule),
         typeof(SettingsModule),

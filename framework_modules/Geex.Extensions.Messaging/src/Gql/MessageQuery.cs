@@ -1,16 +1,12 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Abstractions;
-using Geex.Extensions.Requests;
-using Geex.Extensions.Messaging.Api.Aggregates.Messages;
-using Geex.Extensions.Messaging.Core.Aggregates.Messages;
-using Geex.Extensions.Requests.Messaging;
+using Geex.Extensions.Messaging.Core.Entities;
+using Geex.Extensions.Messaging.Requests;
 using Geex.Gql.Types;
 using Geex.Requests;
 using HotChocolate.Types;
-using MediatR;
 
-namespace Geex.Extensions.Messaging.Api.GqlSchemas.Messages
+namespace Geex.Extensions.Messaging.Gql
 {
     public sealed class MessageQuery : QueryExtension<MessageQuery>
     {

@@ -1,7 +1,6 @@
-using Geex.Abstractions;
 using Geex.Extensions.Settings;
 
-namespace Geex.Extensions.Messaging.Api
+namespace Geex.Extensions.Messaging
 {
     public class MessagingSettings : SettingDefinition
     {

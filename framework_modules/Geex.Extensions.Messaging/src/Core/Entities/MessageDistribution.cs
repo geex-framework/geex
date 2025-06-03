@@ -1,10 +1,9 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Storage;
 
-namespace Geex.Extensions.Messaging.Core.Aggregates.Messages
+namespace Geex.Extensions.Messaging.Core.Entities
 {
     public class MessageDistribution : Entity<MessageDistribution>
     {

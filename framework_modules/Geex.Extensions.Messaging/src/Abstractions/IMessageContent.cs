@@ -1,8 +1,6 @@
-﻿using Geex;
-using Geex.Abstractions;
-using HotChocolate.Types;
+﻿using HotChocolate.Types;
 
-namespace KuanFang.Rms.MessageManagement.Messages
+namespace Geex.Extensions.Messaging
 {
     public interface IMessageContent
     {

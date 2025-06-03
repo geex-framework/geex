@@ -4,8 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Entities;
-using Geex.Extensions.Messaging.Core.Aggregates;
-using Geex.Extensions.Messaging.Core.Aggregates.Messages;
 
 namespace Geex.Extensions.Messaging.Core.Migrations
 {

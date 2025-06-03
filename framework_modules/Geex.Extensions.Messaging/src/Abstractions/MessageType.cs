@@ -1,4 +1,4 @@
-﻿namespace Geex.Extensions.Messaging.Api.Aggregates.Messages
+﻿namespace Geex.Extensions.Messaging
 {
     public enum MessageType
     {

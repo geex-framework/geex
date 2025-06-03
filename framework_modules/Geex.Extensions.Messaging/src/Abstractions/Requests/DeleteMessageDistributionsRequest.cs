@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using MediatR;
 
-namespace Geex.Extensions.Requests.Messaging
+namespace Geex.Extensions.Messaging.Requests
 {
     public record DeleteMessageDistributionsRequest : IRequest
     {
