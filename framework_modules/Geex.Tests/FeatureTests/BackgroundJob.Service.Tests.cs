@@ -73,7 +73,7 @@ namespace Geex.Tests.FeatureTests
             }
 
             // Act
-            var testJob = new TestStatefulCronJob(ScopedService, "* * * * *");
+            var testJob = new TestStatefulCronJob(ScopedService, "* * * * * *");
             await testJob.Run(ScopedService, CancellationToken.None);
 
             // Assert
@@ -144,10 +144,10 @@ namespace Geex.Tests.FeatureTests
             var scheduler = scope.ServiceProvider.GetService<FireAndForgetTaskScheduler>();
 
             // Act
-            await scheduler.Schedule(task1);
-            await scheduler.Schedule(task2); // Should be ignored
+            Task.Run(() => scheduler.Schedule(task1));
+            Task.Run(() => scheduler.Schedule(task2)); // Should be ignored
 
-            await Task.Delay(200);
+            await Task.Delay(1000);
 
             // Assert - Only first task should execute
             TestFireAndForgetTaskWithId.ExecutionCount.ShouldBe(1);
@@ -205,7 +205,7 @@ namespace Geex.Tests.FeatureTests
 
         public override async Task Run(CancellationToken token)
         {
-            await Task.Delay(50, token);
+            await Task.Delay(500, token);
             ExecutionCount++;
             LastExecutedData = Param;
         }

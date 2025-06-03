@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Geex.Abstractions;
+using Geex.Extensions.BackgroundJob.Gql;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp;
@@ -10,10 +11,12 @@ namespace Geex.Extensions.BackgroundJob
 {
     [DependsOn(typeof(GeexCoreModule))]
     public class BackgroundJobModule : GeexModule<BackgroundJobModule, BackgroundJobModuleOptions>
-    {
-        public override void ConfigureServices(ServiceConfigurationContext context)
+    {        public override void ConfigureServices(ServiceConfigurationContext context)
         {
             context.Services.TryAddSingleton<FireAndForgetTaskScheduler>(sp => new FireAndForgetTaskScheduler(sp));
+            
+            // GraphQL extensions will be automatically discovered through TryAddGeexAssembly
+            // since they implement IScopedDependency through QueryExtension/MutationExtension
             base.ConfigureServices(context);
         }
 

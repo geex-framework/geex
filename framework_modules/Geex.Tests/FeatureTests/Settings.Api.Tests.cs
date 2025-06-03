@@ -42,7 +42,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest( query);
 
             int totalCount = responseData["data"]["settings"]["totalCount"].GetValue<int>();
             totalCount.ShouldBeGreaterThanOrEqualTo(0);
@@ -61,7 +61,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest( query);
 
             var initSettings = responseData["data"]["initSettings"].AsArray();
             int settingsCount = initSettings.Count;
@@ -85,7 +85,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = testSettingName.Name, value = testValue });
+            var (responseData, responseString) = await client.PostGqlRequest( query, new { name = testSettingName.Name, value = testValue });
 
             ((string)responseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName.Name);
             ((string)responseData["data"]["editSetting"]["value"]).ShouldBe(testValue);
@@ -122,7 +122,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = targetSettingName.Name });
+            var (responseData, responseString) = await client.PostGqlRequest( query, new { name = targetSettingName.Name });
 
             var items = responseData["data"]["settings"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
@@ -150,7 +150,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (editResponseData, _) = await client.PostGqlRequest(GqlEndpoint, editQuery, new { name = testSettingName.Name, value = testValue });
+            var (editResponseData, _) = await client.PostGqlRequest( editQuery, new { name = testSettingName.Name, value = testValue });
 
             // Assert - Edit successful
             ((string)editResponseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName.Name);
@@ -166,7 +166,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (queryResponseData, responseString) = await client.PostGqlRequest(GqlEndpoint, queryQuery, new { name = testSettingName.Name });
+            var (queryResponseData, responseString) = await client.PostGqlRequest( queryQuery, new { name = testSettingName.Name });
 
             // Assert - Query successful and value updated
             var items = queryResponseData["data"]["settings"]["items"].AsArray();
@@ -193,7 +193,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = testSettingName.Name, value = complexValue });
+            var (responseData, responseString) = await client.PostGqlRequest( query, new { name = testSettingName.Name, value = complexValue });
 
             ((string)responseData["data"]["editSetting"]["name"]).ShouldBe(testSettingName);
         }
@@ -229,7 +229,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest( query);
 
             var items = responseData["data"]["settings"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);

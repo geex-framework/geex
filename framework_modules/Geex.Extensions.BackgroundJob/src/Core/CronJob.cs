@@ -2,8 +2,13 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Cronos;
+
 using EasyCronJob.Abstractions;
+
+using Geex.Extensions.BackgroundJob.Gql.Types;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -74,18 +79,17 @@ namespace Geex.Extensions.BackgroundJob.Core
         /// <inheritdoc />
         public override async Task DoWork(CancellationToken cancellationToken)
         {
+
             if (IsBusy && !IsConcurrentAllowed)
             {
+                _logger.LogWarning("Job is busy: [{JobName}], skipping execution", typeof(TImplementation).Name);
                 return;
             }
             IsBusy = true;
-            _logger.LogInformation("Job processing: [{JobName}]", typeof(TImplementation).Name);
-            using var scope = this.ServiceProvider.CreateScope();
             try
             {
-                using var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
-                await this.Run(scope.ServiceProvider, cancellationToken);
-                await uow.SaveChanges(cancellationToken);
+                _logger.LogInformation("Job processing: [{JobName}]", typeof(TImplementation).Name);
+                await this.Run(this.ServiceProvider, cancellationToken);
                 _logger.LogInformation("Job processed: [{JobName}]", typeof(TImplementation).Name);
             }
             catch (Exception e)

@@ -42,7 +42,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest( query);
 
             // Assert
             int totalCount = responseData["data"]["blobObjects"]["totalCount"].GetValue<int>();
@@ -81,7 +81,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { fileName = targetFileName });
+            var (responseData, responseString) = await client.PostGqlRequest( query, new { fileName = targetFileName });
 
             // Assert
             var items = responseData["data"]["blobObjects"]["items"].AsArray();
@@ -124,7 +124,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, _) = await client.PostGqlRequest(GqlEndpoint, query, new { blobId });
+            var (responseData, _) = await client.PostGqlRequest( query, new { blobId });
 
             // Assert
             bool deleteResult = (bool)responseData["data"]["deleteBlobObject"];
@@ -169,7 +169,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest( query);
 
             // Assert
             var items = responseData["data"]["blobObjects"]["items"].AsArray();

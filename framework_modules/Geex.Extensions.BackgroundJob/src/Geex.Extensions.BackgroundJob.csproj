@@ -14,4 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Gql\Types\" />
+  </ItemGroup>
 </Project>

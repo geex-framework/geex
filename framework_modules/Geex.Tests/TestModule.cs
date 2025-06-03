@@ -4,6 +4,7 @@ using Geex.Extensions.ApprovalFlows;
 using Geex.Extensions.AuditLogs;
 using Geex.Extensions.MultiTenant;
 using Geex.Extensions.Settings;
+using Geex.Tests.FeatureTests;
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Configuration;
@@ -40,6 +41,7 @@ public class TestModule : GeexEntryModule<TestModule>
         var builder = this.SchemaBuilder;
         context.Services.AddSingleton<IRequestExecutorBuilder>((sp) => builder);
         context.Services.AddSingleton<ISchema>((sp) => builder.BuildSchemaAsync().GetAwaiter().GetResult());
+        context.Services.AddJob<TestStatefulCronJob>("* * * * * *");
         base.ConfigureServices(context);
     }
 }

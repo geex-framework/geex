@@ -46,7 +46,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest(query);
 
             responseData["data"]["orgs"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
         }
@@ -84,7 +84,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { code = targetOrgCode });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { code = targetOrgCode });
 
             var items = responseData["data"]["orgs"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
@@ -125,7 +125,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = targetOrgName });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { name = targetOrgName });
 
             var items = responseData["data"]["orgs"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
@@ -156,7 +156,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { code = testOrgCode, name = testOrgName });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { code = testOrgCode, name = testOrgName });
 
             var createdOrg = responseData["data"]["createOrg"];
             ((string)createdOrg["code"]).ShouldBe(testOrgCode);
@@ -201,7 +201,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { code = subOrgCode, name = subOrgName });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { code = subOrgCode, name = subOrgName });
 
             var createdOrg = responseData["data"]["createOrg"];
             ((string)createdOrg["code"]).ShouldBe(subOrgCode);
@@ -236,7 +236,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { id = orgId });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { id = orgId });
 
             bool deleteResult = (bool)responseData["data"]["deleteOrg"];
             deleteResult.ShouldBeTrue();
@@ -253,7 +253,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest(query);
 
             bool fixResult = (bool)responseData["data"]["fixUserOrg"];
             fixResult.ShouldBeTrue();
@@ -302,7 +302,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest(query);
 
             var items = responseData["data"]["orgs"]["items"].AsArray();
 

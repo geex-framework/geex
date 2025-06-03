@@ -44,7 +44,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest( query);
 
             responseData["data"]["roles"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
         }
@@ -84,7 +84,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { name = targetRoleName });
+            var (responseData, responseString) = await client.PostGqlRequest( query, new { name = targetRoleName });
 
             var items = responseData["data"]["roles"]["items"].AsArray();
             items.Count.ShouldBeGreaterThan(0);
@@ -118,7 +118,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { roleCode = testRoleCode, roleName = testRoleName });
+            var (responseData, responseString) = await client.PostGqlRequest( query, new { roleCode = testRoleCode, roleName = testRoleName });
 
             var createdRole = responseData["data"]["createRole"];
             ((string)createdRole["code"]).ShouldBe(testRoleCode);
@@ -156,7 +156,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query, new { roleId });
+            var (responseData, responseString) = await client.PostGqlRequest( query, new { roleId });
 
             bool setDefaultResult = (bool)responseData["data"]["setRoleDefault"];
             setDefaultResult.ShouldBeTrue();
@@ -182,7 +182,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest( query);
 
             var items = responseData["data"]["roles"]["items"].AsArray();
             foreach (var role in items)
@@ -208,7 +208,7 @@ namespace Geex.Tests.FeatureTests
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(GqlEndpoint, query);
+            var (responseData, responseString) = await client.PostGqlRequest( query);
 
             var items = responseData["data"]["roles"]["items"].AsArray();
             foreach (var role in items)
