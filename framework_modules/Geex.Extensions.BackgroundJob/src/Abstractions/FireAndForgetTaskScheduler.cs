@@ -27,8 +27,7 @@ namespace Geex.Extensions.BackgroundJob
 
         public async Task Schedule<TTask>(TTask task, int? delay = default) where TTask : IFireAndForgetTask
         {
-            var existingTaskId = await _redisDatabase.GetAsync<string>(task.Id);
-            if (string.IsNullOrEmpty(existingTaskId))
+            if (!_taskCancellationTokenSources.TryGetValue(task.Id, out _))
             {
                 var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromHours(1));
                 _taskCancellationTokenSources.TryAdd(task.Id, cancellationTokenSource);

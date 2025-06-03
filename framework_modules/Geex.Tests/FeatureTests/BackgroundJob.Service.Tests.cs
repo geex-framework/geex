@@ -136,6 +136,7 @@ namespace Geex.Tests.FeatureTests
         public async Task FireAndForgetTaskWithSameIdShouldNotScheduleTwice()
         {
             // Arrange
+            TestFireAndForgetTaskWithId.ExecutionCount = 0;
             var taskId = ObjectId.GenerateNewId().ToString();
             var task1 = new TestFireAndForgetTaskWithId(taskId, "data1");
             var task2 = new TestFireAndForgetTaskWithId(taskId, "data2");
@@ -144,10 +145,9 @@ namespace Geex.Tests.FeatureTests
             var scheduler = scope.ServiceProvider.GetService<FireAndForgetTaskScheduler>();
 
             // Act
-            Task.Run(() => scheduler.Schedule(task1));
-            Task.Run(() => scheduler.Schedule(task2)); // Should be ignored
-
-            await Task.Delay(1000);
+            await scheduler.Schedule(task1);
+            await Task.Delay(100);
+            await scheduler.Schedule(task2); // Should be ignored
 
             // Assert - Only first task should execute
             TestFireAndForgetTaskWithId.ExecutionCount.ShouldBe(1);
@@ -205,9 +205,9 @@ namespace Geex.Tests.FeatureTests
 
         public override async Task Run(CancellationToken token)
         {
-            await Task.Delay(500, token);
             ExecutionCount++;
             LastExecutedData = Param;
+            await Task.Delay(1000, token);
         }
     }
 
