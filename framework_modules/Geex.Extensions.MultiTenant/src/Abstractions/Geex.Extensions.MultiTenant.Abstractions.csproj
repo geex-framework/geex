@@ -5,12 +5,12 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <RootNamespace>Geex.Extensions.MultiTenant</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
-    <PackageReference Include="OpenIddict.MongoDb" Version="5.8.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
-    <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
-    <ProjectReference Include="..\..\Geex.Extensions.MultiTenant\src\Abstractions\Geex.Extensions.MultiTenant.Abstractions.csproj" />
+
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
   </ItemGroup>
 </Project>

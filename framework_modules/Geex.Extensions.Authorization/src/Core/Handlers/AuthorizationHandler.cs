@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Events;
 using Geex.Extensions.Authorization.Events;
 using Geex.Extensions.Authorization.Requests;
 using MediatR;

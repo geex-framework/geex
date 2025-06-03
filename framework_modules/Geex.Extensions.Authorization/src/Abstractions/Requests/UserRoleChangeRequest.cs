@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using MediatR;
 
-namespace Geex.Events
+namespace Geex.Extensions.Authorization.Requests
 {
     public record UserRoleChangeRequest : IRequest
     {

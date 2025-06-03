@@ -7,6 +7,11 @@
         <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
     </PropertyGroup>
     <ItemGroup>
+      <Compile Remove="Desensitization\**" />
+      <EmbeddedResource Remove="Desensitization\**" />
+      <None Remove="Desensitization\**" />
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="AutoEquality" Version="0.5.4" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
         <PackageReference Include="fasterflect" Version="3.0.0" />
@@ -40,10 +45,7 @@
         <PackageReference Include="Volo.Abp.Core" Version="9.1.3" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Desensitization\" />
-        <Folder Include="Enumerations\" />
         <Folder Include="Gql\Interceptors\" />
-        <Folder Include="Settings\" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Casbin\src\Geex.Casbin.csproj" />

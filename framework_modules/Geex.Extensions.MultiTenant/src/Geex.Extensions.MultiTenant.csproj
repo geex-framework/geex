@@ -7,7 +7,13 @@
         <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
     </PropertyGroup>
     <ItemGroup>
+      <Compile Remove="Abstractions\**" />
+      <EmbeddedResource Remove="Abstractions\**" />
+      <None Remove="Abstractions\**" />
+    </ItemGroup>
+    <ItemGroup>
         <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+        <ProjectReference Include="Abstractions\Geex.Extensions.MultiTenant.Abstractions.csproj" />
         <PackageReference Include="Geex.Analyzer" Version="8.1.0.4" />
     </ItemGroup>
     <ItemGroup>
