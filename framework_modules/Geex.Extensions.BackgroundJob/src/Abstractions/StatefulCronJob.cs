@@ -30,14 +30,14 @@ namespace Geex.Extensions.BackgroundJob
             var jobName = this.GetType().Name;
             try
             {
-                var jobState = uow.Query<TState>().FirstOrDefault(x => x.JobName == jobName)
+                var jobState = uow.Query<JobState>().FirstOrDefault(x => x.JobName == jobName)
                                ?? uow.Attach(new TState
                                {
                                    JobName = jobName,
                                    Cron = Cron.ToString()
                                });
 
-                await this.Run(scope.ServiceProvider, jobState, cancellationToken);
+                await this.Run(scope.ServiceProvider, jobState as TState, cancellationToken);
                 var endTime = DateTimeOffset.Now;
                 var executionHistory = new JobExecutionHistory
                 {

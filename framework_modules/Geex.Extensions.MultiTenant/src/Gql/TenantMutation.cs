@@ -55,7 +55,7 @@ namespace Geex.Extensions.MultiTenant.Gql.Schemas
         public async Task<ITenant?> CheckTenant(string code)
         {
             var result = (await _uow.Request(new QueryRequest<ITenant>(x => x.Code == code))).FirstOrDefault();
-            if (result is not { ExternalInfo: null })
+            if (result is not null && result is not { ExternalInfo: null })
             {
                 result = await _uow.Request(new SyncExternalTenantRequest(code));
             }

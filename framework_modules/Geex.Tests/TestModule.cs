@@ -26,12 +26,6 @@ public class TestModule : GeexEntryModule<TestModule>
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         Console.WriteLine(Env.EnvironmentName);
-        var listCollectionNames = DB.DefaultDb.ListCollectionNames();
-        listCollectionNames.MoveNext();
-        foreach (var collectionName in listCollectionNames.Current)
-        {
-            DB.DefaultDb.DropCollection(collectionName);
-        }
         base.OnApplicationInitialization(context);
     }
 

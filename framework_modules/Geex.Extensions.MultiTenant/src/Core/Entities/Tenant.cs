@@ -33,6 +33,16 @@ namespace Geex.Extensions.MultiTenant.Core.Aggregates.Tenants
 
         public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
         {
+            if (this.Code.IsNullOrEmpty())
+            {
+                return new ValidationResult("Invalid tenant code", [nameof(Code)]);
+            }
+
+            if (this.Name.IsNullOrEmpty())
+            {
+                return new ValidationResult("Invalid tenant name", [nameof(Name)]);
+            }
+
             return ValidationResult.Success;
         }
 
@@ -51,7 +61,6 @@ namespace Geex.Extensions.MultiTenant.Core.Aggregates.Tenants
                     options.Background = true;
                     options.Sparse = true;
                     options.Unique = true;
-
                 });
             }
         }

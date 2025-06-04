@@ -2,12 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
 using Fasterflect;
+
 using Geex.Storage;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Entities;
+
 using Volo.Abp.DependencyInjection;
 
 namespace Geex
@@ -47,7 +52,7 @@ namespace Geex
 
             if (this.IndexConfig.Indexes.Any() == true)
             {
-                DB.Collection<TEntity>().Indexes.CreateMany(this.IndexConfig.Indexes, new CreateManyIndexesOptions());
+                DB.Collection<TEntity>().Indexes.CreateMany(this.IndexConfig.Indexes, new CreateManyIndexesOptions() { CommitQuorum = CreateIndexCommitQuorum.Majority });
             }
         }
         public void Map(BsonClassMap<TEntity> map);

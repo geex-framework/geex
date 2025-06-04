@@ -60,7 +60,7 @@ namespace Geex.Tests.FeatureTests
         public async Task StatefulCronJobShouldMaintainState()
         {
             // Arrange
-            var testJobState = new TestJobState { JobName = nameof(TestStatefulCronJob) };
+            var testJobState = new TestJobState { JobName = nameof(TestStatefulCronJob1) };
             string jobId;
 
             using (var scope = ScopedService.CreateScope())
@@ -73,9 +73,9 @@ namespace Geex.Tests.FeatureTests
             }
 
             // Act
-            var testJob = new TestStatefulCronJob(ScopedService, "* * * * * *");
-            await testJob.Run(ScopedService, CancellationToken.None);
-
+            var testJob = new TestStatefulCronJob1(ScopedService.CreateScope().ServiceProvider, "* * * * * *");
+            await testJob.DoWork(CancellationToken.None);
+            await Task.Delay(1111);
             // Assert
             using (var verifyScope = ScopedService.CreateScope())
             {
@@ -244,6 +244,20 @@ namespace Geex.Tests.FeatureTests
     public class TestStatefulCronJob : StatefulCronJob<TestJobState, TestStatefulCronJob>
     {
         public TestStatefulCronJob(IServiceProvider sp, string cronExp) : base(sp, cronExp)
+        {
+        }
+
+        public override bool IsConcurrentAllowed => false;
+
+        public override async Task Run(IServiceProvider serviceProvider, TestJobState jobState, CancellationToken cancellationToken)
+        {
+            await Task.Delay(10, cancellationToken);
+            jobState.ExecutionCount++;
+        }
+    }
+    public class TestStatefulCronJob1 : StatefulCronJob<TestJobState, TestStatefulCronJob1>
+    {
+        public TestStatefulCronJob1(IServiceProvider sp, string cronExp) : base(sp, cronExp)
         {
         }
 
