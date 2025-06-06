@@ -18,7 +18,7 @@ jobs:
       PACKAGE_AUTHOR: "Geex Team"
       PACKAGE_COMPANY: "Geex"
       PACKAGE_COPYRIGHT: "Copyright © Geex Team"
-      PACKAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/136053225?s=64&v=4"
+      PACKAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/136053225?s=64&v=4.png"
       PACKAGE_PROJECT_URL: "https://github.com/geex-framework/geex"
       PACKAGE_LICENSE_URL: "https://github.com/geex-framework/geex/blob/main/LICENSE"
       PACKAGE_REPOSITORY_URL: "https://github.com/geex-framework/geex"
