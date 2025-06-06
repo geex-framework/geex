@@ -71,42 +71,23 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           SUFFIX: ${{ steps.version.outputs.suffix }}
         run: |
-          PROJECTS=(
-            "./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj"
-            "./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj"
-            "./framework_modules/Geex.Common/src/Geex.Common.csproj"
-            "./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj"
-            "./framework_modules/Geex.Extensions.AuditLogs/src/Geex.Extensions.AuditLogs.csproj"
-            "./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj"
-            "./framework_modules/Geex.Extensions.Authentication/src/Geex.Extensions.Authentication.csproj"
-            "./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj"
-            "./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj"
-            "./framework_modules/Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj"
-            "./framework_modules/Geex.Extensions.Identity/src/Geex.Extensions.Identity.csproj"
-            "./framework_modules/Geex.Extensions.Logging/src/Geex.Extensions.Logging.csproj"
-            "./framework_modules/Geex.Extensions.Messaging/src/Geex.Extensions.Messaging.csproj"
-            "./framework_modules/Geex.Extensions.MultiTenant/src/Geex.Extensions.MultiTenant.csproj"
-            "./framework_modules/Geex.Extensions.Settings/src/Geex.Extensions.Settings.csproj"
-            "./framework_modules/Geex.MediatX/MediatX/MediatX.csproj"
-            "./framework_modules/Geex.MediatX/MediatX.RabbitMQ/MediatX.RabbitMQ.csproj"
-          )
-          
-          for project in "${PROJECTS[@]}"; do
-            dotnet pack "$project" \
-              --configuration Release \
-              --no-build \
-              --output ./nupkg \
-              -p:PackageVersion="${VERSION}" \
-              -p:Description="${PACKAGE_DESCRIPTION}" \
-              -p:Authors="${PACKAGE_AUTHOR}" \
-              -p:Company="${PACKAGE_COMPANY}" \
-              -p:Copyright="${PACKAGE_COPYRIGHT}" \
-              -p:PackageIconUrl="${PACKAGE_LOGO_URL}" \
-              -p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" \
-              -p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" \
-              -p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" \
-              -p:PackageTags="${PACKAGE_TAGS}"
-          done
+          dotnet pack "./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Common/src/Geex.Common.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.AuditLogs/src/Geex.Extensions.AuditLogs.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Authentication/src/Geex.Extensions.Authentication.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Identity/src/Geex.Extensions.Identity.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Logging/src/Geex.Extensions.Logging.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Messaging/src/Geex.Extensions.Messaging.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.MultiTenant/src/Geex.Extensions.MultiTenant.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Settings/src/Geex.Extensions.Settings.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.MediatX/MediatX/MediatX.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.MediatX/MediatX.RabbitMQ/MediatX.RabbitMQ.csproj" --configuration Release --no-build --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
 
       - name: Generate NuGet prerelease packages
         if: ${{ steps.version.outputs.suffix != '' }}
@@ -114,43 +95,23 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           SUFFIX: ${{ steps.version.outputs.suffix }}
         run: |
-          PROJECTS=(
-            "./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj"
-            "./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj"
-            "./framework_modules/Geex.Common/src/Geex.Common.csproj"
-            "./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj"
-            "./framework_modules/Geex.Extensions.AuditLogs/src/Geex.Extensions.AuditLogs.csproj"
-            "./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj"
-            "./framework_modules/Geex.Extensions.Authentication/src/Geex.Extensions.Authentication.csproj"
-            "./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj"
-            "./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj"
-            "./framework_modules/Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj"
-            "./framework_modules/Geex.Extensions.Identity/src/Geex.Extensions.Identity.csproj"
-            "./framework_modules/Geex.Extensions.Logging/src/Geex.Extensions.Logging.csproj"
-            "./framework_modules/Geex.Extensions.Messaging/src/Geex.Extensions.Messaging.csproj"
-            "./framework_modules/Geex.Extensions.MultiTenant/src/Geex.Extensions.MultiTenant.csproj"
-            "./framework_modules/Geex.Extensions.Settings/src/Geex.Extensions.Settings.csproj"
-            "./framework_modules/Geex.MediatX/MediatX/MediatX.csproj"
-            "./framework_modules/Geex.MediatX/MediatX.RabbitMQ/MediatX.RabbitMQ.csproj"
-          )
-          
-          for project in "${PROJECTS[@]}"; do
-            dotnet pack "$project" \
-              --configuration Release \
-              --no-build \
-              --version-suffix "${SUFFIX}" \
-              --output ./nupkg \
-              -p:PackageVersion="${VERSION}" \
-              -p:Description="${PACKAGE_DESCRIPTION}" \
-              -p:Authors="${PACKAGE_AUTHOR}" \
-              -p:Company="${PACKAGE_COMPANY}" \
-              -p:Copyright="${PACKAGE_COPYRIGHT}" \
-              -p:PackageIconUrl="${PACKAGE_LOGO_URL}" \
-              -p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" \
-              -p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" \
-              -p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" \
-              -p:PackageTags="${PACKAGE_TAGS}"
-          done
+          dotnet pack "./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Common/src/Geex.Common.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Abstractions/src/Geex.Abstractions.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.AuditLogs/src/Geex.Extensions.AuditLogs.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Authentication/src/Geex.Extensions.Authentication.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Identity/src/Geex.Extensions.Identity.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Logging/src/Geex.Extensions.Logging.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Messaging/src/Geex.Extensions.Messaging.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.MultiTenant/src/Geex.Extensions.MultiTenant.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.Extensions.Settings/src/Geex.Extensions.Settings.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.MediatX/MediatX/MediatX.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
+          dotnet pack "./framework_modules/Geex.MediatX/MediatX.RabbitMQ/MediatX.RabbitMQ.csproj" --configuration Release --no-build --version-suffix "${SUFFIX}" --output ./nupkg /p:PackageVersion="${VERSION}" /p:Description="${PACKAGE_DESCRIPTION}" /p:Authors="${PACKAGE_AUTHOR}" /p:Company="${PACKAGE_COMPANY}" /p:Copyright="${PACKAGE_COPYRIGHT}" /p:PackageIconUrl="${PACKAGE_LOGO_URL}" /p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" /p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" /p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" /p:PackageTags="${PACKAGE_TAGS}"
 
       - name: Publish to NuGet
         run: dotnet nuget push ./nupkg/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
