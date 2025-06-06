@@ -14,7 +14,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <ProjectReference Include="Abstractions\Geex.Extensions.MultiTenant.Abstractions.csproj" />
-        <PackageReference Include="Geex.Analyzer" Version="8.1.0.4" />
+        <PackageReference Include="Geex.Analyzer" Version="8.1.1.4" />
     </ItemGroup>
     <ItemGroup>
         <Folder Include="Core\Migrations\" />

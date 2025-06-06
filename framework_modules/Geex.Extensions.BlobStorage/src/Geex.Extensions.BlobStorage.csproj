@@ -7,7 +7,7 @@
         <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Geex.Analyzer" Version="8.1.0.4" />
+        <PackageReference Include="Geex.Analyzer" Version="8.1.1.4" />
         <PackageReference Include="MimeKitLite" Version="4.12.0" />
     </ItemGroup>
     <ItemGroup>

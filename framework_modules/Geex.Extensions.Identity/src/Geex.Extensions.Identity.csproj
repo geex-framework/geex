@@ -12,7 +12,7 @@
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Geex.Analyzer" Version="8.1.0.4" />
+        <PackageReference Include="Geex.Analyzer" Version="8.1.1.4" />
         <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <ProjectReference Include="..\..\Geex.Extensions.Authorization\src\Geex.Extensions.Authorization.csproj" />
         <ProjectReference Include="..\..\Geex.Extensions.BlobStorage\src\Geex.Extensions.BlobStorage.csproj" />

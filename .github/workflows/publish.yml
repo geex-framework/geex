@@ -96,16 +96,16 @@ jobs:
               --configuration Release \
               --no-build \
               --output ./nupkg \
-              /p:PackageVersion=$VERSION \
-              /p:Description="$PACKAGE_DESCRIPTION" \
-              /p:Authors="$PACKAGE_AUTHOR" \
-              /p:Company="$PACKAGE_COMPANY" \
-              /p:Copyright="$PACKAGE_COPYRIGHT" \
-              /p:PackageIconUrl="$PACKAGE_LOGO_URL" \
-              /p:PackageProjectUrl="$PACKAGE_PROJECT_URL" \
-              /p:PackageLicenseUrl="$PACKAGE_LICENSE_URL" \
-              /p:RepositoryUrl="$PACKAGE_REPOSITORY_URL" \
-              /p:PackageTags="$PACKAGE_TAGS"
+              -p:PackageVersion="${VERSION}" \
+              -p:Description="${PACKAGE_DESCRIPTION}" \
+              -p:Authors="${PACKAGE_AUTHOR}" \
+              -p:Company="${PACKAGE_COMPANY}" \
+              -p:Copyright="${PACKAGE_COPYRIGHT}" \
+              -p:PackageIconUrl="${PACKAGE_LOGO_URL}" \
+              -p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" \
+              -p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" \
+              -p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" \
+              -p:PackageTags="${PACKAGE_TAGS}"
           done
 
       - name: Generate NuGet prerelease packages
@@ -138,18 +138,18 @@ jobs:
             dotnet pack "$project" \
               --configuration Release \
               --no-build \
-              --version-suffix $SUFFIX \
+              --version-suffix "${SUFFIX}" \
               --output ./nupkg \
-              /p:PackageVersion=$VERSION \
-              /p:Description="$PACKAGE_DESCRIPTION" \
-              /p:Authors="$PACKAGE_AUTHOR" \
-              /p:Company="$PACKAGE_COMPANY" \
-              /p:Copyright="$PACKAGE_COPYRIGHT" \
-              /p:PackageIconUrl="$PACKAGE_LOGO_URL" \
-              /p:PackageProjectUrl="$PACKAGE_PROJECT_URL" \
-              /p:PackageLicenseUrl="$PACKAGE_LICENSE_URL" \
-              /p:RepositoryUrl="$PACKAGE_REPOSITORY_URL" \
-              /p:PackageTags="$PACKAGE_TAGS"
+              -p:PackageVersion="${VERSION}" \
+              -p:Description="${PACKAGE_DESCRIPTION}" \
+              -p:Authors="${PACKAGE_AUTHOR}" \
+              -p:Company="${PACKAGE_COMPANY}" \
+              -p:Copyright="${PACKAGE_COPYRIGHT}" \
+              -p:PackageIconUrl="${PACKAGE_LOGO_URL}" \
+              -p:PackageProjectUrl="${PACKAGE_PROJECT_URL}" \
+              -p:PackageLicenseUrl="${PACKAGE_LICENSE_URL}" \
+              -p:RepositoryUrl="${PACKAGE_REPOSITORY_URL}" \
+              -p:PackageTags="${PACKAGE_TAGS}"
           done
 
       - name: Publish to NuGet
