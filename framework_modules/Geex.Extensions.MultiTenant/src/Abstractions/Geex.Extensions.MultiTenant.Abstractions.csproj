@@ -8,7 +8,7 @@
     <RootNamespace>Geex.Extensions.MultiTenant</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-
+    <PackageReference Include="Volo.Abp.Core" Version="9.1.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />

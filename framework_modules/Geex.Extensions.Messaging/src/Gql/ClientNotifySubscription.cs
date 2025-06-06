@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
+using Geex.Extensions.Messaging.ClientNotification;
 using Geex.Gql.Types;
 using HotChocolate;
 using HotChocolate.Execution;

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Security.Claims;
+using System.Threading.Tasks;
 
 using Geex.Abstractions;
 using Geex.Extensions.Authentication;
@@ -8,6 +9,7 @@ using Geex.Gql;
 
 using HotChocolate;
 using HotChocolate.Authorization;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using Volo.Abp;
@@ -25,6 +27,18 @@ namespace Geex.Extensions.Authorization
         {
             var services = context.Services;
             services.AddCasbinAuthorization();
+            SchemaBuilder.UseRequest(next => async context =>
+            {
+                var work = context.Services.GetService<IUnitOfWork>();
+                if (work != null)
+                {
+                    if (context.Services.GetService<ClaimsPrincipal>()?.FindUserId() == GeexConstants.SuperAdminId)
+                    {
+                        work.DbContext.DisableAllDataFilters();
+                    }
+                }
+                await next(context);
+            });
             SchemaBuilder.AddAuthorization();
             SchemaBuilder.TryAddTypeInterceptor<AuthorizationTypeInterceptor>();
             base.ConfigureServices(context);

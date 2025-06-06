@@ -1,7 +1,7 @@
 ﻿using System;
 using HotChocolate.Types;
 
-namespace Geex.ClientNotification
+namespace Geex.Extensions.Messaging.ClientNotification
 {
     public abstract class ClientNotify
     {

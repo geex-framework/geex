@@ -1,4 +1,4 @@
-﻿namespace Geex.ClientNotification;
+﻿namespace Geex.Extensions.Messaging.ClientNotification;
 
 public class DataChangeType : Enumeration<DataChangeType>
 {

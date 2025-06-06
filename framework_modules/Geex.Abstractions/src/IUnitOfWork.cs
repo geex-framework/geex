@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.ClientNotification;
 using Geex.Storage;
 using HotChocolate.Subscriptions;
 using MediatR;
@@ -69,19 +68,6 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     T Attach<T>(T entity) where T : IEntityBase;
     T AttachNoTracking<T>(T entity) where T : IEntityBase;
     IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase;
-
-    async Task ClientNotify<T>(T clientNotify, params string[] userIds) where T : ClientNotify
-    {
-        var topicEventSender = this.ServiceProvider.GetService<ITopicEventSender>();
-        if (!userIds.IsNullOrEmpty())
-        {
-            await Task.WhenAll(userIds.Select(userId => topicEventSender.SendAsync($"{nameof(ClientNotifySubscription.OnPrivateNotify)}:{userId}", clientNotify).AsTask()));
-        }
-        else
-        {
-            await topicEventSender.SendAsync(nameof(ClientNotifySubscription.OnPublicNotify), clientNotify as ClientNotify);
-        }
-    }
 
     /// <inheritdoc />
     Task<List<string>> SaveChanges(CancellationToken cancellation = default);

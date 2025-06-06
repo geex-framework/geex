@@ -1,4 +1,5 @@
 ﻿using Geex.ClientNotification;
+using Geex.Extensions.Messaging.ClientNotification;
 using HotChocolate.Types;
 
 namespace Geex.Extensions.Messaging.Core.Entities

@@ -127,13 +127,13 @@ namespace Geex
                 {
                     // todo: extract to request middleware
                     var work = context.Services.GetService<IUnitOfWork>();
-                    if (work != null)
-                    {
-                        if (context.Services.GetService<ClaimsPrincipal>()?.FindUserId() == GeexConstants.SuperAdminId)
-                        {
-                            work.DbContext.DisableAllDataFilters();
-                        }
-                    }
+                    //if (work != null)
+                    //{
+                    //    if (context.Services.GetService<ClaimsPrincipal>()?.FindUserId() == GeexConstants.SuperAdminId)
+                    //    {
+                    //        work.DbContext.DisableAllDataFilters();
+                    //    }
+                    //}
                     if (context.Request.Query?.ToString().StartsWith("query ", StringComparison.InvariantCultureIgnoreCase) == true)
                     {
                         if (work != null)
