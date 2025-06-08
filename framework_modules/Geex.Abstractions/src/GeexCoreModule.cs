@@ -123,7 +123,7 @@ namespace Geex
                 .AddInMemorySubscriptions()
                 .AddValidationVisitor<ExtraArgsTolerantValidationVisitor>()
                 .AddTransactionScopeHandler<GeexTransactionScopeHandler>()
-                .UseRequest(next => async context =>
+                .UseRequest(next => context =>
                 {
                     // todo: extract to request middleware
                     var work = context.Services.GetService<IUnitOfWork>();
@@ -141,7 +141,7 @@ namespace Geex
                             work.DbContext.EntityTrackingEnabled = false;
                         }
                     }
-                    await next(context);
+                    return next(context);
                 })
                 .UseDefaultPipeline()
                 .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))

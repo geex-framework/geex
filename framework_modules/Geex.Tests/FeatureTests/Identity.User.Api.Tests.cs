@@ -268,11 +268,10 @@ namespace Geex.Tests.FeatureTests
         public async Task ChangePasswordMutationShouldWork()
         {
             // Arrange
-            var client = this.SuperAdminClient;
             var testUsername = $"changeapi_{ObjectId.GenerateNewId()}";
             var originalPassword = "OriginalPass123!";
             var newUserToken = string.Empty;
-            
+
             // Prepare data using separate scope
             using (var scope = ScopedService.CreateScope())
             {
@@ -291,19 +290,8 @@ namespace Geex.Tests.FeatureTests
                 await setupUow.SaveChanges();
             }
 
-            // Get authentication token in separate scope
-            using (var authScope = ScopedService.CreateScope())
-            {
-                var authUow = authScope.ServiceProvider.GetService<IUnitOfWork>();
-                var token = await authUow.Request(new AuthenticateRequest()
-                {
-                    Password = originalPassword,
-                    UserIdentifier = testUsername
-                });
-                newUserToken = token.Value;
-            }
+            var client = this.UserClient(testUsername);
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", newUserToken);
             var query = """
                 mutation($originPassword: String!) {
                     changePassword(request: {

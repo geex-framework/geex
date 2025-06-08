@@ -1,8 +1,10 @@
+using Geex.Extensions.Authorization.Core.Utils;
 using Geex.Gql;
 using Geex.Gql.Types;
 using Geex.Storage;
 using Geex.Tests.FeatureTests;
 using Geex.Tests.SchemaTests.TestEntities;
+
 using HotChocolate;
 using HotChocolate.Authorization;
 using HotChocolate.Types;
@@ -44,7 +46,7 @@ namespace Geex.Tests.SchemaTests
         public async Task ImplicitAuthorizationShouldBeApplied()
         {
             // Arrange
-            
+
             var schema = ScopedService.GetService<ISchema>();
 
             // Get the schema type for our test aggregate entity
@@ -53,26 +55,25 @@ namespace Geex.Tests.SchemaTests
             var entityName = typeof(AuthTestEntity).Name.ToCamelCase();
 
             var queryType = schema.GetType<ObjectType>(nameof(Query));
-            TestPermissions.AuthTestQueryField.Value.ShouldEndWith(queryType.Fields.First(x => x.Name == nameof(AuthTestQuery.AuthTestQueryField).ToCamelCase()).Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>().Policy);
+            var authQueryField = queryType.Fields.First(x => x.Name == nameof(AuthTestQuery.AuthTestQueryField).ToCamelCase());
+            authQueryField.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor)).ShouldBeTrue();
 
             var mutationType = schema.GetType<ObjectType>(nameof(Mutation));
-            TestPermissions.AuthTestMutationField.Value.ShouldEndWith(mutationType.Fields.First(x => x.Name == nameof(AuthTestMutation.AuthTestMutationField).ToCamelCase()).Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>().Policy);
+            var authMutationField = mutationType.Fields.First(x => x.Name == nameof(AuthTestMutation.AuthTestMutationField).ToCamelCase());
+            authMutationField.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor)).ShouldBeTrue();
 
             // Check if permission-based field authorization is applied to fields
-            var authFields = aggregateType.Fields.Where(x => x.Directives.Any(y => y.Type.Name == "authorize")).ToList();
+            var authFields = aggregateType.Fields.Where(x => x.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor))).ToList();
             authFields.ShouldNotBeEmpty();
             var authTestField = authFields.FirstOrDefault(x => x.Name == nameof(AuthTestEntity.AuthorizedField).ToCamelCase());
-            var authorizeDirective = authTestField.Directives.First(x => x.Type.Name == "authorize").AsValue<AuthorizeDirective>();
-            TestPermissions.AuthTestEntityAuthorizedField.Value.ShouldEndWith(authorizeDirective.Policy);
-
-
+            authTestField.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor)).ShouldBeTrue();
         }
 
         [Fact]
         public async Task ExtensionTypeAuthorizationShouldBeApplied()
         {
             // Arrange
-            
+
             var schema = ScopedService.GetService<ISchema>();
 
             // Check mutation type
@@ -112,7 +113,7 @@ namespace Geex.Tests.SchemaTests
         public async Task SpecialFieldsShouldNotBeAuthorized()
         {
             // Arrange
-            
+
             var schema = ScopedService.GetService<ISchema>();
 
             // Get test aggregate type

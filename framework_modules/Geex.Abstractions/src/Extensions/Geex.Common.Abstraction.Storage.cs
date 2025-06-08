@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FastExpressionCompiler;
 using Geex.Notifications;
 using Geex.Storage;
 using MongoDB.Driver;

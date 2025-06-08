@@ -21,6 +21,7 @@ namespace Geex.Extensions.Identity.Gql
         protected override void Configure(IObjectTypeDescriptor<UserQuery> descriptor)
         {
             descriptor.Field(x => x.Users())
+
             .UseOffsetPaging<InterfaceType<IUser>>()
             .UseFiltering<IUser>(x =>
             {
@@ -40,6 +41,7 @@ namespace Geex.Extensions.Identity.Gql
                 x.Field(y => y.Id);
                 x.Field(y => y.CreatedOn);
             })
+            //.Authorize()
             ;
             base.Configure(descriptor);
         }

@@ -3,34 +3,44 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+
 using JetBrains.Annotations;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Geex.Extensions.Authentication.Core.Utils
 {
     public class SuperAdminAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>, IAuthenticationHandler
     {
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
+        private readonly TokenValidationParameters _tokenValidationParameters;
 
         private const string AuthorizationHeaderName = "Authorization";
         public const string SchemeName = "SuperAdmin";
-        public static string? AdminToken;
+        public static string? AdminTokenStr;
+        public static DateTime AdminTokenIssuedAt { get; set; }
 
         /// <inheritdoc />
         public SuperAdminAuthHandler([NotNull][ItemNotNull] IOptionsMonitor<AuthenticationSchemeOptions> options,
             GeexJwtSecurityTokenHandler tokenHandler,
+            TokenValidationParameters tokenValidationParameters,
             UserTokenGenerateOptions tokenGenerateOptions,
             [NotNull] ILoggerFactory logger, [NotNull] UrlEncoder encoder, [NotNull] ISystemClock clock) : base(options,
             logger, encoder, clock)
         {
             _tokenHandler = tokenHandler;
-            if (AdminToken.IsNullOrEmpty())
+            _tokenValidationParameters = tokenValidationParameters;
+            if (AdminTokenStr.IsNullOrEmpty())
             {
                 var staticTokenGenerationOptions = new UserTokenGenerateOptions(tokenGenerateOptions.Issuer, tokenGenerateOptions.Audience, tokenGenerateOptions.SigningCredentials, null);
                 var token = _tokenHandler.CreateJwtSecurityToken(new GeexSecurityTokenDescriptor(GeexConstants.SuperAdminId, LoginProviderEnum.Local, staticTokenGenerationOptions));
-                AdminToken = token.UnsafeToString();
+                AdminTokenIssuedAt = token.IssuedAt;
+                AdminTokenStr = token.UnsafeToString();
+                Console.WriteLine("AdminToken generated:");
+                Console.WriteLine($"SuperAdmin {AdminTokenStr}");
             }
         }
 
@@ -54,27 +64,14 @@ namespace Geex.Extensions.Authentication.Core.Utils
             if (!SchemeName.Equals(headerValue.Scheme, StringComparison.OrdinalIgnoreCase))
             {
                 //Not SuperAdmin authentication header
-                if (!headerValue.Scheme.IsNullOrEmpty())
-                {
-                    Options.ForwardDefault ??= headerValue.Scheme;
-                }
                 return AuthenticateResult.NoResult();
             }
 
-            string userAndPassword = headerValue.Parameter;
+            var result = await _tokenHandler.ValidateTokenAsync(headerValue.Parameter, _tokenValidationParameters);
+            if (!result.IsValid || result.SecurityToken.ValidFrom != AdminTokenIssuedAt)
+                return AuthenticateResult.NoResult();
 
-            if (userAndPassword != AdminToken)
-            {
-                return AuthenticateResult.Fail("Invalid auth parameter.");
-            }
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.Name, GeexConstants.SuperAdminId),
-                new Claim(GeexClaimType.FullName, GeexConstants.SuperAdminName),
-                new Claim(GeexClaimType.Sub, GeexConstants.SuperAdminId),
-            };
-            var identity = new ClaimsIdentity(claims, SchemeName);
+            var identity = result.ClaimsIdentity;
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, SchemeName);
             return AuthenticateResult.Success(ticket);

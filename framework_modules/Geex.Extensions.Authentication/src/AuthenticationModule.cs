@@ -10,9 +10,11 @@ using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Abstractions;
 using Geex.Extensions.Authentication.Core.Utils;
+
 using HotChocolate.AspNetCore;
 
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -47,11 +49,10 @@ namespace Geex.Extensions.Authentication
             var moduleOptions = services.GetSingletonInstance<AuthenticationModuleOptions>();
 
             services.AddSingleton<GeexJwtSecurityTokenHandler>();
-            var authenticationBuilder = services.AddAuthentication("Bearer");
+            var authenticationBuilder = services.AddAuthentication(AuthSchemeRoutingHandler.SchemeName);
 
             if (moduleOptions != default)
             {
-                X509Certificate? cert = default;
                 X509Certificate2? cert2 = default;
                 SecurityKey? securityKey = default;
                 SigningCredentials? signCredentials = default;
@@ -80,11 +81,10 @@ namespace Geex.Extensions.Authentication
                     // Register the signing and encryption credentials.
                     if (!string.IsNullOrEmpty(certFile))
                     {
-                        cert = string.IsNullOrEmpty(certPassword) ? new X509Certificate(certFile) : new X509Certificate(certFile, certPassword);
-                        cert2 = new X509Certificate2(cert);
+                        cert2 = string.IsNullOrEmpty(certPassword) ? X509CertificateLoader.LoadPkcs12FromFile(certFile, null, keyStorageFlags: X509KeyStorageFlags.EphemeralKeySet) : X509CertificateLoader.LoadPkcs12FromFile(certFile, certPassword, X509KeyStorageFlags.EphemeralKeySet);
                         securityKey = new X509SecurityKey(cert2);
                         signCredentials = new X509SigningCredentials(cert2);
-                        services.AddSingleton(cert);
+                        services.AddSingleton(cert2);
                     }
                 }
 
@@ -151,7 +151,7 @@ namespace Geex.Extensions.Authentication
                             .AllowPasswordFlow()
                             ;
 
-                        Console.WriteLine(certFile);
+                        Console.WriteLine($"Using cert file: {certFile}");
 
                         // Register the signing and encryption credentials.
                         if (cert2 != default)
@@ -169,10 +169,11 @@ namespace Geex.Extensions.Authentication
                             using var x509Store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
                             x509Store.Open(OpenFlags.ReadOnly);
                             var tempCert = x509Store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, (object)tempCertName.Name, false).OfType<X509Certificate2>().FirstOrDefault(x => x.NotBefore < DateTime.Now && x.NotAfter > DateTime.Now);
-                            cert = cert2 = tempCert;
+                            cert2 = tempCert;
                             securityKey = new X509SecurityKey(cert2);
                             signCredentials = new X509SigningCredentials(cert2);
-                            services.AddSingleton(cert);
+                            services.AddSingleton(cert2);
+                            services.AddSingleton<X509Certificate>(cert2);
                         }
 
                         options.DisableAccessTokenEncryption();
@@ -180,7 +181,7 @@ namespace Geex.Extensions.Authentication
                         // 配置选项
                         options.Configure(x =>
                         {
-                            ConfigTokenValidationParameters(x.TokenValidationParameters, cert, securityKey, moduleOptions);
+                            ConfigTokenValidationParameters(x.TokenValidationParameters, cert2, securityKey, moduleOptions);
                             x.IgnoreEndpointPermissions = true;
                             x.IgnoreResponseTypePermissions = true;
                         });
@@ -215,7 +216,7 @@ namespace Geex.Extensions.Authentication
                 services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
 
                 var tokenValidationParameters = new TokenValidationParameters();
-                ConfigTokenValidationParameters(tokenValidationParameters, cert, securityKey, moduleOptions);
+                ConfigTokenValidationParameters(tokenValidationParameters, cert2, securityKey, moduleOptions);
                 services.AddSingleton<TokenValidationParameters>(tokenValidationParameters);
 
                 void ConfigJwtBearerOptions(JwtBearerOptions jwtBearerOptions)
@@ -241,18 +242,21 @@ namespace Geex.Extensions.Authentication
                     };
                 }
 
-                authenticationBuilder
-                    .AddScheme<JwtBearerOptions, LocalAuthHandler>("Bearer", "Bearer", ConfigJwtBearerOptions)
-                    .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>("SuperAdmin", "SuperAdmin", x =>
+               authenticationBuilder
+                    .AddScheme<AuthenticationSchemeOptions, AuthSchemeRoutingHandler>(AuthSchemeRoutingHandler.SchemeName, AuthSchemeRoutingHandler.SchemeName, x => { })
+                    .AddScheme<JwtBearerOptions, LocalAuthHandler>(LocalAuthHandler.SchemeName, LocalAuthHandler.SchemeName, ConfigJwtBearerOptions)
+                    .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>(SuperAdminAuthHandler.SchemeName, SuperAdminAuthHandler.SchemeName, x =>
                     {
                     })
+                    .AddJwtBearer()
                     .AddCookie();
-                services.AddSingleton(new UserTokenGenerateOptions(cert?.Issuer, moduleOptions.ValidAudience, signCredentials, TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds)));
+
+                services.AddSingleton(new UserTokenGenerateOptions(cert2?.Issuer, moduleOptions.ValidAudience, signCredentials, TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds)));
 
             }
             base.ConfigureServices(context);
 
-            void ConfigTokenValidationParameters(TokenValidationParameters x, X509Certificate? cert, SecurityKey? securityKey,
+            void ConfigTokenValidationParameters(TokenValidationParameters x, X509Certificate2? cert, SecurityKey? securityKey,
                 AuthenticationModuleOptions authOptions)
             {
                 x.RequireSignedTokens = x.ValidateIssuerSigningKey = securityKey != default;
@@ -274,11 +278,20 @@ namespace Geex.Extensions.Authentication
         public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
+            //app.UseMiddleware<AuthSchemeRoutingMiddleware>();
             app.UseAuthentication();
             //app.UseMiddleware<IdsvrMiddleware>();
             app.Map("/idsvr", x => x.UseMiddleware<IdsvrMiddleware>());
             app.UseAuthorization();
             return base.OnPreApplicationInitializationAsync(context);
+        }
+
+        /// <inheritdoc />
+        public override Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+        {
+            // init admin token and print it to console
+            _ = context.ServiceProvider.GetService<SuperAdminAuthHandler>();
+            return base.OnPostApplicationInitializationAsync(context);
         }
     }
 }

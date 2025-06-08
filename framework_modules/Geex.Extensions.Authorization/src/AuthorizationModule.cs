@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 using Geex.Abstractions;
@@ -10,11 +11,19 @@ using Geex.Gql;
 using HotChocolate;
 using HotChocolate.Authorization;
 
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+
+using OpenIddict.Client.AspNetCore;
+using OpenIddict.Server.AspNetCore;
+using OpenIddict.Validation.AspNetCore;
 
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
+using AuthorizationOptions = Microsoft.AspNetCore.Authorization.AuthorizationOptions;
 
 namespace Geex.Extensions.Authorization
 {
@@ -26,7 +35,7 @@ namespace Geex.Extensions.Authorization
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             var services = context.Services;
-            services.AddCasbinAuthorization();
+            services.AddCasbinAuthorization(out var configureAction);
             SchemaBuilder.UseRequest(next => async context =>
             {
                 var work = context.Services.GetService<IUnitOfWork>();
@@ -39,7 +48,7 @@ namespace Geex.Extensions.Authorization
                 }
                 await next(context);
             });
-            SchemaBuilder.AddAuthorization();
+            SchemaBuilder.AddAuthorization(configureAction);
             SchemaBuilder.TryAddTypeInterceptor<AuthorizationTypeInterceptor>();
             base.ConfigureServices(context);
         }

@@ -34,7 +34,7 @@ namespace Geex.Tests
             get
             {
                 _ = this.ScopedService.GetService<SuperAdminAuthHandler>();
-                var token = SuperAdminAuthHandler.AdminToken;
+                var token = SuperAdminAuthHandler.AdminTokenStr;
                 var client = this.Factory.CreateClient();
                 client.DefaultRequestHeaders.Add("Authorization", $"SuperAdmin {token}");
                 return client;
@@ -49,7 +49,7 @@ namespace Geex.Tests
             var user = GeexCommonAbstractionEntitiesIUserExtensions.MatchUserIdentifier(this.ScopedService.GetService<IUnitOfWork>().Query<IUser>(), userIdentifier);
             var token = tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, tokenGenerateOptions));
             var client = this.Factory.CreateClient();
-            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+            client.DefaultRequestHeaders.Add("Authorization", $"Local {token}");
             return client;
         }
 
