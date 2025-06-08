@@ -13,15 +13,17 @@ namespace Geex.Tests;
 
 public class TestApplicationFactory : WebApplicationFactory<Program>
 {
-    /// <inheritdoc />
-    protected override void ConfigureClient(HttpClient client)
-    {
-        base.ConfigureClient(client);
-    }
-
     protected override IHostBuilder CreateHostBuilder()
     {
         return Program.CreateHostBuilder();
+    }
+
+    /// <inheritdoc />
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = builder.Build();
+        host.ConfigServiceLocator().Start();
+        return host;
     }
 
     /// <inheritdoc />
