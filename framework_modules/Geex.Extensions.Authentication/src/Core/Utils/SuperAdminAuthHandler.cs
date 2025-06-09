@@ -39,8 +39,15 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 var token = _tokenHandler.CreateJwtSecurityToken(new GeexSecurityTokenDescriptor(GeexConstants.SuperAdminId, LoginProviderEnum.Local, staticTokenGenerationOptions));
                 AdminTokenIssuedAt = token.IssuedAt;
                 AdminTokenStr = token.UnsafeToString();
-                Console.WriteLine("AdminToken generated:");
-                Console.WriteLine($"SuperAdmin {AdminTokenStr}");
+                Task.Run((async () =>
+                {
+                    await Task.Delay(500);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("🔑 Admin token generated! It's having full system access until next restart. ⚠️ Please use with caution. ⚠️");
+                    Console.ForegroundColor = ConsoleColor.Magenta;
+                    Console.WriteLine($"SuperAdmin {AdminTokenStr}");
+                    Console.ResetColor();
+                }));
             }
         }
 

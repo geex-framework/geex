@@ -13,15 +13,10 @@ namespace Geex.Tests;
 
 public class TestApplicationFactory : WebApplicationFactory<Program>
 {
-    protected override IHostBuilder CreateHostBuilder()
-    {
-        return Program.CreateHostBuilder();
-    }
-
     /// <inheritdoc />
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        var host = builder.Build();
+        var host = Program.CreateHostBuilder().Build();
         host.ConfigServiceLocator().Start();
         return host;
     }

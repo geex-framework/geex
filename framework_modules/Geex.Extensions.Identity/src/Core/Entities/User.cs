@@ -38,7 +38,9 @@ namespace Geex.Extensions.Identity.Core.Entities
             this.Password = passwordHasher.HashPassword(this, request.Password);
             uow?.Attach(this);
         }
-
+        /// <summary>
+        /// 注意：此处的 Password 是经过二次哈希处理的密码，前端会单独将密码进行哈希处理后传入, 数据库存储值为二次加盐哈希后的值。
+        /// </summary>
         public string Password { get; internal set; }
         public string? TenantCode { get; set; }
 
@@ -90,9 +92,10 @@ namespace Geex.Extensions.Identity.Core.Entities
 
         public virtual bool CheckPassword(string password)
         {
+            var normalizedPassword = password.ToUpperInvariant();
             var passwordHasher = this.ServiceProvider.GetService<IPasswordHasher<IUser>>();
             //passwordHasher.HashPassword(this, password)
-            return passwordHasher!.VerifyHashedPassword(this, Password, password) != PasswordVerificationResult.Failed;
+            return passwordHasher!.VerifyHashedPassword(this, Password, normalizedPassword) != PasswordVerificationResult.Failed;
         }
 
         public List<UserClaim> Claims { get; set; } = new List<UserClaim>();
@@ -123,7 +126,8 @@ namespace Geex.Extensions.Identity.Core.Entities
 
         public virtual IUser SetPassword(string? password)
         {
-            Password = ServiceProvider.GetService<IPasswordHasher<IUser>>().HashPassword(this, password);
+            var normalizedPassword = password.ToUpperInvariant();
+            Password = ServiceProvider.GetService<IPasswordHasher<IUser>>().HashPassword(this, normalizedPassword);
             return this;
         }
 

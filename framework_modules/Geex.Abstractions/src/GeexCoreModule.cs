@@ -4,9 +4,11 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
 using Geex.Bson;
 using Geex.Gql;
 using Geex.Gql.Types;
+
 using HotChocolate;
 using HotChocolate.Configuration;
 using HotChocolate.Types;
@@ -14,6 +16,7 @@ using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Utilities;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -22,9 +25,13 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
+
 using MongoDB.Bson.Serialization.Conventions;
+
 using RestSharp;
+
 using StackExchange.Redis.Extensions.Core;
+
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -191,6 +198,13 @@ namespace Geex
             this.ConfigureModuleEntityMaps(context.ServiceProvider);
             var _env = context.GetEnvironment();
             var app = context.GetApplicationBuilder();
+            var logger = context.ServiceProvider.GetService<ILogger<GeexCoreModule>>();
+            logger.LogInformation("Loaded geex modules:");
+            logger.LogInformation(GeexModule.LoadedModules.Select(x => x.ModuleName).ToJsonSafe());
+            logger.LogInformation($"Loaded root types:");
+            logger.LogInformation(GeexModule.RootTypes.Select(x => x.Name).ToJsonSafe());
+            logger.LogInformation($"Loaded directive types:");
+            logger.LogInformation(GeexModule.DirectiveTypes.Select(x => x.Name).ToJsonSafe());
             app.UseCors();
             app.UseRouting();
             app.UseWebSockets();

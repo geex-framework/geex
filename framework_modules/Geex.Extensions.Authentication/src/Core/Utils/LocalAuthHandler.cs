@@ -35,13 +35,6 @@ namespace Geex.Extensions.Authentication.Core.Utils
             _tokenValidationParameters = tokenValidationParameters;
         }
 
-
-        /// <inheritdoc />
-        public new Task<AuthenticateResult> AuthenticateAsync()
-        {
-            return this.HandleAuthenticateAsync();
-        }
-
         /// <inheritdoc />
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {

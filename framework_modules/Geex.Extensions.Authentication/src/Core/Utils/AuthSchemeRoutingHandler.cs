@@ -2,11 +2,13 @@ using System;
 using System.Net.Http.Headers;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenIddict.Server.AspNetCore;
 
 namespace Geex.Extensions.Authentication.Core.Utils
 {
@@ -20,7 +22,6 @@ namespace Geex.Extensions.Authentication.Core.Utils
             : base(options, logger, encoder, clock)
         {
         }
-
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var request = Context.Request;

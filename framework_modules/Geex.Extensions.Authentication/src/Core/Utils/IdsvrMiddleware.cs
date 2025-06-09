@@ -2,11 +2,13 @@
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using OpenIddict.Server.AspNetCore;
@@ -116,7 +118,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
         private async Task Logout(HttpContext context, RequestDelegate next)
         {
             var request = context.GetOpenIddictServerRequest() ??
-                throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+        throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
             // Revoke authentication cookie
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -131,6 +133,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 {
                     RedirectUri = request.PostLogoutRedirectUri
                 };
+                context.Response.Redirect(request.PostLogoutRedirectUri);
                 return;
             }
 
@@ -180,10 +183,10 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 claimsPrincipal.SetScopes(request.GetScopes());
             }
             else if (request.IsAuthorizationCodeGrantType())
-            //{
-            //    claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
-            //}
-            //else if (request.IsRefreshTokenGrantType())
+            {
+                claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+            }
+            else if (request.IsRefreshTokenGrantType())
             {
                 // Retrieve the claims principal stored in the refresh token.
                 claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;

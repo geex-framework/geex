@@ -112,7 +112,8 @@ namespace Geex
         /// module name in simple display format
         /// XxxModule => xxx
         /// </summary>
-        public virtual string ModuleDisplayName => this.GetType().Name.RemovePostFix("Module").ToCamelCase();
+        public virtual string ModuleName => this.GetType().Name;
+        public virtual string ModuleDisplayName => this.ModuleName.RemovePostFix("Module").ToCamelCase();
         public IRequestExecutorBuilder SchemaBuilder => this.ServiceConfigurationContext.Services.GetSingletonInstance<IRequestExecutorBuilder>();
         public static ConcurrentHashSet<Assembly> KnownModuleAssembly { get; } = new ConcurrentHashSet<Assembly>();
         public static ConcurrentHashSet<Type> RootTypes { get; } = new ConcurrentHashSet<Type>();

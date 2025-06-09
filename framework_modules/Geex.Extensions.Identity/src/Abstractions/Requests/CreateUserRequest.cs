@@ -16,6 +16,9 @@ namespace Geex.Extensions.Identity.Requests
         string? AvatarFileId { get; set; }
         List<UserClaim>? Claims { get; set; }
         string? PhoneNumber { get; set; }
+        /// <summary>
+        /// 注：此处的 Password 应是经过前端哈希处理后的密码
+        /// </summary>
         string? Password { get; set; }
         string? Nickname { get; set; }
         string? OpenId { get; set; }
@@ -36,6 +39,7 @@ namespace Geex.Extensions.Identity.Requests
         public string? AvatarFileId { get; set; }
         public List<UserClaim>? Claims { get; set; }
         public string? PhoneNumber { get; set; }
+        /// <inheritdoc />
         public string? Password { get; set; }
         public string? Nickname { get; set; } = "";
         public string? OpenId { get; set; } = "";

@@ -11,6 +11,7 @@ namespace Geex.Extensions.Identity.Requests
         public string UserId { get; set; }
         /// <summary>
         /// 新密码
+        /// 注：此处的 Password 应是经过前端哈希处理后的密码
         /// </summary>
         public string Password { get; set; }
     }

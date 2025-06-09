@@ -35,7 +35,7 @@ namespace Geex.Core.Authentication.Migrations
                 Nickname = "superAdmin",
                 PhoneNumber = "15055555555",
                 Email = "superAdmin@geex.com",
-                Password = "superAdmin"
+                Password = "superAdmin".ToMd5()
             });
             superAdmin.Id = "000000000000000000000001";
             var adminRole = new Role("admin")
@@ -66,7 +66,7 @@ namespace Geex.Core.Authentication.Migrations
                 Nickname = "admin",
                 PhoneNumber = "13333333332",
                 Email = "admin@geex.com",
-                Password = "admin"
+                Password = "admin".ToMd5()
             });
             await admin.AssignOrgs(orgs);
             await admin.AssignRoles(adminRole.Id);
@@ -76,7 +76,7 @@ namespace Geex.Core.Authentication.Migrations
                 Nickname = "user",
                 PhoneNumber = "15555555555",
                 Email = "user@geex.com",
-                Password = "user"
+                Password = "user".ToMd5()
             });
             await user.AssignRoles(userRole.Id);
             await user.AssignOrgs(orgs);
