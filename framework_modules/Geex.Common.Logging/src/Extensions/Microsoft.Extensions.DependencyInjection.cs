@@ -3,7 +3,7 @@
 using Geex.Common.Gql;
 using Geex.Common.Logging;
 using Geex.Common.Logging.DiagnosticListeners;
-
+using Geex.Extensions.Logging;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Execution.Instrumentation;
 
