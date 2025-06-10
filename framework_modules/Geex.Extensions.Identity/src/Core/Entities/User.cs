@@ -143,8 +143,7 @@ namespace Geex.Extensions.Identity.Core.Entities
             {
                 return;
             }
-
-            (this as ITenantFilteredEntity).SetTenant(code);
+            this.TenantCode = code;
         }
     }
 }
