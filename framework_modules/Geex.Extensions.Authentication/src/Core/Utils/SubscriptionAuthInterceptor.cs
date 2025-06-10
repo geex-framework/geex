@@ -8,8 +8,12 @@ using HotChocolate.AspNetCore.Subscriptions.Protocols;
 using HotChocolate.AspNetCore.Subscriptions.Protocols.Apollo;
 using HotChocolate.Execution;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
+using OpenIddict.Server.AspNetCore;
+using OpenIddict.Validation.AspNetCore;
 
 namespace Geex.Extensions.Authentication.Core.Utils
 {
@@ -59,7 +63,8 @@ namespace Geex.Extensions.Authentication.Core.Utils
                     //    OriginalPath = context.Request.Path,
                     //    OriginalPathBase = context.Request.PathBase
                     //});
-                    var result = await context.AuthenticateAsync(schema);
+                    //OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme
+                    var result = await context.AuthenticateAsync(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
                     if (result?.Principal != null && result.Principal.Identity.IsAuthenticated)
                     {
                         context.User = result.Principal;

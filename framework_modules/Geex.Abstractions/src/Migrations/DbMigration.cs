@@ -10,6 +10,6 @@ namespace Geex.Migrations
     public abstract class DbMigration : ITransientDependency
     {
         public abstract long Number { get; }
-        public abstract Task UpgradeAsync(IUnitOfWork dbContext);
+        public abstract Task UpgradeAsync(IUnitOfWork uow);
     }
 }

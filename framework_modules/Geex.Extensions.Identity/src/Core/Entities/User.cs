@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization.Requests;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Requests;
+using Geex.MultiTenant;
 using Geex.Storage;
+
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -132,5 +135,16 @@ namespace Geex.Extensions.Identity.Core.Entities
         }
 
         public string Username { get; set; }
+
+        /// <inheritdoc />
+        public void SetTenant(string? code)
+        {
+            if (this.Id == GeexConstants.SuperAdminId)
+            {
+                return;
+            }
+
+            (this as ITenantFilteredEntity).SetTenant(code);
+        }
     }
 }

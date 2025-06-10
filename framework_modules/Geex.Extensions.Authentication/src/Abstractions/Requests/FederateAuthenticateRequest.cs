@@ -7,7 +7,7 @@ namespace Geex.Extensions.Authentication.Requests
         /// <summary>
         /// 登陆提供方
         /// </summary>
-        public LoginProviderEnum LoginProvider { get; set; }
+        public LoginProviderEnum? LoginProvider { get; set; } = LoginProviderEnum.Local;
         /// <summary>
         /// OAuth Code
         /// </summary>

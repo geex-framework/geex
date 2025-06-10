@@ -8,7 +8,9 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using OpenIddict.Server.AspNetCore;
+using OpenIddict.Validation.AspNetCore;
 
 namespace Geex.Extensions.Authentication.Core.Utils
 {
@@ -26,6 +28,26 @@ namespace Geex.Extensions.Authentication.Core.Utils
         {
             var request = Context.Request;
 
+            // Check for OpenIddict server authentication for idsvr endpoints
+            if (request.Path.StartsWithSegments("/idsvr"))
+            {
+                // For checksession, try cookie authentication first, then validation scheme
+                var cookieResult = await Context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (cookieResult.Succeeded)
+                {
+                    return cookieResult;
+                }
+
+                // Try OpenIddict validation for token-based authentication
+                var validationResult = await Context.AuthenticateAsync(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+                if (validationResult.Succeeded)
+                {
+                    return validationResult;
+                }
+
+                return AuthenticateResult.NoResult();
+            }
+
             // Check for Authorization header first
             if (request.Headers.ContainsKey(AuthorizationHeaderName))
             {
@@ -41,18 +63,8 @@ namespace Geex.Extensions.Authentication.Core.Utils
                         case "superadmin":
                             return await Context.AuthenticateAsync(SuperAdminAuthHandler.SchemeName);
                         case "bearer":
-                            return await Context.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
+                            return await Context.AuthenticateAsync(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
                     }
-                }
-            }
-
-            // Check for authentication cookie as fallback
-            if (request.Cookies.Count > 0)
-            {
-                var cookieResult = await Context.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                if (cookieResult.Succeeded)
-                {
-                    return cookieResult;
                 }
             }
 
@@ -62,12 +74,12 @@ namespace Geex.Extensions.Authentication.Core.Utils
 
         protected override Task HandleChallengeAsync(AuthenticationProperties properties)
         {
-            return Context.ChallengeAsync(CookieAuthenticationDefaults.AuthenticationScheme, properties);
+            return Context.ChallengeAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, properties);
         }
 
         protected override Task HandleForbiddenAsync(AuthenticationProperties properties)
         {
-            return Context.ForbidAsync(JwtBearerDefaults.AuthenticationScheme, properties);
+            return Context.ForbidAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, properties);
         }
     }
 }

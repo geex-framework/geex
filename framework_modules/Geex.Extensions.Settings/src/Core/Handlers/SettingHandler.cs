@@ -141,12 +141,6 @@ namespace Geex.Extensions.Settings.Core.Handlers
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "cannot update global setting in tenant.");
             }
-
-            if (isEmptyTenant == true && scope == SettingScopeEnumeration.Tenant)
-            {
-                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "cannot update tenant setting in host.");
-            }
-
             var setting = _dbContext.Query<Setting>().SingleOrDefault(x => x.Name == settingDefinition && x.Scope == scope && x.ScopedKey == scopedKey);
             if (setting == default)
             {

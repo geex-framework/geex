@@ -8,52 +8,64 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using OpenIddict.Server.AspNetCore;
+using OpenIddict.Validation.AspNetCore;
 
 namespace Geex.Extensions.Authentication.Core.Utils
 {
     public class IdsvrMiddleware : IMiddleware
     {
-        public async Task Authorize(HttpContext HttpContext, RequestDelegate requestDelegate)
+        public async Task Authorize(HttpContext context, RequestDelegate requestDelegate)
         {
-            var request = HttpContext.GetOpenIddictServerRequest() ??
+            var request = context.GetOpenIddictServerRequest() ??
                 throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
-
             // Retrieve the user principal stored in the authentication cookie.
-            var result = await HttpContext.AuthenticateAsync();
+            //var cliamsTrans = context.RequestServices.GetRequiredService<IClaimsTransformation>();
 
-            // If the user principal can't be extracted, redirect the user to the login page.
-            if (!result.Succeeded)
+            if (!request.AccessToken.IsNullOrEmpty())
             {
-                await HttpContext.ChallengeAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                    properties: new AuthenticationProperties
-                    {
-                        RedirectUri = HttpContext.Request.PathBase + HttpContext.Request.Path + QueryString.Create(
-                            HttpContext.Request.HasFormContentType ? HttpContext.Request.Form.ToList() : HttpContext.Request.Query.ToList())
-                    });
-                return;
+                var result = await context.AuthenticateAsync(LocalAuthHandler.SchemeName);
+                if (!result.Succeeded)
+                {
+                    await Challenge(context);
+                    return;
+                }
+                context.User = result.Principal;
             }
 
-            // Create a new claims principal
-            var claims = result.Principal.Claims;
+            if (context.User.Identity is { IsAuthenticated: true })
+            {
+                var existedClaimsPrincipal = context.User;
+                // Set requested scopes for the validated principal
+                existedClaimsPrincipal.SetScopes(request.GetScopes());
 
-            var claimsIdentity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+                // Sign in to both OpenIddict and Cookie schemes to maintain login state
+                await context.SignInAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, existedClaimsPrincipal);
+                await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, existedClaimsPrincipal);
+                return;
+            }
+            await Challenge(context);
+        }
 
-            var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-
-            // Set requested scopes (this is not done automatically)
-            claimsPrincipal.SetScopes(request.GetScopes());
-
-            // Signing in with the OpenIddict authentiction scheme trigger OpenIddict to issue a code (which can be exchanged for an access token)
-            await HttpContext.SignInAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, claimsPrincipal);
+        private static async Task Challenge(HttpContext context)
+        {
+            await context.ChallengeAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties
+                {
+                    RedirectUri = context.Request.PathBase + context.Request.Path + QueryString.Create(
+                        context.Request.HasFormContentType ? context.Request.Form.ToList() : context.Request.Query.ToList())
+                });
         }
 
         /// <inheritdoc />
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
+            // checksession is now handled separately, no need to check here
+
             var path = context.GetOpenIddictServerEndpointType();
             switch (path)
             {
@@ -100,7 +112,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
 
             if (!result.Succeeded)
             {
-                throw new InvalidOperationException("Authentication failed.");
+                await Challenge(context);
             }
 
             // Create a new claims principal with existing claims
@@ -108,11 +120,13 @@ namespace Geex.Extensions.Authentication.Core.Utils
             var claimsIdentity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 
+            var cliamsTrans = context.RequestServices.GetRequiredService<IClaimsTransformation>();
+            await cliamsTrans.TransformAsync(claimsPrincipal);
             // Set requested scopes
             claimsPrincipal.SetScopes(request.GetScopes());
 
             // Sign in the user
-            await context.SignInAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, claimsPrincipal);
+            await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
         }
 
         private async Task Logout(HttpContext context, RequestDelegate next)
@@ -140,27 +154,27 @@ namespace Geex.Extensions.Authentication.Core.Utils
             await next(context);
         }
 
-        private async Task UserInfo(HttpContext HttpContext, RequestDelegate requestDelegate)
+        private async Task UserInfo(HttpContext context, RequestDelegate requestDelegate)
         {
             ClaimsPrincipal? claimsPrincipal;
-            if (HttpContext.User.Identity?.IsAuthenticated == true && HttpContext.User.FindUserId() != null)
+            if (context.User.Identity?.IsAuthenticated == true && context.User.FindUserId() != null)
             {
-                claimsPrincipal = HttpContext.User;
+                claimsPrincipal = context.User;
             }
             else
             {
-                claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+                claimsPrincipal = (await context.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
             }
 
             var claims = claimsPrincipal.Claims;
-            claimsPrincipal = await HttpContext.RequestServices.GetService<IClaimsTransformation>().TransformAsync(claimsPrincipal);
+            claimsPrincipal = await context.RequestServices.GetService<IClaimsTransformation>().TransformAsync(claimsPrincipal);
 
-            await HttpContext.Response.WriteAsJsonAsync(claimsPrincipal.Claims.GroupBy(x => x.Type).ToDictionary(x => x.Key, x => string.Join(',', x.Select(y => y.Value))));
+            await context.Response.WriteAsJsonAsync(claimsPrincipal.Claims.GroupBy(x => x.Type).ToDictionary(x => x.Key, x => string.Join(',', x.Select(y => y.Value))));
         }
 
-        private async Task Token(HttpContext HttpContext, RequestDelegate requestDelegate)
+        private async Task Token(HttpContext context, RequestDelegate requestDelegate)
         {
-            var request = HttpContext.GetOpenIddictServerRequest() ??
+            var request = context.GetOpenIddictServerRequest() ??
                           throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
             ClaimsPrincipal claimsPrincipal = ClaimsPrincipal.Current;
@@ -179,19 +193,28 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 //identity.AddClaim(OpenIddictConstants.Claims., "some-value", OpenIddictConstants.Destinations.AccessToken);
 
                 claimsPrincipal = new ClaimsPrincipal(identity);
-
+                var cliamsTrans = context.RequestServices.GetRequiredService<IClaimsTransformation>();
+                await cliamsTrans.TransformAsync(claimsPrincipal);
                 claimsPrincipal.SetScopes(request.GetScopes());
             }
             else if (request.IsAuthorizationCodeGrantType())
             {
-                claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+                claimsPrincipal = (await context.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+
+                // Also sign in to Cookie scheme to maintain login state
+                await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
             }
             else if (request.IsRefreshTokenGrantType())
             {
                 // Retrieve the claims principal stored in the refresh token.
-                claimsPrincipal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+                claimsPrincipal = (await context.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+
+                // Also sign in to Cookie scheme to maintain login state
+                await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
             }
-            await HttpContext.SignInAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, claimsPrincipal);
+
+            // Use OpenIddict authentication scheme to generate and return tokens
+            await context.SignInAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme, claimsPrincipal);
         }
     }
 }

@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Logging;
@@ -26,7 +27,7 @@ using MongoDB.Driver;
 using MongoDB.Entities;
 
 using OpenIddict.Abstractions;
-
+using OpenIddict.Server.AspNetCore;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -103,7 +104,6 @@ namespace Geex.Extensions.Authentication
                     .AddServer(options =>
                     {
                         options.SetAccessTokenLifetime(TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
-
                         // Enable the authorization and token endpoints.
                         options
                             //connect/checksession
@@ -115,7 +115,8 @@ namespace Geex.Extensions.Authentication
                             .SetVerificationEndpointUris("/idsvr/deviceauthorization")
                             .SetAuthorizationEndpointUris("/idsvr/authorize")
                             .SetDeviceEndpointUris("/idsvr/device")
-                            .SetTokenEndpointUris("/idsvr/token");
+                            .SetTokenEndpointUris("/idsvr/token")
+                            .SetConfigurationEndpointUris("/.well-known/openid-configuration");
 
                         options.RegisterClaims(
                             GeexClaimType.Provider,
@@ -184,6 +185,8 @@ namespace Geex.Extensions.Authentication
                             ConfigTokenValidationParameters(x.TokenValidationParameters, cert2, securityKey, moduleOptions);
                             x.IgnoreEndpointPermissions = true;
                             x.IgnoreResponseTypePermissions = true;
+                            x.IgnoreGrantTypePermissions = true;
+                            x.IgnoreScopePermissions = true;
                         });
 
                         // Register the ASP.NET Core host and configure the authorization endpoint
@@ -249,7 +252,8 @@ namespace Geex.Extensions.Authentication
                     {
                     })
                     .AddJwtBearer()
-                    .AddCookie();
+                    .AddCookie()
+                    ;
 
                 services.AddSingleton(new UserTokenGenerateOptions(cert2?.Issuer, moduleOptions.ValidAudience, signCredentials, TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds)));
 
@@ -280,7 +284,6 @@ namespace Geex.Extensions.Authentication
             var app = context.GetApplicationBuilder();
             //app.UseMiddleware<AuthSchemeRoutingMiddleware>();
             app.UseAuthentication();
-            //app.UseMiddleware<IdsvrMiddleware>();
             app.Map("/idsvr", x => x.UseMiddleware<IdsvrMiddleware>());
             app.UseAuthorization();
             return base.OnPreApplicationInitializationAsync(context);

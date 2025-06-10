@@ -13,11 +13,12 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+        <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
+        <ProjectReference Include="..\..\Geex.Extensions.Identity\src\Geex.Extensions.Identity.csproj" />
         <ProjectReference Include="Abstractions\Geex.Extensions.MultiTenant.Abstractions.csproj" />
         <PackageReference Include="Geex.Analyzer" Version="8.1.1.4" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include="Core\Migrations\" />
         <Folder Include="Gql\Types\" />
     </ItemGroup>
 </Project>

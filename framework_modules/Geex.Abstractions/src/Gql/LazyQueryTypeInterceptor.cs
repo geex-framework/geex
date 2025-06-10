@@ -43,7 +43,7 @@ namespace Geex.Gql
                 foreach (var getter in lazyGetters)
                 {
                     var lazyFieldName = getter.Name;
-                    var field = objectTypeDefinition.Fields.FirstOrDefault(f => f.Name == lazyFieldName);
+                    var field = objectTypeDefinition.Fields.FirstOrDefault(f => f.Name.ToLowerInvariant() == lazyFieldName.ToLowerInvariant());
                     if (field != null)
                     {
                         var valueType = getter.PropertyType.GenericTypeArguments[0];

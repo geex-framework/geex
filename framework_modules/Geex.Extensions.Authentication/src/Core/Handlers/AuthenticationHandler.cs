@@ -3,10 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Authentication.Requests;
+
 using MediatR;
+
+using MongoDB.Bson;
+
 using OpenIddict.Abstractions;
+
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
@@ -34,6 +40,10 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         /// <inheritdoc />
         public async Task<UserToken> Handle(AuthenticateRequest request, CancellationToken cancellationToken)
         {
+            if (request.UserIdentifier is GeexConstants.SuperAdminId or GeexConstants.SuperAdminName)
+            {
+                _uow.DbContext.DisableAllDataFilters();
+            }
             var users = _uow.Query<IAuthUser>();
             var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
             if (user == default || !user.CheckPassword(request.Password))
@@ -51,10 +61,15 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         /// <inheritdoc />
         public async Task<UserToken> Handle(FederateAuthenticateRequest request, CancellationToken cancellationToken)
         {
+            request.LoginProvider ??= LoginProviderEnum.Local;
             if (request.LoginProvider == LoginProviderEnum.Local)
             {
-                var userQuery = _uow.Query<IAuthUser>();
                 var sub = _tokenHandler.ReadJwtToken(request.Code).Subject;
+                if (sub is GeexConstants.SuperAdminId)
+                {
+                    _uow.DbContext.DisableAllDataFilters();
+                }
+                var userQuery = _uow.Query<IAuthUser>();
                 var user = userQuery.MatchUserIdentifier(sub);
                 var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
                 return token;

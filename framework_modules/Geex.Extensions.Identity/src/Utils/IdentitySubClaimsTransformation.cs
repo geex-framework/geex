@@ -32,7 +32,7 @@ namespace Geex.Extensions.Identity.Utils
             return claimsPrincipal;
         }
         /// <inheritdoc />
-        public async Task<ClaimsPrincipal> TransformAsync(Authentication.IAuthUser user, ClaimsPrincipal claimsPrincipal)
+        public async Task<ClaimsPrincipal> TransformAsync(IAuthUser user, ClaimsPrincipal claimsPrincipal)
         {
             if (user is IUser identityUser)
             {

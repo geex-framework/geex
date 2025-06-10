@@ -22,7 +22,6 @@ namespace Geex.MultiTenant
 
         /// <summary>
         /// 设置租户信息<br/>
-        /// <remarks>不会修改租户信息</remarks>
         /// </summary>
         /// <param name="code"></param>
         [Obsolete("geex 会自动处理租户编码, 绝大多数情况不需要手动设置租户信息")]

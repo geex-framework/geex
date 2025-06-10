@@ -23,7 +23,6 @@ using OpenIddict.Validation.AspNetCore;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
-using AuthorizationOptions = Microsoft.AspNetCore.Authorization.AuthorizationOptions;
 
 namespace Geex.Extensions.Authorization
 {
@@ -36,18 +35,6 @@ namespace Geex.Extensions.Authorization
         {
             var services = context.Services;
             services.AddCasbinAuthorization(out var configureAction);
-            SchemaBuilder.UseRequest(next => async context =>
-            {
-                var work = context.Services.GetService<IUnitOfWork>();
-                if (work != null)
-                {
-                    if (context.Services.GetService<ClaimsPrincipal>()?.FindUserId() == GeexConstants.SuperAdminId)
-                    {
-                        work.DbContext.DisableAllDataFilters();
-                    }
-                }
-                await next(context);
-            });
             SchemaBuilder.AddAuthorization(configureAction);
             SchemaBuilder.TryAddTypeInterceptor<AuthorizationTypeInterceptor>();
             base.ConfigureServices(context);
@@ -56,6 +43,18 @@ namespace Geex.Extensions.Authorization
         public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
+            app.Use(next => async context =>
+            {
+                if (context.User.FindUserId() == GeexConstants.SuperAdminId)
+                {
+                    var work = context.RequestServices.GetService<IUnitOfWork>();
+                    if (work != null)
+                    {
+                        work.DbContext.DisableAllDataFilters();
+                    }
+                }
+                await next(context);
+            });
             return base.OnPreApplicationInitializationAsync(context);
         }
     }

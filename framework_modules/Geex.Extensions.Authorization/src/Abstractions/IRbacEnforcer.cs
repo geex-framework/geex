@@ -11,8 +11,8 @@ namespace Geex.Extensions.Authorization
         Task SetPermissionsAsync(string sub, IEnumerable<string> permissions);
         Task<bool> AddRolesForUserAsync(string sub, IEnumerable<string> role);
         List<string> GetImplicitPermissionsForUser(string sub);
-        bool Enforce(string sub, string mod, string act, string obj, string fields = "");
-        Task<bool> EnforceAsync(string sub, string mod, string act, string obj, string fields = "");
+        bool Enforce(string sub, string mod, string obj, string fields = "");
+        Task<bool> EnforceAsync(string sub, string mod, string obj, string fields = "");
         Task<bool> EnforceAsync(string sub, AppPermission permission);
         bool Enforce(string sub, AppPermission permission);
         void Reload();

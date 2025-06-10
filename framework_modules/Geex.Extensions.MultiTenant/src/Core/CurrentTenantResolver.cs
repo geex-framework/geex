@@ -20,9 +20,10 @@ namespace Geex.Extensions.MultiTenant.Core
         {
             var request = _httpContextAccessor.HttpContext?.Request;
             // 租户解析优先级 claimsPrinciple>query>header>cookie
-            if (_httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated == true)
+            var userIdentity = _httpContextAccessor.HttpContext?.User.Identity;
+            if (userIdentity?.IsAuthenticated == true && userIdentity.FindUserId() != GeexConstants.SuperAdminId)
             {
-                var tenantCode = _httpContextAccessor.HttpContext?.User.Identity?.FindTenantCode();
+                var tenantCode = userIdentity?.FindTenantCode();
                 return tenantCode;
             }
 

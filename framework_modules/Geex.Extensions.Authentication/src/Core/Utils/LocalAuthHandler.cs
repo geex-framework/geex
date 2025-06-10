@@ -39,38 +39,32 @@ namespace Geex.Extensions.Authentication.Core.Utils
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var request = Context.Request;
-            if (!request.Headers.ContainsKey(AuthorizationHeaderName))
-            {
-                //Authorization header not in request
-                return AuthenticateResult.NoResult();
-            }
-
-            var header = request.Headers[AuthorizationHeaderName];
-            if (!AuthenticationHeaderValue.TryParse(header, out AuthenticationHeaderValue headerValue))
-            {
-                //Invalid Authorization header
-                return AuthenticateResult.NoResult();
-            }
-
-            if (!SchemeName.Equals(headerValue.Scheme, StringComparison.OrdinalIgnoreCase))
-            {
-                //Not SuperAdmin authentication header
-                return AuthenticateResult.NoResult();
-            }
-
             var openIddictRequest = Context.GetOpenIddictServerRequest();
 
-            var accessToken = openIddictRequest != default ? openIddictRequest.AccessToken : headerValue.Parameter;
+            // Try to get access token from OpenIddict first, then from Authorization header
+            var accessToken = openIddictRequest?.AccessToken;
+
+            if (accessToken.IsNullOrEmpty())
+            {
+                // Fall back to Authorization header
+                if (!request.Headers.TryGetValue(AuthorizationHeaderName, out var header) ||
+                    !AuthenticationHeaderValue.TryParse(header, out var headerValue) ||
+                    !SchemeName.Equals(headerValue.Scheme, StringComparison.OrdinalIgnoreCase))
+                {
+                    return AuthenticateResult.NoResult();
+                }
+
+                accessToken = headerValue.Parameter;
+            }
 
             if (accessToken.IsNullOrEmpty())
             {
                 return AuthenticateResult.NoResult();
             }
+
             var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenValidationParameters);
-            var identity = result.ClaimsIdentity;
-            var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, SchemeName);
-            return AuthenticateResult.Success(ticket);
+            var principal = new ClaimsPrincipal(result.ClaimsIdentity);
+            return AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));
         }
 
         /// <inheritdoc />

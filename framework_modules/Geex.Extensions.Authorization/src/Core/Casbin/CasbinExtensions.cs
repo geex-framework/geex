@@ -6,7 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Entities;
-
+using OpenIddict.Client.AspNetCore;
+using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
 
 namespace Geex.Extensions.Authorization.Core.Casbin
@@ -31,10 +32,10 @@ namespace Geex.Extensions.Authorization.Core.Casbin
                     .AddAuthenticationSchemes("SuperAdmin",
                         "Local",
                         JwtBearerDefaults.AuthenticationScheme,
-                        CookieAuthenticationDefaults.AuthenticationScheme,
-                        //OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                        OpenIddictServerAspNetCoreDefaults.AuthenticationScheme
                         //OpenIddictClientAspNetCoreDefaults.AuthenticationScheme,
-                        OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)
+                        //OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme
+                        )
                     .RequireAuthenticatedUser()
                     .Build();
             };

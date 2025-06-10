@@ -32,7 +32,6 @@ namespace Geex.Extensions.Authorization.Core.Casbin
             IMiddlewareContext resource)
         {
             var mod = "*"; // the module.
-            var act = "*"; // the operation that the user performs on the resource.
             var obj = requirement.Obj ?? "*"; // the resource that is going to be accessed.
             var fields = requirement.Field ?? "*"; // the fields that the user is going to retrieve from the resource.
             var sub = context.User.FindUserId();
@@ -44,7 +43,7 @@ namespace Geex.Extensions.Authorization.Core.Casbin
                 sub = "client::" + context.User.FindClientId();
             }
 
-            result = await _enforcer.EnforceAsync(sub, mod, act, obj, fields);
+            result = await _enforcer.EnforceAsync(sub, mod, obj, fields);
 
             if (result)
             {

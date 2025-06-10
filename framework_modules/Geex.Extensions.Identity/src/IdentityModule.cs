@@ -9,11 +9,13 @@ using Autofac.Core;
 
 using Geex.Abstractions;
 using Geex.Extensions.Authentication;
+using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Authorization;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Core;
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Core.Handlers;
+using Geex.Extensions.Identity.Utils;
 using Geex.Extensions.Settings;
 
 using HotChocolate;
@@ -24,6 +26,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -51,6 +54,7 @@ namespace Geex.Extensions.Identity
             context.Services.AddTransient<UserHandler>();
             context.Services.AddTransient<OrgHandler>();
             context.Services.AddTransient<RoleHandler>();
+            context.Services.TryAddEnumerable(new ServiceDescriptor(typeof(ISubClaimsTransformation), typeof(IdentitySubClaimsTransformation), ServiceLifetime.Singleton));
             base.ConfigureServices(context);
         }
     }
