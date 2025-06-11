@@ -57,8 +57,8 @@ namespace Geex.Extensions.Authentication
                 X509Certificate2? cert2 = default;
                 SecurityKey? securityKey = default;
                 SigningCredentials? signCredentials = default;
-                var certFile = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Path");
-                var certPassword = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Password");
+                var certFile = Environment.GetEnvironmentVariable("Certificate__Path");
+                var certPassword = Environment.GetEnvironmentVariable("Certificate__Password");
                 if (!string.IsNullOrEmpty(certFile))
                 {
                     // Get the linked file name from the path
