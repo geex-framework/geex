@@ -50,7 +50,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest( query);
+            var (responseData, responseString) = await client.PostGqlRequest(query);
 
             // Assert
             responseData["data"]["users"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
@@ -95,7 +95,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest( query, new { username = targetUsername });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { username = targetUsername });
 
             // Assert
             var items = responseData["data"]["users"]["items"].AsArray();
@@ -120,7 +120,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest( query);
+            var (responseData, responseString) = await client.PostGqlRequest(query);
 
             // Assert
             responseData["data"]["currentUser"].ShouldNotBeNull();
@@ -154,7 +154,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest( query, new { username = testUsername, email = $"{testUsername}@test.com" });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { username = testUsername, email = $"{testUsername}@test.com" });
 
             // Assert
             var createdUser = responseData["data"]["createUser"];
@@ -207,7 +207,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest( query, new { id = userId, nickname = "Updated API Nickname", phoneNumber = uniquePhoneNumber });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { id = userId, nickname = "Updated API Nickname", phoneNumber = uniquePhoneNumber });
 
             // Assert
             var editedUser = responseData["data"]["editUser"];
@@ -249,7 +249,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest( query, new { id = userId });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { id = userId });
 
             // Assert
             bool deleteResult = (bool)responseData["data"]["deleteUser"];
@@ -269,14 +269,14 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var testUsername = $"changeapi_{ObjectId.GenerateNewId()}";
-            var originalPassword = "OriginalPass123!";
+            var originalPassword = "OriginalPass123!".ToMd5();
             var newUserToken = string.Empty;
 
             // Prepare data using separate scope
             using (var scope = ScopedService.CreateScope())
             {
                 var setupUow = scope.ServiceProvider.GetService<IUnitOfWork>();
-                await setupUow.Query<IUser>().Where(x=>x.Username == testUsername).DeleteAsync();
+                await setupUow.Query<IUser>().Where(x => x.Username == testUsername).DeleteAsync();
                 await setupUow.Request(new CreateUserRequest
                 {
                     Username = testUsername,
@@ -292,17 +292,17 @@ namespace Geex.Tests.FeatureTests
 
             var client = this.UserClient(testUsername);
 
-            var query = """
+            var query = $$$"""
                 mutation($originPassword: String!) {
                     changePassword(request: {
                         originPassword: $originPassword
-                        newPassword: "NewPassword123!"
+                        newPassword: "{{{"NewPassword123!".ToMd5()}}}"
                     })
                 }
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest( query, new { originPassword = originalPassword });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { originPassword = originalPassword });
 
             // Assert
             bool changeResult = (bool)responseData["data"]["changePassword"];
@@ -328,7 +328,7 @@ namespace Geex.Tests.FeatureTests
                 """;
 
             // Act
-            var (responseData, responseString) = await client.PostGqlRequest( query);
+            var (responseData, responseString) = await client.PostGqlRequest(query);
 
             // Assert
             var items = responseData["data"]["users"]["items"].AsArray();

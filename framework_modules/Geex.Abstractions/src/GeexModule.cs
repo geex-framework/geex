@@ -165,7 +165,7 @@ namespace Geex
             base.PostConfigureServices(context);
         }
 
-        public override async Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
             //var _env = context.GetEnvironment();
@@ -174,7 +174,7 @@ namespace Geex
         }
 
         /// <inheritdoc />
-        public override async Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
         {
             var coreModuleOptions = context.ServiceProvider.GetService<GeexCoreModuleOptions>();
             var app = context.GetApplicationBuilder();
@@ -192,11 +192,10 @@ namespace Geex
                     }
                 });
             });
-            await base.OnPostApplicationInitializationAsync(context);
             if (coreModuleOptions.AutoMigration)
             {
                 var migrations = context.ServiceProvider.GetServices<DbMigration>();
-                var appliedMigrations = await DB.Find<Migration>().Project(x => x.Number).ExecuteAsync();
+                var appliedMigrations = DB.Find<Migration>().Project(x => x.Number).ExecuteAsync().ConfigureAwait(true).GetAwaiter().GetResult();
 
                 var sortedMigrations = migrations.OrderBy(x => x.Number);
 
@@ -207,10 +206,11 @@ namespace Geex
                         using var scope = context.ServiceProvider.CreateScope();
                         var dbContext = scope.ServiceProvider.GetRequiredService<IUnitOfWork>().As<GeexDbContext>();
                         using var _ = dbContext.DisableAllDataFilters();
-                        await dbContext.MigrateAsync(migration);
+                        dbContext.MigrateAsync(migration).ConfigureAwait(true).GetAwaiter().GetResult();
                     }
                 }
             }
+            base.OnPostApplicationInitialization(context);
         }
     }
 }

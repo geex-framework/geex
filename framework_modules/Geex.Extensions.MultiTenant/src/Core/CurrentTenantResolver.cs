@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+
 using Geex.Extensions.MultiTenant.Api;
 
 using Microsoft.AspNetCore.Http;
@@ -24,22 +25,22 @@ namespace Geex.Extensions.MultiTenant.Core
             if (userIdentity?.IsAuthenticated == true && userIdentity.FindUserId() != GeexConstants.SuperAdminId)
             {
                 var tenantCode = userIdentity?.FindTenantCode();
-                return tenantCode;
+                return tenantCode ?? "";
             }
 
             if (request?.Query.TryGetValue("__tenant", out var queryTenant) == true)
             {
-                return queryTenant.IsNullOrEmpty() ? null : queryTenant.ToString();
+                return queryTenant.IsNullOrEmpty() ? "" : queryTenant.ToString();
             }
             if (request?.Headers.TryGetValue("__tenant", out var headerTenant) == true)
             {
-                return headerTenant.IsNullOrEmpty() ? null : headerTenant.ToString();
+                return headerTenant.IsNullOrEmpty() ? "" : headerTenant.ToString();
             }
             if (request?.Cookies.TryGetValue("__tenant", out var cookieTenant) == true)
             {
-                return cookieTenant.IsNullOrEmpty() ? null : cookieTenant;
+                return cookieTenant.IsNullOrEmpty() ? "" : cookieTenant;
             }
-            return default;
+            return "";
         }
     }
 }

@@ -1,6 +1,10 @@
 ﻿using System;
+
 using Geex.Storage;
+
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 using MongoDB.Entities.Interceptors;
 
 namespace Geex.MultiTenant
@@ -13,7 +17,7 @@ namespace Geex.MultiTenant
         /// <summary>
         /// 租户编码, 为null时为宿主数据
         /// </summary>
-        public string? TenantCode { get; [Obsolete(message: "框架会自动维护租户编码, 请勿直接set.", error: true)] set; }
+        public string TenantCode { get; [Obsolete(message: "框架会自动维护租户编码, 请勿直接set.", error: true)] set; }
 
         void IAttachIntercepted.InterceptOnAttached()
         {
@@ -27,15 +31,21 @@ namespace Geex.MultiTenant
         [Obsolete("geex 会自动处理租户编码, 绝大多数情况不需要手动设置租户信息")]
         public void SetTenant(string? code)
         {
-            var property = this.GetType().GetProperty(nameof(TenantCode));
+            var type = this.GetType();
+            var property = type.GetProperty(nameof(TenantCode));
             if (property == null || property.CanWrite == false)
             {
                 throw new BusinessException(GeexExceptionType.OnPurpose, message: $"{nameof(ITenantFilteredEntity)}.{nameof(TenantCode)}必须拥有直接的setter.");
             }
 
-            if (property.GetValue(this) == null)
+            var oldTenantCode = property.GetValue(this);
+            if (oldTenantCode == "" || oldTenantCode == null)
             {
                 property.SetValue(this, code);
+            }
+            else
+            {
+                DbContext?.ServiceProvider?.GetService<ILogger<ITenantFilteredEntity>>()?.LogErrorWithData("尝试修改已有的TenantCode!", new { EntityName = type.Name, OldTenantCode = oldTenantCode, NewTenantCode = code });
             }
         }
     }

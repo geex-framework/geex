@@ -28,9 +28,9 @@ public class ApprovalFlowModule : GeexModule<ApprovalFlowModule, ApprovalFlowMod
         base.ConfigureServices(context);
     }
 
-    public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+    public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
-        return base.OnPreApplicationInitializationAsync(context);
+        base.OnPreApplicationInitialization(context);
     }
 }

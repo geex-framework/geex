@@ -34,6 +34,18 @@ namespace Geex.Extensions.MultiTenant.Core.Migrations
             {
                 user.SetTenant(tenant.Code);
             }
+
+            var roles = uow.Query<IRole>();
+            foreach (var role in roles)
+            {
+                role.SetTenant(tenant.Code);
+            }
+
+            var orgs = uow.Query<IOrg>();
+            foreach (var role in orgs)
+            {
+                role.SetTenant(tenant.Code);
+            }
         }
     }
 }

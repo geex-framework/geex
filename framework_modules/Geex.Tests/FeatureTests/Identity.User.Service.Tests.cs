@@ -25,14 +25,14 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var testUsername = $"testuser_{ObjectId.GenerateNewId()}";
-            var password = "Password123!";
+            var password = "Password123!".ToMd5();
 
             // Act
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 await uow.DbContext.Query<User>().Where(x => x.PhoneNumber == "15555555556").DeleteAsync();
-                
+
                 var request = new CreateUserRequest
                 {
                     Username = testUsername,
@@ -57,7 +57,7 @@ namespace Geex.Tests.FeatureTests
                 user.CheckPassword(password).ShouldBeTrue();
             }
         }
-        
+
         [Fact]
         public async Task PasswordHashingShouldWork()
         {
@@ -70,7 +70,7 @@ namespace Geex.Tests.FeatureTests
             {
                 var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
                 var passwordHasher = scope.ServiceProvider.GetService<IPasswordHasher<IUser>>();
-                
+
                 var request = new CreateUserRequest
                 {
                     Username = testUsername,
@@ -96,14 +96,14 @@ namespace Geex.Tests.FeatureTests
         public async Task CheckPasswordShouldWork()
         {
             // Arrange
-            var password = "Password123!";
+            var password = "Password123!".ToMd5();
             var testUsername = $"checkpwd_{ObjectId.GenerateNewId()}";
 
             // Act & Assert
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var user = await uow.Request(new CreateUserRequest
                 {
                     Username = testUsername,
@@ -125,15 +125,15 @@ namespace Geex.Tests.FeatureTests
         public async Task ChangePasswordServiceShouldWork()
         {
             // Arrange
-            var originalPassword = "Password123!";
-            var newPassword = "NewPassword123!";
+            var originalPassword = "Password123!".ToMd5();
+            var newPassword = "NewPassword123!".ToMd5();
             var testUsername = $"changepwd_{ObjectId.GenerateNewId()}";
 
             // Act
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var user = await uow.Request(new CreateUserRequest
                 {
                     Username = testUsername,
@@ -165,12 +165,12 @@ namespace Geex.Tests.FeatureTests
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var user = await uow.Request(new CreateUserRequest
                 {
                     Username = testUsername,
                     Email = $"{testUsername}@test.com",
-                    Password = "Password123!",
+                    Password = "Password123!".ToMd5(),
                     Nickname = "Test User",
                     IsEnable = true,
                     RoleIds = new List<string>(),
@@ -179,7 +179,7 @@ namespace Geex.Tests.FeatureTests
                 await uow.SaveChanges();
 
                 Should.Throw<BusinessException>(() =>
-                    user.ChangePassword("WrongPassword", "NewPassword123!"));
+                    user.ChangePassword("WrongPassword".ToMd5(), "NewPassword123!".ToMd5()));
             }
         }
 
@@ -196,12 +196,12 @@ namespace Geex.Tests.FeatureTests
             {
                 var setupUow = setupScope.ServiceProvider.GetService<IUnitOfWork>();
                 await setupUow.DbContext.Query<User>().Where(x => x.PhoneNumber == uniquePhoneNumber).DeleteAsync();
-                
+
                 var user = await setupUow.Request(new CreateUserRequest
                 {
                     Username = testUsername,
                     Email = $"{testUsername}@test.com",
-                    Password = "Password123!",
+                    Password = "Password123!".ToMd5(),
                     Nickname = "Original Nickname",
                     IsEnable = true,
                     RoleIds = new List<string>(),
@@ -215,7 +215,7 @@ namespace Geex.Tests.FeatureTests
             using (var editScope = ScopedService.CreateScope())
             {
                 var editUow = editScope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var editRequest = new EditUserRequest
                 {
                     Id = userId,
@@ -247,7 +247,7 @@ namespace Geex.Tests.FeatureTests
             using (var setupScope = ScopedService.CreateScope())
             {
                 var setupUow = setupScope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var user = await setupUow.Request(new CreateUserRequest
                 {
                     Username = testUsername,
@@ -267,7 +267,7 @@ namespace Geex.Tests.FeatureTests
             using (var deleteScope = ScopedService.CreateScope())
             {
                 var deleteUow = deleteScope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var deleteRequest = new DeleteUserRequest { Id = userId };
                 result = await deleteUow.Request(deleteRequest);
                 await deleteUow.SaveChanges();
@@ -295,7 +295,7 @@ namespace Geex.Tests.FeatureTests
             using (var setupScope = ScopedService.CreateScope())
             {
                 var setupUow = setupScope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var user = await setupUow.Request(new CreateUserRequest
                 {
                     Username = testUsername,
@@ -314,7 +314,7 @@ namespace Geex.Tests.FeatureTests
             using (var resetScope = ScopedService.CreateScope())
             {
                 var resetUow = resetScope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var resetRequest = new ResetUserPasswordRequest
                 {
                     UserId = userId,
@@ -340,7 +340,7 @@ namespace Geex.Tests.FeatureTests
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
-                
+
                 var user = await uow.Request(new CreateUserRequest
                 {
                     Username = testUsername,

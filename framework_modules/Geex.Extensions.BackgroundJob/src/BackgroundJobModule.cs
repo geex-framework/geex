@@ -28,17 +28,17 @@ namespace Geex.Extensions.BackgroundJob
         }
 
         /// <inheritdoc />
-        public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
-            return base.OnPreApplicationInitializationAsync(context);
+            base.OnPreApplicationInitialization(context);
         }
 
         /// <inheritdoc />
-        public override Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
         {
             var moduleOptions = Configuration.GetModuleOptions<BackgroundJobModuleOptions>();
-            return base.OnPostApplicationInitializationAsync(context);
+            base.OnPostApplicationInitialization(context);
         }
     }
 }

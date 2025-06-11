@@ -40,22 +40,10 @@ namespace Geex.Extensions.Authorization
             base.ConfigureServices(context);
         }
 
-        public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
-            app.Use(next => async context =>
-            {
-                if (context.User.FindUserId() == GeexConstants.SuperAdminId)
-                {
-                    var work = context.RequestServices.GetService<IUnitOfWork>();
-                    if (work != null)
-                    {
-                        work.DbContext.DisableAllDataFilters();
-                    }
-                }
-                await next(context);
-            });
-            return base.OnPreApplicationInitializationAsync(context);
+            base.OnPreApplicationInitialization(context);
         }
     }
 }

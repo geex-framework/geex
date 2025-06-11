@@ -28,17 +28,17 @@ namespace Geex.Extensions.BlobStorage
         }
 
         /// <inheritdoc />
-        public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
-            return base.OnPreApplicationInitializationAsync(context);
+            base.OnPreApplicationInitialization(context);
         }
 
         /// <inheritdoc />
-        public override Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
             app.UseEndpoints(endpoints => endpoints.UseFileDownload());
-            return base.OnPostApplicationInitializationAsync(context);
+            base.OnPostApplicationInitialization(context);
         }
     }
 }

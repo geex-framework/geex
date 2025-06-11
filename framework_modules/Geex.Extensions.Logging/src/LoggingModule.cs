@@ -24,14 +24,14 @@ namespace Geex.Extensions.Logging
         }
 
         /// <inheritdoc />
-        public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
             if (this.ModuleOptions?.ElasticApm?.Enabled == true)
             {
                 app.UseElasticApm(this.ModuleOptions.ConfigurationSection.GetSection(nameof(LoggingModuleOptions.ElasticApm)));
             }
-            return base.OnPreApplicationInitializationAsync(context);
+            base.OnPreApplicationInitialization(context);
         }
     }
 }

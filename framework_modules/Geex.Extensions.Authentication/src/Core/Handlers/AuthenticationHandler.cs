@@ -65,13 +65,15 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             if (request.LoginProvider == LoginProviderEnum.Local)
             {
                 var sub = _tokenHandler.ReadJwtToken(request.Code).Subject;
+                IDisposable disableAllDataFilters = default;
                 if (sub is GeexConstants.SuperAdminId)
                 {
-                    _uow.DbContext.DisableAllDataFilters();
+                    disableAllDataFilters = _uow.DbContext.DisableAllDataFilters();
                 }
                 var userQuery = _uow.Query<IAuthUser>();
                 var user = userQuery.MatchUserIdentifier(sub);
                 var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
+                disableAllDataFilters?.Dispose();
                 return token;
             }
             else

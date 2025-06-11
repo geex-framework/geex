@@ -279,22 +279,22 @@ namespace Geex.Extensions.Authentication
             }
         }
 
-        public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
             //app.UseMiddleware<AuthSchemeRoutingMiddleware>();
             app.UseAuthentication();
             app.Map("/idsvr", x => x.UseMiddleware<IdsvrMiddleware>());
             app.UseAuthorization();
-            return base.OnPreApplicationInitializationAsync(context);
+            base.OnPreApplicationInitialization(context);
         }
 
         /// <inheritdoc />
-        public override Task OnPostApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
         {
             // init admin token and print it to console
             _ = context.ServiceProvider.GetService<SuperAdminAuthHandler>();
-            return base.OnPostApplicationInitializationAsync(context);
+            base.OnPostApplicationInitialization(context);
         }
     }
 }

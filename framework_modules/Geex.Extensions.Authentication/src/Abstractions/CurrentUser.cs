@@ -36,12 +36,12 @@ namespace Geex.Extensions.Authentication
                 if (!_userId.IsNullOrEmpty())
                 {
                     var user = _uow.Query<IAuthUser>().FirstOrDefault(x => x.Id == _userId);
-                    var claimsPrincipal = _uow.ServiceProvider.GetService<IUserClaimsPrincipalFactory<IAuthUser>>().CreateAsync(user).ConfigureAwait(false).GetAwaiter().GetResult();
-                    _claimsIdentity = claimsPrincipal.Identity as ClaimsIdentity;
+                    var claimsPrincipal = _uow.ServiceProvider.GetService<IUserClaimsPrincipalFactory<IAuthUser>>()?.CreateAsync(user).ConfigureAwait(false).GetAwaiter().GetResult();
+                    _claimsIdentity = claimsPrincipal?.Identity as ClaimsIdentity;
                 }
                 else
                 {
-                    _claimsIdentity = _uow.ServiceProvider.GetService<ClaimsPrincipal>().Identity as ClaimsIdentity;
+                    _claimsIdentity = _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.Identity as ClaimsIdentity;
                 }
                 return _claimsIdentity;
             }

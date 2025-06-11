@@ -169,7 +169,7 @@ namespace Geex
 
             context.Services.AddTransient(typeof(LazyService<>));
             context.Services.AddTransient<ClaimsPrincipal>(x =>
-            x.GetService<IHttpContextAccessor>()?.HttpContext?.User);
+            x.GetService<IHttpContextAccessor>()?.HttpContext?.User ?? ClaimsPrincipal.Current ?? new ClaimsPrincipal());
             context.Services.AddResponseCompression(x =>
             {
                 // todo: 此处可能有安全风险
@@ -193,7 +193,7 @@ namespace Geex
         }
 
         /// <inheritdoc />
-        public override Task OnPreApplicationInitializationAsync(ApplicationInitializationContext context)
+        public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
             this.ConfigureModuleEntityMaps(context.ServiceProvider);
             var _env = context.GetEnvironment();
@@ -219,7 +219,7 @@ namespace Geex
 
             app.UseResponseCompression();
 
-            return base.OnPreApplicationInitializationAsync(context);
+            base.OnPreApplicationInitialization(context);
         }
     }
 }
