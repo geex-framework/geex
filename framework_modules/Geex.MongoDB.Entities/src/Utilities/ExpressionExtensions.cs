@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Microsoft.Extensions.Primitives;
 using MongoDB.Bson;
 
 namespace MongoDB.Entities.Utilities
@@ -127,6 +128,10 @@ namespace MongoDB.Entities.Utilities
             {
                 convertedValue = ids.Select(id =>
                        (object)(id is string str && ObjectId.TryParse(str, out var objectId) ? objectId : id));
+            }
+            else if (node.Value is StringValues stringValues)
+            {
+                convertedValue = ObjectId.TryParse(stringValues, out var objectId) ? objectId : node.Value;
             }
             else
             {
