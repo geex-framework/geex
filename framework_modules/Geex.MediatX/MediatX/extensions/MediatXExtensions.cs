@@ -26,7 +26,7 @@ namespace MediatX
         public static IServiceCollection AddMediatX(this IServiceCollection services)
         {
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(Pipelines.MediatXPipeline<,>));
-            services.AddSingleton<IMediatX, MediatX>();
+            services.AddSingleton<IMediator, Mediator>();
             services.AddSingleton<MediatXMediatr>();
             return services;
         }

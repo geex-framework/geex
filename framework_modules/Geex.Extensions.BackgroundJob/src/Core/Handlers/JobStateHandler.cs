@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Geex.Extensions.BackgroundJob.Gql.Requests;
 using Geex.Extensions.BackgroundJob.Gql.Types;
 
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.BackgroundJob.Core.Handlers
 {

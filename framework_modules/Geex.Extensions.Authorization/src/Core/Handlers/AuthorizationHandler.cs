@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Extensions.Authorization.Events;
 using Geex.Extensions.Authorization.Requests;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Authorization.Core.Handlers
 {

@@ -16,7 +16,7 @@ using HotChocolate.Data.Sorting;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Types;
 
-using MediatR;
+using MediatX;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -173,11 +173,11 @@ namespace Microsoft.Extensions.DependencyInjection
             var objectTypes = exportedTypes.Where(x => !x.IsAbstract && x.IsAssignableTo<IType>()).Where(x => !x.IsGenericType || (x.IsGenericType && x.GenericTypeArguments.Any())).ToList();
             GeexModule.ObjectTypes.AddIfNotContains(objectTypes);
 
-            var remoteNotificationHandleTypes = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRemoteNotificationHandler)));
+            var remoteNotificationHandleTypes = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IDistributedEventHandler)));
             //var inheritanceDeclarations = notificationHandleTypes.SelectMany(x => x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(INotificationHandler<>))));
             //var notificationTypes = inheritanceDeclarations.Select(x => x.GenericTypeArguments[0]).ToArray().ToList();
             var remoteNotificationHandlers = remoteNotificationHandleTypes
-                .Select(x => (notifications: x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(IRemoteNotificationHandler<>))).Select(x => x.GenericTypeArguments[0]).ToArray(), handlerType: x))
+                .Select(x => (notifications: x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(IDistributedEventHandler<>))).Select(x => x.GenericTypeArguments[0]).ToArray(), handlerType: x))
                 .ToList();
             var dic = remoteNotificationHandlers.ToDictionary(x => x.handlerType, x => x.notifications);
             GeexModule.RemoteNotificationHandlerTypes.AddIfNotContains(dic);

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Geex.Extensions.Requests;
 using HotChocolate.Types;
 
-using MediatR;
+using MediatX;
 
 using StackExchange.Redis.Extensions.Core.Abstractions;
 using Geex.Extensions.Requests.MultiTenant;

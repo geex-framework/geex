@@ -11,7 +11,7 @@ using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Settings.Requests;
 using Geex.MultiTenant;
-using MediatR;
+using MediatX;
 using Microsoft.Extensions.Logging;
 using MongoDB.Entities;
 using StackExchange.Redis.Extensions.Core;

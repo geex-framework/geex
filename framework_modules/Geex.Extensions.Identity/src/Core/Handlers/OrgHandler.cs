@@ -16,7 +16,7 @@ using Geex.Notifications;
 using Geex.Requests;
 using HotChocolate.Subscriptions;
 
-using MediatR;
+using MediatX;
 
 using MongoDB.Entities;
 
@@ -27,9 +27,9 @@ namespace Geex.Extensions.Identity.Core.Handlers
         IRequestHandler<QueryRequest<IOrg>, IQueryable<IOrg>>,
         IRequestHandler<CreateOrgRequest, IOrg>,
         IRequestHandler<FixUserOrgRequest, bool>,
-        INotificationHandler<OrgCodeChangedEvent>,
-        INotificationHandler<EntityCreatedNotification<IOrg>>,
-        INotificationHandler<EntityDeletedNotification<IOrg>>
+        IEventHandler<OrgCodeChangedEvent>,
+        IEventHandler<EntityCreatedEvent<IOrg>>,
+        IEventHandler<EntityDeletedEvent<IOrg>>
     {
         private readonly ITopicEventSender _topicEventSender;
         public IUnitOfWork Uow { get; }
@@ -125,13 +125,13 @@ namespace Geex.Extensions.Identity.Core.Handlers
         }
 
         /// <inheritdoc />
-        public virtual async Task Handle(EntityCreatedNotification<IOrg> notification, CancellationToken cancellationToken)
+        public virtual async Task Handle(EntityCreatedEvent<IOrg> @event, CancellationToken cancellationToken)
         {
             await this.NotifyCacheDataChange(DataChangeType.Org);
         }
 
         /// <inheritdoc />
-        public virtual async Task Handle(EntityDeletedNotification<IOrg> notification, CancellationToken cancellationToken)
+        public virtual async Task Handle(EntityDeletedEvent<IOrg> @event, CancellationToken cancellationToken)
         {
             await this.NotifyCacheDataChange(DataChangeType.Org);
         }

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 using Geex.MultiTenant;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Requests.MultiTenant
 {

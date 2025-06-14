@@ -11,7 +11,7 @@ using Geex.Extensions.Messaging.Core.Entities;
 using Geex.Extensions.Messaging.Requests;
 using HotChocolate.Subscriptions;
 
-using MediatR;
+using MediatX;
 
 using MongoDB.Entities;
 

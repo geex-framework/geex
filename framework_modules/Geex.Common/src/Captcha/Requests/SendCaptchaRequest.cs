@@ -2,7 +2,7 @@
 using Geex.Gql.Types.Scalars;
 using HotChocolate;
 
-using MediatR;
+using MediatX;
 
 namespace Geex.Common.Requests.Captcha
 {

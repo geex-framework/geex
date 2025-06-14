@@ -73,7 +73,9 @@ namespace Geex.Extensions.Identity.Core.Entities
         public virtual async Task AssignRoles(IEnumerable<string> roles)
         {
             this.RoleIds = roles.ToList();
-            await this.ServiceProvider.GetService<IUnitOfWork>().Request(new UserRoleChangeRequest(this.Id, roles.ToList()));
+            var unitOfWork = this.ServiceProvider.GetService<IUnitOfWork>();
+            var request = new UserRoleChangeRequest(this.Id, roles.ToList());
+            await unitOfWork.Request(request);
         }
 
         public virtual Task AssignRoles(params string[] roles)

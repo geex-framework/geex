@@ -3,7 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Requests;
-using MediatR;
+using Geex.Requests;
+using MediatX;
 using MongoDB.Entities;
 
 namespace Geex.Extensions.ApprovalFlows;
@@ -16,8 +17,7 @@ public interface IApproveRequestHandler<TInterface, TEntity> :
     IRequestHandler<UnApproveRequest<TInterface>>
     where TInterface : IApproveEntity, IEntityBase where TEntity : TInterface
 {
-
-    async Task IRequestHandler<SubmitRequest<TInterface>>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
+    async Task MediatR.IRequestHandler<SubmitRequest<TInterface>>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
     {
         var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
         if (!entities.Any())
@@ -34,7 +34,7 @@ public interface IApproveRequestHandler<TInterface, TEntity> :
         }
     }
 
-    async Task IRequestHandler<ApproveRequest<TInterface>>.Handle(ApproveRequest<TInterface> request, CancellationToken cancellationToken)
+    async Task MediatR.IRequestHandler<ApproveRequest<TInterface>>.Handle(ApproveRequest<TInterface> request, CancellationToken cancellationToken)
     {
         var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
         if (!entities.Any())
@@ -52,7 +52,7 @@ public interface IApproveRequestHandler<TInterface, TEntity> :
         }
     }
 
-    async Task IRequestHandler<UnSubmitRequest<TInterface>>.Handle(UnSubmitRequest<TInterface> request, CancellationToken cancellationToken)
+    async Task MediatR.IRequestHandler<UnSubmitRequest<TInterface>>.Handle(UnSubmitRequest<TInterface> request, CancellationToken cancellationToken)
     {
         var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
         if (!entities.Any())
@@ -69,7 +69,7 @@ public interface IApproveRequestHandler<TInterface, TEntity> :
         }
     }
 
-    async Task IRequestHandler<UnApproveRequest<TInterface>>.Handle(UnApproveRequest<TInterface> request, CancellationToken cancellationToken)
+    async Task MediatR.IRequestHandler<UnApproveRequest<TInterface>>.Handle(UnApproveRequest<TInterface> request, CancellationToken cancellationToken)
     {
         var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
         if (!entities.Any())

@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Common.Requests;
 using Geex.Requests;
-using MediatR;
+using MediatX;
 using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
 
@@ -18,7 +18,7 @@ namespace Geex
     {
         public IUnitOfWork Uow { get; }
 
-        async Task<IQueryable<TInterface>> IRequestHandler<QueryRequest<TInterface>, IQueryable<TInterface>>.Handle(QueryRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task<IQueryable<TInterface>> MediatR.IRequestHandler<QueryRequest<TInterface>, IQueryable<TInterface>>.Handle(QueryRequest<TInterface> request, CancellationToken cancellationToken)
         {
             if (request.Filter != default)
             {
@@ -26,7 +26,7 @@ namespace Geex
             }
             return (IQueryable<TInterface>)Uow.Query<TEntity>();
         }
-        async Task<long> IRequestHandler<DeleteRequest<TInterface>, long>.Handle(DeleteRequest<TInterface> request, CancellationToken cancellationToken)
+        async Task<long> MediatR.IRequestHandler<DeleteRequest<TInterface>, long>.Handle(DeleteRequest<TInterface> request, CancellationToken cancellationToken)
         {
             if (request.Filter != default)
             {
@@ -44,7 +44,7 @@ namespace Geex
     {
         public IUnitOfWork Uow { get; }
 
-        async Task<IQueryable<TEntity>> IRequestHandler<QueryRequest<TEntity>, IQueryable<TEntity>>.Handle(QueryRequest<TEntity> request, CancellationToken cancellationToken)
+        async Task<IQueryable<TEntity>> MediatR.IRequestHandler<QueryRequest<TEntity>, IQueryable<TEntity>>.Handle(QueryRequest<TEntity> request, CancellationToken cancellationToken)
         {
             if (request.Filter != default)
             {
@@ -52,7 +52,7 @@ namespace Geex
             }
             return Uow.Query<TEntity>();
         }
-        async Task<long> IRequestHandler<DeleteRequest<TEntity>, long>.Handle(DeleteRequest<TEntity> request, CancellationToken cancellationToken)
+        async Task<long> MediatR.IRequestHandler<DeleteRequest<TEntity>, long>.Handle(DeleteRequest<TEntity> request, CancellationToken cancellationToken)
         {
             if (request.Filter != default)
             {

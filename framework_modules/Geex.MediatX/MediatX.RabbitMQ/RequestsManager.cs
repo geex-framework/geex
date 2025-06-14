@@ -33,7 +33,7 @@ namespace MediatX.RabbitMQ
         /// <summary>
         /// The private readonly field that holds an instance of the IMediatX interface.
         /// </summary>
-        private readonly IMediatX _mediatx;
+        private readonly IMediator _mediatx;
 
         /// <summary>
         /// Represents a service provider.
@@ -65,7 +65,7 @@ namespace MediatX.RabbitMQ
         /// </summary>
         private readonly MessageDispatcherOptions _options;
 
-        private ConcurrentDictionary<string, (Type notificationType, Func<INotification, Task> handler)> _handlersMap = new();
+        private ConcurrentDictionary<string, (Type notificationType, Func<IEvent, Task> handler)> _handlersMap = new();
 
         /// <summary>
         /// Constructs a new instance of the RequestsManager class.
@@ -74,7 +74,7 @@ namespace MediatX.RabbitMQ
         /// <param name="logger">The logger to be used for logging.</param>
         /// <param name="mediatx">The object responsible for coordinating requests.</param>
         /// <param name="provider">The service provider for resolving dependencies.</param>
-        public RequestsManager(IOptions<MessageDispatcherOptions> options, ILogger<RequestsManager> logger, IMediatX mediatx, IServiceProvider provider)
+        public RequestsManager(IOptions<MessageDispatcherOptions> options, ILogger<RequestsManager> logger, IMediator mediatx, IServiceProvider provider)
         {
             this._options = options.Value;
             this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -137,7 +137,7 @@ namespace MediatX.RabbitMQ
                     var routeKey = $"{notificationType.TypeRouteKey()}";
 
                     _channel.QueueBind(queueName, Constants.MediatXExchangeName, $"{routeKey}");
-                    var handleMethod = handler.GetMethod(nameof(INotificationHandler<INotification>.Handle), new Type[] { notificationType, typeof(CancellationToken) });
+                    var handleMethod = handler.GetMethod(nameof(INotificationHandler<IEvent>.Handle), new Type[] { notificationType, typeof(CancellationToken) });
                     this._handlersMap.TryAdd(routeKey, (notificationType, async (notification) =>
                     {
                         handleMethod.Invoke(_provider.CreateScope().ServiceProvider.GetRequiredService(typeof(INotificationHandler<>).MakeGenericType(notificationType)), new object[] { notification, CancellationToken.None });
@@ -182,7 +182,7 @@ namespace MediatX.RabbitMQ
         /// <typeparam name="T">The type of messages to be consumed</typeparam> <param name="sender">The object that triggered the event</param> <param name="ea">The event arguments containing the consumed message</param>
         /// <returns>A Task representing the asynchronous operation</returns>
         /// /
-        private async Task<INotification> Deserialize(Type messageType, BasicDeliverEventArgs ea)
+        private async Task<IEvent> Deserialize(Type messageType, BasicDeliverEventArgs ea)
         {
             try
             {
@@ -214,7 +214,7 @@ namespace MediatX.RabbitMQ
 
                 var msgStr = Encoding.UTF8.GetString(msg);
                 _logger.LogDebug("Elaborating notification : {0}", msgStr);
-                var message = JsonSerializer.Deserialize(msgStr, messageType, _options.SerializerSettings) as INotification;
+                var message = JsonSerializer.Deserialize(msgStr, messageType, _options.SerializerSettings) as IEvent;
                 return message;
             }
             catch (Exception ex)

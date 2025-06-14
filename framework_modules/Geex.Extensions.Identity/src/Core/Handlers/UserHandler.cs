@@ -11,7 +11,7 @@ using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Requests.Accounting;
 using HotChocolate.Utilities;
 
-using MediatR;
+using MediatX;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,8 +35,8 @@ namespace Geex.Extensions.Identity.Core.Handlers
         IRequestHandler<DeleteUserRequest, bool>,
         IRequestHandler<ChangePasswordRequest, IUser>,
         IRequestHandler<RegisterUserRequest>,
-        INotificationHandler<UserOrgChangedEvent>,
-        INotificationHandler<OrgCodeChangedEvent>,
+        IEventHandler<UserOrgChangedEvent>,
+        IEventHandler<OrgCodeChangedEvent>,
         ICommonHandler<IUser, User>,
             IRequestHandler<CreateUserRequest, IUser>
     {

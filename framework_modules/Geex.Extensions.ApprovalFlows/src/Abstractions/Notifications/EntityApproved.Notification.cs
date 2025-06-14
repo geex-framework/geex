@@ -1,8 +1,8 @@
-﻿using MediatR;
+﻿using MediatX;
 
 namespace Geex.Extensions.ApprovalFlows.Notifications;
 
-public class EntityApprovedNotification<TEntity> : INotification
+public class EntityApprovedNotification<TEntity> : IEvent
 {
     public IApproveEntity Entity { get; }
 

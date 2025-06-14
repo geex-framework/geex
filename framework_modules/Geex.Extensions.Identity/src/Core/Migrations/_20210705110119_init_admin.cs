@@ -11,7 +11,7 @@ using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
 using Geex.Migrations;
-using MediatR;
+using MediatX;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;

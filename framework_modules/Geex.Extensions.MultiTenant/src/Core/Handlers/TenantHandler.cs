@@ -5,7 +5,7 @@ using Geex.Abstractions;
 using Geex.Extensions.Requests;
 using Geex.Extensions.MultiTenant.Core.Aggregates.Tenants;
 
-using MediatR;
+using MediatX;
 
 using MongoDB.Entities;
 using Geex.Extensions.Requests.MultiTenant;

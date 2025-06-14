@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MediatR;
+using MediatX;
 
 using MongoDB.Entities;
 
@@ -13,7 +13,7 @@ namespace Geex.Storage
     public interface IEntity : IEntityBase
     {
 
-        public void AddDomainEvent(params INotification[] events);
+        public void AddDomainEvent(params IEvent[] events);
         public Task<ValidationResult> Validate(CancellationToken cancellation = default);
         internal Task ValidateOnAttach();
     }
@@ -21,7 +21,7 @@ namespace Geex.Storage
     {
         public DateTimeOffset ModifiedOn { get; set; }
 
-        public void AddDomainEvent(params INotification[] events)
+        public void AddDomainEvent(params IEvent[] events)
         {
             foreach (var @event in events)
             {

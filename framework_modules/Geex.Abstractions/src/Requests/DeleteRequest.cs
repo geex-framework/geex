@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using HotChocolate;
 
-using MediatR;
+using MediatX;
 
 using MongoDB.Entities;
 

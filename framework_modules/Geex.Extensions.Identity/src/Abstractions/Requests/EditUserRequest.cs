@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Geex.Extensions.Authentication;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Identity.Requests
 {

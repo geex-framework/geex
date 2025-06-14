@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Authentication.Requests;
 
-using MediatR;
+using MediatX;
 
 using MongoDB.Bson;
 

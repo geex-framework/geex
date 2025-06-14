@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Storage;
 using HotChocolate.Subscriptions;
-using MediatR;
+using MediatX;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;
 
@@ -43,16 +43,16 @@ public interface IBus
     Task<object?> Request(object request, CancellationToken cancellationToken = default) => Mediator.Send(request, cancellationToken);
 
     /// <summary>Asynchronously send a notification to multiple handlers</summary>
-    /// <param name="notification">Notification object</param>
+    /// <param name="event">Notification object</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>A task that represents the publish operation.</returns>
-    Task Notify(object notification, CancellationToken cancellationToken = default) => Mediator.Publish(notification, cancellationToken);
+    Task Notify(object @event, CancellationToken cancellationToken = default) => Mediator.Publish(@event, cancellationToken);
 
     /// <summary>Asynchronously send a notification to multiple handlers</summary>
-    /// <param name="notification">Notification object</param>
+    /// <param name="event">Notification object</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>A task that represents the publish operation.</returns>
-    Task Notify<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification => Mediator.Publish(notification, cancellationToken);
+    Task Notify<TEvent>(TEvent @event, CancellationToken cancellationToken = default) where TEvent : IEvent => Mediator.Publish(@event, cancellationToken);
 }
 
 public interface IRepository

@@ -10,7 +10,7 @@ using Geex.Migrations;
 using Geex.MongoDB.Entities.Utilities;
 using Geex.Notifications;
 using KellermanSoftware.CompareNetObjects;
-using MediatR;
+using MediatX;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -46,7 +46,7 @@ namespace Geex.Storage
             {
                 if (entity.Id.IsNullOrEmpty())
                 {
-                    this.DomainEvents.Enqueue(new EntityCreatedNotification<T>((T)geexEntity));
+                    this.DomainEvents.Enqueue(new EntityCreatedEvent<T>((T)geexEntity));
                     entity = base.Attach(entity);
                     // todo: 区分innerAttach和外部attach, innerAttach不进行校验逻辑
 #pragma warning disable CS0618
@@ -71,7 +71,7 @@ namespace Geex.Storage
         {
             return entities.Select(this.Attach).ToList();
         }
-        public Queue<INotification> DomainEvents { get; } = new Queue<INotification>();
+        public Queue<IEvent> DomainEvents { get; } = new Queue<IEvent>();
 
         /// <inheritdoc />
         public override async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
@@ -116,7 +116,7 @@ namespace Geex.Storage
             var result = await base.DeleteAsync<T>(id, cancellation);
             if (result > 0)
             {
-                this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(id));
+                this.DomainEvents.Enqueue(new EntityDeletedEvent<T>(id));
                 return true;
             }
             return false;
@@ -128,7 +128,7 @@ namespace Geex.Storage
             var result = await base.DeleteAsync<T>(entity, cancellation);
             if (result > 0)
             {
-                this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(entity.Id));
+                this.DomainEvents.Enqueue(new EntityDeletedEvent<T>(entity.Id));
                 return true;
             }
             return false;
@@ -176,7 +176,7 @@ namespace Geex.Storage
         {
             foreach (var id in ids)
             {
-                this.DomainEvents.Enqueue(new EntityDeletedNotification<T>(id));
+                this.DomainEvents.Enqueue(new EntityDeletedEvent<T>(id));
             }
             var result = await base.DeleteAsync<T>(ids, cancellation);
             return result;

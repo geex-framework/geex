@@ -5,7 +5,7 @@ using Geex.Extensions.Authentication;
 using Geex.Gql.Types;
 using HotChocolate;
 using HotChocolate.Types;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Authorization.Gql
 {

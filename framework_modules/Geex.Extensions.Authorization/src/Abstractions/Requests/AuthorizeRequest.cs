@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Geex.Extensions.Authorization.Gql.Types;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Authorization.Requests
 {

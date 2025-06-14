@@ -7,6 +7,7 @@ using Geex;
 using Geex.Abstractions;
 using Geex.Extensions.BackgroundJob;
 using Geex.Extensions.BackgroundJob.Core;
+
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace

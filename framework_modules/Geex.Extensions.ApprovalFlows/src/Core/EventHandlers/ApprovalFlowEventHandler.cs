@@ -5,12 +5,12 @@ using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.Messaging;
 using Geex.Extensions.Messaging.Requests;
-using MediatR;
+using MediatX;
 using Volo.Abp.DependencyInjection;
 
 namespace Geex.Extensions.ApprovalFlows.Core.EventHandlers;
 
-public class ApprovalFlowEventHandler : INotificationHandler<ApprovalFlowFinishEvent>, ITransientDependency
+public class ApprovalFlowEventHandler : IEventHandler<ApprovalFlowFinishEvent>, ITransientDependency
 {
     private readonly IUnitOfWork _uow;
 

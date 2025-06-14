@@ -3,7 +3,7 @@ using MediatX;
 
 namespace Geex.Extensions.ApprovalFlows.Events
 {
-    public class ApprovalFlowFinishEvent : INotification
+    public class ApprovalFlowFinishEvent : IEvent
     {
         public ApprovalFlow ApprovalFlow { get; }
         public string Id { get; }
@@ -15,7 +15,7 @@ namespace Geex.Extensions.ApprovalFlows.Events
         }
     }
 
-    public class ApprovalFlowCanceledEvent : INotification
+    public class ApprovalFlowCanceledEvent : IEvent
     {
         public ApprovalFlow ApprovalFlow { get; }
         public string Id { get; }

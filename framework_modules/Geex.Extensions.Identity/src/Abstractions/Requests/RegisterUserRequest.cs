@@ -1,4 +1,4 @@
-﻿using MediatR;
+﻿using MediatX;
 
 // ReSharper disable once CheckNamespace
 namespace Geex.Extensions.Requests.Accounting

@@ -7,7 +7,7 @@ using Geex.MultiTenant;
 using Geex.Requests;
 using HotChocolate.Types;
 
-using MediatR;
+using MediatX;
 
 using StackExchange.Redis.Extensions.Core.Abstractions;
 

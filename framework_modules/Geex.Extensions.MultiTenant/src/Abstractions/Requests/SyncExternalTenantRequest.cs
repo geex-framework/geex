@@ -1,5 +1,5 @@
 ﻿using Geex.MultiTenant;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Requests.MultiTenant
 {

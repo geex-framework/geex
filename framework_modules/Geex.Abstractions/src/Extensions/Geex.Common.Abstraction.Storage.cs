@@ -19,7 +19,7 @@ namespace Geex.Abstractions
         /// </summary>
         public static async Task<long> DeleteAsync<T>(this T entity) where T : IEntity
         {
-            entity.AddDomainEvent(new EntityDeletedNotification<T>(entity.Id));
+            entity.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
             return await entity.DeleteAsync();
         }
 
@@ -28,7 +28,7 @@ namespace Geex.Abstractions
             var enumerable = entities.ToList();
             foreach (var entity in enumerable)
             {
-                entity.AddDomainEvent(new EntityDeletedNotification<T>(entity.Id));
+                entity.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
             }
             var deletes = enumerable.Select(async x => await x.DeleteAsync());
             // todo: possible deadlock for duplicate delete in parallel

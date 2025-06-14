@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Identity
 {
-    public record UserOrgChangedEvent(string UserId, List<string> Orgs) : INotification
+    public record UserOrgChangedEvent(string UserId, List<string> Orgs) : IEvent
     {
     }
 }

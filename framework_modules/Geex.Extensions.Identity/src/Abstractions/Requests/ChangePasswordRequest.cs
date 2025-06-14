@@ -1,5 +1,5 @@
 ﻿
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Identity.Requests
 {

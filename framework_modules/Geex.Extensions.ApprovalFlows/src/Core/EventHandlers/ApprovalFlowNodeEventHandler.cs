@@ -9,12 +9,12 @@ using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Messaging;
 using Geex.Extensions.Messaging.Requests;
-using MediatR;
+using MediatX;
 using Volo.Abp.DependencyInjection;
 
 namespace Geex.Extensions.ApprovalFlows.Core.EventHandlers;
 
-public class ApprovalFlowNodeEventHandler : INotificationHandler<ApprovalFlowNodeStartEvent>, INotificationHandler<ApprovalFlowNodeConsultRepliedEvent>, INotificationHandler<ApprovalFlowNodeApprovedEvent>, INotificationHandler<ApprovalFlowNodeTransferredEvent>, INotificationHandler<ApprovalFlowNodeRejectedEvent>, INotificationHandler<ApprovalFlowNodeBulkRejectedEvent>, ITransientDependency
+public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartEvent>, IEventHandler<ApprovalFlowNodeConsultRepliedEvent>, IEventHandler<ApprovalFlowNodeApprovedEvent>, IEventHandler<ApprovalFlowNodeTransferredEvent>, IEventHandler<ApprovalFlowNodeRejectedEvent>, IEventHandler<ApprovalFlowNodeBulkRejectedEvent>, ITransientDependency
 {
     private readonly IUnitOfWork _uow;
 

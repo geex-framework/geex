@@ -10,11 +10,16 @@ using Geex.Extensions.BackgroundJob.Gql.Types;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson.Serialization;
 
 namespace Geex.Extensions.BackgroundJob
 {
     public abstract class StatefulCronJob<TState, TImplementation> : CronJob<TImplementation> where TImplementation : class, IHostedService where TState : JobState, new()
     {
+        static StatefulCronJob()
+        {
+            BsonClassMap.LookupClassMap(typeof(TState)).Inherit<JobState>();
+        }
         /// <inheritdoc />
         protected StatefulCronJob(IServiceProvider sp, string cronExp) : base(sp, cronExp)
         {

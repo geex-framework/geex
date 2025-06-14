@@ -1,5 +1,5 @@
 ﻿using System.Text.Json.Nodes;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Messaging.Requests
 {

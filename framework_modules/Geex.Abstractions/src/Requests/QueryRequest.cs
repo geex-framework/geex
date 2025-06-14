@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using HotChocolate;
-using MediatR;
+using MediatX;
 using MongoDB.Entities;
 
 namespace Geex.Requests

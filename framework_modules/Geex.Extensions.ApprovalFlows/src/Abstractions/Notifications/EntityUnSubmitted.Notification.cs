@@ -1,8 +1,8 @@
-﻿using MediatR;
+﻿using MediatX;
 
 namespace Geex.Extensions.ApprovalFlows.Notifications;
 
-public class EntityUnSubmittedNotification<TEntity> : INotification
+public class EntityUnSubmittedNotification<TEntity> : IEvent
 {
     public IApproveEntity Entity { get; }
 

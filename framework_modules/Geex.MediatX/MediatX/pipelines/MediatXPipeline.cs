@@ -17,9 +17,9 @@ namespace MediatX.Pipelines
   public class MediatXPipeline<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> //where TRequest : notnull
   {
     private readonly MediatXMediatr mediatx;
-    private readonly ILogger<MediatX> _logger;
+    private readonly ILogger<Mediator> _logger;
 
-    public MediatXPipeline(MediatXMediatr mediatx, ILogger<MediatX> logger)
+    public MediatXPipeline(MediatXMediatr mediatx, ILogger<Mediator> logger)
     {
       this.mediatx = mediatx;
       _logger = logger;
@@ -46,10 +46,10 @@ namespace MediatX.Pipelines
           return await next().ConfigureAwait(false);
         }
 
-        if (request is INotification notification)
+        if (request is IEvent @event)
         {
-          _logger.LogTrace("notification triggered: {notification}", notification.ToString());
-          await mediatx.Publish(notification, cancellationToken);
+          _logger.LogTrace("event triggered: {event}", @event.ToString());
+          await mediatx.Publish(@event, cancellationToken);
           return default;
         }
 
@@ -81,9 +81,9 @@ namespace MediatX.Pipelines
           return await next().ConfigureAwait(false);
         }
 
-        if (request is INotification notification)
+        if (request is IEvent @event)
         {
-          await mediatx.Publish(notification, cancellationToken);
+          await mediatx.Publish(@event, cancellationToken);
           return default;
         }
 

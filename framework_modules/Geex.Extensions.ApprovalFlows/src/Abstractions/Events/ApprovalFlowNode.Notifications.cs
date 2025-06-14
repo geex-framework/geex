@@ -5,7 +5,7 @@ using MediatX;
 
 namespace Geex.Extensions.ApprovalFlows.Events;
 
-public abstract class ApprovalFlowNodeStatusChangeEvent : INotification
+public abstract class ApprovalFlowNodeStatusChangeEvent : IEvent
 {
     public ApprovalFlowNodeStatusChangeEvent(ApprovalFlowNode approvalflowNode)
     {

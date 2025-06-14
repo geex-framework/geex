@@ -133,10 +133,10 @@ namespace Geex
             var env = context.Services.GetSingletonInstance<IWebHostEnvironment>();
             var coreModuleOptions = context.Services.GetSingletonInstanceOrNull<GeexCoreModuleOptions>();
 
+            context.Services.AddMediatX();
             if (coreModuleOptions.RabbitMq != null)
             {
                 var options = coreModuleOptions.RabbitMq;
-                context.Services.AddMediatX();
                 context.Services.AddMediatXRabbitMQ(x =>
                 {
                     x.HostName = options.HostName;

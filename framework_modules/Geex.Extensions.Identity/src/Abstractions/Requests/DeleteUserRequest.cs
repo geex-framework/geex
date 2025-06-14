@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Identity.Requests
 {

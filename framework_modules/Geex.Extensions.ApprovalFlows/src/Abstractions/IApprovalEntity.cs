@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Geex.Extensions.ApprovalFlows.Notifications;
 using Geex.Storage;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.ApprovalFlows;
 
@@ -29,7 +29,7 @@ public interface IApproveEntity : IEntity
         {
             this.ApproveStatus |= ApproveStatus.Submitted;
             this.ApproveRemark = remark;
-            (this as IEntity)?.AddDomainEvent(new EntitySubmittedNotification<TEntity>(this));
+            (this as IEntity)?.AddDomainEvent(new EntitySubmittedEvent<TEntity>(this));
         }
         else
         {
@@ -49,7 +49,7 @@ public interface IApproveEntity : IEntity
         {
             this.ApproveStatus |= ApproveStatus.Submitted;
             this.ApproveRemark = remark;
-            var entity = Activator.CreateInstance(typeof(EntitySubmittedNotification<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as INotification;
+            var entity = Activator.CreateInstance(typeof(EntitySubmittedEvent<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as IEvent;
             (this as IEntity)?.AddDomainEvent(entity);
         }
         else
@@ -90,7 +90,7 @@ public interface IApproveEntity : IEntity
         {
             this.ApproveStatus |= ApproveStatus.Approved;
             this.ApproveRemark = remark;
-            var entity = Activator.CreateInstance(typeof(EntityApprovedNotification<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as INotification;
+            var entity = Activator.CreateInstance(typeof(EntityApprovedNotification<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as IEvent;
             (this as IEntity)?.AddDomainEvent(entity);
         }
         else

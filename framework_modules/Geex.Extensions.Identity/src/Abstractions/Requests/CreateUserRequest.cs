@@ -2,7 +2,7 @@
 using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity.Core.Entities;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Identity.Requests
 {

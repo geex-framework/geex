@@ -1,5 +1,5 @@
 using System.Linq;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.Messaging.Requests
 {

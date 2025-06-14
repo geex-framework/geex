@@ -1,5 +1,5 @@
 ﻿using Geex.Common.Captcha.Domain;
-using MediatR;
+using MediatX;
 
 namespace Geex.Common.Requests.Captcha
 {

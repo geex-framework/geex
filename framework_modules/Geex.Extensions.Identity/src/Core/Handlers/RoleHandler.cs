@@ -5,7 +5,7 @@ using Geex.Abstractions;
 
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Requests;
-using MediatR;
+using MediatX;
 
 using MongoDB.Entities;
 using Geex.Extensions.Identity.Requests;

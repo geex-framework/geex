@@ -1,6 +1,5 @@
+using System;
 using System.Threading.Tasks;
-
-using MediatR;
 
 using Microsoft.Extensions.Logging;
 
@@ -9,12 +8,12 @@ namespace MediatX
     /// <summary>
     /// Represents an mediatx that handles message routing and dispatching.
     /// </summary>
-    public class MediatX : IMediatX
+    public class Mediator : MediatR.Mediator, IMediator
     {
         private readonly IExternalMessageDispatcher _messageDispatcher;
-        private readonly ILogger<MediatX> _logger;
+        private readonly ILogger<Mediator> _logger;
 
-        public MediatX(IExternalMessageDispatcher messageDispatcher, ILogger<MediatX> logger)
+        public Mediator(IServiceProvider serviceProvider, IExternalMessageDispatcher messageDispatcher, ILogger<Mediator> logger) : base(serviceProvider)
         {
             this._messageDispatcher = messageDispatcher;
             this._logger = logger;
@@ -26,7 +25,7 @@ namespace MediatX
         /// <typeparam name="TRequest">The type of the notification.</typeparam>
         /// <param name="request">The notification request to send.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public async Task SendRemoteNotification<TRequest>(TRequest request) where TRequest : IRemoteNotification
+        public async Task SendDistributedEvent<TRequest>(TRequest request) where TRequest : IDistributedEvent
         {
             // todo: here need simulate contexts or distinguish the remote request
             _logger.LogDebug($"Invoking remote handler for: {typeof(TRequest).TypeRouteKey()}");

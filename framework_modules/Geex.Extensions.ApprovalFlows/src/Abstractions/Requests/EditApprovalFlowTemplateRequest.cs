@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Geex.Extensions.ApprovalFlows.Core.Entities;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.ApprovalFlows.Requests;
 

@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Threading;
 
-using MediatR;
+using MediatX;
 
 using MongoDB.Entities;
 
@@ -21,7 +21,7 @@ namespace Mediator
         static ConcurrentDictionary<Type, Dictionary<string, PropertyInfo>> mapDictionary = new();
 
         static Task<TResponse> Send<TRequest, TResponse>(
-            this ISender sender,
+            this IMediator sender,
             TRequest request,
             CancellationToken cancellationToken = default(CancellationToken)) where TRequest : IRequest<TResponse>
         {

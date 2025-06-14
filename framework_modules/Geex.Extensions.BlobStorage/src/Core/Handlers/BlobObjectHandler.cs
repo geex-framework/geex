@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Geex.Extensions.BlobStorage.Core.Entities;
 using Geex.Extensions.BlobStorage.Requests;
-using MediatR;
+using MediatX;
 
 namespace Geex.Extensions.BlobStorage.Core.Handlers
 {

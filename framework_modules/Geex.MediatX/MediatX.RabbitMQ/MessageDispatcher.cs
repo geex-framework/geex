@@ -84,11 +84,11 @@ namespace MediatX.RabbitMQ
         /// <summary>
         /// Sends a notification message to the specified exchange and routing key.
         /// </summary>
-        /// <typeparam name="TRequest">The type of the request message.</typeparam>
+        /// <typeparam name="TEvent">The type of the request message.</typeparam>
         /// <param name="request">The request message to send.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the notification operation.</param>
         /// <returns>A task representing the asynchronous notification operation.</returns>
-        public async Task Notify<TRequest>(TRequest request, CancellationToken cancellationToken = default) where TRequest : INotification
+        public async Task Notify<TEvent>(TEvent request, CancellationToken cancellationToken = default) where TEvent : IEvent
         {
             var typeQueueName = request.GetType().TypeRouteKey();
             using var stream = new MemoryStream();
