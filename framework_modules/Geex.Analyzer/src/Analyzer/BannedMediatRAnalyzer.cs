@@ -16,7 +16,7 @@ namespace Geex.Analyzer.Analyzers
             "MediatR usage is not allowed",
             "不推荐使用 MediatR 命名空间 '{0}'。请使用 MediatX",
             "Usage",
-            DiagnosticSeverity.Warning,
+            DiagnosticSeverity.Error,
             isEnabledByDefault: true,
             description: "MediatR has been deprecated in favor of our custom MediatX.");
 
@@ -25,9 +25,9 @@ namespace Geex.Analyzer.Analyzers
             "MediatR type usage is not allowed",
             "不推荐使用使用 MediatR 类型 '{0}'。请使用 '{1}' 替代",
             "Usage",
-            DiagnosticSeverity.Warning,
+            DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "MediatR types have been deprecated in favor of our custom interfaces.");
+            description: "MediatR types have been deprecated in favor of our custom MediatX interfaces.");
 
         private static readonly ImmutableArray<string> BannedNamespaces =
             ImmutableArray.Create("MediatR");
