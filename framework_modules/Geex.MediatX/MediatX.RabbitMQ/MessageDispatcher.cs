@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using MediatR;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -85,24 +84,34 @@ namespace MediatX.RabbitMQ
         /// Sends a notification message to the specified exchange and routing key.
         /// </summary>
         /// <typeparam name="TEvent">The type of the request message.</typeparam>
+        /// <param name="routingKey"></param>
         /// <param name="request">The request message to send.</param>
         /// <param name="cancellationToken">A cancellation token to cancel the notification operation.</param>
         /// <returns>A task representing the asynchronous notification operation.</returns>
-        public async Task Notify<TEvent>(TEvent request, CancellationToken cancellationToken = default) where TEvent : IEvent
+        public async Task Notify<TEvent>(string routingKey, TEvent request, CancellationToken cancellationToken = default) where TEvent : IEvent
         {
-            var typeQueueName = request.GetType().TypeRouteKey();
-            using var stream = new MemoryStream();
-            await JsonSerializer.SerializeAsync(stream, request, options.SerializerSettings, cancellationToken: cancellationToken);
-            var message = stream.ToArray();
+            var fullRouteKey = Constants.MediatXExchangeName + "/" + routingKey;
+            try
+            {
+                using var stream = new MemoryStream();
+                await JsonSerializer.SerializeAsync(stream, request, options.SerializerSettings,
+                    cancellationToken: cancellationToken);
+                var message = stream.ToArray();
 
-            logger.LogInformation($"Sending message to: {Constants.MediatXExchangeName}/{typeQueueName}");
+                logger.LogInformation("Sending message to: {fullRouteKey}", fullRouteKey);
 
-            _sendChannel.BasicPublish(
-              exchange: Constants.MediatXExchangeName,
-              routingKey: typeQueueName,
-              mandatory: false,
-              body: message
-            );
+                _sendChannel.BasicPublish(
+                    exchange: Constants.MediatXExchangeName,
+                    routingKey: routingKey,
+                    mandatory: false,
+                    body: message
+                );
+            }
+            catch (Exception e)
+            {
+                logger.LogError("Failed to send mediator distributed event to [{routeKey}]: {event}", fullRouteKey, JsonSerializer.Serialize(request));
+                throw;
+            }
         }
 
 

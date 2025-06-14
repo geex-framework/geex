@@ -36,7 +36,7 @@ namespace Geex
 {
     public abstract class GeexModule<TModule, TModuleOptions> : GeexModule<TModule> where TModule : GeexModule where TModuleOptions : GeexModuleOption
     {
-        private TModuleOptions _moduleOptions;
+        private TModuleOptions? _moduleOptions;
         protected new TModuleOptions ModuleOptions => this._moduleOptions ??= this.ServiceConfigurationContext.Services.GetSingletonInstance<TModuleOptions>();
 
         public virtual void ConfigureModuleOptions(Action<GeexModuleOption> optionsAction)
@@ -122,7 +122,7 @@ namespace Geex
         public static ConcurrentHashSet<Type> ClassEnumTypes { get; } = new ConcurrentHashSet<Type>();
         public static ConcurrentHashSet<Type> DirectiveTypes { get; } = new ConcurrentHashSet<Type>();
         public static ConcurrentHashSet<Type> ObjectTypes { get; } = new ConcurrentHashSet<Type>();
-        public static ConcurrentDictionary<Type, Type[]> RemoteNotificationHandlerTypes { get; } = new ConcurrentDictionary<Type, Type[]>();
+        public static ConcurrentDictionary<Type, Type[]> DistributedEventHandlerTypes { get; } = new ConcurrentDictionary<Type, Type[]>();
         public static ConcurrentHashSet<Type> RequestHandlerTypes { get; } = new ConcurrentHashSet<Type>();
     }
 
@@ -133,9 +133,9 @@ namespace Geex
             var env = context.Services.GetSingletonInstance<IWebHostEnvironment>();
             var coreModuleOptions = context.Services.GetSingletonInstanceOrNull<GeexCoreModuleOptions>();
 
-            context.Services.AddMediatX();
             if (coreModuleOptions.RabbitMq != null)
             {
+                context.Services.AddMediatX(true);
                 var options = coreModuleOptions.RabbitMq;
                 context.Services.AddMediatXRabbitMQ(x =>
                 {
@@ -149,8 +149,12 @@ namespace Geex
                     x.QueueName = coreModuleOptions.AppName;
                     x.DeDuplicationEnabled = true;
                     x.SerializerSettings = JsonExtension.InternalSerializeSettings;
-                    x.NotificationHandlerTypes = RemoteNotificationHandlerTypes;
+                    x.EventHandlerTypes = DistributedEventHandlerTypes;
                 });
+            }
+            else
+            {
+                context.Services.AddMediatX();
             }
 
             context.Services.AddWebSockets(x => { });

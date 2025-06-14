@@ -14,6 +14,6 @@ namespace MediatX
 
     public interface IMediator : MediatR.IMediator
     {
-        Task SendDistributedEvent<TRequest>(TRequest request) where TRequest : IDistributedEvent;
+        Task PublishDistributedEvent<TRequest>(TRequest @event) where TRequest : IDistributedEvent;
     }
 }

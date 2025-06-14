@@ -7,6 +7,7 @@ using System.Text;
 using MediatR;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace MediatX
 {
@@ -21,13 +22,14 @@ namespace MediatX
         /// Adds the MediatX to the service collection.
         /// </summary>
         /// <param name="services">The service collection.</param>
+        /// <param name="b"></param>
         /// <param name="configure">Optional configuration action.</param>
         /// <returns>The modified service collection.</returns>
-        public static IServiceCollection AddMediatX(this IServiceCollection services)
+        public static IServiceCollection AddMediatX(this IServiceCollection services, bool enableDistributedEvent = false)
         {
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(Pipelines.MediatXPipeline<,>));
-            services.AddSingleton<IMediator, Mediator>();
-            services.AddSingleton<MediatXMediatr>();
+            services.AddScoped<IMediator, Mediator>(x=>new Mediator(x,x.GetService<ILogger<Mediator>>(),enableDistributedEvent));
+            //services.AddSingleton<MediatXMediatr>();
             return services;
         }
 
@@ -69,7 +71,7 @@ namespace MediatX
         /// <param name="messageType">The type.</param>
         /// <param name="sb">The <see cref="StringBuilder"/> instance to append the queue name to (optional).</param>
         /// <returns>The queue name for the specified type.</returns>
-        public static string TypeRouteKey(this Type messageType, StringBuilder sb = null)
+        public static string TypeRoutingKey(this Type messageType, StringBuilder sb = null)
         {
             if (messageType.CustomAttributes.Any())
             {
@@ -82,7 +84,7 @@ namespace MediatX
                 return messageType.FullName;
 
             var name = messageType.FullName.Substring(0, messageType.FullName.IndexOf('`'));
-            var args = string.Join("],[", messageType.GetGenericArguments().Select(x => x.TypeRouteKey(sb)));
+            var args = string.Join("],[", messageType.GetGenericArguments().Select(x => x.TypeRoutingKey(sb)));
 
             sb.Append(name);
             sb.Append("`");

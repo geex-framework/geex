@@ -1,14 +1,12 @@
-using System;
-using System.Collections.Concurrent;
+﻿using System;
 using System.Collections.Generic;
-using System.Text.Json;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace MediatX.RabbitMQ
+namespace mediatx.rabbitmq
 {
-    /// <summary>
-    /// Represents the options for configuring the message dispatcher.
-    /// </summary>
-    public class MessageDispatcherOptions
+    public class RabbitMqConfiguration
     {
         /// <summary>
         /// Gets or sets the name of the host.
@@ -88,18 +86,5 @@ namespace MediatX.RabbitMQ
         /// <c>true</c> if deduplication is enabled; otherwise, <c>false</c>.
         /// </value>
         public bool DeDuplicationEnabled { get; set; } = false;
-
-        /// <summary>
-        /// Gets or sets the serializer settings for JSON serialization and deserialization.
-        /// </summary>
-        public JsonSerializerOptions SerializerSettings { get; set; }
-
-        public ConcurrentDictionary<Type, Type[]> EventHandlerTypes { get; set; } = new ConcurrentDictionary<Type, Type[]>();
-
-        /// Represents the options for message dispatcher.
-        /// /
-        public MessageDispatcherOptions()
-        {
-        }
     }
 }

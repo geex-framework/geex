@@ -26,7 +26,8 @@ namespace Geex.Extensions.Identity.Gql
         public async Task<IOrg> CreateOrg(CreateOrgRequest request) => await _uow.Request(request);
         public async Task<bool> DeleteOrg(string id)
         {
-            var delete = await _uow.Query<Org>().FirstOrDefault(x => x.Id == id)?.DeleteAsync();
+            var org = _uow.Query<Org>().FirstOrDefault(x => x.Id == id);
+            var delete = await org?.DeleteAsync();
             return delete > 0;
         }
 

@@ -16,10 +16,10 @@ namespace MediatX.Pipelines
   /// <typeparam name="TResponse">The type of the response.</typeparam>
   public class MediatXPipeline<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> //where TRequest : notnull
   {
-    private readonly MediatXMediatr mediatx;
-    private readonly ILogger<Mediator> _logger;
+    private readonly IMediator mediatx;
+    private readonly ILogger<IMediator> _logger;
 
-    public MediatXPipeline(MediatXMediatr mediatx, ILogger<Mediator> logger)
+    public MediatXPipeline(IMediator mediatx, ILogger<IMediator> logger)
     {
       this.mediatx = mediatx;
       _logger = logger;

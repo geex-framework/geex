@@ -180,7 +180,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .Select(x => (notifications: x.GetInterfaces().Where(y => y.ImplementsOrInherits(typeof(IDistributedEventHandler<>))).Select(x => x.GenericTypeArguments[0]).ToArray(), handlerType: x))
                 .ToList();
             var dic = remoteNotificationHandlers.ToDictionary(x => x.handlerType, x => x.notifications);
-            GeexModule.RemoteNotificationHandlerTypes.AddIfNotContains(dic);
+            GeexModule.DistributedEventHandlerTypes.AddIfNotContains(dic);
 
             var requestHandlers = exportedTypes.Where(x => !x.IsAbstract && x.ImplementsOrInherits(typeof(IRequestHandler<>))).ToList();
             GeexModule.RequestHandlerTypes.AddIfNotContains(requestHandlers);

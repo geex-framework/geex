@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-using MediatR;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,7 +19,7 @@ using RabbitMQ.Client.Events;
 namespace MediatX.RabbitMQ
 {
     /// <summary>
-    /// The RequestsManager class is responsible for managing requests and notifications in a distributed system. It implements the IHostedService interface.
+    /// The RequestsManager class is responsible for managing requests and events in a distributed system. It implements the IHostedService interface.
     /// </summary>
     public class RequestsManager : IHostedService
     {
@@ -65,7 +64,7 @@ namespace MediatX.RabbitMQ
         /// </summary>
         private readonly MessageDispatcherOptions _options;
 
-        private ConcurrentDictionary<string, (Type notificationType, Func<IEvent, Task> handler)> _handlersMap = new();
+        private ConcurrentDictionary<string, (Type eventType, Func<IEvent, Task> handler)> _handlersMap = new();
 
         /// <summary>
         /// Constructs a new instance of the RequestsManager class.
@@ -124,7 +123,7 @@ namespace MediatX.RabbitMQ
                 _logger.LogInformation("MediatX: ready !");
             }
 
-            foreach (var (handler, notificationTypes) in _options.NotificationHandlerTypes)
+            foreach (var (handler, eventTypes) in _options.EventHandlerTypes)
             {
                 var queueName = $"{handler.TypeQueueName()}";
                 _channel.QueueDeclare(queue: queueName, durable: _options.Durable, exclusive: false, autoDelete: _options.AutoDelete, arguments: new Dictionary<string, object>()
@@ -132,15 +131,15 @@ namespace MediatX.RabbitMQ
                     { "x-dead-letter-exchange", Constants.MediatXDeadLetterExchangeName },
                     { "x-message-ttl", 1000*3600*24 }
                 });
-                foreach (var notificationType in notificationTypes)
+                foreach (var eventType in eventTypes)
                 {
-                    var routeKey = $"{notificationType.TypeRouteKey()}";
+                    var routeKey = $"{eventType.TypeRoutingKey()}";
 
                     _channel.QueueBind(queueName, Constants.MediatXExchangeName, $"{routeKey}");
-                    var handleMethod = handler.GetMethod(nameof(INotificationHandler<IEvent>.Handle), new Type[] { notificationType, typeof(CancellationToken) });
-                    this._handlersMap.TryAdd(routeKey, (notificationType, async (notification) =>
+                    var handleMethod = handler.GetMethod(nameof(IEventHandler<IEvent>.Handle), new Type[] { eventType, typeof(CancellationToken) });
+                    this._handlersMap.TryAdd(routeKey, (eventType, async (@event) =>
                     {
-                        handleMethod.Invoke(_provider.CreateScope().ServiceProvider.GetRequiredService(typeof(INotificationHandler<>).MakeGenericType(notificationType)), new object[] { notification, CancellationToken.None });
+                        handleMethod.Invoke(_provider.CreateScope().ServiceProvider.GetRequiredService(typeof(IEventHandler<>).MakeGenericType(eventType)), new object[] { @event, CancellationToken.None });
                     }
                     ));
                 }
@@ -152,9 +151,9 @@ namespace MediatX.RabbitMQ
                      try
                      {
                          _logger.LogInformation("Message consumed, [{path}]: {messageType}", $"{Constants.MediatXExchangeName}/{ea.RoutingKey}", JsonSerializer.Serialize(new { ea.DeliveryTag, ea.Exchange, ea.RoutingKey, ea.BasicProperties }));
-                         var (notificationType, handler) = this._handlersMap[ea.RoutingKey];
-                         var notification = await Deserialize(notificationType, ea);
-                         await (Task)handler(notification);
+                         var (eventType, handler) = this._handlersMap[ea.RoutingKey];
+                         var @event = await Deserialize(eventType, ea);
+                         await (Task)handler(@event);
                          _channel.BasicAck(ea.DeliveryTag, false);
                      }
                      catch (Exception e)
@@ -178,7 +177,7 @@ namespace MediatX.RabbitMQ
         }
 
         /// <summary>
-        /// ConsumeChannelNotification is a private asynchronous method that handles the consumption of channel notifications. </summary>
+        /// ConsumeChannelNotification is a private asynchronous method that handles the consumption of channel events. </summary>
         /// <typeparam name="T">The type of messages to be consumed</typeparam> <param name="sender">The object that triggered the event</param> <param name="ea">The event arguments containing the consumed message</param>
         /// <returns>A Task representing the asynchronous operation</returns>
         /// /
@@ -213,7 +212,7 @@ namespace MediatX.RabbitMQ
                 }
 
                 var msgStr = Encoding.UTF8.GetString(msg);
-                _logger.LogDebug("Elaborating notification : {0}", msgStr);
+                _logger.LogDebug("Elaborating event : {0}", msgStr);
                 var message = JsonSerializer.Deserialize(msgStr, messageType, _options.SerializerSettings) as IEvent;
                 return message;
             }

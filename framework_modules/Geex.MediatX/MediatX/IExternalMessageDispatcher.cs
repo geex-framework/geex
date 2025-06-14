@@ -5,6 +5,6 @@ namespace MediatX
 {
   public interface IExternalMessageDispatcher
   {
-    Task Notify<TRequest>(TRequest request, CancellationToken cancellationToken = default) where TRequest : IEvent;
+    Task Notify<TRequest>(string routingKey, TRequest request, CancellationToken cancellationToken = default) where TRequest : IEvent;
   }
 }
