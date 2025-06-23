@@ -28,6 +28,7 @@ using MongoDB.Entities;
 
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
+
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -154,16 +155,16 @@ namespace Geex.Extensions.Authentication
 
                         Console.WriteLine($"Using cert file: {certFile}");
 
+                        var tempCertName = new X500DistinguishedName("CN=OpenIddict Server Encryption Certificate");
                         // Register the signing and encryption credentials.
                         if (cert2 != default)
                         {
                             options
-                                .AddEncryptionCertificate(cert2)
+                                .AddDevelopmentEncryptionCertificate(tempCertName)
                                 .AddSigningCertificate(cert2);
                         }
                         else
                         {
-                            var tempCertName = new X500DistinguishedName("CN=OpenIddict Server Encryption Certificate");
                             options
                                 .AddDevelopmentEncryptionCertificate(tempCertName)
                                 .AddDevelopmentSigningCertificate(tempCertName);
@@ -177,7 +178,7 @@ namespace Geex.Extensions.Authentication
                             services.AddSingleton<X509Certificate>(cert2);
                         }
 
-                        options.DisableAccessTokenEncryption();
+                        //options.DisableAccessTokenEncryption();
 
                         // 配置选项
                         options.Configure(x =>
@@ -245,15 +246,15 @@ namespace Geex.Extensions.Authentication
                     };
                 }
 
-               authenticationBuilder
-                    .AddScheme<AuthenticationSchemeOptions, AuthSchemeRoutingHandler>(AuthSchemeRoutingHandler.SchemeName, AuthSchemeRoutingHandler.SchemeName, x => { })
-                    .AddScheme<JwtBearerOptions, LocalAuthHandler>(LocalAuthHandler.SchemeName, LocalAuthHandler.SchemeName, ConfigJwtBearerOptions)
-                    .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>(SuperAdminAuthHandler.SchemeName, SuperAdminAuthHandler.SchemeName, x =>
-                    {
-                    })
-                    .AddJwtBearer()
-                    .AddCookie()
-                    ;
+                authenticationBuilder
+                     .AddScheme<AuthenticationSchemeOptions, AuthSchemeRoutingHandler>(AuthSchemeRoutingHandler.SchemeName, AuthSchemeRoutingHandler.SchemeName, x => { })
+                     .AddScheme<JwtBearerOptions, LocalAuthHandler>(LocalAuthHandler.SchemeName, LocalAuthHandler.SchemeName, ConfigJwtBearerOptions)
+                     .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>(SuperAdminAuthHandler.SchemeName, SuperAdminAuthHandler.SchemeName, x =>
+                     {
+                     })
+                     .AddJwtBearer()
+                     .AddCookie()
+                     ;
 
                 services.AddSingleton(new UserTokenGenerateOptions(cert2?.Issuer, moduleOptions.ValidAudience, signCredentials, TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds)));
 
