@@ -83,10 +83,11 @@ namespace Geex.Extensions.Authentication
                     // Register the signing and encryption credentials.
                     if (!string.IsNullOrEmpty(certFile))
                     {
-                        cert2 = string.IsNullOrEmpty(certPassword) ? X509CertificateLoader.LoadPkcs12FromFile(certFile, null, keyStorageFlags: X509KeyStorageFlags.EphemeralKeySet) : X509CertificateLoader.LoadPkcs12FromFile(certFile, certPassword, X509KeyStorageFlags.EphemeralKeySet);
+                        cert2 = string.IsNullOrEmpty(certPassword) ? X509CertificateLoader.LoadPkcs12FromFile(certFile, null, keyStorageFlags: X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable) : X509CertificateLoader.LoadPkcs12FromFile(certFile, certPassword, X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
                         securityKey = new X509SecurityKey(cert2);
                         signCredentials = new X509SigningCredentials(cert2);
                         services.AddSingleton(cert2);
+                        Console.WriteLine($"Successfully loaded certificate from {certFile}, HasPrivateKey: {cert2.HasPrivateKey}");
                     }
                 }
 
@@ -157,7 +158,7 @@ namespace Geex.Extensions.Authentication
 
                         var tempCertName = new X500DistinguishedName("CN=OpenIddict Server Encryption Certificate");
                         // Register the signing and encryption credentials.
-                        if (cert2 != default)
+                        if (cert2 is { HasPrivateKey: true })
                         {
                             options
                                 .AddDevelopmentEncryptionCertificate(tempCertName)
