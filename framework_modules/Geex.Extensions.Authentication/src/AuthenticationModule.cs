@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -55,16 +56,14 @@ namespace Geex.Extensions.Authentication
 
             if (moduleOptions != default)
             {
-                X509Certificate2? cert2 = default;
+                X509Certificate2? tlsCert = default;
+                X509Certificate2? signingCert = default;
                 SecurityKey? securityKey = default;
                 SigningCredentials? signCredentials = default;
-                var certFile = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Path");
-                var certPassword = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Certificates__Default__Password");
+                var certFile = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Endpoints__Https__Certificate__Path");
+                var keyPath = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Endpoints__Https__Certificate__KeyPath");
                 if (!string.IsNullOrEmpty(certFile))
                 {
-                    // Get the linked file name from the path
-                    var certFileName = Path.GetFileName(certFile);
-
                     // Try multiple possible locations
                     var possiblePaths = new[]
                     {
@@ -83,11 +82,11 @@ namespace Geex.Extensions.Authentication
                     // Register the signing and encryption credentials.
                     if (!string.IsNullOrEmpty(certFile))
                     {
-                        cert2 = string.IsNullOrEmpty(certPassword) ? X509CertificateLoader.LoadPkcs12FromFile(certFile, null, keyStorageFlags: X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable) : X509CertificateLoader.LoadPkcs12FromFile(certFile, certPassword, X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
-                        securityKey = new X509SecurityKey(cert2);
-                        signCredentials = new X509SigningCredentials(cert2);
-                        services.AddSingleton(cert2);
-                        Console.WriteLine($"Successfully loaded certificate from {certFile}, HasPrivateKey: {cert2.HasPrivateKey}");
+                        tlsCert = string.IsNullOrEmpty(keyPath) ? X509Certificate2.CreateFromPemFile(certFile) : X509Certificate2.CreateFromPemFile(certFile, keyPath);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Certificate file not found: {certFile}");
                     }
                 }
 
@@ -156,35 +155,73 @@ namespace Geex.Extensions.Authentication
 
                         Console.WriteLine($"Using cert file: {certFile}");
 
-                        var tempCertName = new X500DistinguishedName("CN=OpenIddict Server Encryption Certificate");
-                        // Register the signing and encryption credentials.
-                        if (cert2 is { HasPrivateKey: true })
+                        using var x509Store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+                        x509Store.Open(OpenFlags.ReadWrite);
+                        var signatureUsageFlags = (X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment);
+                        if ((tlsCert.Extensions.OfType<X509KeyUsageExtension>().FirstOrDefault()?.KeyUsages &
+                             signatureUsageFlags) == signatureUsageFlags)
                         {
-                            options
-                                .AddDevelopmentEncryptionCertificate(tempCertName)
-                                .AddSigningCertificate(cert2);
+                            signingCert = tlsCert;
                         }
                         else
                         {
-                            options
-                                .AddDevelopmentEncryptionCertificate(tempCertName)
-                                .AddDevelopmentSigningCertificate(tempCertName);
-                            using var x509Store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
-                            x509Store.Open(OpenFlags.ReadOnly);
-                            var tempCert = x509Store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, (object)tempCertName.Name, false).OfType<X509Certificate2>().FirstOrDefault(x => x.NotBefore < DateTime.Now && x.NotAfter > DateTime.Now);
-                            cert2 = tempCert;
-                            securityKey = new X509SecurityKey(cert2);
-                            signCredentials = new X509SigningCredentials(cert2);
-                            services.AddSingleton(cert2);
-                            services.AddSingleton<X509Certificate>(cert2);
-                        }
+                            var certName = new X500DistinguishedName("CN=Geex OpenIddict Server Certificate");
+                            signingCert = x509Store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, (object)certName.Name, false).OfType<X509Certificate2>().FirstOrDefault(x => x.NotBefore < DateTime.Now && x.NotAfter > DateTime.Now);
+                            if (signingCert == default)
+                            {
+                                // 从 ACME 证书中提取信息
+                                var subject = certName;
+                                var notBefore = tlsCert.NotBefore;
+                                var notAfter = tlsCert.NotAfter;
 
-                        //options.DisableAccessTokenEncryption();
+                                // 创建新的 RSA 密钥对
+                                using var rsa = RSA.Create();
+                                var keyContent = File.ReadAllText(keyPath);
+                                rsa.ImportFromPem(keyContent);
+                                // 创建证书请求
+                                var request = new CertificateRequest(
+                                    subject,
+                                    rsa,
+                                    HashAlgorithmName.SHA256,
+                                    RSASignaturePadding.Pkcs1
+                                );
+
+                                // 添加扩展用于 JWT 签名
+                                request.CertificateExtensions.Add(
+                                    new X509KeyUsageExtension(
+                                        X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment,
+                                        critical: true
+                                    )
+                                );
+
+                                // 添加增强密钥用法
+                                request.CertificateExtensions.Add(
+                                    new X509EnhancedKeyUsageExtension(
+                                        new OidCollection
+                                        {
+                                            new Oid("1.3.6.1.5.5.7.3.1"), // Server Authentication
+                                            new Oid("1.3.6.1.5.5.7.3.2")  // Client Authentication
+                                        },
+                                        critical: true
+                                    )
+                                );
+
+                                // 生成自签名证书，使用相同的有效期
+                                signingCert = request.CreateSelfSigned(notBefore, notAfter);
+                            }
+                        }
+                        securityKey = new X509SecurityKey(signingCert);
+                        signCredentials = new X509SigningCredentials(signingCert);
+                        services.AddSingleton(signingCert);
+                        services.AddSingleton<X509Certificate>(signingCert);
+                        options.AddEncryptionCertificate(signingCert)
+                                .AddSigningCertificate(signingCert);
+                        options.DisableAccessTokenEncryption();
 
                         // 配置选项
                         options.Configure(x =>
                         {
-                            ConfigTokenValidationParameters(x.TokenValidationParameters, cert2, securityKey, moduleOptions);
+                            ConfigTokenValidationParameters(x.TokenValidationParameters, signingCert, securityKey, moduleOptions);
                             x.IgnoreEndpointPermissions = true;
                             x.IgnoreResponseTypePermissions = true;
                             x.IgnoreGrantTypePermissions = true;
@@ -221,7 +258,7 @@ namespace Geex.Extensions.Authentication
                 services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
 
                 var tokenValidationParameters = new TokenValidationParameters();
-                ConfigTokenValidationParameters(tokenValidationParameters, cert2, securityKey, moduleOptions);
+                ConfigTokenValidationParameters(tokenValidationParameters, tlsCert, securityKey, moduleOptions);
                 services.AddSingleton<TokenValidationParameters>(tokenValidationParameters);
 
                 void ConfigJwtBearerOptions(JwtBearerOptions jwtBearerOptions)
@@ -257,7 +294,7 @@ namespace Geex.Extensions.Authentication
                      .AddCookie()
                      ;
 
-                services.AddSingleton(new UserTokenGenerateOptions(cert2?.Issuer, moduleOptions.ValidAudience, signCredentials, TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds)));
+                services.AddSingleton(new UserTokenGenerateOptions(tlsCert?.Issuer, moduleOptions.ValidAudience, signCredentials, TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds)));
 
             }
             base.ConfigureServices(context);
