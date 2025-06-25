@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+
 using Geex.Extensions.Authentication.Core.Utils;
 
 using HotChocolate.AspNetCore;
@@ -21,6 +22,7 @@ using MongoDB.Driver;
 using MongoDB.Entities;
 
 using OpenIddict.Abstractions;
+
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -157,58 +159,26 @@ namespace Geex.Extensions.Authentication
                         {
                             SecurityKey securityKey;
                             var x500DistinguishedName = new X500DistinguishedName("CN=Geex OpenIddict Server Signing Certificate");
-                            using var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-                            store.Open(OpenFlags.ReadWrite);
-                            var existingCert = store.Certificates
-                                .Find(X509FindType.FindByIssuerDistinguishedName, x500DistinguishedName.Name, true)
-                                .Where(x => x.GetPublicKeyString() == cert.GetPublicKeyString())
-                                .OfType<X509Certificate2>()
-                                .FirstOrDefault();
-
-                            if (existingCert != null && existingCert.NotAfter <= DateTime.Now)
+                            CertificateRequest certRequest;
+                            if (cert.GetECDsaPrivateKey() is { } ecDsa)
                             {
-                                store.Remove(existingCert);
-                                existingCert = null;
-                            }
-
-                            if (existingCert != null)
-                            {
-                                if (existingCert.GetECDsaPrivateKey() is { } ecDsa)
-                                {
-                                    securityKey = new ECDsaSecurityKey(ecDsa);
-                                }
-                                else
-                                {
-                                    var rsa = existingCert.GetRSAPrivateKey() ?? RSA.Create(2048);
-                                    securityKey = new RsaSecurityKey(rsa);
-                                }
-                                cert = existingCert;
+                                certRequest = new CertificateRequest(x500DistinguishedName, ecDsa, HashAlgorithmName.SHA256);
+                                securityKey = new ECDsaSecurityKey(ecDsa);
                             }
                             else
                             {
-                                CertificateRequest certRequest;
-                                if (cert.GetECDsaPrivateKey() is { } ecDsa)
-                                {
-                                    certRequest = new CertificateRequest(x500DistinguishedName, ecDsa, HashAlgorithmName.SHA256);
-                                    securityKey = new ECDsaSecurityKey(ecDsa);
-                                }
-                                else
-                                {
-                                    var rsa = cert.GetRSAPrivateKey() ?? RSA.Create(2048);
-                                    certRequest = new CertificateRequest(x500DistinguishedName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-                                    securityKey = new RsaSecurityKey(rsa);
-                                }
-                                certRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
-                                certRequest.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(certRequest.PublicKey, false));
-                                cert = certRequest.CreateSelfSigned(cert.NotBefore, cert.NotAfter);
-                                // 导出并重新导入以确保私钥正确关联
-                                var password = cert.GetKeyAlgorithmParametersString();
-                                byte[] pfxBytes = cert.Export(X509ContentType.Pfx, password);
-                                cert = new X509Certificate2(pfxBytes, password,
-                                    X509KeyStorageFlags.Exportable | X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
-                                store.Add(cert);
-                                store.Close();
+                                var rsa = cert.GetRSAPrivateKey() ?? RSA.Create(2048);
+                                certRequest = new CertificateRequest(x500DistinguishedName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                                securityKey = new RsaSecurityKey(rsa);
                             }
+                            certRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
+                            certRequest.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(certRequest.PublicKey, false));
+                            cert = certRequest.CreateSelfSigned(cert.NotBefore, cert.NotAfter);
+                            // 导出并重新导入以确保私钥正确关联
+                            var password = cert.GetKeyAlgorithmParametersString();
+                            byte[] pfxBytes = cert.Export(X509ContentType.Pfx, password);
+                            cert = new X509Certificate2(pfxBytes, password,
+                                X509KeyStorageFlags.Exportable | X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
 
                             string algorithm;
                             if (securityKey.IsSupportedAlgorithm("RS256"))
