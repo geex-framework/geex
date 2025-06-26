@@ -1,114 +1,34 @@
-# Geex Framework
+# [Geex Framework](https://docs.geexcode.com/)
 ![star](https://gitcode.com/geexcode/geex/star/badge.svg)
 [![publish](https://github.com/geex-framework/geex/actions/workflows/publish.yml/badge.svg)](https://github.com/geex-framework/geex/actions/workflows/publish.yml)
 
-Geex是一个基于.NET的现代化模块化应用框架，专为构建高性能、可扩展的企业应用而设计。它集成了多种常用功能模块和扩展，为开发者提供了完整的应用开发解决方案。
+Geex 是一个模块化、业务友好、以绝佳开发体验为终极目标的全栈应用框架，采用 DDD（领域驱动设计）和 ActiveEntity 模式，专为构建高性能、可扩展、全功能的企业级 SaaS 应用而设计。
 
-## 核心特性
+## 🏗️ 核心特性
 
-- **模块化架构**：基于模块化设计，可按需组合各种功能模块
-- **GraphQL支持**：内置HotChocolate集成，轻松构建GraphQL API
-- **MongoDB集成**：使用改进的MongoDB.Entities提供强大的数据访问层
-- **CQRS模式**：实现跨进程通信的命令查询职责分离
-- **认证与授权**：集成完整的身份验证和基于Casbin的授权系统
-- **微服务Ready**：支持零改动将业务模块升格为独立的微服务
+- **🔧 ActiveEntity 模式**&nbsp;: &nbsp;&nbsp;&nbsp;业务逻辑内聚在实体中, 减少样板代码, 加速开发
+- **📦 模块化架构**&nbsp;: &nbsp;&nbsp;&nbsp;清晰的模块边界和依赖管理, 模块可零改动升格为微服务
+- **🔗 GraphQL API**&nbsp;: &nbsp;&nbsp;&nbsp;基于 Hot Chocolate 的现代化 API, 减少前后端沟通成本
+- **📊 MongoDB 集成**&nbsp;: &nbsp;&nbsp;&nbsp;灵活且高性能的 NoSQL 数据存储, 支持事务、读写分离
+- **🔐 身份认证授权**&nbsp;: &nbsp;&nbsp;&nbsp;基于枚举的 RBAC 权限管理系统, 支持字段级的权限控制
+- **🌐 多租户支持**&nbsp;: &nbsp;&nbsp;&nbsp;租户级的数据隔离, 自动、无感的租户数据过滤
+- **🚀 代码生成器**&nbsp;: &nbsp;&nbsp;&nbsp;一键生成全栈、前端、后端、模块代码， 无需繁琐的项目初始化流程
+- **🐳 容器化部署**&nbsp;: &nbsp;&nbsp;&nbsp;Traefik + ELK 完整基础设施一键部署, 通过域名快速挂载, 初级开发也能快速上手
+- **🔑 开发时HTTPS支持**&nbsp;: &nbsp;&nbsp;&nbsp;基于域名的本地 HTTPS 开发调试, 抹平各环境间的鸿沟
 
-## 项目结构
+## 🌍 技术栈
 
-```
-framework_modules/         # 核心框架模块
-├── Geex.Casbin/           # 基于Casbin的授权系统
-├── Geex.Common/           # 框架通用组件
-├── Geex.Abstractions/ # 抽象层和接口定义
-├── Geex.Extensions.Authentication/ # 认证模块
-├── Geex.Extensions.Authorization/ # 授权模块
-├── Geex.Extensions.BackgroundJob/ # 后台任务处理
-├── Geex.Extensions.BlobStorage/ # Blob存储功能
-├── Geex.Extensions.Identity/   # 身份管理
-├── Geex.Extensions.Logging/    # 日志系统
-├── Geex.Extensions.Messaging/  # 消息系统
-├── Geex.Extensions.MultiTenant/ # 多租户支持
-├── Geex.Extensions.Settings/   # 应用设置管理
-├── Geex.MediatX/           # MediatR扩展，支持分布式任务
-└── Geex.MongoDB.Entities/  # MongoDB数据访问增强库
-
-extensions/                # VS Code扩展
-├── vscode-npm-quick-install/ # NPM包快速安装工具
-
-scripts/                   # 实用脚本
-└── enable_nested_vitualization.ps1 # 启用嵌套虚拟化脚本
-
-nupkg/                     # NuGet包输出目录
-```
+| 前端技术栈         | 后端技术栈            |
+| :----------------- | :-------------------- |
+| Angular 18+        | .NET 9.0+             |
+| NG-ALAIN 脚手架    | Hot Chocolate GraphQL |
+| NG-ZORRO UI 组件库 | MongoDB + Redis       |
 
 ## 入门指南
 
-推荐直接使用Geex的[vscode插件](https://marketplace.visualstudio.com/items?itemName=Lulus.geex-schematics)进行项目创建和模块安装。
+推荐直接使用Geex的[🔗vscode插件](https://marketplace.visualstudio.com/items?itemName=Lulus.geex-schematics)进行项目创建和模块安装。
 
-### 安装
-
-Geex框架的各个模块作为NuGet包发布，可以使用NuGet包管理器安装：
-
-```bash
-# 安装核心抽象层
-dotnet add package Geex.Abstractions
-
-# 安装通用模块
-dotnet add package Geex.Common
-
-# 根据需要添加其他模块
-dotnet add package Geex.Extensions.Authentication
-dotnet add package Geex.Extensions.Authorization
-# ...其他模块
-```
-
-### 基本用法
-
-1. 安装Geex的VSCode插件
-2. 生成样板项目
-3. 创建应用模块：
-
-```csharp
-[DependsOn(
-    typeof(GeexCommonModule),
-    typeof(GeexAuthenticationModule),
-    typeof(GeexAuthorizationModule)
-)]
-public class YourAppModule : GeexModule
-{
-    public override void ConfigureServices(ServiceConfigurationContext context)
-    {
-        // 配置应用服务
-    }
-
-    public override void OnApplicationInitialization(ApplicationInitializationContext context)
-    {
-        // 应用初始化逻辑
-    }
-}
-```
-
-## 主要模块说明
-
-### Geex.MediatX
-
-MediatX是对MediatR的扩展，允许将in-process的Mediator模式扩展为支持跨进程通信，便于构建微服务架构。它支持多种传输方式，包括RabbitMQ、Kafka和GRPC。
-
-### Geex.MongoDB.Entities
-
-基于官方MongoDB.Entities的增强版本，提供了更友好的API来操作MongoDB数据库，简化了数据访问层的开发。
-
-### Geex.Extensions.Authorization
-
-基于Casbin的授权系统，提供灵活的基于RBAC和ABAC的权限控制。
-
-### Geex.Extensions.Authentication
-
-提供JWT认证和其他身份验证机制的集成。
-
-### Geex.Extensions.MultiTenant
-
-多租户支持模块，为SaaS应用提供租户隔离和管理功能。
+详细教程请参考我们的[🔗官方文档](https://docs.geexcode.com/), 或者观看我们的[🔗视频教程](https://www.bilibili.com/video/BV1QF4m1u7iB/)
 
 ## 贡献指南
 
