@@ -18,6 +18,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 using OpenIddict.Abstractions;
+using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.DataProtection;
 
 namespace Geex.Common.Authentication.Utils
@@ -53,6 +54,11 @@ namespace Geex.Common.Authentication.Utils
             var accessToken = request != default ? request.AccessToken : Context.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(1);
 
             if (accessToken.IsNullOrEmpty())
+            {
+                return AuthenticateResult.NoResult();
+            }
+            var token = _tokenHandler.ReadToken(accessToken);
+            if (token.Issuer.Contains("account.api"))
             {
                 return AuthenticateResult.NoResult();
             }

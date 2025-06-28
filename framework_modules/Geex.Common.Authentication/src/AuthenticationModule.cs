@@ -99,122 +99,122 @@ namespace Geex.Common.Authentication
 
                 services.AddSingleton<IMongoDatabase>(DB.DefaultDb);
 
-                services.AddOpenIddict()
-                    .AddCore(options =>
-                    {
-                        options.UseMongoDb();
-                    })
-                    .AddServer(options =>
-                    {
-                        options.SetAccessTokenLifetime(TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
+                //services.AddOpenIddict()
+                //    .AddCore(options =>
+                //    {
+                //        options.UseMongoDb();
+                //    })
+                //    .AddServer(options =>
+                //    {
+                //        options.SetAccessTokenLifetime(TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
 
-                        // Enable the authorization and token endpoints.
-                        options
-                            //connect/checksession
-                            .SetUserinfoEndpointUris("/idsvr/userinfo")
-                            .SetLogoutEndpointUris("/idsvr/logout")
-                            .SetRevocationEndpointUris("/idsvr/revocation")
-                            .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
-                            .SetIntrospectionEndpointUris("/idsvr/introspect")
-                            .SetVerificationEndpointUris("/idsvr/deviceauthorization")
-                            .SetAuthorizationEndpointUris("/idsvr/authorize")
-                            .SetDeviceEndpointUris("/idsvr/device")
-                            .SetTokenEndpointUris("/idsvr/token");
+                //        // Enable the authorization and token endpoints.
+                //        options
+                //            //connect/checksession
+                //            .SetUserinfoEndpointUris("/idsvr/userinfo")
+                //            .SetLogoutEndpointUris("/idsvr/logout")
+                //            .SetRevocationEndpointUris("/idsvr/revocation")
+                //            .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
+                //            .SetIntrospectionEndpointUris("/idsvr/introspect")
+                //            .SetVerificationEndpointUris("/idsvr/deviceauthorization")
+                //            .SetAuthorizationEndpointUris("/idsvr/authorize")
+                //            .SetDeviceEndpointUris("/idsvr/device")
+                //            .SetTokenEndpointUris("/idsvr/token");
 
-                        options.RegisterClaims(
-                            GeexClaimType.Provider,
-                            GeexClaimType.Sub,
-                            GeexClaimType.Tenant,
-                            GeexClaimType.Role,
-                            GeexClaimType.Org,
-                            GeexClaimType.ClientId,
-                            GeexClaimType.Expires,
-                            GeexClaimType.FullName,
-                            GeexClaimType.Nickname
-                        );
+                //        options.RegisterClaims(
+                //            GeexClaimType.Provider,
+                //            GeexClaimType.Sub,
+                //            GeexClaimType.Tenant,
+                //            GeexClaimType.Role,
+                //            GeexClaimType.Org,
+                //            GeexClaimType.ClientId,
+                //            GeexClaimType.Expires,
+                //            GeexClaimType.FullName,
+                //            GeexClaimType.Nickname
+                //        );
 
-                        options.RegisterScopes(
-                            OpenIddictConstants.Scopes.OpenId,
-                            OpenIddictConstants.Scopes.Email,
-                            OpenIddictConstants.Scopes.Phone,
-                            OpenIddictConstants.Scopes.Profile,
-                            OpenIddictConstants.Scopes.Roles,
-                            OpenIddictConstants.Scopes.OfflineAccess
-                            );
+                //        options.RegisterScopes(
+                //            OpenIddictConstants.Scopes.OpenId,
+                //            OpenIddictConstants.Scopes.Email,
+                //            OpenIddictConstants.Scopes.Phone,
+                //            OpenIddictConstants.Scopes.Profile,
+                //            OpenIddictConstants.Scopes.Roles,
+                //            OpenIddictConstants.Scopes.OfflineAccess
+                //            );
 
-                        // Enable the flows.
-                        options
-                            .AllowAuthorizationCodeFlow()
-                            .RequireProofKeyForCodeExchange()
-                            .AllowClientCredentialsFlow()
-                            .AllowDeviceCodeFlow()
-                            .AllowRefreshTokenFlow()
-                            .AllowImplicitFlow()
-                            .AllowHybridFlow()
-                            .AllowNoneFlow()
-                            .AllowPasswordFlow()
-                            ;
+                //        // Enable the flows.
+                //        options
+                //            .AllowAuthorizationCodeFlow()
+                //            .RequireProofKeyForCodeExchange()
+                //            .AllowClientCredentialsFlow()
+                //            .AllowDeviceCodeFlow()
+                //            .AllowRefreshTokenFlow()
+                //            .AllowImplicitFlow()
+                //            .AllowHybridFlow()
+                //            .AllowNoneFlow()
+                //            .AllowPasswordFlow()
+                //            ;
 
-                        Console.WriteLine(certFile);
+                //        Console.WriteLine(certFile);
 
-                        // Register the signing and encryption credentials.
-                        if (cert2 != default)
-                        {
-                            options
-                                .AddEncryptionCertificate(cert2)
-                                .AddSigningCertificate(cert2);
-                        }
-                        else
-                        {
-                            var tempCertName = new X500DistinguishedName("CN=OpenIddict Server Encryption Certificate");
-                            options
-                                .AddDevelopmentEncryptionCertificate(tempCertName)
-                                .AddDevelopmentSigningCertificate(tempCertName);
-                            using var x509Store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
-                            x509Store.Open(OpenFlags.ReadOnly);
-                            var tempCert = x509Store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, (object)tempCertName.Name, false).OfType<X509Certificate2>().FirstOrDefault(x => x.NotBefore < DateTime.Now && x.NotAfter > DateTime.Now);
-                            cert = cert2 = tempCert;
-                            securityKey = new X509SecurityKey(cert2);
-                            signCredentials = new X509SigningCredentials(cert2);
-                            services.AddSingleton(cert);
-                        }
+                //        // Register the signing and encryption credentials.
+                //        if (cert2 != default)
+                //        {
+                //            options
+                //                .AddEncryptionCertificate(cert2)
+                //                .AddSigningCertificate(cert2);
+                //        }
+                //        else
+                //        {
+                //            var tempCertName = new X500DistinguishedName("CN=OpenIddict Server Encryption Certificate");
+                //            options
+                //                .AddDevelopmentEncryptionCertificate(tempCertName)
+                //                .AddDevelopmentSigningCertificate(tempCertName);
+                //            using var x509Store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+                //            x509Store.Open(OpenFlags.ReadOnly);
+                //            var tempCert = x509Store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, (object)tempCertName.Name, false).OfType<X509Certificate2>().FirstOrDefault(x => x.NotBefore < DateTime.Now && x.NotAfter > DateTime.Now);
+                //            cert = cert2 = tempCert;
+                //            securityKey = new X509SecurityKey(cert2);
+                //            signCredentials = new X509SigningCredentials(cert2);
+                //            services.AddSingleton(cert);
+                //        }
 
-                        options.DisableAccessTokenEncryption();
+                //        options.DisableAccessTokenEncryption();
 
-                        // 配置选项
-                        options.Configure(x =>
-                        {
-                            ConfigTokenValidationParameters(x.TokenValidationParameters, cert, securityKey, moduleOptions);
-                            x.IgnoreEndpointPermissions = true;
-                            x.IgnoreResponseTypePermissions = true;
-                        });
+                //        // 配置选项
+                //        options.Configure(x =>
+                //        {
+                //            ConfigTokenValidationParameters(x.TokenValidationParameters, cert, securityKey, moduleOptions);
+                //            x.IgnoreEndpointPermissions = true;
+                //            x.IgnoreResponseTypePermissions = true;
+                //        });
 
-                        // Register the ASP.NET Core host and configure the authorization endpoint
-                        // to allow the /authorize minimal API handler to handle authorization requests
-                        // after being validated by the built-in OpenIddict server event handlers.
-                        //
-                        // Token requests will be handled by OpenIddict itself by reusing the identity
-                        // created by the /authorize handler and stored in the authorization codes.
-                        var aspNetCoreBuilder = options.UseAspNetCore();
-                        aspNetCoreBuilder
-                            .EnableAuthorizationEndpointPassthrough()
-                            .EnableLogoutEndpointPassthrough()
-                            .EnableTokenEndpointPassthrough()
-                            .EnableUserinfoEndpointPassthrough()
-                            .EnableVerificationEndpointPassthrough()
-                            .EnableErrorPassthrough()
-                            //.EnableStatusCodePagesIntegration()
-                            ;
+                //        // Register the ASP.NET Core host and configure the authorization endpoint
+                //        // to allow the /authorize minimal API handler to handle authorization requests
+                //        // after being validated by the built-in OpenIddict server event handlers.
+                //        //
+                //        // Token requests will be handled by OpenIddict itself by reusing the identity
+                //        // created by the /authorize handler and stored in the authorization codes.
+                //        var aspNetCoreBuilder = options.UseAspNetCore();
+                //        aspNetCoreBuilder
+                //            .EnableAuthorizationEndpointPassthrough()
+                //            .EnableLogoutEndpointPassthrough()
+                //            .EnableTokenEndpointPassthrough()
+                //            .EnableUserinfoEndpointPassthrough()
+                //            .EnableVerificationEndpointPassthrough()
+                //            .EnableErrorPassthrough()
+                //            //.EnableStatusCodePagesIntegration()
+                //            ;
 
-                        aspNetCoreBuilder.DisableTransportSecurityRequirement();
-                    })
-                    .AddValidation(options =>
-                    {
-                        // Import the configuration from the local OpenIddict server instance.
-                        options.UseLocalServer();
-                        // Register the ASP.NET Core host.
-                        options.UseAspNetCore();
-                    });
+                //        aspNetCoreBuilder.DisableTransportSecurityRequirement();
+                //    })
+                //    .AddValidation(options =>
+                //    {
+                //        // Import the configuration from the local OpenIddict server instance.
+                //        options.UseLocalServer();
+                //        // Register the ASP.NET Core host.
+                //        options.UseAspNetCore();
+                //    });
                 services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
 
                 var tokenValidationParameters = new TokenValidationParameters();

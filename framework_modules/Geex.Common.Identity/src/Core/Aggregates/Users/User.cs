@@ -52,8 +52,11 @@ namespace Geex.Common.Identity.Core.Aggregates.Users
             this.IsEnable = request.IsEnable;
             IUserCreationValidator userCreationValidator = uow.ServiceProvider.GetService<IUserCreationValidator>();
             userCreationValidator.Check(this);
-            IPasswordHasher<IUser> passwordHasher = uow.ServiceProvider.GetService<IPasswordHasher<IUser>>();
-            this.Password = passwordHasher.HashPassword(this, request.Password);
+            if (!request.Password.IsNullOrEmpty())
+            {
+                IPasswordHasher<IUser> passwordHasher = uow.ServiceProvider.GetService<IPasswordHasher<IUser>>();
+                this.Password = passwordHasher.HashPassword(this, request.Password);
+            }
             uow?.Attach(this);
         }
 

@@ -27,16 +27,14 @@ namespace Geex.Common.Authentication.Handlers
         private UserTokenGenerateOptions _userTokenGenerateOptions;
         private readonly IEnumerable<IExternalLoginProvider> _externalLoginProviders;
         private IRedisDatabase _redis;
-        private readonly IOpenIddictTokenManager _tokenManager;
 
-        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis, IOpenIddictTokenManager tokenManager)
+        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis)
         {
             _uow = uow;
             _tokenHandler = tokenHandler;
             _userTokenGenerateOptions = userTokenGenerateOptions;
             _externalLoginProviders = externalLoginProviders;
             _redis = redis;
-            _tokenManager = tokenManager;
         }
 
         /// <inheritdoc />
@@ -61,6 +59,7 @@ namespace Geex.Common.Authentication.Handlers
         {
             if (request.LoginProvider == LoginProviderEnum.Local)
             {
+                using var _ = _uow.DbContext.DisableAllDataFilters();
                 var userQuery = _uow.Query<IUser>();
                 var sub = _tokenHandler.ReadJwtToken(request.Code).Subject;
                 var user = userQuery.MatchUserIdentifier(sub);
