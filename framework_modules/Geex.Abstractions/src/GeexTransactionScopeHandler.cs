@@ -53,7 +53,7 @@ namespace Geex
         return;
       foreach (var unitOfWork in UowServices)
       {
-        unitOfWork.SaveChanges().Wait();
+        unitOfWork.SaveChanges().ConfigureAwait(false).GetAwaiter().GetResult();
       }
       this.Transaction.Complete();
 

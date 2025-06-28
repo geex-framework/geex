@@ -199,7 +199,7 @@ namespace Geex
             if (coreModuleOptions.AutoMigration)
             {
                 var migrations = context.ServiceProvider.GetServices<DbMigration>();
-                var appliedMigrations = DB.Find<Migration>().Project(x => x.Number).ExecuteAsync().ConfigureAwait(true).GetAwaiter().GetResult();
+                var appliedMigrations = DB.Find<Migration>().Project(x => x.Number).ExecuteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
                 var sortedMigrations = migrations.OrderBy(x => x.Number);
 
@@ -210,7 +210,7 @@ namespace Geex
                         using var scope = context.ServiceProvider.CreateScope();
                         var dbContext = scope.ServiceProvider.GetRequiredService<IUnitOfWork>().As<GeexDbContext>();
                         using var _ = dbContext.DisableAllDataFilters();
-                        dbContext.MigrateAsync(migration).ConfigureAwait(true).GetAwaiter().GetResult();
+                        dbContext.MigrateAsync(migration).ConfigureAwait(false).GetAwaiter().GetResult();
                     }
                 }
             }

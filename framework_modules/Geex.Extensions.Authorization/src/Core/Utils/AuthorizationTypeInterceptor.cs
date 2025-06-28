@@ -63,7 +63,7 @@ namespace Geex.Extensions.Authorization.Core.Utils
                     //}
                     var directive = new AuthorizeDirective(policy);
                     //fieldDefinition.MiddlewareDefinitions.Add(new FieldMiddlewareDefinition(next => async context =>
-                    //    await new AuthorizeMiddleware(next, directive).InvokeAsync(context).ConfigureAwait(true)));
+                    //    await new AuthorizeMiddleware(next, directive).InvokeAsync(context).ConfigureAwait(false)));
                     descriptor.Use(next => async context =>
                         await new AuthorizeMiddleware(next, directive).InvokeAsync(context));
                     logger.LogInformation($@"成功匹配权限规则:{policy}");
