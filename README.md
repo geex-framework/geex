@@ -1,4 +1,4 @@
-# [Geex Framework](https://docs.geexcode.com/)
+# [Geex](https://docs.geexcode.com/)
 ![star](https://gitcode.com/geexcode/geex/star/badge.svg)
 [![publish](https://github.com/geex-framework/geex/actions/workflows/publish.yml/badge.svg)](https://github.com/geex-framework/geex/actions/workflows/publish.yml)
 
