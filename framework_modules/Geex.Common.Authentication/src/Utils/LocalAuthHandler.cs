@@ -63,6 +63,10 @@ namespace Geex.Common.Authentication.Utils
                 return AuthenticateResult.NoResult();
             }
             var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenValidationParameters);
+            if (!result.IsValid || result.ClaimsIdentity == null)
+            {
+                return AuthenticateResult.Fail(result.Exception);
+            }
             var identity = result.ClaimsIdentity;
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, SchemeName);
