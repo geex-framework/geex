@@ -14,7 +14,9 @@ namespace Geex.Common.Identity.Core
     /// </summary>
     public class OrgDataFilter : ExpressionDataFilter<IOrgFilteredEntity>
     {
-        public OrgDataFilter(ICurrentUser currentUser) : base(PredicateBuilder.New<IOrgFilteredEntity>(entity => currentUser.UserId == "000000000000000000000001" || entity.OrgCode == null || (currentUser.User != null && currentUser.User.OrgCodes.Contains(entity.OrgCode))), null)
+        public OrgDataFilter(LazyService<ClaimsPrincipal> currentUser) : base(PredicateBuilder.New<IOrgFilteredEntity>(entity =>
+            currentUser.Value != null &&
+            (currentUser.Value.FindUserId() == "000000000000000000000001" || entity.OrgCode == null || currentUser.Value.FindOrgCodes().Contains(entity.OrgCode))), null)
         {
 
         }

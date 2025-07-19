@@ -3,7 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-
+using Geex.Common.Abstractions;
 using Geex.Common.Authentication.Domain;
 
 using JetBrains.Annotations;
@@ -51,8 +51,13 @@ namespace Geex.Common.Authentication.Utils
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var request = Context.GetOpenIddictServerRequest();
-            var accessToken = request != default ? request.AccessToken : Context.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries).ElementAtOrDefault(1);
-
+            var parts = Context.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var accessToken = request != default ? request.AccessToken : parts.ElementAtOrDefault(1);
+            var schema = parts.ElementAtOrDefault(0);
+            if (schema == "SuperAdmin")
+            {
+                return AuthenticateResult.NoResult();
+            }
             if (accessToken.IsNullOrEmpty())
             {
                 return AuthenticateResult.NoResult();
@@ -63,7 +68,7 @@ namespace Geex.Common.Authentication.Utils
                 return AuthenticateResult.NoResult();
             }
             var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenValidationParameters);
-            if (!result.IsValid || result.ClaimsIdentity == null)
+            if (result == null || !result.IsValid || result.ClaimsIdentity == null)
             {
                 return AuthenticateResult.Fail(result.Exception);
             }
