@@ -16,16 +16,14 @@ namespace Geex.Extensions.Authentication.Core.Utils
     {
         private readonly IEnumerable<ISubClaimsTransformation> _transformations;
         private readonly IUnitOfWork _uow;
-        private readonly IRedisDatabase _redis;
         private UserTokenGenerateOptions _options;
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
         private TokenValidationParameters _validationParams;
 
-        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IUnitOfWork uow, IRedisDatabase redis, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
+        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IUnitOfWork uow,UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
         {
             _transformations = transformations;
             _uow = uow;
-            _redis = redis;
             _options = options;
             _tokenHandler = tokenHandler;
             _validationParams = validationParams;
@@ -62,9 +60,9 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 principalIdentity.AppendClaims(claimsPrincipal.Claims.ToList());
             }
 
-            var tokenDescriptor = new GeexSecurityTokenDescriptor(userId, LoginProviderEnum.Local, _options, principalIdentity.Claims);
+            //var tokenDescriptor = new GeexSecurityTokenDescriptor(userId, LoginProviderEnum.Local, _options, principalIdentity.Claims);
             // 设置用户session, 缓存数据10分钟, 避免大量的组织架构和权限查询
-            await this._redis.SetNamedAsync(new UserSessionCache { userId = userId, token = _tokenHandler.CreateEncodedJwt(tokenDescriptor) }, expireIn: TimeSpan.FromMinutes(10));
+            //await this._redis.SetNamedAsync(new UserSessionCache { userId = userId, token = _tokenHandler.CreateEncodedJwt(tokenDescriptor) }, expireIn: TimeSpan.FromMinutes(10));
 
             return principal;
         }

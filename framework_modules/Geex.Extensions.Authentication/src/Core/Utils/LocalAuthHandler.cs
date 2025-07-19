@@ -63,6 +63,10 @@ namespace Geex.Extensions.Authentication.Core.Utils
             }
 
             var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenValidationParameters);
+            if (!result.IsValid || result.ClaimsIdentity == null)
+            {
+                return AuthenticateResult.Fail(result.Exception);
+            }
             var principal = new ClaimsPrincipal(result.ClaimsIdentity);
             return AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));
         }

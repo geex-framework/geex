@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 
@@ -22,7 +23,6 @@ using MongoDB.Driver;
 using MongoDB.Entities;
 
 using OpenIddict.Abstractions;
-
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -35,11 +35,16 @@ namespace Geex.Extensions.Authentication
     )]
     public class AuthenticationModule : GeexModule<AuthenticationModule, AuthenticationModuleOptions>
     {
+        private ILogger<AuthenticationModule>? _logger;
+
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             IdentityModelEventSource.ShowPII = true;
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
             var services = context.Services;
+            using var serviceProvider = context.Services.BuildServiceProvider();
+            _logger = serviceProvider.GetService<ILogger<AuthenticationModule>>();
+
             services.AddTransient<IPasswordHasher<IAuthUser>, PasswordHasher<IAuthUser>>();
             var geexCoreModuleOptions = services.GetSingletonInstance<GeexCoreModuleOptions>();
             var moduleOptions = services.GetSingletonInstance<AuthenticationModuleOptions>();
@@ -49,281 +54,472 @@ namespace Geex.Extensions.Authentication
 
             if (moduleOptions != default)
             {
-                X509Certificate2? cert = default;
-                SigningCredentials? signCredentials = default;
+                var cert = LoadCertificate();
+
+                var (configuredCert, signingCredentials) = ConfigureOpenIddict(services, moduleOptions, geexCoreModuleOptions, cert);
+                ConfigureAuthentication(services, authenticationBuilder, configuredCert ?? cert, moduleOptions, geexCoreModuleOptions);
+            }
+
+            base.ConfigureServices(context);
+        }
+
+        private X509Certificate2 LoadCertificate()
+        {
+            try
+            {
                 var certFile = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Endpoints__Https__Certificate__Path");
                 var keyPath = Environment.GetEnvironmentVariable("ASPNETCORE_Kestrel__Endpoints__Https__Certificate__KeyPath");
-                if (!string.IsNullOrEmpty(certFile))
-                {
-                    // Try multiple possible locations
-                    var possiblePaths = new[]
-                    {
-                        // Direct path if fully qualified
-                        Path.IsPathFullyQualified(certFile) ? certFile : null,
-                        // Project directory path
-                        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, certFile)),
-                        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../", certFile)),
-                        // Bin directory path
-                        Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, certFile)),
-                        Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"../../../", certFile)),
-                    };
-                    // Use first existing file path
-                    certFile = possiblePaths.FirstOrDefault(p => p != null && Path.IsPathFullyQualified(p) && File.Exists(p));
 
-                    // Register the signing and encryption credentials.
-                    if (!string.IsNullOrEmpty(certFile))
-                    {
-                        cert = string.IsNullOrEmpty(keyPath) ? X509Certificate2.CreateFromPemFile(certFile) : X509Certificate2.CreateFromPemFile(certFile, keyPath);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Certificate file not found: {certFile}");
-                    }
+                if (string.IsNullOrEmpty(certFile))
+                {
+                    _logger?.LogInformation("未找到证书路径环境变量，将使用开发证书");
+                    return null;
                 }
 
-                services.AddSingleton<IdsvrMiddleware>();
-
-                services.AddSingleton<ISocketSessionInterceptor, SubscriptionAuthInterceptor>(x => new SubscriptionAuthInterceptor(x.GetApplicationService<TokenValidationParameters>(), x.GetApplicationService<GeexJwtSecurityTokenHandler>(), x.GetApplicationService<IAuthenticationSchemeProvider>()));
-                SchemaBuilder.AddSocketSessionInterceptor(x => new SubscriptionAuthInterceptor(x.GetApplicationService<TokenValidationParameters>(), x.GetApplicationService<GeexJwtSecurityTokenHandler>(), x.GetApplicationService<IAuthenticationSchemeProvider>()));
-
-                services.AddSingleton<IMongoDatabase>(DB.DefaultDb);
-
-                services.AddOpenIddict()
-                    .AddCore(options =>
-                    {
-                        options.UseMongoDb();
-                    })
-                    .AddServer(options =>
-                    {
-                        options.SetAccessTokenLifetime(TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
-                        // Enable the authorization and token endpoints.
-                        options
-                            //connect/checksession
-                            .SetUserinfoEndpointUris("/idsvr/userinfo")
-                            .SetLogoutEndpointUris("/idsvr/logout")
-                            .SetRevocationEndpointUris("/idsvr/revocation")
-                            .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
-                            .SetIntrospectionEndpointUris("/idsvr/introspect")
-                            .SetVerificationEndpointUris("/idsvr/deviceauthorization")
-                            .SetAuthorizationEndpointUris("/idsvr/authorize")
-                            .SetDeviceEndpointUris("/idsvr/device")
-                            .SetTokenEndpointUris("/idsvr/token")
-                            .SetConfigurationEndpointUris("/.well-known/openid-configuration");
-
-                        options.RegisterClaims(
-                            GeexClaimType.Provider,
-                            GeexClaimType.Sub,
-                            GeexClaimType.Tenant,
-                            GeexClaimType.Role,
-                            GeexClaimType.Org,
-                            GeexClaimType.ClientId,
-                            GeexClaimType.Expires,
-                            GeexClaimType.FullName,
-                            GeexClaimType.Nickname
-                        );
-
-                        options.RegisterScopes(
-                            OpenIddictConstants.Scopes.OpenId,
-                            OpenIddictConstants.Scopes.Email,
-                            OpenIddictConstants.Scopes.Phone,
-                            OpenIddictConstants.Scopes.Profile,
-                            OpenIddictConstants.Scopes.Roles,
-                            OpenIddictConstants.Scopes.OfflineAccess
-                            );
-
-                        // Enable the flows.
-                        options
-                            .AllowAuthorizationCodeFlow()
-                            .RequireProofKeyForCodeExchange()
-                            .AllowClientCredentialsFlow()
-                            .AllowDeviceCodeFlow()
-                            .AllowRefreshTokenFlow()
-                            .AllowImplicitFlow()
-                            .AllowHybridFlow()
-                            .AllowNoneFlow()
-                            .AllowPasswordFlow()
-                            ;
-
-                        Console.WriteLine($"Using cert file: {certFile}");
-
-                        // Register the signing and encryption credentials.
-                        var x509KeyUsageFlags = (X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DigitalSignature);
-                        if ((cert?.Extensions.OfType<X509KeyUsageExtension>().FirstOrDefault()?.KeyUsages &
-                             x509KeyUsageFlags) == x509KeyUsageFlags)
-                        {
-                            options
-                                .AddEncryptionCertificate(cert)
-                                .AddSigningCertificate(cert);
-                        }
-                        else
-                        {
-                            SecurityKey securityKey;
-                            var x500DistinguishedName = new X500DistinguishedName("CN=Geex OpenIddict Server Signing Certificate");
-                            CertificateRequest certRequest;
-                            if (cert.GetECDsaPrivateKey() is { } ecDsa)
-                            {
-                                certRequest = new CertificateRequest(x500DistinguishedName, ecDsa, HashAlgorithmName.SHA256);
-                                securityKey = new ECDsaSecurityKey(ecDsa);
-                            }
-                            else
-                            {
-                                var rsa = cert.GetRSAPrivateKey() ?? RSA.Create(2048);
-                                certRequest = new CertificateRequest(x500DistinguishedName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-                                securityKey = new RsaSecurityKey(rsa);
-                            }
-                            certRequest.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
-                            certRequest.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(certRequest.PublicKey, false));
-                            cert = certRequest.CreateSelfSigned(cert.NotBefore, cert.NotAfter);
-                            // 导出并重新导入以确保私钥正确关联
-                            var password = cert.GetKeyAlgorithmParametersString();
-                            byte[] pfxBytes = cert.Export(X509ContentType.Pfx, password);
-                            cert = new X509Certificate2(pfxBytes, password,
-                                X509KeyStorageFlags.Exportable | X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
-
-                            string algorithm;
-                            if (securityKey.IsSupportedAlgorithm("RS256"))
-                                algorithm = "RS256";
-                            else if (securityKey.IsSupportedAlgorithm("HS256"))
-                                algorithm = "HS256";
-                            else if (securityKey.IsSupportedAlgorithm("ES256"))
-                                algorithm = "ES256";
-                            else if (securityKey.IsSupportedAlgorithm("ES384"))
-                                algorithm = "ES384";
-                            else if (securityKey.IsSupportedAlgorithm("ES512"))
-                                algorithm = "ES512";
-                            else
-                                throw new InvalidOperationException(OpenIddictResources.GetResourceString("ID0068"));
-                            signCredentials = new SigningCredentials(securityKey, algorithm);
-                        }
-                        options.AddDevelopmentEncryptionCertificate(new X500DistinguishedName("CN=Geex OpenIddict Server Encryption Certificate"));
-                        options.AddSigningCredentials(signCredentials);
-                        services.AddSingleton(cert);
-                        services.AddSingleton<X509Certificate>(cert);
-                        options.DisableAccessTokenEncryption();
-
-                        // 配置选项
-                        options.Configure(x =>
-                        {
-                            ConfigTokenValidationParameters(x.TokenValidationParameters, cert, moduleOptions);
-                            x.IgnoreEndpointPermissions = true;
-                            x.IgnoreResponseTypePermissions = true;
-                            x.IgnoreGrantTypePermissions = true;
-                            x.IgnoreScopePermissions = true;
-                        });
-
-                        // Register the ASP.NET Core host and configure the authorization endpoint
-                        // to allow the /authorize minimal API handler to handle authorization requests
-                        // after being validated by the built-in OpenIddict server event handlers.
-                        //
-                        // Token requests will be handled by OpenIddict itself by reusing the identity
-                        // created by the /authorize handler and stored in the authorization codes.
-                        var aspNetCoreBuilder = options.UseAspNetCore();
-                        aspNetCoreBuilder
-                            .EnableAuthorizationEndpointPassthrough()
-                            .EnableLogoutEndpointPassthrough()
-                            .EnableTokenEndpointPassthrough()
-                            .EnableUserinfoEndpointPassthrough()
-                            .EnableVerificationEndpointPassthrough()
-                            .EnableErrorPassthrough()
-                            //.EnableStatusCodePagesIntegration()
-                            ;
-
-                        aspNetCoreBuilder.DisableTransportSecurityRequirement();
-                    })
-                    .AddValidation(options =>
-                    {
-                        // Import the configuration from the local OpenIddict server instance.
-                        options.UseLocalServer();
-                        // Register the ASP.NET Core host.
-                        options.UseAspNetCore();
-                    });
-                services.AddScoped<ICurrentUser, CurrentUser>();
-                services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
-
-                var tokenValidationParameters = new TokenValidationParameters();
-                ConfigTokenValidationParameters(tokenValidationParameters, cert, moduleOptions);
-                services.AddSingleton<TokenValidationParameters>(tokenValidationParameters);
-
-                void ConfigJwtBearerOptions(JwtBearerOptions jwtBearerOptions)
+                var resolvedCertPath = ResolveCertificatePath(certFile);
+                if (string.IsNullOrEmpty(resolvedCertPath))
                 {
-                    jwtBearerOptions.TokenValidationParameters = tokenValidationParameters;
-                    jwtBearerOptions.SecurityTokenValidators.Clear();
-                    jwtBearerOptions.SecurityTokenValidators.Add(services.GetRequiredServiceLazy<GeexJwtSecurityTokenHandler>().Value);
-                    jwtBearerOptions.Events ??= new JwtBearerEvents();
-                    jwtBearerOptions.Events.OnMessageReceived = receivedContext =>
-                    {
-                        if (receivedContext.HttpContext.WebSockets.IsWebSocketRequest)
-                        {
-                            if (receivedContext.HttpContext.Items.TryGetValue("jwtToken", out var token1))
-                            {
-                                receivedContext.Token = token1.ToString();
-                            }
-                            else if (receivedContext.Request.Query.TryGetValue("access_token", out var token2))
-                            {
-                                receivedContext.Token = token2.ToString();
-                            }
-                        }
-                        return Task.CompletedTask;
-                    };
+                    _logger?.LogWarning("证书文件未找到: {CertFile}，将使用开发证书", certFile);
+                    return null;
                 }
 
-                authenticationBuilder
-                     .AddScheme<AuthenticationSchemeOptions, AuthSchemeRoutingHandler>(AuthSchemeRoutingHandler.SchemeName, AuthSchemeRoutingHandler.SchemeName, x => { })
-                     .AddScheme<JwtBearerOptions, LocalAuthHandler>(LocalAuthHandler.SchemeName, LocalAuthHandler.SchemeName, ConfigJwtBearerOptions)
-                     .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>(SuperAdminAuthHandler.SchemeName, SuperAdminAuthHandler.SchemeName, x =>
-                     {
-                     })
-                     .AddJwtBearer()
-                     .AddCookie()
-                     ;
+                var cert = CreateCertificateFromFiles(resolvedCertPath, keyPath);
+                _logger?.LogInformation("成功加载证书: {CertPath}", resolvedCertPath);
 
-                services.AddSingleton(new UserTokenGenerateOptions(cert?.Issuer, moduleOptions.ValidAudience, signCredentials, TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds)));
-
+                return cert;
             }
-            base.ConfigureServices(context);
-
-            void ConfigTokenValidationParameters(TokenValidationParameters x, X509Certificate2? cert,
-                AuthenticationModuleOptions authOptions)
+            catch (Exception ex)
             {
-                SecurityKey? securityKey;
+                _logger?.LogError(ex, "加载证书时发生错误，将使用开发证书");
+                return null;
+            }
+        }
+
+        private string? ResolveCertificatePath(string certFile)
+        {
+            if (Path.IsPathFullyQualified(certFile) && File.Exists(certFile))
+            {
+                return certFile;
+            }
+
+            var searchPaths = new[]
+            {
+                AppContext.BaseDirectory,
+                Path.Combine(AppContext.BaseDirectory, "../../../"),
+                AppDomain.CurrentDomain.BaseDirectory,
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../../")
+            };
+
+            foreach (var basePath in searchPaths)
+            {
+                var fullPath = Path.GetFullPath(Path.Combine(basePath, certFile));
+                if (File.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+
+            return null;
+        }
+
+        private X509Certificate2 CreateCertificateFromFiles(string certFile, string? keyPath)
+        {
+            try
+            {
+                return string.IsNullOrEmpty(keyPath)
+                    ? X509Certificate2.CreateFromPemFile(certFile)
+                    : X509Certificate2.CreateFromPemFile(certFile, keyPath);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "从文件创建证书时发生错误: {CertFile}, {KeyPath}", certFile, keyPath);
+                throw;
+            }
+        }
+
+        private (X509Certificate2? cert, SigningCredentials? signingCredentials) ConfigureOpenIddict(IServiceCollection services, AuthenticationModuleOptions moduleOptions,
+            GeexCoreModuleOptions geexCoreModuleOptions, X509Certificate2 certificateInfo)
+        {
+            services.AddSingleton<IdsvrMiddleware>();
+            services.AddSingleton<ISocketSessionInterceptor, SubscriptionAuthInterceptor>(x =>
+                new SubscriptionAuthInterceptor(
+                    x.GetApplicationService<TokenValidationParameters>(),
+                    x.GetApplicationService<GeexJwtSecurityTokenHandler>(),
+                    x.GetApplicationService<IAuthenticationSchemeProvider>()));
+
+            SchemaBuilder.AddSocketSessionInterceptor(x =>
+                new SubscriptionAuthInterceptor(
+                    x.GetApplicationService<TokenValidationParameters>(),
+                    x.GetApplicationService<GeexJwtSecurityTokenHandler>(),
+                    x.GetApplicationService<IAuthenticationSchemeProvider>()));
+
+            services.AddSingleton<IMongoDatabase>(DB.DefaultDb);
+
+            X509Certificate2? cert = default;
+            SigningCredentials? signCredentials = default;
+            services.AddOpenIddict()
+                .AddCore(options => options.UseMongoDb())
+                .AddServer(options =>
+                {
+                    ConfigureOpenIddictEndpoints(options);
+                    ConfigureOpenIddictClaims(options);
+                    ConfigureOpenIddictScopes(options);
+                    ConfigureOpenIddictFlows(options);
+
+                    options.SetAccessTokenLifetime(TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
+
+                    (cert, signCredentials) = ConfigureOpenIddictCertificates(options, certificateInfo);
+
+                    RegisterCertificateServices(services, cert);
+
+                    // 注册SigningCredentials到服务容器
+                    if (signCredentials != null)
+                    {
+                        services.AddSingleton(signCredentials);
+                    }
+
+                    options.DisableAccessTokenEncryption();
+
+                    ConfigureOpenIddictOptions(options, cert, moduleOptions, geexCoreModuleOptions);
+                    ConfigureOpenIddictAspNetCore(options);
+                })
+                .AddValidation(options =>
+                {
+                    options.UseLocalServer();
+                    options.UseAspNetCore();
+                });
+
+            return (cert, signCredentials);
+        }
+
+        private void ConfigureOpenIddictEndpoints(OpenIddictServerBuilder options)
+        {
+            options
+                .SetUserinfoEndpointUris("/idsvr/userinfo")
+                .SetLogoutEndpointUris("/idsvr/logout")
+                .SetRevocationEndpointUris("/idsvr/revocation")
+                .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
+                .SetIntrospectionEndpointUris("/idsvr/introspect")
+                .SetVerificationEndpointUris("/idsvr/deviceauthorization")
+                .SetAuthorizationEndpointUris("/idsvr/authorize")
+                .SetDeviceEndpointUris("/idsvr/device")
+                .SetTokenEndpointUris("/idsvr/token")
+                .SetConfigurationEndpointUris("/.well-known/openid-configuration");
+        }
+
+        private void ConfigureOpenIddictClaims(OpenIddictServerBuilder options)
+        {
+            options.RegisterClaims(
+                GeexClaimType.Provider,
+                GeexClaimType.Sub,
+                GeexClaimType.Tenant,
+                GeexClaimType.Role,
+                GeexClaimType.Org,
+                GeexClaimType.ClientId,
+                GeexClaimType.Expires,
+                GeexClaimType.FullName,
+                GeexClaimType.Nickname
+            );
+        }
+
+        private void ConfigureOpenIddictScopes(OpenIddictServerBuilder options)
+        {
+            options.RegisterScopes(
+                OpenIddictConstants.Scopes.OpenId,
+                OpenIddictConstants.Scopes.Email,
+                OpenIddictConstants.Scopes.Phone,
+                OpenIddictConstants.Scopes.Profile,
+                OpenIddictConstants.Scopes.Roles,
+                OpenIddictConstants.Scopes.OfflineAccess
+            );
+        }
+
+        private void ConfigureOpenIddictFlows(OpenIddictServerBuilder options)
+        {
+            options
+                .AllowAuthorizationCodeFlow()
+                .RequireProofKeyForCodeExchange()
+                .AllowClientCredentialsFlow()
+                .AllowDeviceCodeFlow()
+                .AllowRefreshTokenFlow()
+                .AllowImplicitFlow()
+                .AllowHybridFlow()
+                .AllowNoneFlow()
+                .AllowPasswordFlow();
+        }
+
+        private (X509Certificate2? signingCert, SigningCredentials? signCredentials) ConfigureOpenIddictCertificates(
+            OpenIddictServerBuilder options, X509Certificate2 cert)
+        {
+            var signingCertName = new X500DistinguishedName("CN=Geex OpenIddict Server Signing Certificate");
+            var encryptionCertName = new X500DistinguishedName("CN=Geex OpenIddict Server Encryption Certificate");
+
+            if (cert != null)
+            {
+                return ConfigureFromExistingCertificate(options, cert, signingCertName, encryptionCertName);
+            }
+            else
+            {
+                // 如果没有提供证书，创建自签名的签名和加密证书
+                _logger?.LogInformation("未提供证书，正在创建自签名证书");
+
+                var rsa = RSA.Create(2048);
+                var certRequest = new CertificateRequest(signingCertName, rsa, HashAlgorithmName.SHA256,
+                    RSASignaturePadding.Pkcs1);
+                var securityKey = new RsaSecurityKey(rsa);
+
+                certRequest.CertificateExtensions.Add(new X509KeyUsageExtension(
+                    X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
+                certRequest.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(certRequest.PublicKey, false));
+
+                var newCert = certRequest.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(10));
+                var algorithm = DetermineSigningAlgorithm(securityKey);
+                var signCredentials = new SigningCredentials(securityKey, algorithm);
+
+                options.AddEncryptionCertificate(newCert);
+                options.AddSigningCredentials(signCredentials);
+
+                _logger?.LogInformation("成功创建自签名证书用于OpenIddict");
+                return (newCert, signCredentials);
+            }
+        }
+
+        private (X509Certificate2? signingCert, SigningCredentials? signCredentials) ConfigureFromExistingCertificate(
+            OpenIddictServerBuilder options, X509Certificate2 cert,
+            X500DistinguishedName signingCertName, X500DistinguishedName encryptionCertName)
+        {
+            _logger?.LogInformation("使用现有证书: {CertName} 进行认证授权", cert.Subject);
+
+            var requiredKeyUsage = X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DigitalSignature;
+            var keyUsageExtension = cert.Extensions.OfType<X509KeyUsageExtension>().FirstOrDefault();
+
+            // 如果证书同时支持签名和加密，直接使用
+            if (keyUsageExtension != null && (keyUsageExtension.KeyUsages & requiredKeyUsage) == requiredKeyUsage)
+            {
+                options
+                    .AddEncryptionCertificate(cert)
+                    .AddSigningCertificate(cert);
+                _logger?.LogInformation("证书支持签名和加密，直接使用");
+                return (cert, null);
+            }
+
+            // 处理部分支持的情况
+            if (keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.DigitalSignature) == true)
+            {
+                options.AddSigningCertificate(cert);
+                _logger?.LogInformation("证书支持数字签名，添加为签名证书");
+            }
+
+            if (keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.KeyEncipherment) == true)
+            {
+                options.AddEncryptionCertificate(cert);
+                _logger?.LogInformation("证书支持密钥加密，添加为加密证书");
+            }
+
+            // 如果证书不满足所有要求，创建补充的自签名证书
+            var needsSigningCert = keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.DigitalSignature) != true;
+            var needsEncryptionCert = keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.KeyEncipherment) != true;
+
+            if (needsSigningCert || needsEncryptionCert)
+            {
+                _logger?.LogWarning("证书 {CertName} 不满足所需的签名/加密要求，正在创建补充的自签名证书", cert.Subject);
+
+                SecurityKey securityKey;
+                CertificateRequest certRequest;
+                var certNotBefore = cert.NotBefore;
+                var certNotAfter = cert.NotAfter;
+
                 if (cert.GetECDsaPrivateKey() is { } ecDsa)
                 {
+                    certRequest = new CertificateRequest(signingCertName, ecDsa, HashAlgorithmName.SHA256);
                     securityKey = new ECDsaSecurityKey(ecDsa);
                 }
                 else
                 {
                     var rsa = cert.GetRSAPrivateKey() ?? RSA.Create(2048);
+                    certRequest = new CertificateRequest(signingCertName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
                     securityKey = new RsaSecurityKey(rsa);
                 }
-                x.RequireSignedTokens = x.ValidateIssuerSigningKey = securityKey != default;
-                x.IssuerSigningKey = securityKey;
-                x.ValidateIssuer = x.ValidateIssuerSigningKey = !string.IsNullOrEmpty(cert?.Issuer);
-                if (!string.IsNullOrEmpty(cert?.Issuer))
+
+                try
                 {
-                    x.ValidIssuers = [cert.Issuer, new Uri(geexCoreModuleOptions.Host).ToString()];
+                    certRequest.CertificateExtensions.Add(new X509KeyUsageExtension(
+                        X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment, false));
+                    certRequest.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(certRequest.PublicKey, false));
+
+                    var newCert = certRequest.CreateSelfSigned(certNotBefore, certNotAfter);
+
+                    // 导出为PFX格式以包含私钥
+                    var password = Guid.NewGuid().ToString("N");
+                    byte[] pfxBytes = newCert.Export(X509ContentType.Pfx, password);
+                    newCert = new X509Certificate2(pfxBytes, password,
+                        X509KeyStorageFlags.Exportable | X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
+
+                    var algorithm = DetermineSigningAlgorithm(securityKey);
+                    var signCredentials = new SigningCredentials(securityKey, algorithm);
+
+                    if (needsEncryptionCert)
+                    {
+                        options.AddEncryptionCertificate(newCert);
+                        _logger?.LogInformation("添加自签名加密证书");
+                    }
+
+                    if (needsSigningCert)
+                    {
+                        options.AddSigningCredentials(signCredentials);
+                        _logger?.LogInformation("添加自签名签名凭据");
+                    }
+
+                    return (newCert, signCredentials);
                 }
-
-                x.ValidateAudience = !authOptions.ValidAudience.IsNullOrEmpty();
-                x.ValidAudience = authOptions.ValidAudience;
-
-                x.ValidateLifetime = authOptions.TokenExpireInSeconds > 0;
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "配置自定义证书时发生错误");
+                    throw;
+                }
             }
+
+            return (cert, null);
+        }
+
+        private string DetermineSigningAlgorithm(SecurityKey securityKey)
+        {
+            var supportedAlgorithms = new[] { "RS256", "HS256", "ES256", "ES384", "ES512" };
+
+            foreach (var algorithm in supportedAlgorithms)
+            {
+                if (securityKey.IsSupportedAlgorithm(algorithm))
+                {
+                    return algorithm;
+                }
+            }
+
+            throw new InvalidOperationException("无法找到支持的签名算法");
+        }
+
+        private void RegisterCertificateServices(IServiceCollection services, X509Certificate2? cert)
+        {
+            if (cert != null)
+            {
+                services.AddSingleton(cert);
+                services.AddSingleton<X509Certificate>(cert);
+            }
+        }
+
+        private void ConfigureOpenIddictOptions(OpenIddictServerBuilder options, X509Certificate2? cert,
+            AuthenticationModuleOptions moduleOptions, GeexCoreModuleOptions geexCoreModuleOptions)
+        {
+            options.Configure(x =>
+            {
+                ConfigTokenValidationParameters(x.TokenValidationParameters, cert, moduleOptions, geexCoreModuleOptions);
+                x.IgnoreEndpointPermissions = true;
+                x.IgnoreResponseTypePermissions = true;
+                x.IgnoreGrantTypePermissions = true;
+                x.IgnoreScopePermissions = true;
+            });
+        }
+
+        private void ConfigureOpenIddictAspNetCore(OpenIddictServerBuilder options)
+        {
+            var aspNetCoreBuilder = options.UseAspNetCore();
+            aspNetCoreBuilder
+                .EnableAuthorizationEndpointPassthrough()
+                .EnableLogoutEndpointPassthrough()
+                .EnableTokenEndpointPassthrough()
+                .EnableUserinfoEndpointPassthrough()
+                .EnableVerificationEndpointPassthrough()
+                .EnableErrorPassthrough()
+                .DisableTransportSecurityRequirement();
+        }
+
+        private void ConfigureAuthentication(IServiceCollection services, AuthenticationBuilder authenticationBuilder,
+            X509Certificate2 cert, AuthenticationModuleOptions moduleOptions, GeexCoreModuleOptions geexCoreModuleOptions)
+        {
+            services.AddScoped<ICurrentUser, CurrentUser>();
+            services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
+
+            var tokenValidationParameters = new TokenValidationParameters();
+            ConfigTokenValidationParameters(tokenValidationParameters, cert, moduleOptions, geexCoreModuleOptions);
+            services.AddSingleton<TokenValidationParameters>(tokenValidationParameters);
+
+            void ConfigJwtBearerOptions(JwtBearerOptions jwtBearerOptions)
+            {
+                jwtBearerOptions.TokenValidationParameters = tokenValidationParameters;
+                jwtBearerOptions.SecurityTokenValidators.Clear();
+                jwtBearerOptions.SecurityTokenValidators.Add(services.GetRequiredServiceLazy<GeexJwtSecurityTokenHandler>().Value);
+                jwtBearerOptions.Events ??= new JwtBearerEvents();
+                jwtBearerOptions.Events.OnMessageReceived = receivedContext =>
+                {
+                    if (receivedContext.HttpContext.WebSockets.IsWebSocketRequest)
+                    {
+                        if (receivedContext.HttpContext.Items.TryGetValue("jwtToken", out var token1))
+                        {
+                            receivedContext.Token = token1.ToString();
+                        }
+                        else if (receivedContext.Request.Query.TryGetValue("access_token", out var token2))
+                        {
+                            receivedContext.Token = token2.ToString();
+                        }
+                    }
+                    return Task.CompletedTask;
+                };
+            }
+
+            authenticationBuilder
+                .AddScheme<AuthenticationSchemeOptions, AuthSchemeRoutingHandler>(AuthSchemeRoutingHandler.SchemeName, AuthSchemeRoutingHandler.SchemeName, x => { })
+                .AddScheme<JwtBearerOptions, LocalAuthHandler>(LocalAuthHandler.SchemeName, LocalAuthHandler.SchemeName, ConfigJwtBearerOptions)
+                .AddScheme<AuthenticationSchemeOptions, SuperAdminAuthHandler>(SuperAdminAuthHandler.SchemeName, SuperAdminAuthHandler.SchemeName, x => { })
+                .AddJwtBearer()
+                .AddCookie();
+
+            services.AddSingleton<UserTokenGenerateOptions>(serviceProvider =>
+            {
+                var signingCredentials = serviceProvider.GetService<SigningCredentials>();
+                return new UserTokenGenerateOptions(
+                    cert?.Issuer,
+                    moduleOptions.ValidAudience,
+                    signingCredentials,
+                    TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
+            });
+        }
+
+        private void ConfigTokenValidationParameters(TokenValidationParameters parameters, X509Certificate2? cert,
+            AuthenticationModuleOptions authOptions, GeexCoreModuleOptions geexCoreModuleOptions)
+        {
+            SecurityKey? securityKey = null;
+
+            if (cert != null)
+            {
+                securityKey = cert.GetECDsaPrivateKey() is { } ecDsa
+                    ? new ECDsaSecurityKey(ecDsa)
+                    : new RsaSecurityKey(cert.GetRSAPrivateKey() ?? RSA.Create(2048));
+            }
+
+            parameters.RequireSignedTokens = parameters.ValidateIssuerSigningKey = securityKey != null;
+            parameters.IssuerSigningKey = securityKey;
+
+            parameters.ValidateIssuer = !string.IsNullOrEmpty(cert?.Issuer);
+            if (!string.IsNullOrEmpty(cert?.Issuer))
+            {
+                parameters.ValidIssuers = [cert.Issuer, new Uri(geexCoreModuleOptions.Host).ToString()];
+            }
+
+            parameters.ValidateAudience = !authOptions.ValidAudience.IsNullOrEmpty();
+            parameters.ValidAudience = authOptions.ValidAudience;
+            parameters.ValidateLifetime = authOptions.TokenExpireInSeconds > 0;
         }
 
         public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
             var app = context.GetApplicationBuilder();
-            //app.UseMiddleware<AuthSchemeRoutingMiddleware>();
             app.UseAuthentication();
             app.Map("/idsvr", x => x.UseMiddleware<IdsvrMiddleware>());
             app.UseAuthorization();
             base.OnPreApplicationInitialization(context);
         }
 
-        /// <inheritdoc />
         public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
         {
-            // init admin token and print it to console
             _ = context.ServiceProvider.GetService<SuperAdminAuthHandler>();
             base.OnPostApplicationInitialization(context);
         }
