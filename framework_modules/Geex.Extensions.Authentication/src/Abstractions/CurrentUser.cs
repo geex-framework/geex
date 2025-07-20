@@ -25,28 +25,7 @@ namespace Geex.Extensions.Authentication
         public string? UserId => _userId ??= _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.FindUserId();
 
         /// <inheritdoc />
-        public ClaimsIdentity? ClaimsIdentity
-        {
-            get
-            {
-                if (_claimsIdentity != null)
-                {
-                    return _claimsIdentity;
-                }
-                if (!_userId.IsNullOrEmpty())
-                {
-                    var user = _uow.Query<IAuthUser>().FirstOrDefault(x => x.Id == _userId);
-                    var claimsPrincipal = _uow.ServiceProvider.GetService<IUserClaimsPrincipalFactory<IAuthUser>>()?.CreateAsync(user).ConfigureAwait(false).GetAwaiter().GetResult();
-                    _claimsIdentity = claimsPrincipal?.Identity as ClaimsIdentity;
-                }
-                else
-                {
-                    _claimsIdentity = _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.Identity as ClaimsIdentity;
-                }
-                return _claimsIdentity;
-            }
-
-        }
+        public ClaimsIdentity? ClaimsIdentity => _claimsIdentity ??= _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.Identity as ClaimsIdentity;
 
         /// <inheritdoc />
         public IDisposable Change(string? userId)
