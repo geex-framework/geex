@@ -69,7 +69,7 @@ namespace Geex.Gql.Extensions
             return MarkTypeRefNullable(typeInspector, reference);
         }
 
-        private static TypeReference MarkTypeRefNullable(ITypeInspector typeInspector, TypeReference? reference)
+        public static TypeReference MarkTypeRefNullable(this ITypeInspector typeInspector, TypeReference? reference)
         {
             if (reference is ExtendedTypeReference extendedTypeRef)
             {

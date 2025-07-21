@@ -38,7 +38,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
-        <PackageReference Include="Geex.Analyzer" Version="8.1.1.4" />
+        <ProjectReference Include="..\Geex.Analyzer\src\Geex.Analyzer.csproj" />
         <ProjectReference Include="..\Geex.Extensions.ApprovalFlows\src\Geex.Extensions.ApprovalFlows.csproj" />
         <ProjectReference Include="..\Geex.Extensions.AuditLogs\src\Geex.Extensions.AuditLogs.csproj" />
         <ProjectReference Include="..\Geex.Extensions.Authorization\src\Geex.Extensions.Authorization.csproj" />

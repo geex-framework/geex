@@ -10,7 +10,7 @@ namespace Geex.Analyzer
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class NullableAttributeAnalyzer : DiagnosticAnalyzer
     {
-        public const string DiagnosticId = "GEEX001";
+        public const string DiagnosticId = "GEEX003";
         private static readonly LocalizableString Title = "Should add NullableAttribute";
         private static readonly LocalizableString MessageFormat = "Field or parameter '{0}' has a default value and should be marked with [Nullable]";
         private static readonly DiagnosticDescriptor Rule = new DiagnosticDescriptor(
@@ -39,6 +39,8 @@ namespace Geex.Analyzer
             if (property.AttributeLists.SelectMany(x => x.Attributes)
                 .Any(attr => attr.Name.ToString().Contains("Nullable")))
                 return;
+            // 调试输出
+            System.Diagnostics.Debug.WriteLine($"AnalyzeProperty: {property.Identifier.Text}");
             context.ReportDiagnostic(Diagnostic.Create(Rule, property.Identifier.GetLocation(), property.Identifier.Text));
         }
 
@@ -52,6 +54,8 @@ namespace Geex.Analyzer
             if (parameter.AttributeLists.SelectMany(x => x.Attributes)
                 .Any(attr => attr.Name.ToString().Contains("Nullable")))
                 return;
+            // 调试输出
+            System.Diagnostics.Debug.WriteLine($"AnalyzeParameter: {parameter.Identifier.Text}");
             context.ReportDiagnostic(Diagnostic.Create(Rule, parameter.Identifier.GetLocation(), parameter.Identifier.Text));
         }
     }
