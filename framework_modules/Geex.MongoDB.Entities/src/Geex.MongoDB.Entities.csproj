@@ -11,8 +11,9 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="DeepCloner" Version="0.10.3" />
-        <PackageReference Include="FastExpressionCompiler" Version="5.2.0" />
+        <PackageReference Include="FastExpressionCompiler" Version="5.3.0" />
         <PackageReference Include="LinqToAnything" Version="2.1.28" />
+        <PackageReference Include="Mapster" Version="7.4.0" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.5" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="MongoDB.Driver" Version="2.20.0" />

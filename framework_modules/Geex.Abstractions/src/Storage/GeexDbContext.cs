@@ -3,16 +3,20 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Geex.Abstractions;
 using Geex.Migrations;
 using Geex.MongoDB.Entities.Utilities;
 using Geex.Notifications;
+
 using KellermanSoftware.CompareNetObjects;
+
 using MediatX;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Entities;
 using Nito.AsyncEx.Synchronous;
@@ -25,6 +29,7 @@ namespace Geex.Storage
         {
             DbContext._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
             DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
+            DbContext.saveMethod = typeof(GeexCommonAbstractionStorageExtensions).GetMethods().First(x => x.Name == nameof(GeexCommonAbstractionStorageExtensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         }
 
         /// <inheritdoc />
@@ -234,6 +239,40 @@ namespace Geex.Storage
 
             return ActivatorUtilities.CreateInstance<T>(ServiceProvider);
         }
+
+        /// <summary>
+        /// 取消特定对象的对象跟踪,
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        public void Detach<T>(T entity) where T : IEntity
+        {
+            entity.DbContext = null;
+            var rootType = entity.GetType().GetRootBsonClassMap().ClassType;
+            this.Local[rootType].TryRemove(entity.Id, out _);
+            this.OriginLocal[rootType].TryRemove(entity.Id, out _);
+        }
+
+        /// <summary>
+        /// 取消特定对象的对象跟踪,
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entities"></param>
+        public void Detach<T>(IEnumerable<T> entities) where T : IEntity
+        {
+            if (!entities.Any())
+            {
+                return;
+            }
+            var rootType = entities.First().GetType().GetRootBsonClassMap().ClassType;
+            foreach (var entity in entities)
+            {
+                (entity as IEntityBase).DbContext = null;
+                this.Local[rootType].TryRemove(entity.Id, out _);
+                this.OriginLocal[rootType].TryRemove(entity.Id, out _);
+            }
+        }
+
     }
     public static class ActivatorUtilitiesExtensions
     {

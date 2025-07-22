@@ -17,7 +17,6 @@
         public string protocol { get; set; }
         public int millis { get; set; }
         public string planSummary { get; set; }
-        public string ts { get; set; }
         public string client { get; set; }
         public string appName { get; set; }
         public object[] allUsers { get; set; }

@@ -69,7 +69,6 @@ namespace Geex.Extensions.Messaging.Core.Handlers
         {
             var message = new Message(request.Text, request.Severity);
             Uow.Attach(message);
-            await message.SaveAsync(cancellation: cancellationToken);
             return message;
         }
 
@@ -88,7 +87,6 @@ namespace Geex.Extensions.Messaging.Core.Handlers
             {
                 message.MessageType = request.MessageType.Value;
             }
-            await message.SaveAsync(cancellation: cancellationToken);
             return;
         }
     }

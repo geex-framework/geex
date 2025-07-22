@@ -34,7 +34,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
         IRequestHandler<ResetUserPasswordRequest, IUser>,
         IRequestHandler<DeleteUserRequest, bool>,
         IRequestHandler<ChangePasswordRequest, IUser>,
-        IRequestHandler<RegisterUserRequest>,
+        IRequestHandler<RegisterUserRequest, IUser>,
         IEventHandler<UserOrgChangedEvent>,
         IEventHandler<OrgCodeChangedEvent>,
         ICommonHandler<IUser, User>,
@@ -188,7 +188,6 @@ namespace Geex.Extensions.Identity.Core.Handlers
             var user = Uow.Create(request);
             await user.AssignRoles(request.RoleIds);
             await user.AssignOrgs(request.OrgCodes);
-            await user.SaveAsync(cancellationToken);
             return user;
         }
 
@@ -214,9 +213,9 @@ namespace Geex.Extensions.Identity.Core.Handlers
         /// <param name="request">The request</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Response from the request</returns>
-        public virtual async Task Handle(RegisterUserRequest request, CancellationToken cancellationToken)
+        public virtual async Task<IUser> Handle(RegisterUserRequest request, CancellationToken cancellationToken)
         {
-            await this.Uow.Request(new CreateUserRequest
+            return await this.Uow.Request(new CreateUserRequest
             {
                 Username = request.Username,
                 IsEnable = true,
@@ -228,7 +227,6 @@ namespace Geex.Extensions.Identity.Core.Handlers
                 PhoneNumber = request.PhoneNumber,
                 Password = request.Password
             }, cancellationToken);
-            return;
         }
     }
 }

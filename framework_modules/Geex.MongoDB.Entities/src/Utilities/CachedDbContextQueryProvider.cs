@@ -100,6 +100,7 @@ namespace MongoDB.Entities.Utilities
             //var sw = Stopwatch.StartNew();
             var sourceType = typeof(T);
             var resultType = typeof(TResult);
+            var rootType = typeof(T).GetRootBsonClassMap().ClassType;
             //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} started.");
             try
             {
@@ -133,16 +134,17 @@ namespace MongoDB.Entities.Utilities
                         }
 
                         IQueryable<T> entities;
+                        var dbQuery = this.CreateQuery<T>(visitor.PreSelectExpression);
                         if (localEntities.Any() || deletedEntities.Any())
                         {
-                            var dbQuery = this.CreateQuery<T>(visitor.PreSelectExpression);
                             var dbEntities = dbQuery
                             //.Where(x => !localIds.Contains(x.Id))
                             .ToList();
 
                             if (dbEntities.Count != 0)
                             {
-                                dbEntities = this.DbContext.Attach(dbEntities);
+                                dbEntities = this.DbContext.Attach(dbEntities.Except(localEntities)).ToList();
+                                this.DbContext.UpdateDbValue(dbEntities);
                             }
 
                             entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
@@ -152,8 +154,10 @@ namespace MongoDB.Entities.Utilities
                         }
                         else
                         {
-                            entities = this.CreateQuery<T>(visitor.PreSelectExpression).ToList().AsQueryable();
-                            this.DbContext.Attach(entities);
+                            var dbEntities = dbQuery.AsEnumerable();
+                            dbEntities = this.DbContext.Attach(dbEntities.Except(localEntities));
+                            this.DbContext.UpdateDbValue(dbEntities);
+                            entities = dbEntities.AsQueryable();
                         }
 
                         BatchLoadLazyQueries(entities, this.BatchLoadConfig);

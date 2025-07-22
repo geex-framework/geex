@@ -43,7 +43,6 @@ namespace Geex.Extensions.Identity.Core.Handlers
         {
             var role = new Role(request.RoleCode, request.RoleName, request.IsStatic ?? false, request.IsDefault ?? false);
             Uow.Attach(role);
-            await role.SaveAsync(cancellationToken);
             return role;
         }
 

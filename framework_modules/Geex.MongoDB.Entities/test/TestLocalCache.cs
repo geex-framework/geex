@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 
+using Geex.Storage;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Entities.Tests.Models;
@@ -462,6 +464,41 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             var list = dbContext.Query<TestEntity>().ToList();
+            dbContext.Dispose();
+        }
+
+        class ProtectedCtorClass : Entity<ProtectedCtorClass>
+        {
+            public string Name { get; set; }
+
+            protected ProtectedCtorClass()
+            {
+
+            }
+
+            public ProtectedCtorClass(string name)
+            {
+                Name = name;
+            }
+        }
+
+        [TestMethod]
+        public async Task protected_ctor_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<ProtectedCtorClass>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var testEntity = new ProtectedCtorClass("test");
+            dbContext.Attach(testEntity);
+            await testEntity.SaveAsync();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            var result = dbContext.Query<ProtectedCtorClass>().FirstOrDefault();
+            dbContext.Local[typeof(ProtectedCtorClass)].ShouldNotBeEmpty();
             dbContext.Dispose();
         }
     }

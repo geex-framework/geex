@@ -1,25 +1,34 @@
-﻿using MongoDB.Driver;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+
+using FastExpressionCompiler;
+using Force.DeepCloner;
 using KellermanSoftware.CompareNetObjects;
+
+using Mapster;
+
 using Microsoft.Extensions.DependencyInjection;
+
 using MongoDB.Bson;
+using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
+using MongoDB.Driver.Core.Clusters;
 using MongoDB.Entities.Core.Comparers;
 using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
+
 using ReadConcern = MongoDB.Driver.ReadConcern;
 using WriteConcern = MongoDB.Driver.WriteConcern;
-using MongoDB.Bson.IO;
-using MongoDB.Driver.Core.Clusters;
 
 namespace MongoDB.Entities
 {
@@ -34,6 +43,7 @@ namespace MongoDB.Entities
         static DbContext()
         {
             DbContext._compareLogic.Config.CustomComparers.Add(new JsonNodeComparer(RootComparerFactory.GetRootComparer()));
+            TypeAdapterConfig.GlobalSettings.Compiler = exp => exp.CompileFast();
         }
         protected internal IClientSessionHandle
             session; //this will be set by Transaction class when inherited. otherwise null.
@@ -198,13 +208,6 @@ namespace MongoDB.Entities
                     //throw new NotSupportedException("Queryable Api不支持数量过多的Entity查询/写入, 请考虑使用原生Api");
                 }
                 this.Local[rootType].TryAdd(entity.Id, entity);
-                if (!isNew)
-                {
-                    // bug: 这里只需要拷贝所有数据库的数据即可
-                    var serializer = BsonSerializer.LookupSerializer<T>();
-                    var dbValue = serializer.Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(entity.ToBsonDocument(serializer))));
-                    this.OriginLocal[rootType].TryAdd(entity.Id, dbValue);
-                }
                 entity.DbContext = this;
                 if (entity is IAttachIntercepted intercepted)
                 {
@@ -579,7 +582,7 @@ namespace MongoDB.Entities
                 session);
         }
 
-        private static MethodInfo saveMethod = typeof(Extensions).GetMethods().First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
+        protected static MethodInfo saveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
 
         public virtual async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
@@ -679,7 +682,7 @@ namespace MongoDB.Entities
             MembersToIgnore = new List<string>()
             {
                 nameof(IModifiedOn.ModifiedOn)
-            }
+            },
         });
 
         protected virtual void Dispose(bool disposing)
@@ -752,6 +755,41 @@ namespace MongoDB.Entities
         {
             if (cancellation != default && this?.Session == null)
                 throw new NotSupportedException("Cancellation is only supported within transactions for delete operations!");
+        }
+
+        public void UpdateDbValue<T>(T dbEntity, bool force = false) where T : IEntityBase
+        {
+            var rootType = typeof(T).GetRootBsonClassMap().ClassType;
+            UpdateDbValue(dbEntity, rootType, force);
+        }
+
+        public void UpdateDbValue<T>(IEnumerable<T> dbEntities, bool force = false) where T : IEntityBase
+        {
+            if (!dbEntities.Any())
+            {
+                return;
+            }
+            var rootType = typeof(T).GetRootBsonClassMap().ClassType;
+            foreach (var dbEntity in dbEntities)
+            {
+                UpdateDbValue(dbEntity, rootType, force);
+            }
+        }
+
+        private void UpdateDbValue<T>(T dbEntity, Type rootType, bool force = false) where T : IEntityBase
+        {
+            if (force)
+            {
+                var tobeCached = dbEntity.ShallowClone();
+                this.OriginLocal[rootType].AddOrUpdate(dbEntity.Id, tobeCached, (_, _) => tobeCached);
+                return;
+            }
+            if (!OriginLocal[rootType].ContainsKey(dbEntity.Id))
+            {
+                // todo: Copy dbEntity and save it to OriginLocal
+                var tobeCached = dbEntity.ShallowClone();
+                this.OriginLocal[rootType].TryAdd(dbEntity.Id, tobeCached);
+            }
         }
     }
 }

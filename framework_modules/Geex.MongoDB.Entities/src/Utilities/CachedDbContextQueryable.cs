@@ -130,6 +130,7 @@ namespace MongoDB.Entities.Utilities
                     }
 
                     var dbEntities = dbQuery.ToList();
+                    _dbContext.UpdateDbValue(dbEntities);
                     var attachedDbEntities = _dbContext.Attach(dbEntities);
 
                     entities = localEntities.Union(attachedDbEntities).Except(deletedEntities).AsQueryable();

@@ -6,7 +6,15 @@ using System.Threading.Tasks;
 
 using MediatX;
 
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+
+using MongoDB.Bson;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
 using MongoDB.Entities;
+
+using SharpCompress.Writers;
 
 namespace Geex.Storage
 {
@@ -26,6 +34,26 @@ namespace Geex.Storage
             foreach (var @event in events)
             {
                 (this.DbContext as GeexDbContext)?.DomainEvents.Enqueue(@event);
+            }
+        }
+
+        public virtual TChild ConvertToChild<TChild>() where TChild : T
+        {
+            try
+            {
+                var uow = (this.DbContext as GeexDbContext);
+                uow.Detach(this);
+                var bsonDocument = new BsonDocument();
+                BsonSerializer.LookupSerializer(this.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), this);
+                //var obj = BsonTypeMapper.MapToDotNetValue(bsonDocument);
+                //JsonSerializer.Serialize(writer, obj, options);
+                var child = BsonSerializer.LookupSerializer<TChild>().Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(bsonDocument)));
+                //var child = ActivatorUtilities.CreateInstance<TChild>(uow.ServiceProvider, this, uow);
+                return uow.Attach(child);
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException($"无法将实体 {this.GetType().Name} 转换为子实体 {typeof(TChild).Name}, 子实体必须具有`public TChild(Parent parent, IUnitOfWork uow = default){{/* ... */}}`的构造函数", e);
             }
         }
 
