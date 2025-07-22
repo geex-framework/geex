@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Extensions.Authorization.Events;
 using Geex.Extensions.Authorization.Requests;
+
 using MediatX;
 
 namespace Geex.Extensions.Authorization.Core.Handlers
@@ -35,13 +37,17 @@ namespace Geex.Extensions.Authorization.Core.Handlers
         {
             if (request.Subject == GeexConstants.SuperAdminId)
             {
-                return AppPermission.DynamicValues.Select(x=>x.Value);
+                return AppPermission.DynamicValues.Select(x => x.Value);
             }
             return _enforcer.GetImplicitPermissionsForUser(request.Subject);
         }
 
         public async Task Handle(AuthorizeRequest request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(request.Target))
+            {
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "AuthorizeRequest.Target cannot be null or empty.");
+            }
             var permissions = request.AllowedPermissions.Select(x => x.Value);
             await _enforcer.SetPermissionsAsync(request.Target, permissions);
             await _uow.Notify(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);

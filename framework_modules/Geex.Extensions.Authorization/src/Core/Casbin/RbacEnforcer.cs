@@ -34,9 +34,11 @@ namespace Geex.Extensions.Authorization.Core.Casbin
         public RbacEnforcer(CasbinMongoAdapter adapter, ILogger<RbacEnforcer> logger)
         {
             _logger = logger;
-            this._innerEnforcer = new Enforcer(Model, adapter);
+            _innerEnforcer = new Enforcer(Model, adapter);
+            _innerEnforcer.EnableCache(true);
             _innerEnforcer.EnableAutoSave(true);
             _innerEnforcer.AddFunction("fieldMatch", new FieldsSelectFunc());
+            _innerEnforcer.EnableAutoCleanEnforceCache(true);
         }
         /// <summary>
         /// # defines
@@ -71,7 +73,7 @@ g2 = _, _
 e = some(where (p.eft == allow))
 
 [matchers]
-m = (p.sub == ""*"" || g(r.sub, p.sub)) && r.obj == p.obj && (p.fields == ""*"" || r.fields == p.fields)
+m = (p.sub == ""*"" || g(r.sub, p.sub) || r.sub == p.sub) && r.obj == p.obj && (p.fields == ""*"" || r.fields == p.fields)
 ");
 
         public bool Enforce(string sub, string mod, string obj, string fields = "")

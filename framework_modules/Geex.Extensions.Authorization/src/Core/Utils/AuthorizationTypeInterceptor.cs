@@ -55,7 +55,7 @@ namespace Geex.Extensions.Authorization.Core.Utils
                 foreach (var fieldDefinition in matches)
                 {
                     var descriptor = ObjectFieldDescriptor.From(completionContext.DescriptorContext, fieldDefinition);
-                    var policy = $"{typeName}_{fieldDefinition.Name}";
+                    var policy = $"*_{typeName}_{fieldDefinition.Name}";
                     //descriptor.Authorize(policy);
                     //if (!fieldDefinition.Directives.Any(x => (x.Value is AuthorizeDirective)))
                     //{
