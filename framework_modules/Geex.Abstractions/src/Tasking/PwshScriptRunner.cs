@@ -17,6 +17,37 @@ namespace Geex.Tasking
         [Logging]
         public static async Task<string?> Execute(string workDirectory, string command, string? outputMatchRegex = default, TimeSpan? timeout = default)
         {
+            var outputStr = await ExecuteInternal(workDirectory, command, timeout);
+            if (outputStr == null) return null;
+
+            if (outputMatchRegex.IsNullOrEmpty())
+            {
+                return outputStr;
+            }
+            else
+            {
+                var regex = new Regex(outputMatchRegex, RegexOptions.Compiled);
+                var match = regex.Match(outputStr);
+                if (match.Success)
+                {
+                    return match.Groups[0].Value;
+                }
+                return null;
+            }
+        }
+
+        [Logging]
+        public static async Task<Match?> Execute(string workDirectory, string command, Regex outputMatchRegex, TimeSpan? timeout = default)
+        {
+            var outputStr = await ExecuteInternal(workDirectory, command, timeout);
+            if (outputStr == null) return null;
+
+            var match = outputMatchRegex.Match(outputStr);
+            return match.Success ? match : null;
+        }
+
+        private static async Task<string?> ExecuteInternal(string workDirectory, string command, TimeSpan? timeout)
+        {
             // 创建一个pwsh进程
             var processInfo = new ProcessStartInfo
             {
@@ -36,13 +67,14 @@ namespace Geex.Tasking
             var output = new StringBuilder();
             var error = new StringBuilder();
 
-            using var outputWaitHandle = new AutoResetEvent(false);
-            using var errorWaitHandle = new AutoResetEvent(false);
+            var outputComplete = new TaskCompletionSource<bool>();
+            var errorComplete = new TaskCompletionSource<bool>();
+            
             process.OutputDataReceived += (sender, e) =>
             {
                 if (e.Data == null)
                 {
-                    outputWaitHandle.Set();
+                    outputComplete.SetResult(true);
                 }
                 else
                 {
@@ -53,7 +85,7 @@ namespace Geex.Tasking
             {
                 if (e.Data == null)
                 {
-                    errorWaitHandle.Set();
+                    errorComplete.SetResult(true);
                 }
                 else
                 {
@@ -66,38 +98,67 @@ namespace Geex.Tasking
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            if (process.WaitForExit(timeout.GetValueOrDefault(defaultTimeout)) &&
-                outputWaitHandle.WaitOne(timeout.GetValueOrDefault(defaultTimeout)) &&
-                errorWaitHandle.WaitOne(timeout.GetValueOrDefault(defaultTimeout)))
+            var timeoutValue = timeout.GetValueOrDefault(defaultTimeout);
+            using var cts = new CancellationTokenSource(timeoutValue);
+            
+            try
             {
-                if (process.ExitCode < 0)
+                // 等待进程完成或超时
+                var processTask = Task.Run(() => process.WaitForExit());
+                var completedTask = await Task.WhenAny(processTask, Task.Delay(timeoutValue, cts.Token));
+                
+                if (completedTask == processTask)
                 {
-                    // 处理错误信息
-                    throw new Exception(error.ToString());
-                }
-                else
-                {
-                    var outputStr = output.ToString();
-                    if (outputMatchRegex.IsNullOrEmpty())
+                    // 进程正常完成，等待输出流完成
+                    await Task.WhenAll(outputComplete.Task, errorComplete.Task).ConfigureAwait(false);
+                    
+                    if (process.ExitCode != 0)
                     {
-                        return outputStr;
+                        // 处理错误信息
+                        throw new Exception(error.ToString());
                     }
                     else
                     {
-                        var regex = new Regex(outputMatchRegex, RegexOptions.Compiled);
-                        var match = regex.Match(outputStr);
-                        if (match.Success)
-                        {
-                            return match.Groups[0].Value;
-                        }
-                        return null;
+                        return output.ToString();
                     }
                 }
+                else
+                {
+                    // 超时处理
+                    Logger.LogError("PwshScriptRunner process timeout for command '{command}'", command);
+                    
+                    if (!process.HasExited)
+                    {
+                        try
+                        {
+                            process.Kill(true); // 终止进程及其子进程
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogWarning("Failed to kill process: {exception}", ex.Message);
+                        }
+                    }
+                    
+                    return null;
+                }
             }
-            else
+            catch (OperationCanceledException)
             {
                 Logger.LogError("PwshScriptRunner process cancelled for command '{command}'", command);
-                return error.ToString();
+                
+                if (!process.HasExited)
+                {
+                    try
+                    {
+                        process.Kill(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning("Failed to kill process: {exception}", ex.Message);
+                    }
+                }
+                
+                return null;
             }
         }
 
