@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MethodBoundaryAspect.Fody.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Geex.Logging
 {
@@ -20,9 +21,20 @@ namespace Geex.Logging
             LogInput = logInput;
             LogOutput = logOutput;
         }
-        private static ILoggerFactory? _loggerFactory;
+        private static ILoggerFactory _loggerFactory = NullLoggerFactory.Instance;
 
-        static ILoggerFactory loggerFactory => _loggerFactory ??= ServiceLocator.Global.GetService<ILoggerFactory>();
+        static ILoggerFactory loggerFactory
+        {
+            get
+            {
+                if (_loggerFactory == NullLoggerFactory.Instance)
+                {
+                    _loggerFactory = ServiceLocator.Global?.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance;
+                }
+
+                return _loggerFactory;
+            }
+        }
 
         public override void OnEntry(MethodExecutionArgs args)
         {

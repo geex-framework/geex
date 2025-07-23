@@ -107,7 +107,7 @@ namespace Geex
                     o.IgnoreAdditionalInputFields = true;
                 })
                 .AddConvention<INamingConventions>(sp => new GeexNamingConventions(new XmlDocumentationProvider(new XmlDocumentationFileResolver(capturedSchemaOptions.ResolveXmlDocumentationFileName), sp.GetApplicationService<ObjectPool<StringBuilder>>())))
-                .TryAddTypeInterceptor<GeexTypeInterceptor>()
+                .TryAddTypeInterceptor(new GeexTypeInterceptor(ConfigStageLoggerFactory.Create<GeexTypeInterceptor>()))
                 .TryAddTypeInterceptor<LazyQueryTypeInterceptor>()
                 .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
                 {
@@ -195,6 +195,7 @@ namespace Geex
         /// <inheritdoc />
         public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
+            ServiceLocator.Global = context.ServiceProvider;
             this.ConfigureModuleEntityMaps(context.ServiceProvider);
             var _env = context.GetEnvironment();
             var app = context.GetApplicationBuilder();

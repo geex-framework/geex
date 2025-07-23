@@ -24,6 +24,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using MongoDB.Entities;
 
@@ -31,6 +33,7 @@ using Open.Collections;
 
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Logging;
 using Volo.Abp.Modularity;
 
 namespace Geex
@@ -39,13 +42,15 @@ namespace Geex
     {
         private TModuleOptions? _moduleOptions;
         protected new TModuleOptions ModuleOptions => this._moduleOptions ??= this.ServiceConfigurationContext.Services.GetSingletonInstance<TModuleOptions>();
-
+        internal static IInitLoggerFactory? ConfigStageLoggerFactory { get; set; }
+        public ILogger<TModule> Logger => ConfigStageLoggerFactory?.Create<TModule>() ?? (NullLogger<TModule>.Instance as ILogger<TModule>);
         public virtual void ConfigureModuleOptions(Action<GeexModuleOption> optionsAction)
         {
             optionsAction.Invoke(_moduleOptions);
         }
         public override void PreConfigureServices(ServiceConfigurationContext context)
         {
+            ConfigStageLoggerFactory ??= context.Services.GetSingletonInstance<IInitLoggerFactory>();
             base.PreConfigureServices(context);
             context.Services.Add(new ServiceDescriptor(typeof(GeexModule), this));
             context.Services.Add(new ServiceDescriptor(this.GetType(), this));

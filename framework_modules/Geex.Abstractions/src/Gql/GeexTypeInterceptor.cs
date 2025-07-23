@@ -20,7 +20,7 @@ using MongoDB.Entities;
 
 namespace Geex.Gql
 {
-    public class GeexTypeInterceptor : TypeInterceptor
+    public class GeexTypeInterceptor(ILogger<GeexTypeInterceptor> _logger) : TypeInterceptor
     {
         #region Static Configuration
 
@@ -120,15 +120,7 @@ namespace Geex.Gql
             catch (Exception e)
             {
                 var message = $"Error occurred while creating instance of {runtimeType} when marking nullable fields";
-                var logger = ServiceLocator.Global.GetService<ILogger<GeexTypeInterceptor>>();
-                if (logger != null)
-                {
-                    logger.LogError(e, message);
-                }
-                else
-                {
-                    Console.WriteLine($"{message}: {e.Message}");
-                }
+                _logger.LogError(e, message);
             }
         }
 

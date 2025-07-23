@@ -35,15 +35,11 @@ namespace Geex.Extensions.Authentication
     )]
     public class AuthenticationModule : GeexModule<AuthenticationModule, AuthenticationModuleOptions>
     {
-        private ILogger<AuthenticationModule>? _logger;
-
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             IdentityModelEventSource.ShowPII = true;
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
             var services = context.Services;
-            using var serviceProvider = context.Services.BuildServiceProvider();
-            _logger = serviceProvider.GetService<ILogger<AuthenticationModule>>();
 
             services.AddTransient<IPasswordHasher<IAuthUser>, PasswordHasher<IAuthUser>>();
             var geexCoreModuleOptions = services.GetSingletonInstance<GeexCoreModuleOptions>();
@@ -72,25 +68,25 @@ namespace Geex.Extensions.Authentication
 
                 if (string.IsNullOrEmpty(certFile))
                 {
-                    _logger?.LogInformation("未找到证书路径环境变量，将使用开发证书");
+                    Logger?.LogInformation("未找到证书路径环境变量，将使用开发证书");
                     return null;
                 }
 
                 var resolvedCertPath = ResolveCertificatePath(certFile);
                 if (string.IsNullOrEmpty(resolvedCertPath))
                 {
-                    _logger?.LogWarning("证书文件未找到: {CertFile}，将使用开发证书", certFile);
+                    Logger?.LogWarning("证书文件未找到: {CertFile}，将使用开发证书", certFile);
                     return null;
                 }
 
                 var cert = CreateCertificateFromFiles(resolvedCertPath, keyPath);
-                _logger?.LogInformation("成功加载证书: {CertPath}", resolvedCertPath);
+                Logger?.LogInformation("成功加载证书: {CertPath}", resolvedCertPath);
 
                 return cert;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "加载证书时发生错误，将使用开发证书");
+                Logger?.LogError(ex, "加载证书时发生错误，将使用开发证书");
                 return null;
             }
         }
@@ -132,7 +128,7 @@ namespace Geex.Extensions.Authentication
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "从文件创建证书时发生错误: {CertFile}, {KeyPath}", certFile, keyPath);
+                Logger?.LogError(ex, "从文件创建证书时发生错误: {CertFile}, {KeyPath}", certFile, keyPath);
                 throw;
             }
         }
@@ -261,7 +257,7 @@ namespace Geex.Extensions.Authentication
             else
             {
                 // 如果没有提供证书，创建自签名的签名和加密证书
-                _logger?.LogInformation("未提供证书，正在创建自签名证书");
+                Logger?.LogInformation("未提供证书，正在创建自签名证书");
 
                 var rsa = RSA.Create(2048);
                 var certRequest = new CertificateRequest(signingCertName, rsa, HashAlgorithmName.SHA256,
@@ -279,7 +275,7 @@ namespace Geex.Extensions.Authentication
                 options.AddEncryptionCertificate(newCert);
                 options.AddSigningCredentials(signCredentials);
 
-                _logger?.LogInformation("成功创建自签名证书用于OpenIddict");
+                Logger?.LogInformation("成功创建自签名证书用于OpenIddict");
                 return (newCert, signCredentials);
             }
         }
@@ -288,7 +284,7 @@ namespace Geex.Extensions.Authentication
             OpenIddictServerBuilder options, X509Certificate2 cert,
             X500DistinguishedName signingCertName, X500DistinguishedName encryptionCertName)
         {
-            _logger?.LogInformation("使用现有证书: {CertName} 进行认证授权", cert.Subject);
+            Logger?.LogInformation("使用现有证书: {CertName} 进行认证授权", cert.Subject);
 
             var requiredKeyUsage = X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DigitalSignature;
             var keyUsageExtension = cert.Extensions.OfType<X509KeyUsageExtension>().FirstOrDefault();
@@ -299,7 +295,7 @@ namespace Geex.Extensions.Authentication
                 options
                     .AddEncryptionCertificate(cert)
                     .AddSigningCertificate(cert);
-                _logger?.LogInformation("证书支持签名和加密，直接使用");
+                Logger?.LogInformation("证书支持签名和加密，直接使用");
                 return (cert, null);
             }
 
@@ -307,13 +303,13 @@ namespace Geex.Extensions.Authentication
             if (keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.DigitalSignature) == true)
             {
                 options.AddSigningCertificate(cert);
-                _logger?.LogInformation("证书支持数字签名，添加为签名证书");
+                Logger?.LogInformation("证书支持数字签名，添加为签名证书");
             }
 
             if (keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.KeyEncipherment) == true)
             {
                 options.AddEncryptionCertificate(cert);
-                _logger?.LogInformation("证书支持密钥加密，添加为加密证书");
+                Logger?.LogInformation("证书支持密钥加密，添加为加密证书");
             }
 
             // 如果证书不满足所有要求，创建补充的自签名证书
@@ -322,7 +318,7 @@ namespace Geex.Extensions.Authentication
 
             if (needsSigningCert || needsEncryptionCert)
             {
-                _logger?.LogWarning("证书 {CertName} 不满足所需的签名/加密要求，正在创建补充的自签名证书", cert.Subject);
+                Logger?.LogWarning("证书 {CertName} 不满足所需的签名/加密要求，正在创建补充的自签名证书", cert.Subject);
 
                 SecurityKey securityKey;
                 CertificateRequest certRequest;
@@ -361,20 +357,20 @@ namespace Geex.Extensions.Authentication
                     if (needsEncryptionCert)
                     {
                         options.AddEncryptionCertificate(newCert);
-                        _logger?.LogInformation("添加自签名加密证书");
+                        Logger?.LogInformation("添加自签名加密证书");
                     }
 
                     if (needsSigningCert)
                     {
                         options.AddSigningCredentials(signCredentials);
-                        _logger?.LogInformation("添加自签名签名凭据");
+                        Logger?.LogInformation("添加自签名签名凭据");
                     }
 
                     return (newCert, signCredentials);
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogError(ex, "配置自定义证书时发生错误");
+                    Logger?.LogError(ex, "配置自定义证书时发生错误");
                     throw;
                 }
             }

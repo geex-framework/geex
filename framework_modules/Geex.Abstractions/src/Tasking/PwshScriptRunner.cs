@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Geex.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Geex.Tasking
 {
@@ -69,7 +70,7 @@ namespace Geex.Tasking
 
             var outputComplete = new TaskCompletionSource<bool>();
             var errorComplete = new TaskCompletionSource<bool>();
-            
+
             process.OutputDataReceived += (sender, e) =>
             {
                 if (e.Data == null)
@@ -100,18 +101,18 @@ namespace Geex.Tasking
 
             var timeoutValue = timeout.GetValueOrDefault(defaultTimeout);
             using var cts = new CancellationTokenSource(timeoutValue);
-            
+
             try
             {
                 // 等待进程完成或超时
                 var processTask = Task.Run(() => process.WaitForExit());
                 var completedTask = await Task.WhenAny(processTask, Task.Delay(timeoutValue, cts.Token));
-                
+
                 if (completedTask == processTask)
                 {
                     // 进程正常完成，等待输出流完成
                     await Task.WhenAll(outputComplete.Task, errorComplete.Task).ConfigureAwait(false);
-                    
+
                     if (process.ExitCode != 0)
                     {
                         // 处理错误信息
@@ -126,7 +127,7 @@ namespace Geex.Tasking
                 {
                     // 超时处理
                     Logger.LogError("PwshScriptRunner process timeout for command '{command}'", command);
-                    
+
                     if (!process.HasExited)
                     {
                         try
@@ -138,14 +139,14 @@ namespace Geex.Tasking
                             Logger.LogWarning("Failed to kill process: {exception}", ex.Message);
                         }
                     }
-                    
+
                     return null;
                 }
             }
             catch (OperationCanceledException)
             {
                 Logger.LogError("PwshScriptRunner process cancelled for command '{command}'", command);
-                
+
                 if (!process.HasExited)
                 {
                     try
@@ -157,11 +158,11 @@ namespace Geex.Tasking
                         Logger.LogWarning("Failed to kill process: {exception}", ex.Message);
                     }
                 }
-                
+
                 return null;
             }
         }
 
-        public static ILogger<PwshScriptRunner> Logger => ServiceLocator.Global.GetService<ILogger<PwshScriptRunner>>();
+        public static ILogger<PwshScriptRunner> Logger => ServiceLocator.Global?.GetService<ILogger<PwshScriptRunner>>() ?? NullLogger<PwshScriptRunner>.Instance;
     }
 }

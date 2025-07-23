@@ -1,4 +1,5 @@
-﻿using Geex;
+﻿using System;
+using Geex;
 using Geex.Abstractions;
 using Microsoft.Extensions.Hosting;
 
@@ -13,6 +14,7 @@ namespace Microsoft.AspNetCore.Hosting
             return hostEnvironment.EnvironmentName == "UnitTest";
         }
 
+        [Obsolete("ServiceLocator will be automatically registered.")]
         public static IHost ConfigServiceLocator(this IHost host)
         {
             ServiceLocator.Global = host.Services;
