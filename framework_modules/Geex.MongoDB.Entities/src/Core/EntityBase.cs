@@ -154,7 +154,7 @@ namespace MongoDB.Entities
         /// <inheritdoc />
         Dictionary<string, ILazyQuery> IEntityBase.LazyQueryCache => LazyQueryCache;
         /// <summary>
-        /// 强制转换当前实体为子实体类型, 转换后的实体将保持之前的Attach状态.
+        /// 强制转换当前实体为子实体类型, 转换后的实体将保持之前的Attach状态, 转换后的实体与原实体的原始数据相同但类型不同.
         /// </summary>
         /// <typeparam name="TChild"></typeparam>
         /// <returns></returns>

@@ -802,7 +802,7 @@ namespace MongoDB.Entities
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        public void Detach<T>(T entity) where T : class, IEntityBase
+        public void Detach<T>(T entity) where T : IEntityBase
         {
             ArgumentNullException.ThrowIfNull(entity);
             var entityType = entity.GetType();
@@ -821,7 +821,7 @@ namespace MongoDB.Entities
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entities"></param>
-        public void Detach<T>(IEnumerable<T> entities) where T : class, IEntityBase
+        public void Detach<T>(IEnumerable<T> entities) where T : IEntityBase
         {
             ArgumentNullException.ThrowIfNull(entities);
             var array = entities.ToArray();

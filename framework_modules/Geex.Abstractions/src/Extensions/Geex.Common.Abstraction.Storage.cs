@@ -26,7 +26,7 @@ namespace Geex.Abstractions
         public static async Task<long> DeleteAsync<T>(this T entity) where T : IEntity
         {
             entity.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
-            (entity.DbContext as GeexDbContext)?.Detach(entity);
+            (entity.DbContext)?.Detach(entity);
             return await entity.DeleteAsync();
         }
 
@@ -39,7 +39,7 @@ namespace Geex.Abstractions
             }
             var deletes = enumerable.Select(async x =>
             {
-                (x.DbContext as GeexDbContext)?.Detach(x);
+                (x.DbContext)?.Detach(x);
                 return await x.DeleteAsync();
             });
             // todo: possible deadlock for duplicate delete in parallel
@@ -55,7 +55,7 @@ namespace Geex.Abstractions
         /// <param name="cancellation">An optional cancellation token</param>
         public static Task<ReplaceOneResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntity
         {
-            (entity.DbContext as GeexDbContext)?.Detach<T>(entity);
+            (entity.DbContext)?.Detach<T>(entity);
             return DB.SaveAsync(entity, cancellation: cancellation);
         }
 
@@ -72,7 +72,7 @@ namespace Geex.Abstractions
             {
                 throw new InvalidOperationException("bulksave entities should be in the same session");
             }
-            (dbContext as GeexDbContext)?.Detach(entities);
+            (dbContext)?.Detach(entities);
 
             return DB.SaveAsync(entities, dbContext, cancellation);
         }
@@ -101,7 +101,7 @@ namespace Geex.Abstractions
         /// <param name="cancellation">An optional cancellation token</param>
         public static Task<UpdateResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntity
         {
-            (entity.DbContext as GeexDbContext)?.Detach(entity);
+            (entity.DbContext)?.Detach(entity);
             return DB.SaveOnlyAsync(entity, members, entity.DbContext, cancellation);
         }
 
@@ -120,7 +120,7 @@ namespace Geex.Abstractions
         {
             var enumerable = entities.ToList();
             var dbContext = enumerable.FirstOrDefault()?.DbContext;
-            (dbContext as GeexDbContext)?.Detach(entities);
+            (dbContext)?.Detach(entities);
             return DB.SaveOnlyAsync(enumerable, members, dbContext, cancellation);
         }
 
@@ -137,7 +137,7 @@ namespace Geex.Abstractions
         /// <param name="cancellation">An optional cancellation token</param>
         public static Task<UpdateResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntity
         {
-            (entity.DbContext as GeexDbContext)?.Detach(entity);
+            (entity.DbContext)?.Detach(entity);
             return DB.SaveExceptAsync(entity, members, entity.DbContext, cancellation);
         }
 
@@ -156,7 +156,7 @@ namespace Geex.Abstractions
         {
             var enumerable = entities.ToList();
             var dbContext = enumerable.FirstOrDefault()?.DbContext;
-            (dbContext as GeexDbContext)?.Detach(entities);
+            (dbContext)?.Detach(entities);
             return DB.SaveExceptAsync(enumerable, members, dbContext, cancellation);
         }
     }
