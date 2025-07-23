@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using MongoDB.Entities.Utilities;
@@ -151,5 +153,37 @@ namespace MongoDB.Entities
 
         /// <inheritdoc />
         Dictionary<string, ILazyQuery> IEntityBase.LazyQueryCache => LazyQueryCache;
+        /// <summary>
+        /// 强制转换当前实体为子实体类型, 转换后的实体将保持之前的Attach状态.
+        /// </summary>
+        /// <typeparam name="TChild"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public virtual TChild ConvertToChild<TChild>() where TChild : T
+        {
+            try
+            {
+                if (this.DbContext != null)
+                {
+                    var uow = (this.DbContext);
+                    uow.Detach(this);
+                    var bsonDocument = new BsonDocument();
+                    BsonSerializer.LookupSerializer(this.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), this);
+                    var child = BsonSerializer.LookupSerializer<TChild>().Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(bsonDocument)));
+                    return uow.Attach(child);
+                }
+                else
+                {
+                    var bsonDocument = new BsonDocument();
+                    BsonSerializer.LookupSerializer(this.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), this);
+                    var child = BsonSerializer.LookupSerializer<TChild>().Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(bsonDocument)));
+                    return child;
+                }
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException($"无法将实体 {this.GetType().Name} 转换为子实体 {typeof(TChild).Name}", e);
+            }
+        }
     }
 }

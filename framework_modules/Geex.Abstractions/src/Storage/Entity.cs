@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Force.DeepCloner;
 using MediatX;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -37,25 +37,7 @@ namespace Geex.Storage
             }
         }
 
-        public virtual TChild ConvertToChild<TChild>() where TChild : T
-        {
-            try
-            {
-                var uow = (this.DbContext as GeexDbContext);
-                uow.Detach(this);
-                var bsonDocument = new BsonDocument();
-                BsonSerializer.LookupSerializer(this.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), this);
-                //var obj = BsonTypeMapper.MapToDotNetValue(bsonDocument);
-                //JsonSerializer.Serialize(writer, obj, options);
-                var child = BsonSerializer.LookupSerializer<TChild>().Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(bsonDocument)));
-                //var child = ActivatorUtilities.CreateInstance<TChild>(uow.ServiceProvider, this, uow);
-                return uow.Attach(child);
-            }
-            catch (Exception e)
-            {
-                throw new InvalidOperationException($"无法将实体 {this.GetType().Name} 转换为子实体 {typeof(TChild).Name}, 子实体必须具有`public TChild(Parent parent, IUnitOfWork uow = default){{/* ... */}}`的构造函数", e);
-            }
-        }
+
 
         /// <inheritdoc />
         protected IUnitOfWork Uow => base.DbContext as IUnitOfWork;

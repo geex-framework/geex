@@ -11,12 +11,15 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using FastExpressionCompiler;
+
 using Force.DeepCloner;
+
 using KellermanSoftware.CompareNetObjects;
 
 using Mapster;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
@@ -26,6 +29,8 @@ using MongoDB.Driver.Core.Clusters;
 using MongoDB.Entities.Core.Comparers;
 using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
+
+using Volo.Abp;
 
 using ReadConcern = MongoDB.Driver.ReadConcern;
 using WriteConcern = MongoDB.Driver.WriteConcern;
@@ -789,6 +794,48 @@ namespace MongoDB.Entities
                 // todo: Copy dbEntity and save it to OriginLocal
                 var tobeCached = dbEntity.ShallowClone();
                 this.OriginLocal[rootType].TryAdd(dbEntity.Id, tobeCached);
+            }
+        }
+
+        /// <summary>
+        /// 取消特定对象的对象跟踪,
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        public void Detach<T>(T entity) where T : class, IEntityBase
+        {
+            ArgumentNullException.ThrowIfNull(entity);
+            var entityType = entity.GetType();
+            if (entity.DbContext != this)
+            {
+                ServiceProvider.GetService<ILogger<DbContext>>()?.LogWarning("Detaching {EntityType} with Id {Id} from an ambiguous DbContext: entity.DbContext={entity.DbContext} but current={currentDbContext}", entityType.Name, entity.Id, entity.DbContext?.GetHashCode(), this?.GetHashCode());
+            }
+            entity.DbContext = null;
+            var rootType = entityType.GetRootBsonClassMap().ClassType;
+            this.Local[rootType].TryRemove(entity.Id, out _);
+            this.OriginLocal[rootType].TryRemove(entity.Id, out _);
+        }
+
+        /// <summary>
+        /// 取消特定对象的对象跟踪,
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entities"></param>
+        public void Detach<T>(IEnumerable<T> entities) where T : class, IEntityBase
+        {
+            ArgumentNullException.ThrowIfNull(entities);
+            var array = entities.ToArray();
+            if (array.Length == 0)
+            {
+                return;
+            }
+            var rootType = array.First().GetType().GetRootBsonClassMap().ClassType;
+            foreach (var entity in array)
+            {
+                ArgumentNullException.ThrowIfNull(entity);
+                entity.DbContext = null;
+                this.Local[rootType].TryRemove(entity.Id, out _);
+                this.OriginLocal[rootType].TryRemove(entity.Id, out _);
             }
         }
     }

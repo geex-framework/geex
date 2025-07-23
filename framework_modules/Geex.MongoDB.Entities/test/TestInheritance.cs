@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Bson.Serialization;
@@ -22,6 +23,7 @@ namespace MongoDB.Entities.Tests
         {
             BsonClassMap.LookupClassMap(typeof(InheritanceEntityChild)).Inherit<InheritanceEntity>();
         }
+
         [TestMethod]
         public async Task inheritance_should_work()
         {
@@ -52,7 +54,7 @@ namespace MongoDB.Entities.Tests
 
 
             dbContext = new DbContext();
-             var result3 = dbContext.Query<IInheritanceEntity>().Where(x => x.Name.Contains("1"));
+            var result3 = dbContext.Query<IInheritanceEntity>().Where(x => x.Name.Contains("1"));
             result3.ToList().Count().ShouldBe(2);
             result3.Count().ShouldBe(2);
             var result = dbContext.Query<InheritanceEntity>().Where(x => x.Name.Contains("1"));
@@ -617,7 +619,111 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
         }
 
+        [TestMethod]
+        public async Task type_cast_in_detach_status_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var a1 = new InheritanceEntity()
+            {
+                Name = "a1"
+            };
+            // Detach状态下转换
+            a1 = a1.ConvertToChild<InheritanceEntityChild>();
+            a1.ShouldBeOfType<InheritanceEntityChild>();
+            a1.Name.ShouldBe("a1");
+            dbContext.Attach(a1);
+            await dbContext.SaveChanges();
+
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var children = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList();
+            children.Count(x => x.Name == "a1").ShouldBe(1);
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Count(x => x.Name == "a1").ShouldBe(1);
+        }
+
+        [TestMethod]
+        public async Task type_cast_in_attach_status_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var a1 = new InheritanceEntity()
+            {
+                Name = "a1"
+            };
+
+            dbContext.Attach(a1);
+            // Attach状态下转换
+            a1 = a1.ConvertToChild<InheritanceEntityChild>();
+            a1.ShouldBeOfType<InheritanceEntityChild>();
+            a1.Name.ShouldBe("a1");
+            await dbContext.SaveChanges();
+
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var children = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList();
+            children.Count(x => x.Name == "a1").ShouldBe(1);
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Count(x => x.Name == "a1").ShouldBe(1);
+        }
+
+        [TestMethod]
+        public async Task type_cast_in_saved_status_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var a1 = new InheritanceEntity()
+            {
+                Name = "a1"
+            };
+            dbContext.Attach(a1);
+            await dbContext.SaveChanges();
+
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            a1 = dbContext.Query<InheritanceEntity>().FirstOrDefault(x => x.Name == "a1");
+            // Saved状态下转换
+            a1 = a1.ConvertToChild<InheritanceEntityChild>();
+            a1.ShouldBeOfType<InheritanceEntityChild>();
+            a1.Name.ShouldBe("a1");
+            //await dbContext.SaveChanges();
+            dbContext.Dispose();
+
+            dbContext = new DbContext();
+            a1 = dbContext.Query<InheritanceEntity>().FirstOrDefault(x => x.Name == "a1");
+            a1.ShouldBeOfType<InheritanceEntity>();
+            a1.Name.ShouldBe("a1");
+
+            a1 = a1.ConvertToChild<InheritanceEntityChild>();
+            a1.ShouldBeOfType<InheritanceEntityChild>();
+            a1.Name.ShouldBe("a1");
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+
+            dbContext = new DbContext();
+            a1 = dbContext.Query<InheritanceEntity>().FirstOrDefault(x => x.Name == "a1");
+            a1.ShouldBeOfType<InheritanceEntityChild>();
+            a1.Name.ShouldBe("a1");
+
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var children = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList();
+            children.Count(x => x.Name == "a1").ShouldBe(1);
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Count(x => x.Name == "a1").ShouldBe(1);
+        }
     }
-
-
 }
