@@ -18,7 +18,7 @@ using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
 {
-    public abstract class EntityBase<T> : IEntityBase where T : IEntityBase
+    public abstract class EntityBase<T> : IEntityBase where T : class, IEntityBase
     {
         protected LazyMultiQuery<TEntity, TRelated> ConfigLazyQuery<TEntity, TRelated>(
             Expression<Func<TEntity, IQueryable<TRelated>>> propToLoad, Expression<Func<TRelated, bool>> loadCondition,
@@ -83,6 +83,43 @@ namespace MongoDB.Entities
 
         }
         internal Dictionary<string, ILazyQuery> LazyQueryCache { get; } = new Dictionary<string, ILazyQuery>();
+
+        /// <summary>
+        /// 强制转换当前实体为子实体类型, 转换后的实体将保持之前的Attach状态, 转换后的实体与原实体的原始数据相同但类型不同.
+        /// </summary>
+        /// <typeparam name="TChild"></typeparam>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public virtual TChild Cast<TChild>() where TChild : IEntityBase
+        {
+            try
+            {
+                if (this is TChild castedEntity)
+                {
+                    return castedEntity;
+                }
+                if (this.DbContext != null)
+                {
+                    var uow = (this.DbContext);
+                    uow.Detach(this);
+                    var bsonDocument = new BsonDocument();
+                    BsonSerializer.LookupSerializer(this.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), this);
+                    var child = BsonSerializer.LookupSerializer<TChild>().Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(bsonDocument)));
+                    return uow.Attach(child);
+                }
+                else
+                {
+                    var bsonDocument = new BsonDocument();
+                    BsonSerializer.LookupSerializer(this.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), this);
+                    var child = BsonSerializer.LookupSerializer<TChild>().Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(bsonDocument)));
+                    return child;
+                }
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException($"无法将实体 {this.GetType().Name} 转换为子实体 {typeof(TChild).Name}", e);
+            }
+        }
 
         ///// <inheritdoc />
         //ILazyQuery IEntity.ConfigLazyQueryable(Expression lazyQuery, Expression batchQuery, Func<IQueryable> sourceProvider)
@@ -153,37 +190,6 @@ namespace MongoDB.Entities
 
         /// <inheritdoc />
         Dictionary<string, ILazyQuery> IEntityBase.LazyQueryCache => LazyQueryCache;
-        /// <summary>
-        /// 强制转换当前实体为子实体类型, 转换后的实体将保持之前的Attach状态, 转换后的实体与原实体的原始数据相同但类型不同.
-        /// </summary>
-        /// <typeparam name="TChild"></typeparam>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public virtual TChild ConvertToChild<TChild>() where TChild : T
-        {
-            try
-            {
-                if (this.DbContext != null)
-                {
-                    var uow = (this.DbContext);
-                    uow.Detach(this);
-                    var bsonDocument = new BsonDocument();
-                    BsonSerializer.LookupSerializer(this.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), this);
-                    var child = BsonSerializer.LookupSerializer<TChild>().Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(bsonDocument)));
-                    return uow.Attach(child);
-                }
-                else
-                {
-                    var bsonDocument = new BsonDocument();
-                    BsonSerializer.LookupSerializer(this.GetType()).Serialize(BsonSerializationContext.CreateRoot(new BsonDocumentWriter(bsonDocument)), this);
-                    var child = BsonSerializer.LookupSerializer<TChild>().Deserialize(BsonDeserializationContext.CreateRoot(new BsonDocumentReader(bsonDocument)));
-                    return child;
-                }
-            }
-            catch (Exception e)
-            {
-                throw new InvalidOperationException($"无法将实体 {this.GetType().Name} 转换为子实体 {typeof(TChild).Name}", e);
-            }
-        }
+
     }
 }

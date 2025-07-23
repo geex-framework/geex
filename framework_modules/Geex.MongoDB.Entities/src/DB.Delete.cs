@@ -37,8 +37,8 @@ namespace MongoDB.Entities
             var tasks = new HashSet<Task>();
             foreach (var id in Ids)
             {
-                dbContext?.Local[typeof(T)].Remove(id, out _);
-                dbContext?.OriginLocal[typeof(T)].Remove(id, out _);
+                dbContext?.MemoryDataCache[typeof(T)].Remove(id, out _);
+                dbContext?.DbDataCache[typeof(T)].Remove(id, out _);
             }
             var delResTask =
                     dbContext?.Session == null

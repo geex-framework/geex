@@ -23,19 +23,19 @@ namespace Geex.Abstractions
         /// Deletes a single entity from MongoDB.
         /// <para>HINT: If this entity is referenced by one-to-many/many-to-many relationships, those references are also deleted.</para>
         /// </summary>
-        public static async Task<long> DeleteAsync<T>(this T entity) where T : IEntity
+        public static async Task<long> DeleteAsync<T>(this T entity) where T : IEntityBase
         {
-            entity.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
+            (entity as IEntity)?.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
             (entity.DbContext)?.Detach(entity);
             return await entity.DeleteAsync();
         }
 
-        public static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities) where T : IEntity
+        public static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities) where T : IEntityBase
         {
             var enumerable = entities.ToList();
             foreach (var entity in enumerable)
             {
-                entity.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
+                (entity as IEntity)?.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
             }
             var deletes = enumerable.Select(async x =>
             {
@@ -53,7 +53,7 @@ namespace Geex.Abstractions
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<ReplaceOneResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntity
+        public static Task<ReplaceOneResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
         {
             (entity.DbContext)?.Detach<T>(entity);
             return DB.SaveAsync(entity, cancellation: cancellation);
@@ -65,7 +65,7 @@ namespace Geex.Abstractions
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveAsync<T>(this List<T> entities, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntity
+        public static Task<BulkWriteResult<T>> SaveAsync<T>(this List<T> entities, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             var dbContext = entities.FirstOrDefault()?.DbContext;
             if (entities.Any(x => x.DbContext?.Session != dbContext?.Session))
@@ -83,7 +83,7 @@ namespace Geex.Abstractions
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntity
+        public static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return entities.ToList().SaveAsync(session, cancellation);
         }
@@ -94,12 +94,12 @@ namespace Geex.Abstractions
         /// <para>TIP: The properties to be saved can be specified with a 'New' expression.
         /// You can only specify root level properties with the expression.</para>
         /// </summary>
-        /// <typeparam name="T">Any class that implements IEntity</typeparam>
+        /// <typeparam name="T">Any class that implements IEntityBase</typeparam>
         /// <param name="entity">The entity to save</param>
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<UpdateResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntity
+        public static Task<UpdateResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             (entity.DbContext)?.Detach(entity);
             return DB.SaveOnlyAsync(entity, members, entity.DbContext, cancellation);
@@ -111,12 +111,12 @@ namespace Geex.Abstractions
         /// <para>TIP: The properties to be saved can be specified with a 'New' expression.
         /// You can only specify root level properties with the expression.</para>
         /// </summary>
-        /// <typeparam name="T">Any class that implements IEntity</typeparam>
+        /// <typeparam name="T">Any class that implements IEntityBase</typeparam>
         /// <param name="entities">The batch of entities to save</param>
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveOnlyAsync<T>(this IEnumerable<T> entities, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntity
+        public static Task<BulkWriteResult<T>> SaveOnlyAsync<T>(this IEnumerable<T> entities, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             var enumerable = entities.ToList();
             var dbContext = enumerable.FirstOrDefault()?.DbContext;
@@ -130,12 +130,12 @@ namespace Geex.Abstractions
         /// <para>TIP: The properties to be excluded can be specified with a 'New' expression.
         /// You can only specify root level properties with the expression.</para>
         /// </summary>
-        /// <typeparam name="T">Any class that implements IEntity</typeparam>
+        /// <typeparam name="T">Any class that implements IEntityBase</typeparam>
         /// <param name="entity">The entity to save</param>
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<UpdateResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntity
+        public static Task<UpdateResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             (entity.DbContext)?.Detach(entity);
             return DB.SaveExceptAsync(entity, members, entity.DbContext, cancellation);
@@ -147,12 +147,12 @@ namespace Geex.Abstractions
         /// <para>TIP: The properties to be excluded can be specified with a 'New' expression.
         /// You can only specify root level properties with the expression.</para>
         /// </summary>
-        /// <typeparam name="T">Any class that implements IEntity</typeparam>
+        /// <typeparam name="T">Any class that implements IEntityBase</typeparam>
         /// <param name="entities">The batch of entities to save</param>
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveExceptAsync<T>(this IEnumerable<T> entities, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntity
+        public static Task<BulkWriteResult<T>> SaveExceptAsync<T>(this IEnumerable<T> entities, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             var enumerable = entities.ToList();
             var dbContext = enumerable.FirstOrDefault()?.DbContext;

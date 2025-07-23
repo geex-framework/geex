@@ -19,7 +19,7 @@ namespace Geex
         /// <summary>
         /// 是否使用migration自动初始化数据
         /// </summary>
-        public bool AutoMigration { get; set; } = false;
+        public bool? AutoMigration { get; set; }
         /// <summary>
         /// 分页获取数据最多数量
         /// </summary>

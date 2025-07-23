@@ -49,6 +49,8 @@ namespace MongoDB.Entities
         {
             DbContext._compareLogic.Config.CustomComparers.Add(new JsonNodeComparer(RootComparerFactory.GetRootComparer()));
             TypeAdapterConfig.GlobalSettings.Compiler = exp => exp.CompileFast();
+            //TypeAdapterConfig.GlobalSettings.Default.Settings.ShouldMapMember.Add((model, side) =>
+            //    model.SetterModifier.HasFlag(AccessModifier.Public | AccessModifier.Protected | AccessModifier.Internal) && !model.Type.IsValueType);
         }
         protected internal IClientSessionHandle
             session; //this will be set by Transaction class when inherited. otherwise null.
@@ -202,17 +204,17 @@ namespace MongoDB.Entities
             if (entity is IModifiedOn modifiedOn)
                 modifiedOn.ModifiedOn = now;
             var rootType = entity.GetType().GetRootBsonClassMap().ClassType;
-            if (this.Local[rootType].TryGetValue(entity.Id, out var existed))
+            if (this.MemoryDataCache[rootType].TryGetValue(entity.Id, out var existed))
             {
                 return (T)existed;
             }
             else
             {
-                if (this.Local[rootType].Count > 10000)
+                if (this.MemoryDataCache[rootType].Count > 10000)
                 {
                     //throw new NotSupportedException("Queryable Api不支持数量过多的Entity查询/写入, 请考虑使用原生Api");
                 }
-                this.Local[rootType].TryAdd(entity.Id, entity);
+                this.MemoryDataCache[rootType].TryAdd(entity.Id, entity);
                 entity.DbContext = this;
                 if (entity is IAttachIntercepted intercepted)
                 {
@@ -224,11 +226,11 @@ namespace MongoDB.Entities
         /// <summary>
         /// 本地内存缓存
         /// </summary>
-        public DbContextCache Local { get; set; } = new();
+        public DbContextCache MemoryDataCache { get; set; } = new();
         /// <summary>
         /// 本地内存缓存(数据库值)
         /// </summary>
-        public DbContextCache OriginLocal { get; set; } = new();
+        public DbContextCache DbDataCache { get; set; } = new();
 
         public virtual IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase
         {
@@ -597,7 +599,7 @@ namespace MongoDB.Entities
                 await this.PreSaveChanges();
             }
             var savedIds = new List<string>();
-            foreach (var (type, keyedEntities) in this.Local.TypedCacheDictionary)
+            foreach (var (type, keyedEntities) in this.MemoryDataCache.TypedCacheDictionary)
             {
                 if (!keyedEntities.Any())
                 {
@@ -607,8 +609,8 @@ namespace MongoDB.Entities
                 foreach (var (key, value) in keyedEntities)
                 {
                     // 如果值没有改变, 则不保存
-                    var newValue = this.Local[type][key];
-                    if (this.OriginLocal[type].TryGetValue(key, out var originValue) && this.EntityChangeSet(newValue, originValue).AreEqual)
+                    var newValue = this.MemoryDataCache[type][key];
+                    if (this.DbDataCache[type].TryGetValue(key, out var originValue) && this.EntityChangeSet(newValue, originValue).AreEqual)
                     {
                         continue;
                     }
@@ -653,7 +655,7 @@ namespace MongoDB.Entities
             }
 
             //this.Local.TypedCacheDictionary.Clear();
-            this.OriginLocal.TypedCacheDictionary.Clear();
+            this.DbDataCache.TypedCacheDictionary.Clear();
             if (this.PostSaveChanges != default)
             {
                 await this.PostSaveChanges();
@@ -696,8 +698,8 @@ namespace MongoDB.Entities
             {
                 if (disposing)
                 {
-                    Local.TypedCacheDictionary.Clear();
-                    OriginLocal.TypedCacheDictionary.Clear();
+                    MemoryDataCache.TypedCacheDictionary.Clear();
+                    DbDataCache.TypedCacheDictionary.Clear();
                     if (session.IsInTransaction)
                     {
                         session.AbortTransaction();
@@ -762,13 +764,13 @@ namespace MongoDB.Entities
                 throw new NotSupportedException("Cancellation is only supported within transactions for delete operations!");
         }
 
-        public void UpdateDbValue<T>(T dbEntity, bool force = false) where T : IEntityBase
+        public void UpdateDbDataCache<T>(T dbEntity, bool force = false) where T : IEntityBase
         {
             var rootType = typeof(T).GetRootBsonClassMap().ClassType;
-            UpdateDbValue(dbEntity, rootType, force);
+            UpdateDbDataCache(dbEntity, rootType, force);
         }
 
-        public void UpdateDbValue<T>(IEnumerable<T> dbEntities, bool force = false) where T : IEntityBase
+        public void UpdateDbDataCache<T>(IEnumerable<T> dbEntities, bool force = false) where T : IEntityBase
         {
             if (!dbEntities.Any())
             {
@@ -777,23 +779,25 @@ namespace MongoDB.Entities
             var rootType = typeof(T).GetRootBsonClassMap().ClassType;
             foreach (var dbEntity in dbEntities)
             {
-                UpdateDbValue(dbEntity, rootType, force);
+                UpdateDbDataCache(dbEntity, rootType, force);
             }
         }
 
-        private void UpdateDbValue<T>(T dbEntity, Type rootType, bool force = false) where T : IEntityBase
+        private void UpdateDbDataCache<T>(T dbEntity, Type rootType, bool force = false) where T : IEntityBase
         {
             if (force)
             {
                 var tobeCached = dbEntity.ShallowClone();
-                this.OriginLocal[rootType].AddOrUpdate(dbEntity.Id, tobeCached, (_, _) => tobeCached);
+                tobeCached = dbEntity.Adapt(tobeCached);
+                this.DbDataCache[rootType].AddOrUpdate(dbEntity.Id, tobeCached, (_, _) => tobeCached);
                 return;
             }
-            if (!OriginLocal[rootType].ContainsKey(dbEntity.Id))
+            if (!DbDataCache[rootType].ContainsKey(dbEntity.Id))
             {
                 // todo: Copy dbEntity and save it to OriginLocal
                 var tobeCached = dbEntity.ShallowClone();
-                this.OriginLocal[rootType].TryAdd(dbEntity.Id, tobeCached);
+                tobeCached = dbEntity.Adapt(tobeCached);
+                this.DbDataCache[rootType].TryAdd(dbEntity.Id, dbEntity.Adapt(tobeCached));
             }
         }
 
@@ -812,8 +816,8 @@ namespace MongoDB.Entities
             }
             entity.DbContext = null;
             var rootType = entityType.GetRootBsonClassMap().ClassType;
-            this.Local[rootType].TryRemove(entity.Id, out _);
-            this.OriginLocal[rootType].TryRemove(entity.Id, out _);
+            this.MemoryDataCache[rootType].TryRemove(entity.Id, out _);
+            this.DbDataCache[rootType].TryRemove(entity.Id, out _);
         }
 
         /// <summary>
@@ -834,8 +838,8 @@ namespace MongoDB.Entities
             {
                 ArgumentNullException.ThrowIfNull(entity);
                 entity.DbContext = null;
-                this.Local[rootType].TryRemove(entity.Id, out _);
-                this.OriginLocal[rootType].TryRemove(entity.Id, out _);
+                this.MemoryDataCache[rootType].TryRemove(entity.Id, out _);
+                this.DbDataCache[rootType].TryRemove(entity.Id, out _);
             }
         }
     }

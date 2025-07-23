@@ -107,8 +107,8 @@ namespace MongoDB.Entities.Utilities
             {
                 var visitor = expression.ExtractQueryParts<T, TSelect>();
 
-                var localEntities = _dbContext.Local[_rootType].Values.OfType<T>();
-                var originLocalEntities = _dbContext.OriginLocal[_rootType].Values.OfType<T>();
+                var localEntities = _dbContext.MemoryDataCache[_rootType].Values.OfType<T>();
+                var originLocalEntities = _dbContext.DbDataCache[_rootType].Values.OfType<T>();
 
                 var localIds = localEntities.Select(x => x.Id).ToList();
                 var deletedEntities = Enumerable.Empty<T>();
@@ -130,7 +130,7 @@ namespace MongoDB.Entities.Utilities
                     }
 
                     var dbEntities = dbQuery.ToList();
-                    _dbContext.UpdateDbValue(dbEntities);
+                    _dbContext.UpdateDbDataCache(dbEntities);
                     var attachedDbEntities = _dbContext.Attach(dbEntities);
 
                     entities = localEntities.Union(attachedDbEntities).Except(deletedEntities).AsQueryable();

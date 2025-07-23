@@ -89,11 +89,11 @@ namespace MongoDB.Entities.Tests
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldBeEmpty();
             var result = dbContext.Query<InheritanceEntity>().First(x => x.Id == testEntity.Id);
-            dbContext.Local[typeof(InheritanceEntity)].Count.ShouldBe(1);
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].Count.ShouldBe(1);
             var result1 = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().First(x => x.Id == testEntityChild.Id);
-            dbContext.Local[typeof(InheritanceEntity)].Count.ShouldBe(2);
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].Count.ShouldBe(2);
             dbContext.Dispose();
         }
 
@@ -119,7 +119,7 @@ namespace MongoDB.Entities.Tests
             var result2 = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.GetHashCode().ShouldNotBe(result1.GetHashCode());
             result.GetHashCode().ShouldBe(result2.GetHashCode());
-            result.GetHashCode().ShouldBe(dbContext.Local[typeof(InheritanceEntity)].Values.FirstOrDefault().GetHashCode());
+            result.GetHashCode().ShouldBe(dbContext.MemoryDataCache[typeof(InheritanceEntity)].Values.FirstOrDefault().GetHashCode());
             dbContext.Dispose();
         }
 
@@ -159,7 +159,7 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            dbContext.Local[typeof(InheritanceEntity)].ShouldNotBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldNotBeEmpty();
             dbContext.Dispose();
         }
 
@@ -178,9 +178,9 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
-            dbContext.Local[typeof(InheritanceEntity)].ShouldNotBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldNotBeEmpty();
             await result.DeleteAsync();
-            dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldBeEmpty();
             dbContext.Dispose();
         }
 
@@ -206,14 +206,14 @@ namespace MongoDB.Entities.Tests
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList().Cast<InheritanceEntity>().ToList();
             result.Count.ShouldBe(1);
-            dbContext.Local[typeof(InheritanceEntity)].Count.ShouldBe(1);
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].Count.ShouldBe(1);
             await result.DeleteAsync();
-            dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldBeEmpty();
             result = dbContext.Query<InheritanceEntity>().ToList();
             result.Count.ShouldBe(1);
-            dbContext.Local[typeof(InheritanceEntity)].Count.ShouldBe(1);
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].Count.ShouldBe(1);
             await result.DeleteAsync();
-            dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldBeEmpty();
             dbContext.Dispose();
         }
 
@@ -233,11 +233,11 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
-            dbContext.Local[typeof(InheritanceEntity)].ShouldNotBeEmpty();
-            dbContext.OriginLocal[typeof(InheritanceEntity)].ShouldNotBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldNotBeEmpty();
+            dbContext.DbDataCache[typeof(InheritanceEntity)].ShouldNotBeEmpty();
             await result.DeleteAsync();
-            dbContext.Local[typeof(InheritanceEntity)].ShouldBeEmpty();
-            dbContext.OriginLocal[typeof(InheritanceEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldBeEmpty();
+            dbContext.DbDataCache[typeof(InheritanceEntity)].ShouldBeEmpty();
             result = dbContext.Query<InheritanceEntity>().FirstOrDefault();
             result.ShouldBeNull();
             dbContext.Dispose();
@@ -632,7 +632,7 @@ namespace MongoDB.Entities.Tests
                 Name = "a1"
             };
             // Detach状态下转换
-            a1 = a1.ConvertToChild<InheritanceEntityChild>();
+            a1 = a1.Cast<InheritanceEntityChild>();
             a1.ShouldBeOfType<InheritanceEntityChild>();
             a1.Name.ShouldBe("a1");
             dbContext.Attach(a1);
@@ -662,7 +662,7 @@ namespace MongoDB.Entities.Tests
 
             dbContext.Attach(a1);
             // Attach状态下转换
-            a1 = a1.ConvertToChild<InheritanceEntityChild>();
+            a1 = a1.Cast<InheritanceEntityChild>();
             a1.ShouldBeOfType<InheritanceEntityChild>();
             a1.Name.ShouldBe("a1");
             await dbContext.SaveChanges();
@@ -695,7 +695,7 @@ namespace MongoDB.Entities.Tests
             dbContext = new DbContext();
             a1 = dbContext.Query<InheritanceEntity>().FirstOrDefault(x => x.Name == "a1");
             // Saved状态下转换
-            a1 = a1.ConvertToChild<InheritanceEntityChild>();
+            a1 = a1.Cast<InheritanceEntityChild>();
             a1.ShouldBeOfType<InheritanceEntityChild>();
             a1.Name.ShouldBe("a1");
             //await dbContext.SaveChanges();
@@ -706,7 +706,7 @@ namespace MongoDB.Entities.Tests
             a1.ShouldBeOfType<InheritanceEntity>();
             a1.Name.ShouldBe("a1");
 
-            a1 = a1.ConvertToChild<InheritanceEntityChild>();
+            a1 = a1.Cast<InheritanceEntityChild>();
             a1.ShouldBeOfType<InheritanceEntityChild>();
             a1.Name.ShouldBe("a1");
             await dbContext.SaveChanges();

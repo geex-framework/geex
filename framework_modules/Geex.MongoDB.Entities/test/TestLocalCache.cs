@@ -18,6 +18,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task cache_should_not_exist_after_find()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
             var testEntity = new TestEntity()
             {
@@ -28,15 +29,16 @@ namespace MongoDB.Entities.Tests
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
             var result = await dbContext.Find<TestEntity>().Match(x => x.Id == testEntity.Id).ExecuteFirstAsync();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
             dbContext.Dispose();
         }
 
         [TestMethod]
         public async Task cache_should_exist_after_queryable()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
             var testEntity = new TestEntity()
             {
@@ -47,15 +49,45 @@ namespace MongoDB.Entities.Tests
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
-            dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldNotBeEmpty();
             dbContext.Dispose();
         }
 
         [TestMethod]
+        public async Task memery_cache_db_cache_should_separate()
+        {
+            await DB.DeleteAsync<TestEntity>(x => true);
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<TestEntity>();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var testEntity = new TestEntity()
+            {
+                Name = "test",
+                Data = [0, 1]
+            };
+            dbContext.Attach(testEntity);
+            await testEntity.SaveAsync();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
+            var result = dbContext.Query<TestEntity>().FirstOrDefault();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldNotBeEmpty();
+            (dbContext.MemoryDataCache[typeof(TestEntity)].FirstOrDefault().Value as TestEntity).Data.ShouldContain(1);
+            result.Data[1] = 2;
+            (dbContext.MemoryDataCache[typeof(TestEntity)].FirstOrDefault().Value as TestEntity).Data.ShouldContain(2);
+            (dbContext.DbDataCache[typeof(TestEntity)].FirstOrDefault().Value as TestEntity).Data.ShouldNotContain(2);
+            dbContext.Dispose();
+        }
+
+
+        [TestMethod]
         public async Task cache_should_not_exist_after_queryable_no_tracking()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
             var testEntity = new TestEntity()
             {
@@ -66,9 +98,9 @@ namespace MongoDB.Entities.Tests
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
             var result = dbContext.Query<TestEntity>().AsNoTracking().FirstOrDefault();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
             dbContext.Dispose();
         }
 
@@ -87,9 +119,9 @@ namespace MongoDB.Entities.Tests
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
-            dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldNotBeEmpty();
             var saveResult = await dbContext.SaveChanges();
             saveResult.Count.ShouldBe(0);
             dbContext.Dispose();
@@ -98,11 +130,8 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task multiple_query_should_share_instance_after_edit_except_find()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.Query<TestEntity>().ToList().DeleteAsync();
-            await dbContext.SaveChanges();
-            dbContext.Dispose();
-            dbContext = new DbContext();
             var testEntity = new TestEntity()
             {
                 Name = "test"
@@ -117,18 +146,15 @@ namespace MongoDB.Entities.Tests
             var result2 = dbContext.Query<TestEntity>().FirstOrDefault();
             result.GetHashCode().ShouldNotBe(result1.GetHashCode());
             result.GetHashCode().ShouldBe(result2.GetHashCode());
-            result.GetHashCode().ShouldBe(dbContext.Local[typeof(TestEntity)].Values.FirstOrDefault().GetHashCode());
+            result.GetHashCode().ShouldBe(dbContext.MemoryDataCache[typeof(TestEntity)].Values.FirstOrDefault().GetHashCode());
             dbContext.Dispose();
         }
 
         [TestMethod]
         public async Task multiple_queryable_should_share_instance_after_edit()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.Query<TestEntity>().ToList().DeleteAsync();
-            await dbContext.SaveChanges();
-            dbContext.Dispose();
-            dbContext = new DbContext();
             var testEntity = new TestEntity()
             {
                 Name = "test"
@@ -150,6 +176,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task newly_created_entity_should_be_in_cache()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
             var testEntity = new TestEntity()
             {
@@ -157,18 +184,15 @@ namespace MongoDB.Entities.Tests
             };
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
-            dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldNotBeEmpty();
             dbContext.Dispose();
         }
 
         [TestMethod]
         public async Task delete_should_remove_cache()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            //await dbContext.DeleteAsync<TestEntity>();
-            //dbContext.Dispose();
-            //dbContext = new DbContext();
-            dbContext.OriginLocal[typeof(TestEntity)].Clear();
             var testEntity = new TestEntity()
             {
                 Name = "test"
@@ -176,22 +200,22 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
             await dbContext.SaveChanges();
-            dbContext.OriginLocal[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.DbDataCache[typeof(TestEntity)].ShouldBeEmpty();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.OriginLocal[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.DbDataCache[typeof(TestEntity)].ShouldBeEmpty();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
-            dbContext.OriginLocal[typeof(TestEntity)].Count.ShouldBe(1);
+            dbContext.DbDataCache[typeof(TestEntity)].Count.ShouldBe(1);
             await result.DeleteAsync();
-            dbContext.OriginLocal[typeof(TestEntity)].Count.ShouldBe(0);
+            dbContext.DbDataCache[typeof(TestEntity)].Count.ShouldBe(0);
             dbContext.Dispose();
         }
 
         [TestMethod]
         public async Task batch_delete_should_remove_cache()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.Query<TestEntity>().ToList().DeleteAsync();
             var testEntities = new List<TestEntity>()
             {
                 new TestEntity()
@@ -203,25 +227,23 @@ namespace MongoDB.Entities.Tests
                     Name = "test1"
                 }
             };
-            //dbContext.Attach(testEntities);
+            dbContext.Attach(testEntities);
             await testEntities.SaveAsync();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().ToList();
-            dbContext.Local[typeof(TestEntity)].Count.ShouldBeGreaterThan(0);
+            dbContext.MemoryDataCache[typeof(TestEntity)].Count.ShouldBe(2);
             await result.DeleteAsync();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
             dbContext.Dispose();
         }
 
         [TestMethod]
         public async Task deleted_entity_should_be_filtered()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
-            dbContext.Dispose();
-            dbContext = new DbContext();
             var testEntity = new TestEntity()
             {
                 Name = "test"
@@ -232,11 +254,11 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             var result = dbContext.Query<TestEntity>().FirstOrDefault();
-            dbContext.Local[typeof(TestEntity)].ShouldNotBeEmpty();
-            dbContext.OriginLocal[typeof(TestEntity)].ShouldNotBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldNotBeEmpty();
+            dbContext.DbDataCache[typeof(TestEntity)].ShouldNotBeEmpty();
             await result.DeleteAsync();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
-            dbContext.OriginLocal[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.DbDataCache[typeof(TestEntity)].ShouldBeEmpty();
             result = dbContext.Query<TestEntity>().FirstOrDefault();
             result.ShouldBeNull();
             dbContext.Dispose();
@@ -245,8 +267,8 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task commit_time_save_should_work()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
             var testEntity = new TestEntity()
             {
                 Name = "test"
@@ -277,11 +299,8 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task query_result_should_merge_local_cache_when_add()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
-            await dbContext.SaveChanges();
-            dbContext.Dispose();
-            dbContext = new DbContext();
             var a1 = new TestEntity()
             {
                 Name = "a1"
@@ -310,12 +329,9 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task query_result_should_merge_local_cache_when_update()
         {
-            var dbContext = new DbContext();
+            await DB.DeleteAsync<TestEntity>(x => true);
             {
-                await dbContext.DeleteAsync<TestEntity>();
-                await dbContext.SaveChanges();
-                dbContext.Dispose();
-                dbContext = new DbContext();
+                var dbContext = new DbContext();
                 var a1 = new TestEntity()
                 {
                     Name = "a1"
@@ -338,7 +354,7 @@ namespace MongoDB.Entities.Tests
                 dbContext.Dispose();
             }
             {
-                dbContext = new DbContext();
+                var dbContext = new DbContext();
                 var result = dbContext.Query<TestEntity>().Where(x => x.Name.StartsWith("a"));
                 result.ToList().Count().ShouldBe(2);
                 result.Count().ShouldBe(2);
@@ -360,13 +376,10 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task query_result_should_merge_local_cache_when_update_with_complex_filter()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
             //prepare
             {
-                await dbContext.DeleteAsync<TestEntity>();
-                await dbContext.SaveChanges();
-                dbContext.Dispose();
-                dbContext = new DbContext();
                 var a1 = new TestEntity()
                 {
                     Name = "abc"
@@ -407,11 +420,8 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task query_result_should_merge_local_cache_when_delete()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
-            await dbContext.SaveChanges();
-            dbContext.Dispose();
-            dbContext = new DbContext();
             var a1 = new TestEntity()
             {
                 Name = "a1"
@@ -449,11 +459,8 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task cache_performance_test()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
-            await dbContext.SaveChanges();
-            dbContext.Dispose();
-            dbContext = new DbContext();
             var data = Enumerable.Range(1, 9999).Select(x => new TestEntity()
             {
                 Name = x.ToString()
@@ -485,20 +492,17 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task protected_ctor_should_work()
         {
+            await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<ProtectedCtorClass>();
-            await dbContext.SaveChanges();
-            dbContext.Dispose();
-            dbContext = new DbContext();
             var testEntity = new ProtectedCtorClass("test");
             dbContext.Attach(testEntity);
             await testEntity.SaveAsync();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
-            dbContext.Local[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
             var result = dbContext.Query<ProtectedCtorClass>().FirstOrDefault();
-            dbContext.Local[typeof(ProtectedCtorClass)].ShouldNotBeEmpty();
+            dbContext.MemoryDataCache[typeof(ProtectedCtorClass)].ShouldNotBeEmpty();
             dbContext.Dispose();
         }
     }

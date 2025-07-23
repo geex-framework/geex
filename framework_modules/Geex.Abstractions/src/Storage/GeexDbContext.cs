@@ -86,7 +86,7 @@ namespace Geex.Storage
         {
             var logger = ServiceProvider.GetService<ILogger<GeexDbContext>>();
 
-            var entities = Local.TypedCacheDictionary.Values.SelectMany(y => y.Values).OfType<IEntity>();
+            var entities = MemoryDataCache.TypedCacheDictionary.Values.SelectMany(y => y.Values).OfType<IEntity>();
             foreach (var entity in entities)
             {
                 entity.ValidateOnAttach().WaitAndUnwrapException(cancellation);

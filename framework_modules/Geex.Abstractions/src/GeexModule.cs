@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.WebSockets;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 using MongoDB.Entities;
 
@@ -196,7 +197,8 @@ namespace Geex
                     }
                 });
             });
-            if (coreModuleOptions.AutoMigration)
+            coreModuleOptions.AutoMigration ??= !Env.IsProduction();
+            if (coreModuleOptions.AutoMigration.Value)
             {
                 var migrations = context.ServiceProvider.GetServices<DbMigration>();
                 var appliedMigrations = DB.Find<Migration>().Project(x => x.Number).ExecuteAsync().ConfigureAwait(false).GetAwaiter().GetResult();

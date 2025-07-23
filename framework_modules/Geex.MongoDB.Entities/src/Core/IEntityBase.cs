@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Mapster;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Entities.Utilities;
@@ -18,6 +19,7 @@ namespace MongoDB.Entities
         /// </summary>
         [ObjectId]
         string Id { get; set; }
+        [AdaptIgnore]
         DbContext DbContext { get; set; }
         DateTimeOffset CreatedOn { get; set; }
         /// <summary>
@@ -38,5 +40,6 @@ namespace MongoDB.Entities
         //   Expression lazyQuery,
         //   Expression batchQuery,
         //   Func<IQueryable> sourceProvider = default);
+        public TChild Cast<TChild>() where TChild : IEntityBase;
     }
 }

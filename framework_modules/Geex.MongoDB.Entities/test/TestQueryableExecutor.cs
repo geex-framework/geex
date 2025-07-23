@@ -204,7 +204,7 @@ namespace MongoDB.Entities.Tests
             });
             //await dbContext.SaveChanges();
             sw.Stop();
-            Console.WriteLine("insert:" + sw.ElapsedMilliseconds);
+            Debug.WriteLine("insert:" + sw.ElapsedMilliseconds);
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(3000);
             await Task.Delay(1000);
             var dbContext = new DbContext();
@@ -212,13 +212,13 @@ namespace MongoDB.Entities.Tests
             var list = dbContext.Query<TestEntity>().AsNoTracking().ToList();
             sw.Stop();
             list.Count().ShouldBe(count);
-            Console.WriteLine("query:" + sw.ElapsedMilliseconds);
+            Debug.WriteLine("query:" + sw.ElapsedMilliseconds);
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(3000);
             sw.Restart();
             var list1 = await dbContext.Find<TestEntity>().ExecuteAsync();
             sw.Stop();
             list1.Count().ShouldBe(count);
-            Console.WriteLine("find:" + sw.ElapsedMilliseconds);
+            Debug.WriteLine("find:" + sw.ElapsedMilliseconds);
             sw.ElapsedMilliseconds.ShouldBeLessThanOrEqualTo(1500);
             dbContext.Dispose();
         }
