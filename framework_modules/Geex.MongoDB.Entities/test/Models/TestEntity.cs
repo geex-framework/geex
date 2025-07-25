@@ -18,6 +18,7 @@ namespace MongoDB.Entities.Tests.Models
     {
         Default = 0,
         Value1 = 1,
+        Value2 = 2,
     }
 
     public record TestEntitySelectSubset

@@ -61,8 +61,8 @@ namespace MongoDB.Entities.InnerQuery
         /// <summary>No need to call this directly, required of IQueryProvider</summary>
         public IQueryable<TResult> CreateQuery<TResult>(Expression expression)
         {
-            if (!typeof(IQueryable<TResult>).IsAssignableFrom(expression.Type))
-                throw new ExpressionNotSupportedException(expression);
+            //if (!typeof(IQueryable<TResult>).IsAssignableFrom(expression.Type))
+            //    throw new ExpressionNotSupportedException(expression);
 
             var queryable = new MongoAggregationQueryable<TResult>(_collection.CollectionNamespace.CollectionName)
             {

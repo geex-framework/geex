@@ -40,8 +40,6 @@ using MongoDB.Entities.Utilities;
 
 using ExpressionType = System.Linq.Expressions.ExpressionType;
 
-//using Newtonsoft.Json;
-
 namespace MongoDB.Entities.InnerQuery
 {
     [Flags]
@@ -75,7 +73,7 @@ namespace MongoDB.Entities.InnerQuery
 
         private JsonWriterSettings _jsonWriterSettings = new JsonWriterSettings { OutputMode = JsonOutputMode.Strict, Indent = true, NewLineChars = "\r\n" };
 
-        private List<PipelineStage> _pipeline = new List<PipelineStage>();
+        private List<PipelineStage> _pipeline = [];
         private PipelineResultType _lastPipelineOperation = PipelineResultType.Enumerable;
         private IMongoCollection<TDocType> _collection;
         private readonly IClientSessionHandle _session;
@@ -155,6 +153,52 @@ namespace MongoDB.Entities.InnerQuery
             {"Millisecond", "$millisecond"},
             {"DayOfWeek", "$dayOfWeek"},
             {"DayOfYear", "$dayOfYear"},
+        };
+
+        // 新增：数学函数映射
+        private readonly Dictionary<string, string> MathFunctionToMongoOperatorDict = new Dictionary<string, string> {
+            {"Abs", "$abs"},
+            {"Ceiling", "$ceil"},
+            {"Floor", "$floor"},
+            {"Round", "$round"},
+            {"Sqrt", "$sqrt"},
+            {"Pow", "$pow"},
+            {"Log", "$log"},
+            {"Log10", "$log10"},
+            {"Exp", "$exp"},
+            {"Sin", "$sin"},
+            {"Cos", "$cos"},
+            {"Tan", "$tan"},
+            {"Asin", "$asin"},
+            {"Acos", "$acos"},
+            {"Atan", "$atan"},
+            {"Sinh", "$sinh"},
+            {"Cosh", "$cosh"},
+            {"Tanh", "$tanh"},
+            {"Asinh", "$asinh"},
+            {"Acosh", "$acosh"},
+            {"Atanh", "$atanh"},
+            {"Min", "$min"},
+            {"Max", "$max"},
+        };
+
+        // 新增：字符串函数映射
+        private readonly Dictionary<string, string> StringFunctionToMongoOperatorDict = new Dictionary<string, string> {
+            {"Trim", "$trim"},
+            {"TrimStart", "$ltrim"},
+            {"TrimEnd", "$rtrim"},
+            {"Replace", "$replaceAll"},
+            {"Split", "$split"},
+            {"Join", "$concat"},
+        };
+
+        // 新增：数组函数映射
+        private readonly Dictionary<string, string> ArrayFunctionToMongoOperatorDict = new Dictionary<string, string> {
+            {"Reverse", "$reverseArray"},
+            {"Sort", "$sortArray"},
+            {"Slice", "$slice"},
+            {"Zip", "$zip"},
+            {"Range", "$range"},
         };
 
         /// <summary>Constructs a new MongoPipeline from a typed MongoCollection</summary>
@@ -701,6 +745,61 @@ namespace MongoDB.Entities.InnerQuery
                     return Builders<TDocType>.Filter.Or(Builders<TDocType>.Filter.Eq(mongoFieldName, BsonNull.Value), Builders<TDocType>.Filter.Eq(mongoFieldName, new BsonString("")));
                 }
 
+                // 新增：支持正则表达式匹配
+                if (callExp.Method.ReflectedType == typeof(System.Text.RegularExpressions.Regex))
+                {
+                    if (callExp.Method.Name == "IsMatch" && callExp.Arguments.Count >= 2)
+                    {
+                        var input = GetMongoFieldNameInMatchStage(callExp.Arguments[0], isLambdaParamResultHack);
+
+                        if (callExp.Arguments[1] is ConstantExpression patternExp && patternExp.Value is string pattern)
+                        {
+                            var regexOptions = System.Text.RegularExpressions.RegexOptions.None;
+                            if (callExp.Arguments.Count > 2 && callExp.Arguments[2] is ConstantExpression optionsExp)
+                            {
+                                regexOptions = (System.Text.RegularExpressions.RegexOptions)optionsExp.Value;
+                            }
+
+                            string mongoRegexOptions = "";
+                            if (regexOptions.HasFlag(System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                                mongoRegexOptions += "i";
+                            if (regexOptions.HasFlag(System.Text.RegularExpressions.RegexOptions.Multiline))
+                                mongoRegexOptions += "m";
+                            if (regexOptions.HasFlag(System.Text.RegularExpressions.RegexOptions.Singleline))
+                                mongoRegexOptions += "s";
+
+                            return Builders<TDocType>.Filter.Regex(input, new MongoDB.Bson.BsonRegularExpression(pattern, mongoRegexOptions));
+                        }
+                    }
+                }
+
+                // 新增：支持字符串的更多比较方法
+                if (callExp.Object?.Type == typeof(string))
+                {
+                    // 新增：支持字符串长度比较
+                    if (callExp.Method.Name == "Length")
+                    {
+                        // 这种情况在MemberExpression中已经处理，这里是为了完整性
+                        throw new InvalidQueryException("String.Length should be handled as MemberExpression");
+                    }
+                }
+
+                // 新增：支持DateTime的比较方法
+                if (callExp.Method.ReflectedType == typeof(DateTime) && callExp.Object == null)
+                {
+                    if (callExp.Method.Name == "Compare" && callExp.Arguments.Count == 2)
+                    {
+                        var left = BuildMongoWhereExpressionAsBsonValue(callExp.Arguments[0], isLambdaParamResultHack);
+                        var right = BuildMongoWhereExpressionAsBsonValue(callExp.Arguments[1], isLambdaParamResultHack);
+
+                        // DateTime.Compare返回-1, 0, 或1，这里假设用于比较操作
+                        // 实际使用中可能需要根据上下文进一步处理
+                        return new BsonDocumentFilterDefinition<TDocType>(
+                            new BsonDocument("$expr",
+                                new BsonDocument("$cmp", new BsonArray([left, right]))));
+                    }
+                }
+
                 // Support .Where(c => c.SomeArrayProp.Any()) and .Where(c => c.SomeArrayProp.Any(d => d.SubProp > 5))
                 if (callExp.Method.Name == "Any")
                 {
@@ -916,7 +1015,7 @@ namespace MongoDB.Entities.InnerQuery
         public BsonValue ReplaceNullStringWithEmptyString(Type expressionType, BsonValue mongoExpression)
         {
             return expressionType == typeof(string)
-                       ? new BsonDocument("$ifNull", new BsonArray(new[] { mongoExpression, BsonValue.Create("") }))
+                       ? new BsonDocument("$ifNull", new BsonArray([mongoExpression, BsonValue.Create("")]))
                        : mongoExpression;
         }
 
@@ -967,7 +1066,7 @@ namespace MongoDB.Entities.InnerQuery
                     }
 
                     if (divisor > 0)
-                        return new BsonDocument("$divide", new BsonArray(new[] { expressionDoc, BsonValue.Create(divisor) }));
+                        return new BsonDocument("$divide", new BsonArray([expressionDoc, BsonValue.Create(divisor)]));
 
                     throw new InvalidQueryException($"{member.Name} property on TimeSpan not supported :(");
                 }
@@ -1009,7 +1108,8 @@ namespace MongoDB.Entities.InnerQuery
                     // .Net DayOfWeek is 0 indexed, Mongo is 1 indexed
                     if (member.Name == "DayOfWeek")
                     {
-                        var array = new BsonArray(new[] { new BsonDocument("$dayOfWeek", BuildMongoSelectExpression(memberExpression.Expression)), (BsonValue)1 });
+                        var array = new BsonArray([new BsonDocument("$dayOfWeek", BuildMongoSelectExpression(memberExpression.Expression)), (BsonValue)1
+                        ]);
                         return new BsonDocument("$subtract", array);
                     }
 
@@ -1069,7 +1169,7 @@ namespace MongoDB.Entities.InnerQuery
                     if (constExp.Type == typeof(string))
                     {
                         // Build an expression concatenating the string with nothing else
-                        return new BsonDocument("$concat", new BsonArray(new[] { new BsonString((string)constExp.Value) }));
+                        return new BsonDocument("$concat", new BsonArray([new BsonString((string)constExp.Value)]));
                     }
 
                     if (constExp.Type == typeof(bool))
@@ -1116,12 +1216,12 @@ namespace MongoDB.Entities.InnerQuery
                      || binExp.Left.Type == typeof(TimeSpan) && binExp.Right.Type == typeof(DateTime)))
                 {
                     if (binExp.Left.Type == typeof(TimeSpan))
-                        leftValue = new BsonDocument("$divide", new BsonArray(new[] { leftValue, BsonValue.Create(10000) }));
+                        leftValue = new BsonDocument("$divide", new BsonArray([leftValue, BsonValue.Create(10000)]));
                     else
-                        rightValue = new BsonDocument("$divide", new BsonArray(new[] { rightValue, BsonValue.Create(10000) }));
+                        rightValue = new BsonDocument("$divide", new BsonArray([rightValue, BsonValue.Create(10000)]));
                 }
 
-                var array = new BsonArray(new[] { leftValue, rightValue });
+                var array = new BsonArray([leftValue, rightValue]);
                 var expressionDoc = new BsonDocument(mongoOperator, array);
 
                 // Support integer division
@@ -1130,7 +1230,8 @@ namespace MongoDB.Entities.InnerQuery
 
                 // Mongo returns the difference between DateTimes as milliseconds.  Convert them to 100-nanosecond chunks per .Net symantics
                 if (expression.NodeType == ExpressionType.Subtract && binExp.Left.Type == typeof(DateTime) && binExp.Right.Type == typeof(DateTime))
-                    expressionDoc = new BsonDocument("$multiply", new BsonArray(new[] { expressionDoc, BsonValue.Create(10000) }));
+                    expressionDoc = new BsonDocument("$multiply", new BsonArray([expressionDoc, BsonValue.Create(10000)
+                    ]));
 
                 return expressionDoc;
             }
@@ -1179,10 +1280,11 @@ namespace MongoDB.Entities.InnerQuery
                         BsonValue expressionToTest = BuildMongoSelectExpression(callExp.Arguments.Single());
 
                         // Test for null
-                        var ifNullDoc = new BsonDocument("$ifNull", new BsonArray(new[] { expressionToTest, new BsonString("") }));
+                        var ifNullDoc = new BsonDocument("$ifNull", new BsonArray([expressionToTest, new BsonString("")
+                        ]));
 
                         // Test for empty
-                        return new BsonDocument("$eq", new BsonArray(new[] { new BsonString(""), ifNullDoc.AsBsonValue }));
+                        return new BsonDocument("$eq", new BsonArray([new BsonString(""), ifNullDoc.AsBsonValue]));
                     }
 
                     if (callExp.Method.Name == "Compare" || callExp.Method.Name == "CompareOrdinal")
@@ -1193,7 +1295,7 @@ namespace MongoDB.Entities.InnerQuery
                         BsonValue exp1 = BuildMongoSelectExpression(callExp.Arguments[0]);
                         BsonValue exp2 = BuildMongoSelectExpression(callExp.Arguments[1]);
 
-                        return new BsonDocument("$cmp", new BsonArray(new[] { exp1, exp2 }));
+                        return new BsonDocument("$cmp", new BsonArray([exp1, exp2]));
                     }
 
                     throw new InvalidQueryException($"Can't translate static method string.{callExp.Method.Name} to Mongo expression");
@@ -1210,7 +1312,8 @@ namespace MongoDB.Entities.InnerQuery
                         // By using $substr we need to have the length of our argument to StartsWith.
 
                         string searchString = (string)constantExpression.Value;
-                        var substringDoc = new BsonDocument("$substrCP", new BsonArray(new[] { BuildMongoSelectExpression(callExp.Object), 0, searchString.Length }));
+                        var substringDoc = new BsonDocument("$substrCP", new BsonArray([BuildMongoSelectExpression(callExp.Object), 0, searchString.Length
+                        ]));
 
                         return new BsonDocument("$eq", new BsonArray(new[] { substringDoc, constantExpression.Value }));
                     }
@@ -1224,8 +1327,9 @@ namespace MongoDB.Entities.InnerQuery
                         // By using $substr we need to have the length of our argument to StartsWith.
 
                         string searchString = (string)constantExpression.Value;
-                        var substringDoc = new BsonDocument("$indexOfCP", new BsonArray(new[] { BuildMongoSelectExpression(callExp.Object), new BsonString(searchString) }));
-                        return new BsonDocument("$gte", new BsonArray(new[] { substringDoc, BsonValue.Create(0) }));
+                        var substringDoc = new BsonDocument("$indexOfCP", new BsonArray([BuildMongoSelectExpression(callExp.Object), new BsonString(searchString)
+                        ]));
+                        return new BsonDocument("$gte", new BsonArray([substringDoc, BsonValue.Create(0)]));
                     }
 
                     if (callExp.Method.Name == "EndsWith" && callExp.Arguments.Count() == 1)
@@ -1247,6 +1351,80 @@ namespace MongoDB.Entities.InnerQuery
                         return new BsonDocument("$toUpper", BuildMongoSelectExpression(callExp.Object));
                     if (callExp.Method.Name == "ToLower")
                         return new BsonDocument("$toLower", BuildMongoSelectExpression(callExp.Object));
+
+                    // 新增：Trim系列函数支持
+                    if (callExp.Method.Name == "Trim")
+                    {
+                        if (callExp.Arguments.Count == 0)
+                            return new BsonDocument("$trim", new BsonDocument("input", BuildMongoSelectExpression(callExp.Object)));
+
+                        // 支持 Trim(char[])
+                        if (callExp.Arguments.Count == 1 && callExp.Arguments[0] is ConstantExpression trimCharsExp)
+                        {
+                            var trimChars = (char[])trimCharsExp.Value;
+                            var charsToTrim = string.Concat(trimChars);
+                            return new BsonDocument("$trim", new BsonDocument
+                            {
+                                {"input", BuildMongoSelectExpression(callExp.Object)},
+                                {"chars", charsToTrim}
+                            });
+                        }
+                    }
+
+                    if (callExp.Method.Name == "TrimStart")
+                    {
+                        if (callExp.Arguments.Count == 0)
+                            return new BsonDocument("$ltrim", new BsonDocument("input", BuildMongoSelectExpression(callExp.Object)));
+
+                        if (callExp.Arguments.Count == 1 && callExp.Arguments[0] is ConstantExpression trimCharsExp)
+                        {
+                            var trimChars = (char[])trimCharsExp.Value;
+                            var charsToTrim = string.Concat(trimChars);
+                            return new BsonDocument("$ltrim", new BsonDocument
+                            {
+                                {"input", BuildMongoSelectExpression(callExp.Object)},
+                                {"chars", charsToTrim}
+                            });
+                        }
+                    }
+
+                    if (callExp.Method.Name == "TrimEnd")
+                    {
+                        if (callExp.Arguments.Count == 0)
+                            return new BsonDocument("$rtrim", new BsonDocument("input", BuildMongoSelectExpression(callExp.Object)));
+
+                        if (callExp.Arguments.Count == 1 && callExp.Arguments[0] is ConstantExpression trimCharsExp)
+                        {
+                            var trimChars = (char[])trimCharsExp.Value;
+                            var charsToTrim = string.Concat(trimChars);
+                            return new BsonDocument("$rtrim", new BsonDocument
+                            {
+                                {"input", BuildMongoSelectExpression(callExp.Object)},
+                                {"chars", charsToTrim}
+                            });
+                        }
+                    }
+
+                    // 新增：Replace函数支持
+                    if (callExp.Method.Name == "Replace" && callExp.Arguments.Count == 2)
+                    {
+                        return new BsonDocument("$replaceAll", new BsonDocument
+                        {
+                            {"input", BuildMongoSelectExpression(callExp.Object)},
+                            {"find", BuildMongoSelectExpression(callExp.Arguments[0])},
+                            {"replacement", BuildMongoSelectExpression(callExp.Arguments[1])}
+                        });
+                    }
+
+                    // 新增：Split函数支持
+                    if (callExp.Method.Name == "Split" && callExp.Arguments.Count >= 1)
+                    {
+                        return new BsonDocument("$split", new BsonArray([
+                            BuildMongoSelectExpression(callExp.Object),
+                            BuildMongoSelectExpression(callExp.Arguments[0])
+                        ]));
+                    }
+
                     if (callExp.Method.Name == "Substring")
                     {
                         // Handle string.SubString(index, count) and .Substring(index)
@@ -1257,20 +1435,21 @@ namespace MongoDB.Entities.InnerQuery
 
                         // Build {$substrCP: ["stringToTakeSubstringOf", index, count]}
                         return new BsonDocument("$substrCP",
-                                                new BsonArray(new[] {
+                                                new BsonArray([
                                                     BuildMongoSelectExpression(callExp.Object),
                                                     BuildMongoSelectExpression(callExp.Arguments[0]),
-                                                    characterCount}));
+                                                    characterCount
+                                                ]));
                     }
 
                     if (callExp.Method.Name == "IndexOf")
                     {
                         // Build {indexOfCP: ["stringToSearchWithin", "stringToSearchFor"]}
                         return new BsonDocument("$indexOfCP",
-                                                new BsonArray(new[] {
+                                                new BsonArray([
                                                     BuildMongoSelectExpression(callExp.Object),
                                                     BuildMongoSelectExpression(callExp.Arguments[0])
-                                                }));
+                                                ]));
                     }
 
                     throw new InvalidQueryException($"Can't translate method {callExp.Object.Type.Name}.{callExp.Method.Name} to Mongo expression");
@@ -1302,7 +1481,7 @@ namespace MongoDB.Entities.InnerQuery
                     arrayToSearch = BuildMongoSelectExpression(left);
 
 
-                    return new BsonDocument("$in", new BsonArray(new[] { searchValue, arrayToSearch }));
+                    return new BsonDocument("$in", new BsonArray([searchValue, arrayToSearch]));
                 }
 
                 // c.Any(predicate) (where c is an Enumerable)
@@ -1313,7 +1492,7 @@ namespace MongoDB.Entities.InnerQuery
                         // c.Any()
 
                         var countDoc = new BsonDocument("$size", BuildMongoSelectExpression(callExp.Arguments[0]));
-                        var gteZeroDoc = new BsonDocument("$gte", new BsonArray(new[] { countDoc, BsonValue.Create(1) }));
+                        var gteZeroDoc = new BsonDocument("$gte", new BsonArray([countDoc, BsonValue.Create(1)]));
                         return gteZeroDoc;
                     }
 
@@ -1343,7 +1522,7 @@ namespace MongoDB.Entities.InnerQuery
                         });
 
                         var countDoc = new BsonDocument("$size", filterDoc);
-                        var gteZeroDoc = new BsonDocument("$gte", new BsonArray(new[] { countDoc, BsonValue.Create(1) }));
+                        var gteZeroDoc = new BsonDocument("$gte", new BsonArray([countDoc, BsonValue.Create(1)]));
                         return gteZeroDoc;
                     }
                     else
@@ -1351,7 +1530,7 @@ namespace MongoDB.Entities.InnerQuery
                 }
 
                 // c.All(predicate) (where c is an Enumerable)
-                if (callExp.Method.Name == "All" && callExp.Method.ReflectedType.IsAssignableTo<IEnumerable>())
+                if (callExp.Method.Name == "All" && (callExp.Method.ReflectedType.IsAssignableTo<IEnumerable>() || callExp.Method.ReflectedType.FullName == "System.Linq.Enumerable"))
                 {
                     var searchPredicate = (LambdaExpression)callExp.Arguments[1];
 
@@ -1365,8 +1544,10 @@ namespace MongoDB.Entities.InnerQuery
 
                     var searchTarget = BuildMongoSelectExpression(callExp.Arguments[0]);
 
-                    // There's no direct translation for Any.  So we'll essentially build:
-                    // c.Where(predicate).Count() == c.Length
+                    // All(predicate) logic:
+                    // For empty arrays, All should return true
+                    // For non-empty arrays, All should return true if all elements match the predicate
+                    // Implementation: (array.length == 0) || (filter(array, predicate).length == array.length)
 
                     var filterDoc = new BsonDocument("$filter", new BsonDocument {
                         new BsonElement("input", searchTarget),
@@ -1376,7 +1557,7 @@ namespace MongoDB.Entities.InnerQuery
 
                     var filterCountDoc = new BsonDocument("$size", filterDoc);
                     var expectedCountDoc = new BsonDocument("$size", searchTarget);
-                    var gteZeroDoc = new BsonDocument("$eq", new BsonArray(new[] { filterCountDoc, expectedCountDoc }));
+                    var gteZeroDoc = new BsonDocument("$eq", new BsonArray([filterCountDoc, expectedCountDoc]));
                     return gteZeroDoc;
                 }
 
@@ -1413,6 +1594,252 @@ namespace MongoDB.Entities.InnerQuery
                     return filterCountDoc;
                 }
 
+                // 新增：更多数组操作方法支持
+                if (callExp.Method.ReflectedType.IsAssignableTo<IEnumerable>() || callExp.Method.ReflectedType == typeof(Enumerable))
+                {
+                    // First/FirstOrDefault with predicate
+                    if ((callExp.Method.Name == "First" || callExp.Method.Name == "FirstOrDefault") && callExp.Arguments.Count == 2)
+                    {
+                        var arrayToSearch = BuildMongoSelectExpression(callExp.Arguments[0]);
+                        var searchPredicate = (LambdaExpression)callExp.Arguments[1];
+
+                        string subSelectLambdaParamName = searchPredicate.Parameters.Single().Name;
+                        string internalVariableName = "foo" + ++_nextUniqueVariableId;
+                        _subSelectParameterPrefixes.Add(subSelectLambdaParamName, $"${internalVariableName}" + ".");
+
+                        var searchValue = BuildMongoSelectExpression(searchPredicate.Body);
+                        _subSelectParameterPrefixes.Remove(subSelectLambdaParamName);
+
+                        var filterDoc = new BsonDocument("$filter", new BsonDocument {
+                            new BsonElement("input", arrayToSearch),
+                            new BsonElement("as", internalVariableName),
+                            new BsonElement("cond", searchValue),
+                        });
+
+                        return new BsonDocument("$arrayElemAt", new BsonArray([filterDoc, new BsonInt32(0)]));
+                    }
+
+                    // Last/LastOrDefault with predicate
+                    if ((callExp.Method.Name == "Last" || callExp.Method.Name == "LastOrDefault") && callExp.Arguments.Count == 2)
+                    {
+                        var arrayToSearch = BuildMongoSelectExpression(callExp.Arguments[0]);
+                        var searchPredicate = (LambdaExpression)callExp.Arguments[1];
+
+                        string subSelectLambdaParamName = searchPredicate.Parameters.Single().Name;
+                        string internalVariableName = "foo" + ++_nextUniqueVariableId;
+                        _subSelectParameterPrefixes.Add(subSelectLambdaParamName, $"${internalVariableName}" + ".");
+
+                        var searchValue = BuildMongoSelectExpression(searchPredicate.Body);
+                        _subSelectParameterPrefixes.Remove(subSelectLambdaParamName);
+
+                        var filterDoc = new BsonDocument("$filter", new BsonDocument {
+                            new BsonElement("input", arrayToSearch),
+                            new BsonElement("as", internalVariableName),
+                            new BsonElement("cond", searchValue),
+                        });
+
+                        return new BsonDocument("$arrayElemAt", new BsonArray([filterDoc, new BsonInt32(-1)]));
+                    }
+
+                    // Where方法支持
+                    if (callExp.Method.Name == "Where" && callExp.Arguments.Count == 2)
+                    {
+                        var arrayToSearch = BuildMongoSelectExpression(callExp.Arguments[0]);
+                        var searchPredicate = (LambdaExpression)callExp.Arguments[1];
+
+                        string subSelectLambdaParamName = searchPredicate.Parameters.Single().Name;
+                        string internalVariableName = "foo" + ++_nextUniqueVariableId;
+                        _subSelectParameterPrefixes.Add(subSelectLambdaParamName, $"${internalVariableName}" + ".");
+
+                        var searchValue = BuildMongoSelectExpression(searchPredicate.Body);
+                        _subSelectParameterPrefixes.Remove(subSelectLambdaParamName);
+
+                        return new BsonDocument("$filter", new BsonDocument {
+                            new BsonElement("input", arrayToSearch),
+                            new BsonElement("as", internalVariableName),
+                            new BsonElement("cond", searchValue),
+                        });
+                    }
+
+                    // Select方法支持（数组映射）
+                    if (callExp.Method.Name == "Select" && callExp.Arguments.Count == 2)
+                    {
+                        var arrayToMap = BuildMongoSelectExpression(callExp.Arguments[0]);
+                        var mapExpression = (LambdaExpression)callExp.Arguments[1];
+
+                        string subSelectLambdaParamName = mapExpression.Parameters.Single().Name;
+                        string internalVariableName = "foo" + ++_nextUniqueVariableId;
+                        _subSelectParameterPrefixes.Add(subSelectLambdaParamName, $"${internalVariableName}" + ".");
+
+                        var mappedValue = BuildMongoSelectExpression(mapExpression.Body);
+                        _subSelectParameterPrefixes.Remove(subSelectLambdaParamName);
+
+                        return new BsonDocument("$map", new BsonDocument {
+                            new BsonElement("input", arrayToMap),
+                            new BsonElement("as", internalVariableName),
+                            new BsonElement("in", mappedValue),
+                        });
+                    }
+
+                    // Skip方法支持
+                    if (callExp.Method.Name == "Skip" && callExp.Arguments.Count == 2)
+                    {
+                        var arrayToSlice = BuildMongoSelectExpression(callExp.Arguments[0]);
+                        var skipCount = BuildMongoSelectExpression(callExp.Arguments[1]);
+
+                        return new BsonDocument("$slice", new BsonArray([
+                            arrayToSlice,
+                            skipCount,
+                            new BsonDocument("$size", arrayToSlice) // 取剩余所有元素
+                        ]));
+                    }
+
+                    // Take方法支持
+                    if (callExp.Method.Name == "Take" && callExp.Arguments.Count == 2)
+                    {
+                        var arrayToSlice = BuildMongoSelectExpression(callExp.Arguments[0]);
+                        var takeCount = BuildMongoSelectExpression(callExp.Arguments[1]);
+
+                        return new BsonDocument("$slice", new BsonArray([
+                            arrayToSlice,
+                            takeCount
+                        ]));
+                    }
+
+                    // Reverse方法支持
+                    if (callExp.Method.Name == "Reverse" && callExp.Arguments.Count == 1)
+                    {
+                        return new BsonDocument("$reverseArray", BuildMongoSelectExpression(callExp.Arguments[0]));
+                    }
+
+                    // Distinct方法支持
+                    if (callExp.Method.Name == "Distinct" && callExp.Arguments.Count == 1)
+                    {
+                        return new BsonDocument("$setUnion", new BsonArray([
+                            BuildMongoSelectExpression(callExp.Arguments[0]),
+                            new BsonArray() // 空数组
+                        ]));
+                    }
+
+                    // Union方法支持
+                    if (callExp.Method.Name == "Union" && callExp.Arguments.Count == 2)
+                    {
+                        return new BsonDocument("$setUnion", new BsonArray([
+                            BuildMongoSelectExpression(callExp.Arguments[0]),
+                            BuildMongoSelectExpression(callExp.Arguments[1])
+                        ]));
+                    }
+
+                    // Except方法支持
+                    if (callExp.Method.Name == "Except" && callExp.Arguments.Count == 2)
+                    {
+                        return new BsonDocument("$setDifference", new BsonArray([
+                            BuildMongoSelectExpression(callExp.Arguments[0]),
+                            BuildMongoSelectExpression(callExp.Arguments[1])
+                        ]));
+                    }
+
+                    // Concat方法支持
+                    if (callExp.Method.Name == "Concat" && callExp.Arguments.Count == 2)
+                    {
+                        return new BsonDocument("$concatArrays", new BsonArray([
+                            BuildMongoSelectExpression(callExp.Arguments[0]),
+                            BuildMongoSelectExpression(callExp.Arguments[1])
+                        ]));
+                    }
+
+                    // Sum方法支持（数组元素求和）
+                    if (callExp.Method.Name == "Sum" && callExp.Arguments.Count >= 1)
+                    {
+                        if (callExp.Arguments.Count == 1)
+                        {
+                            // 直接对数组求和
+                            return new BsonDocument("$sum", BuildMongoSelectExpression(callExp.Arguments[0]));
+                        }
+                        else if (callExp.Arguments.Count == 2)
+                        {
+                            // 带选择器的求和
+                            var arrayToSum = BuildMongoSelectExpression(callExp.Arguments[0]);
+                            var sumExpression = (LambdaExpression)callExp.Arguments[1];
+
+                            string subSelectLambdaParamName = sumExpression.Parameters.Single().Name;
+                            string internalVariableName = "foo" + ++_nextUniqueVariableId;
+                            _subSelectParameterPrefixes.Add(subSelectLambdaParamName, $"${internalVariableName}" + ".");
+
+                            var sumValue = BuildMongoSelectExpression(sumExpression.Body);
+                            _subSelectParameterPrefixes.Remove(subSelectLambdaParamName);
+
+                            var mapDoc = new BsonDocument("$map", new BsonDocument {
+                                new BsonElement("input", arrayToSum),
+                                new BsonElement("as", internalVariableName),
+                                new BsonElement("in", sumValue),
+                            });
+
+                            return new BsonDocument("$sum", mapDoc);
+                        }
+                    }
+
+                    // Average方法支持
+                    if (callExp.Method.Name == "Average" && callExp.Arguments.Count >= 1)
+                    {
+                        if (callExp.Arguments.Count == 1)
+                        {
+                            return new BsonDocument("$avg", BuildMongoSelectExpression(callExp.Arguments[0]));
+                        }
+                        else if (callExp.Arguments.Count == 2)
+                        {
+                            var arrayToAvg = BuildMongoSelectExpression(callExp.Arguments[0]);
+                            var avgExpression = (LambdaExpression)callExp.Arguments[1];
+
+                            string subSelectLambdaParamName = avgExpression.Parameters.Single().Name;
+                            string internalVariableName = "foo" + ++_nextUniqueVariableId;
+                            _subSelectParameterPrefixes.Add(subSelectLambdaParamName, $"${internalVariableName}" + ".");
+
+                            var avgValue = BuildMongoSelectExpression(avgExpression.Body);
+                            _subSelectParameterPrefixes.Remove(subSelectLambdaParamName);
+
+                            var mapDoc = new BsonDocument("$map", new BsonDocument {
+                                new BsonElement("input", arrayToAvg),
+                                new BsonElement("as", internalVariableName),
+                                new BsonElement("in", avgValue),
+                            });
+
+                            return new BsonDocument("$avg", mapDoc);
+                        }
+                    }
+
+                    // Min/Max方法支持
+                    if ((callExp.Method.Name == "Min" || callExp.Method.Name == "Max") && callExp.Arguments.Count >= 1)
+                    {
+                        string mongoOp = callExp.Method.Name == "Min" ? "$min" : "$max";
+
+                        if (callExp.Arguments.Count == 1)
+                        {
+                            return new BsonDocument(mongoOp, BuildMongoSelectExpression(callExp.Arguments[0]));
+                        }
+                        else if (callExp.Arguments.Count == 2)
+                        {
+                            var arrayToProcess = BuildMongoSelectExpression(callExp.Arguments[0]);
+                            var processExpression = (LambdaExpression)callExp.Arguments[1];
+
+                            string subSelectLambdaParamName = processExpression.Parameters.Single().Name;
+                            string internalVariableName = "foo" + ++_nextUniqueVariableId;
+                            _subSelectParameterPrefixes.Add(subSelectLambdaParamName, $"${internalVariableName}" + ".");
+
+                            var processValue = BuildMongoSelectExpression(processExpression.Body);
+                            _subSelectParameterPrefixes.Remove(subSelectLambdaParamName);
+
+                            var mapDoc = new BsonDocument("$map", new BsonDocument {
+                                new BsonElement("input", arrayToProcess),
+                                new BsonElement("as", internalVariableName),
+                                new BsonElement("in", processValue),
+                            });
+
+                            return new BsonDocument(mongoOp, mapDoc);
+                        }
+                    }
+                }
+
                 // Handle DateTime methods (ie c.DateTime.AddMinutes(1))
                 if (callExp.Method.ReflectedType == typeof(DateTime))
                 {
@@ -1435,13 +1862,130 @@ namespace MongoDB.Entities.InnerQuery
                             case "AddMinutes": mSecToAdd = 60000 * (double)callArg; break;
                             case "AddHours": mSecToAdd = 3600000 * (double)callArg; break;
                             case "AddDays": mSecToAdd = 86400000 * (double)callArg; break;
-                            default: throw new InvalidQueryException($"Sorry, I can't translate method DateTime.{callExp.Method.Name}.");
+                            default: throw new InvalidQueryException($"Sorry, we can't translate method DateTime.{callExp.Method.Name}.");
                         }
 
-                        return new BsonDocument("$add", new BsonArray(new[] { BuildMongoSelectExpression(callExp.Object), BsonValue.Create(mSecToAdd) }));
+                        return new BsonDocument("$add", new BsonArray([BuildMongoSelectExpression(callExp.Object), BsonValue.Create(mSecToAdd)
+                        ]));
                     }
 
-                    throw new InvalidQueryException($"Sorry, I can't translate method DateTime.{callExp.Method.Name}.");
+                    throw new InvalidQueryException($"Sorry, we can't translate method DateTime.{callExp.Method.Name}.");
+                }
+
+                // 新增：Math静态方法支持
+                if (callExp.Method.ReflectedType == typeof(Math) && callExp.Object == null)
+                {
+                    if (MathFunctionToMongoOperatorDict.TryGetValue(callExp.Method.Name, out string mongoOperator))
+                    {
+                        switch (callExp.Method.Name)
+                        {
+                            case "Abs":
+                            case "Ceiling":
+                            case "Floor":
+                            case "Sqrt":
+                            case "Log10":
+                            case "Exp":
+                            case "Sin":
+                            case "Cos":
+                            case "Tan":
+                            case "Asin":
+                            case "Acos":
+                            case "Atan":
+                            case "Sinh":
+                            case "Cosh":
+                            case "Tanh":
+                            case "Asinh":
+                            case "Acosh":
+                            case "Atanh":
+                                // 单参数函数
+                                if (callExp.Arguments.Count == 1)
+                                    return new BsonDocument(mongoOperator, BuildMongoSelectExpression(callExp.Arguments[0]));
+                                break;
+
+                            case "Round":
+                                // Round可以有1个或2个参数
+                                if (callExp.Arguments.Count == 1)
+                                    return new BsonDocument(mongoOperator, BuildMongoSelectExpression(callExp.Arguments[0]));
+                                if (callExp.Arguments.Count == 2)
+                                    return new BsonDocument(mongoOperator, new BsonArray([
+                                        BuildMongoSelectExpression(callExp.Arguments[0]),
+                                        BuildMongoSelectExpression(callExp.Arguments[1])
+                                    ]));
+                                break;
+
+                            case "Pow":
+                            case "Log":
+                                // 双参数函数
+                                if (callExp.Arguments.Count == 2)
+                                    return new BsonDocument(mongoOperator, new BsonArray([
+                                        BuildMongoSelectExpression(callExp.Arguments[0]),
+                                        BuildMongoSelectExpression(callExp.Arguments[1])
+                                    ]));
+                                break;
+
+                            case "Min":
+                            case "Max":
+                                // 可变参数函数
+                                if (callExp.Arguments.Count >= 2)
+                                    return new BsonDocument(mongoOperator, new BsonArray(
+                                        callExp.Arguments.Select(arg => BuildMongoSelectExpression(arg))));
+                                break;
+                        }
+                    }
+
+                    // 特殊处理一些Math方法
+                    if (callExp.Method.Name == "Sign")
+                    {
+                        // Sign函数：返回-1, 0, 或1
+                        var value = BuildMongoSelectExpression(callExp.Arguments[0]);
+                        return new BsonDocument("$cond", new BsonDocument
+                        {
+                            {"if", new BsonDocument("$gt", new BsonArray([value, new BsonInt32(0)]))},
+                            {"then", new BsonInt32(1)},
+                            {"else", new BsonDocument("$cond", new BsonDocument
+                            {
+                                {"if", new BsonDocument("$lt", new BsonArray([value, new BsonInt32(0)]))},
+                                {"then", new BsonInt32(-1)},
+                                {"else", new BsonInt32(0)}
+                            })}
+                        });
+                    }
+
+                    if (callExp.Method.Name == "Truncate")
+                    {
+                        return new BsonDocument("$trunc", BuildMongoSelectExpression(callExp.Arguments[0]));
+                    }
+
+                    throw new InvalidQueryException($"Unsupported Math method: {callExp.Method.Name}");
+                }
+
+                // 新增：数组/集合操作的静态方法支持（如Enumerable类的方法）
+                if (callExp.Method.ReflectedType == typeof(Enumerable) && callExp.Object == null)
+                {
+                    if (callExp.Method.Name == "Range" && callExp.Arguments.Count == 2)
+                    {
+                        return new BsonDocument("$range", new BsonArray([
+                            BuildMongoSelectExpression(callExp.Arguments[0]), // start
+                            new BsonDocument("$add", new BsonArray([
+                                BuildMongoSelectExpression(callExp.Arguments[0]), // start
+                                BuildMongoSelectExpression(callExp.Arguments[1])  // count
+                            ]))
+                        ]));
+                    }
+
+                    if (callExp.Method.Name == "Repeat" && callExp.Arguments.Count == 2)
+                    {
+                        // 创建重复元素的数组
+                        var element = BuildMongoSelectExpression(callExp.Arguments[0]);
+                        var count = BuildMongoSelectExpression(callExp.Arguments[1]);
+
+                        return new BsonDocument("$map", new BsonDocument
+                        {
+                            {"input", new BsonDocument("$range", new BsonArray([new BsonInt32(0), count]))},
+                            {"as", "item"},
+                            {"in", element}
+                        });
+                    }
                 }
 
                 // MongoDbFunctions.GreaterThan(c.FirstName, "foo")
@@ -1456,14 +2000,14 @@ namespace MongoDB.Entities.InnerQuery
 
                     string op = callExp.Method.Name == "GreaterThan" ? "$gt" : "$gte";
 
-                    return new BsonDocument(op, new BsonArray(new[] { exp1, exp2 }));
+                    return new BsonDocument(op, new BsonArray([exp1, exp2]));
                 }
 
                 if (callExp.Method.Name == "Intersect" && (callExp.Method.ReflectedType.IsAssignableTo<IEnumerable>() || callExp.Method.ReflectedType == typeof(Enumerable)))
                 {
                     BsonValue exp1 = BuildMongoSelectExpression(callExp.Arguments[0]);
                     BsonValue exp2 = BuildMongoSelectExpression(callExp.Arguments[1]);
-                    return new BsonDocument("$setIntersection", new BsonArray(new[] { exp1, exp2 }));
+                    return new BsonDocument("$setIntersection", new BsonArray([exp1, exp2]));
                 }
                 throw new InvalidQueryException("Unsupported Call Expression for method " + callExp.Method.Name);
             }
@@ -1497,7 +2041,8 @@ namespace MongoDB.Entities.InnerQuery
             if (expression.NodeType == ExpressionType.Coalesce)
             {
                 var binaryExpression = (BinaryExpression)expression;
-                return new BsonDocument("$ifNull", new BsonArray(new[] { BuildMongoSelectExpression(binaryExpression.Left), BuildMongoSelectExpression(binaryExpression.Right) }));
+                return new BsonDocument("$ifNull", new BsonArray([BuildMongoSelectExpression(binaryExpression.Left), BuildMongoSelectExpression(binaryExpression.Right)
+                ]));
             }
 
             throw new InvalidQueryException("In Select(), can't build Mongo expression for node type" + expression.NodeType);
@@ -1804,15 +2349,24 @@ namespace MongoDB.Entities.InnerQuery
                     return;
             }
 
+            // Collect all AND conditions to create a single $match stage with $and operator
+            var andConditions = new List<BsonValue>();
 
-            // Split .Where(c => xxx && yyy && zzz)
-            // int   .Where(c => xxx).Where(c => yyy).Where(c => zzz)
-            // That way each can use back to old $match semantics as appropriate
-            // and fall back to $expr individually. (old $match is superior because Mongo
-            // server as of 3.6.4 has bugs hitting indexes properly for $expr.)
-
-            var booleanAndQueue = new Queue<Expression>();
-            booleanAndQueue.Enqueue(lambdaExp.Body);
+            // Helper function to recursively collect AND conditions
+            void CollectAndConditions(Expression exp)
+            {
+                if (exp.NodeType == ExpressionType.AndAlso)
+                {
+                    var andExp = (BinaryExpression)exp;
+                    CollectAndConditions(andExp.Left);
+                    CollectAndConditions(andExp.Right);
+                }
+                else
+                {
+                    // Add this condition to our list
+                    andConditions.Add(BuildMongoSelectExpression(exp));
+                }
+            }
 
             void AddContainsMatchStage(ConstantExpression constantExpression, MethodCallExpression methodCallExpression, bool containOrNot)
             {
@@ -1837,19 +2391,20 @@ namespace MongoDB.Entities.InnerQuery
 """));
             }
 
-            while (booleanAndQueue.Count != 0)
-            {
-                var exp = booleanAndQueue.Dequeue();
-                if (exp.NodeType == ExpressionType.AndAlso)
-                {
-                    // We found an AND expression.  Enqueue the right operand
-                    var andExp = (BinaryExpression)exp;
-                    booleanAndQueue.Enqueue(andExp.Right);
-                    exp = andExp.Left;
-                }
+            // Collect all AND conditions
+            CollectAndConditions(lambdaExp.Body);
 
-                // Now add a pipeline stage for the left operand
-                AddToPipeline("$match", new BsonDocument("$expr", BuildMongoSelectExpression(exp)));
+            // Create a single $match stage
+            if (andConditions.Count == 1)
+            {
+                // Single condition, no need for $and
+                AddToPipeline("$match", new BsonDocument("$expr", andConditions[0]));
+            }
+            else if (andConditions.Count > 1)
+            {
+                // Multiple conditions, use $and
+                var andArray = new BsonArray(andConditions);
+                AddToPipeline("$match", new BsonDocument("$expr", new BsonDocument("$and", andArray)));
             }
         }
 
@@ -1873,7 +2428,7 @@ namespace MongoDB.Entities.InnerQuery
             // Join key looks like:
             // c => c.FirstName
             var mongoName = BuildMongoSelectExpression(lambda.Body, true);
-            return new[] { mongoName };
+            return [mongoName];
 
         }
 
@@ -1937,7 +2492,8 @@ namespace MongoDB.Entities.InnerQuery
             //        }
             //    }
 
-            var eqDocuments = leftKey.Select((c, i) => new BsonDocument("$eq", new BsonArray(new[] { rightKey[i], leftKeyVariables[i] })))
+            var eqDocuments = leftKey.Select((c, i) => new BsonDocument("$eq", new BsonArray([rightKey[i], leftKeyVariables[i]
+                ])))
                                      .ToArray();
 
 

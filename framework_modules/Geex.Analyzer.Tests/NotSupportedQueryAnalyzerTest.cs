@@ -81,7 +81,7 @@ namespace Geex.Analyzer.Tests
         }
 
         [Fact]
-        public async Task UnsupportedStringLength_InWhere_ShouldReportDiagnostic()
+        public async Task SupportedStringLength_InSelect_ShouldNotReportDiagnostic()
         {
             var test = """
                        using System.Linq;
@@ -101,16 +101,12 @@ namespace Geex.Analyzer.Tests
                            void Method()
                            {
                                var list = new List<TestEntity>();
-                               var result = list.AsQueryable().Where(x => x.Name.Length > 5);
+                               var result = list.AsQueryable().Select(x => x.Name.Length);
                            }
                        }
                        """;
 
-            var expected = AnalyzerVerifier.Diagnostic("GEEX004")
-                .WithSpan(18, 54, 18, 65)
-                .WithArguments("System.String.Length", "在$match阶段不支持String.Length，考虑使用聚合管道");
-
-            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test);
         }
 
         [Fact]
@@ -142,7 +138,105 @@ namespace Geex.Analyzer.Tests
 
             var expected = AnalyzerVerifier.Diagnostic("GEEX004")
                 .WithSpan(19, 58, 19, 77)
-                .WithArguments("System.DateTime.Ticks", "在$match阶段不支持此DateTime属性，考虑使用支持的日期操作");
+                .WithArguments("System.DateTime.Ticks", "Ticks和TimeOfDay属性在MongoDB查询中不受支持，考虑使用支持的日期属性如Year, Month, Day等");
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task UnsupportedDateTimeProperty_InWhere_ShouldReportSpecialDiagnostic()
+        {
+            var test = """
+                       using System;
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public DateTime CreatedDate { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Where(x => x.CreatedDate.Year > 2020);
+                           }
+                       }
+                       """;
+
+            var expected = AnalyzerVerifier.Diagnostic("GEEX005")
+                .WithSpan(18, 54, 18, 72)
+                .WithArguments("System.DateTime.Year");
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task SupportedDateTimeProperty_InSelect_ShouldNotReportDiagnostic()
+        {
+            var test = """
+                       using System;
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public DateTime CreatedDate { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Select(x => x.CreatedDate.Year);
+                           }
+                       }
+                       """;
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test);
+        }
+
+        [Fact]
+        public async Task UnsupportedDateTimeOffsetProperty_InWhere_ShouldReportSpecialDiagnostic()
+        {
+            var test = """
+                       using System;
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public DateTimeOffset CreatedDate { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Where(x => x.CreatedDate.Offset.Hours > 0);
+                           }
+                       }
+                       """;
+
+            var expected = AnalyzerVerifier.Diagnostic("GEEX005")
+                .WithSpan(19, 52, 19, 72)
+                .WithArguments("System.DateTimeOffset.Offset");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
         }
@@ -326,7 +420,168 @@ namespace Geex.Analyzer.Tests
 
             var expected = AnalyzerVerifier.Diagnostic("GEEX004")
                 .WithSpan(19, 57, 19, 80)
-                .WithArguments("System.DateTime.TimeOfDay", "在$match阶段不支持此DateTime属性，考虑使用支持的日期操作");
+                .WithArguments("System.DateTime.TimeOfDay", "Ticks和TimeOfDay属性在MongoDB查询中不受支持，考虑使用支持的日期属性如Year, Month, Day等");
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task UnsupportedStringMethod_WithNonConstantParameter_InWhere_ShouldReportDiagnostic()
+        {
+            var test = """
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public string Name { get; set; }
+                           public string SearchTerm { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Where(x => x.Name.StartsWith(x.SearchTerm));
+                           }
+                       }
+                       """;
+
+            var expected = AnalyzerVerifier.Diagnostic("GEEX003")
+                .WithSpan(19, 54, 19, 82)
+                .WithArguments("string.StartsWith", "在Where子句中，StartsWith只支持常量字符串参数");
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task SupportedStringMethod_WithConstantParameter_InWhere_ShouldNotReportDiagnostic()
+        {
+            var test = """
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public string Name { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Where(x => x.Name.StartsWith("test"));
+                           }
+                       }
+                       """;
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test);
+        }
+
+        [Fact]
+        public async Task UnsupportedTimeSpanProperty_InWhere_ShouldReportDiagnostic()
+        {
+            var test = """
+                       using System;
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public TimeSpan Duration { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Where(x => x.Duration.Days > 1);
+                           }
+                       }
+                       """;
+
+            var expected = AnalyzerVerifier.Diagnostic("GEEX004")
+                .WithSpan(18, 54, 18, 69)
+                .WithArguments("System.TimeSpan.Days", "部分TimeSpan属性在某些上下文中不受支持，建议使用Ticks或Total*属性");
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task SupportedTimeSpanProperty_InSelect_ShouldNotReportDiagnostic()
+        {
+            var test = """
+                       using System;
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public TimeSpan Duration { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Select(x => x.Duration.TotalHours);
+                           }
+                       }
+                       """;
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test);
+        }
+
+        [Fact]
+        public async Task UnsupportedDateTimeKind_InWhere_ShouldReportSpecialDiagnostic()
+        {
+            var test = """
+                       using System;
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public DateTime CreatedDate { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Where(x => x.CreatedDate.Kind == DateTimeKind.Utc);
+                           }
+                       }
+                       """;
+
+            var expected = AnalyzerVerifier.Diagnostic("GEEX005")
+                .WithSpan(18, 54, 18, 72)
+                .WithArguments("System.DateTime.Kind");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
         }
@@ -366,6 +621,40 @@ namespace Geex.Analyzer.Tests
                 .WithArguments("ToString", "在查询中避免使用ToString，建议在查询结果上调用");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected1, expected2);
+        }
+
+        [Fact]
+        public async Task UnsupportedDateTimeOffsetOffset_InWhere_ShouldReportSpecialDiagnostic()
+        {
+            var test = """
+                       using System;
+                       using System.Linq;
+                       using MongoDB.Entities;
+                       using System.Collections.Generic;
+
+                       namespace MongoDB.Entities { public interface IEntityBase { string Id { get; set; } } }
+
+                       class TestEntity : IEntityBase
+                       {
+                           public string Id { get; set; }
+                           public DateTimeOffset CreatedDate { get; set; }
+                       }
+
+                       class TestClass
+                       {
+                           void Method()
+                           {
+                               var list = new List<TestEntity>();
+                               var result = list.AsQueryable().Where(x => x.CreatedDate.Offset.TotalHours > 0);
+                           }
+                       }
+                       """;
+
+            var expected = AnalyzerVerifier.Diagnostic("GEEX005")
+                .WithSpan(19, 52, 19, 72)
+                .WithArguments("System.DateTimeOffset.Offset");
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
         }
     }
 }
