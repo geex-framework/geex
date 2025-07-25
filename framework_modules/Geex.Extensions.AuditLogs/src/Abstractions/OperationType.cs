@@ -6,13 +6,9 @@ namespace Geex.Extensions.AuditLogs
 
     public class OperationType : Enumeration<OperationType>
     {
-        public static OperationType Query { get; } = new OperationType(nameof(Query));
-        public static OperationType Mutation { get; } = new OperationType(nameof(Mutation));
-        public static OperationType Subscription { get; } = new OperationType(nameof(Subscription));
-
-        public OperationType(string value) : base(value)
-        {
-        }
+        public static OperationType Query { get; } = FromValue(nameof(Query));
+        public static OperationType Mutation { get; } = FromValue(nameof(Mutation));
+        public static OperationType Subscription { get; } = FromValue(nameof(Subscription));
 
         public static implicit operator GqlOperationType(OperationType operationType)
         {

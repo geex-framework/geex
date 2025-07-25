@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 using JetBrains.Annotations;
+
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using MongoDB.Entities.Utilities;
 
@@ -15,7 +21,7 @@ namespace Geex
     {
         public Enumeration([NotNull] string name, string value) : base(name, value)
         {
-        }
+    }
 
         public Enumeration(string value) : base(value)
         {
@@ -32,29 +38,21 @@ namespace Geex
         IEnumeration,
         IEquatable<Enumeration<TEnum>>,
         IComparable<Enumeration<TEnum>>
-        where TEnum : IEnumeration
+        where TEnum : class, IEnumeration
     {
         static List<Type>? enumTypes;
         public static List<TEnum> DynamicValues => GetAllOptions().ToList();
+
+        private static ILogger<Enumeration>? _logger = null;
+        public static ILogger<Enumeration>? Logger => _logger ??= ServiceLocator.Global?.GetService<ILogger<Enumeration>>();
+
         public static ConcurrentDictionary<string, TEnum> ValueCacheDictionary { get; } = new ConcurrentDictionary<string, TEnum>();
-        static readonly Lazy<ConcurrentDictionary<string, TEnum>> _fromName =
-            new Lazy<ConcurrentDictionary<string, TEnum>>(() => new ConcurrentDictionary<string, TEnum>(GetAllOptions().ToDictionary(item => item.Name)));
+        static readonly ConcurrentDictionary<string, TEnum> _fromName = new ConcurrentDictionary<string, TEnum>();
 
-        static readonly Lazy<ConcurrentDictionary<string, TEnum>> _fromNameIgnoreCase =
-            new Lazy<ConcurrentDictionary<string, TEnum>>(() => new ConcurrentDictionary<string, TEnum>(GetAllOptions().ToDictionary(item => item.Name, StringComparer.OrdinalIgnoreCase)));
+        static readonly ConcurrentDictionary<string, TEnum> _fromNameIgnoreCase = new ConcurrentDictionary<string, TEnum>();
 
-        static readonly Lazy<ConcurrentDictionary<string, TEnum>> _fromValue =
-            new Lazy<ConcurrentDictionary<string, TEnum>>(() =>
-            {
-                // multiple enums with same value are allowed but store only one per value
-                var dictionary = ValueCacheDictionary;
-                foreach (var item in GetAllOptions())
-                {
-                    if (!dictionary.ContainsKey(item.Value))
-                        dictionary.TryAdd(item.Value, item);
-                }
-                return dictionary;
-            });
+        static readonly ConcurrentDictionary<string, TEnum> _fromValue = new ConcurrentDictionary<string, TEnum>();
+
 
         private static IEnumerable<TEnum> GetAllOptions()
         {
@@ -75,6 +73,10 @@ namespace Geex
                 foreach (var enumOption in typeEnumOptions)
                 {
                     IEnumeration.ValueCacheDictionary.TryAdd($"{typeof(TEnum).Name}.{enumOption.Name}", enumOption);
+                    _fromName.TryAdd(enumOption.Name, enumOption);
+                    _fromNameIgnoreCase.TryAdd(enumOption.Name.ToLowerInvariant(), enumOption);
+                    _fromValue.TryAdd(enumOption.Value, enumOption);
+                    ValueCacheDictionary.TryAdd(enumOption.Name, enumOption);
                 }
 
             }
@@ -112,12 +114,12 @@ namespace Geex
         /// <value>A <see cref="IReadOnlyCollection{TEnum}"/> containing all the instances of <see cref="Enumeration{TEnum}"/>.</value>
         /// <remarks>Retrieves all the instances of <see cref="Enumeration{TEnum}"/> referenced by public static read-only fields in the current class or its bases.</remarks>
         public static IEnumerable<TEnum> List =>
-            _fromName.Value.Values
+            _fromName.Values
                 .ToList()
                 .AsReadOnly();
 
-        private readonly string _name;
-        private readonly string _value;
+        private string _name;
+        private string _value;
 
         /// <summary>
         /// Gets the name.
@@ -135,12 +137,27 @@ namespace Geex
 
         string IEnumeration.Value => this.Value;
 
-        protected Enumeration(string name, string value) : base((x) => x.Name, x => x.Value)
+        public Enumeration(string name, string value) : base((x) => x.Name, x => x.Value)
         {
-            if (String.IsNullOrEmpty(name))
+            SetEnum(name, value);
+        }
+
+        internal void SetEnum(string name, string value)
+        {
+            if (string.IsNullOrEmpty(name))
                 throw new InvalidOperationException("simple enum value must have a equation of string.");
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
+
+            if (_fromValue.ContainsKey(value))
+            {
+                throw new InvalidOperationException("Please do use static factory for Enumeration! Enumeration value already exists for this enumeration type: " + typeof(TEnum).Name);
+            }
+
+            if (_fromName.ContainsKey(name))
+            {
+                throw new InvalidOperationException("Please do use static factory for Enumeration! Enumeration name already exists for this enumeration type: " + typeof(TEnum).Name);
+            }
 
             _name = name;
             _value = value;
@@ -150,7 +167,13 @@ namespace Geex
         /// construct a enum with name of value.ToString()
         /// </summary>
         /// <param name="value"></param>
-        protected Enumeration(string value) : this(value?.ToString(), value)
+        public Enumeration(string value) : this(value, value)
+        {
+
+        }
+
+        [Obsolete("Do not use this ctor, use static method of Create instead.", false)]
+        public Enumeration()
         {
 
         }
@@ -172,72 +195,25 @@ namespace Geex
         /// If the specified name is not found, throws a <see cref="KeyNotFoundException"/>.
         /// </returns>
         /// <exception cref="ArgumentException"><paramref name="name"/> is <c>null</c>.</exception>
-        /// <exception cref="SmartEnumNotFoundException"><paramref name="name"/> does not exist.</exception>
-        /// <seealso cref="Enumeration{TEnum}.TryFromName(string, out TEnum)"/>
-        /// <seealso cref="Enumeration{TEnum}.TryFromName(string, bool, out TEnum)"/>
         public static TEnum FromName(string name, bool ignoreCase = false)
         {
             if (String.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
             if (ignoreCase)
-                return FromName(_fromNameIgnoreCase.Value);
+                return FromName(_fromNameIgnoreCase);
             else
-                return FromName(_fromName.Value);
+                return FromName(_fromName);
 
             TEnum FromName(ConcurrentDictionary<string, TEnum> dictionary)
             {
                 if (!dictionary.TryGetValue(name, out var result))
                 {
-                    throw new KeyNotFoundException(name);
+                    // Create dynamic instance instead of throwing exception
+                    return Create(name, name);
                 }
                 return result;
             }
-        }
-
-        /// <summary>
-        /// Gets the item associated with the specified name.
-        /// </summary>
-        /// <param name="name">The name of the item to get.</param>
-        /// <param name="result">
-        /// When this method returns, contains the item associated with the specified name, if the key is found;
-        /// otherwise, <c>null</c>. This parameter is passed uninitialized.</param>
-        /// <returns>
-        /// <c>true</c> if the <see cref="Enumeration{TEnum}"/> contains an item with the specified name; otherwise, <c>false</c>.
-        /// </returns>
-        /// <exception cref="ArgumentException"><paramref name="name"/> is <c>null</c>.</exception>
-        /// <seealso cref="Enumeration{TEnum}.FromName(string, bool)"/>
-        /// <seealso cref="Enumeration{TEnum}.TryFromName(string, bool, out TEnum)"/>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFromName(string name, out TEnum result) =>
-            TryFromName(name, false, out result);
-
-        /// <summary>
-        /// Gets the item associated with the specified name.
-        /// </summary>
-        /// <param name="name">The name of the item to get.</param>
-        /// <param name="ignoreCase"><c>true</c> to ignore case during the comparison; otherwise, <c>false</c>.</param>
-        /// <param name="result">
-        /// When this method returns, contains the item associated with the specified name, if the name is found;
-        /// otherwise, <c>null</c>. This parameter is passed uninitialized.</param>
-        /// <returns>
-        /// <c>true</c> if the <see cref="Enumeration{TEnum}"/> contains an item with the specified name; otherwise, <c>false</c>.
-        /// </returns>
-        /// <exception cref="ArgumentException"><paramref name="name"/> is <c>null</c>.</exception>
-        /// <seealso cref="Enumeration{TEnum}.FromName(string, bool)"/>
-        /// <seealso cref="Enumeration{TEnum}.TryFromName(string, out TEnum)"/>
-        public static bool TryFromName(string name, bool ignoreCase, out TEnum result)
-        {
-            if (String.IsNullOrEmpty(name))
-            {
-                result = default;
-                return false;
-            }
-
-            if (ignoreCase)
-                return _fromNameIgnoreCase.Value.TryGetValue(name, out result);
-            else
-                return _fromName.Value.TryGetValue(name, out result);
         }
 
         /// <summary>
@@ -248,69 +224,107 @@ namespace Geex
         /// The first item found that is associated with the specified value.
         /// If the specified value is not found, throws a <see cref="KeyNotFoundException"/>.
         /// </returns>
-        /// <exception cref="SmartEnumNotFoundException"><paramref name="value"/> does not exist.</exception>
-        /// <seealso cref="Enumeration{TEnum}.FromValue(string, TEnum)"/>
-        /// <seealso cref="Enumeration{TEnum}.TryFromValue(string, out TEnum)"/>
         public static TEnum FromValue(string value)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
 
-            if (!_fromValue.Value.TryGetValue(value, out var result))
+            if (!_fromValue.TryGetValue(value, out var result))
             {
-                throw new KeyNotFoundException(value.ToString());
+                // Create dynamic instance instead of throwing exception
+                return Create(value, value);
             }
             return result;
         }
 
         /// <summary>
-        /// Gets an item associated with the specified value.
+        /// Gets the item associated with the specified name and value, throws if either conflicts with existing ones.
+        /// </summary>
+        /// <param name="name">The name of the item to get or create.</param>
+        /// <param name="value">The value of the item to get or create.</param>
+        /// <returns>The item associated with the specified name and value.</returns>
+        /// <exception cref="ArgumentNullException">If name or value is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">If name or value already exists but with a different value or name.</exception>
+        public static TEnum FromNameAndValue(string name, string value)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
+            // 优先通过Value查找
+            var byValue = FromExistedValue(value, true);
+            if (byValue != null && byValue.Name != name)
+            {
+                throw new InvalidOperationException($"Enumeration value '{value}' already exists with a different name '{byValue.Name}'.");
+            }
+            if (byValue != null)
+            {
+                return byValue;
+            }
+
+            // 再通过Name查找
+            var byName = FromExistedName(name, false, true);
+            if (byName != null && byName.Value != value)
+            {
+                throw new InvalidOperationException($"Enumeration name '{name}' already exists with a different value '{byName.Value}'.");
+            }
+            if (byName != null)
+            {
+                return byName;
+            }
+
+            // 都不存在则创建
+            return Create(name, value);
+        }
+
+        /// <summary>
+        /// Gets the item associated with the specified name, throws if not found.
+        /// </summary>
+        /// <param name="name">The name of the item to get.</param>
+        /// <param name="ignoreCase"><c>true</c> to ignore case during the comparison; otherwise, <c>false</c>.</param>
+        /// <returns>The item associated with the specified name.</returns>
+        /// <exception cref="KeyNotFoundException">If the specified name is not found.</exception>
+        public static TEnum FromExistedName(string name, bool ignoreCase = false, bool noException = false)
+        {
+            if (String.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            var dictionary = ignoreCase ? _fromNameIgnoreCase : _fromName;
+            if (!dictionary.TryGetValue(name, out var result))
+            {
+                if (noException)
+                {
+                    return null;
+                }
+                throw new KeyNotFoundException($"Enumeration name '{name}' does not exist.");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the item associated with the specified value, throws if not found.
         /// </summary>
         /// <param name="value">The value of the item to get.</param>
-        /// <param name="defaultValue">The value to return when item not found.</param>
-        /// <returns>
-        /// The first item found that is associated with the specified value.
-        /// If the specified value is not found, returns <paramref name="defaultValue"/>.
-        /// </returns>
-        /// <seealso cref="Enumeration{TEnum}.FromValue(string)"/>
-        /// <seealso cref="Enumeration{TEnum}.TryFromValue(string, out TEnum)"/>
-        public static TEnum FromValue(string value, TEnum defaultValue)
+        /// <returns>The item associated with the specified value.</returns>
+        /// <exception cref="KeyNotFoundException">If the specified value is not found.</exception>
+        public static TEnum FromExistedValue(string value, bool noException = false)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
 
-            if (!_fromValue.Value.TryGetValue(value, out var result))
+            if (!_fromValue.TryGetValue(value, out var result))
             {
-                return defaultValue;
+                if (noException)
+                {
+                    return null;
+                }
+                throw new KeyNotFoundException($"Enumeration value '{value}' does not exist.");
             }
             return result;
         }
 
-        /// <summary>
-        /// Gets an item associated with the specified value.
-        /// </summary>
-        /// <param name="value">The value of the item to get.</param>
-        /// <param name="result">
-        /// When this method returns, contains the item associated with the specified value, if the value is found;
-        /// otherwise, <c>null</c>. This parameter is passed uninitialized.</param>
-        /// <returns>
-        /// <c>true</c> if the <see cref="Enumeration{TEnum}"/> contains an item with the specified name; otherwise, <c>false</c>.
-        /// </returns>
-        /// <seealso cref="Enumeration{TEnum}.FromValue(string)"/>
-        /// <seealso cref="Enumeration{TEnum}.FromValue(string, TEnum)"/>
-        public static bool TryFromValue(string value, out TEnum result)
-        {
-            if (value == null)
-            {
-                result = default;
-                return false;
-            }
-
-            return _fromValue.Value.TryGetValue(value, out result);
-        }
-
-        public override string ToString() =>
-            _name;
+        public override string ToString() => _name;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode() =>
@@ -387,8 +401,62 @@ namespace Geex
             enumeration._value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static explicit operator Enumeration<TEnum>(string value) =>
+        public static implicit operator Enumeration<TEnum>(string value) =>
             FromValue(value) as Enumeration<TEnum>;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator Enumeration<TEnum>((string name, string value) tuple) =>
+            Create(tuple.name, tuple.value) as Enumeration<TEnum>;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator TEnum(Enumeration<TEnum> value) =>
+            FromValue(value);
+
+        /// <summary>
+        /// Creates a dynamic enumeration instance when no existing instance is found
+        /// </summary>
+        private static TEnum Create(string name, string value)
+        {
+            if (_fromValue.TryGetValue(value, out var existed))
+            {
+                if (existed.Name != name)
+                {
+                    Logger?.LogWarning($"Enumeration value '{value}' already exists with a different name '{existed.Name}'.");
+                }
+                return existed;
+            }
+
+            if (_fromName.TryGetValue(name, out existed))
+            {
+                if (existed.Value != value)
+                {
+                    Logger?.LogWarning($"Enumeration name '{name}' already exists with a different value '{existed.Value}'.");
+                }
+                return existed;
+            }
+
+            // Try to create an instance of the concrete enumeration type
+            var concreteType = typeof(TEnum);
+            try
+            {
+
+                var instance = (TEnum)Activator.CreateInstance(concreteType);
+                (instance as Enumeration<TEnum>).SetEnum(name, value);
+                // Cache the new instance
+                _fromName.TryAdd(name, instance);
+                _fromNameIgnoreCase.TryAdd(name, instance);
+                _fromValue.TryAdd(value, instance);
+                ValueCacheDictionary.TryAdd(name, instance);
+                IEnumeration.ValueCacheDictionary.TryAdd($"{typeof(TEnum).Name}.{name}", instance);
+
+                return instance;
+            }
+            catch
+            {
+                // If we can't create an instance, fall back to throwing the original exception
+                throw new InvalidOperationException($"Cannot create enumeration with name '{name}' and value '{value}'");
+            }
+        }
     }
 
 
