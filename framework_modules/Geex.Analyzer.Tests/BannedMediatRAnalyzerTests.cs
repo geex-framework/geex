@@ -1,15 +1,16 @@
 using System.Threading.Tasks;
 
+using Geex.Analyzer.Analyzer;
 using Geex.Analyzer.Analyzers;
 
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 
 using Xunit;
 
 namespace Geex.Analyzer.Tests
 {
-    using AnalyzerVerifier = CSharpAnalyzerVerifier<BannedMediatRAnalyzer, DefaultVerifier>;
-
+    using AnalyzerVerifier = CSharpAnalyzerVerifier<BannedMediatRAnalyzer, GeexOnlyVerifier>;
     public class BannedMediatRAnalyzerTests
     {
         [Fact]
@@ -20,7 +21,7 @@ namespace Geex.Analyzer.Tests
                        class C { }
                        """;
             var expected = AnalyzerVerifier.Diagnostic("GEEX001").WithSpan(2, 7, 2, 16).WithArguments("MediatR");
-            await AnalyzerVerifier.VerifyAnalyzerAsync(test, new[] { expected });
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
         }
 
         [Fact]
@@ -33,7 +34,8 @@ namespace Geex.Analyzer.Tests
                        }
                        """;
             var expected = AnalyzerVerifier.Diagnostic("GEEX002").WithSpan(4, 5, 4, 24).WithArguments("MediatR.IMediator", "MediatX.IMediator");
-            await AnalyzerVerifier.VerifyAnalyzerAsync(test, new[] { expected });
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(test, [DiagnosticResult.CompilerError("CS0246").WithLocation(3,5), expected]);
         }
     }
 }
