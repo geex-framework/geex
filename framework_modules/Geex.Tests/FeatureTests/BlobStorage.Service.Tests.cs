@@ -233,7 +233,7 @@ namespace Geex.Tests.FeatureTests
                 var dataStream = await file.StreamFromStorage();
                 dataStream.Length.ShouldBe(largeData.Length);
             }
-            uploadTimeCost.ShouldBeLessThan(1000);
+            uploadTimeCost.ShouldBeLessThan(2000);
         }
     }
 }

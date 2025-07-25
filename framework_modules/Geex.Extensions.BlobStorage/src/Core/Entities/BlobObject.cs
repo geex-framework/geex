@@ -28,6 +28,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
     public class BlobObject : Entity<BlobObject>, IBlobObject
     {
         private readonly Task? _streamToStorageTask = null;
+        private static readonly ThreadLocal<byte[]> _bufferCache = new ThreadLocal<byte[]>(() => new byte[512 * 1024]);
 
         const long MaxCacheSize = 2048L * 1024 * 1024; // 2GB
 
@@ -118,10 +119,11 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         /// </summary>
         public static async Task<string> ProcessStreamAsync(Stream inputStream, int bufferSize, MD5 md5Hasher, Func<ReadOnlyMemory<byte>, Task> writeAction, CancellationToken cancellationToken)
         {
-            var buffer = new byte[bufferSize];
+            // Reuse buffer from thread-local cache if size matches
+            var buffer = _bufferCache.Value.Length >= bufferSize ? _bufferCache.Value : new byte[bufferSize];
             int bytesRead;
 
-            while ((bytesRead = await inputStream.ReadAsync(buffer.AsMemory(), cancellationToken)) > 0)
+            while ((bytesRead = await inputStream.ReadAsync(buffer.AsMemory(0, bufferSize), cancellationToken)) > 0)
             {
                 var dataToProcess = buffer.AsMemory(0, bytesRead);
                 md5Hasher.TransformBlock(buffer, 0, bytesRead, null, 0);
@@ -165,7 +167,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                 if (!this.Md5.IsNullOrEmpty())
                 {
                     var filePath = this.GetFilePath();
-                    if (await Task.Run(() => File.Exists(filePath), cancellationToken))
+                    if (File.Exists(filePath))
                     {
                         return;
                     }
@@ -185,9 +187,11 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                         await fileStream.WriteAsync(chunk, cancellationToken);
                     }, cancellationToken);
 
-                await fileStream.DisposeAsync().ConfigureAwait(false);
+                await fileStream.FlushAsync(cancellationToken);
+                await fileStream.DisposeAsync();
+
                 var finalFilePath = Path.Combine(options.FileSystemStoragePath, md5HashFs);
-                await Task.Run(() => File.Move(tempFilePath, finalFilePath, true), cancellationToken);
+                File.Move(tempFilePath, finalFilePath, true);
 
                 this.Md5 = md5HashFs;
             }
@@ -211,29 +215,49 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                         await fileStream2.WriteAsync(chunk, cancellationToken);
                     }, cancellationToken);
 
+                await fileStream2.FlushAsync(cancellationToken);
                 this.Md5 = md5HashCache;
 
-                // 设置自动删除计时器
-                Timer deleteTimer = default;
-                deleteTimer = new Timer(state =>
+                // 设置自动删除计时器 - 使用更高效的清理机制
+                var deleteTimer = new Timer(async state =>
                 {
-                    try
-                    {
-                        if (File.Exists(tempFilePath2))
-                        {
-                            File.Delete(tempFilePath2);
-                            deleteTimer?.Dispose();
-                        }
-                    }
-                    catch (IOException)
-                    {
-                        logger.LogWarning("File is in use, retrying in 1 minute.");
-                        deleteTimer?.Change(TimeSpan.FromMinutes(1), Timeout.InfiniteTimeSpan);
-                    }
+                    await TryDeleteCacheFileAsync(tempFilePath2, logger);
                 }, null, TimeSpan.FromMinutes(5), Timeout.InfiniteTimeSpan);
+
+                // 注册清理回调以避免内存泄漏
+                cancellationToken.Register(() => deleteTimer?.Dispose());
             }
             else
                 throw new NotImplementedException($"未实现的存储类型: {this.StorageType}");
+        }
+
+        /// <summary>
+        /// Asynchronously attempts to delete cache file with retry logic
+        /// </summary>
+        private static async Task TryDeleteCacheFileAsync(string filePath, ILogger logger)
+        {
+            const int maxRetries = 3;
+            for (int retry = 0; retry < maxRetries; retry++)
+            {
+                try
+                {
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                        return;
+                    }
+                }
+                catch (IOException ex) when (retry < maxRetries - 1)
+                {
+                    logger?.LogWarning(ex, "File is in use, retrying in 1 minute. Attempt {Retry}/{MaxRetries}", retry + 1, maxRetries);
+                    await Task.Delay(TimeSpan.FromMinutes(1));
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogError(ex, "Failed to delete cache file: {FilePath}", filePath);
+                    break;
+                }
+            }
         }
 
         /// <summary>
@@ -285,12 +309,16 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                 var duplicateCount = await this.DbContext.CountAsync<BlobObject>(x => x.Md5 == this.Md5, cancellationToken);
                 if (duplicateCount <= 1)
                 {
-                    var dbFile = await Task.FromResult(this.DbContext.Query<DbFile>().Single(x => x.Md5 == this.Md5));
-                    await dbFile.Data.ClearAsync(cancellationToken);
-                    await dbFile.DeleteAsync();
+                    var dbFile = this.DbContext.Query<DbFile>().FirstOrDefault(x => x.Md5 == this.Md5);
+                    if (dbFile != null)
+                    {
+                        await dbFile.Data.ClearAsync(cancellationToken);
+                        await dbFile.DeleteAsync();
+                    }
                 }
             }
         }
+
         /// <summary>
         /// Streams the file from storage based on storage type
         /// </summary>
@@ -322,7 +350,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
             else if (this.StorageType == BlobStorageType.Cache)
             {
                 var tempFilePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), this.Id));
-                if (!await Task.Run(() => File.Exists(tempFilePath), cancellationToken))
+                if (!File.Exists(tempFilePath))
                 {
                     throw new FileNotFoundException("Cached files only available within 5 minutes.");
                 }
@@ -339,7 +367,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                 }
 
                 var filePath = this.GetFilePath();
-                if (!await Task.Run(() => File.Exists(filePath), cancellationToken))
+                if (!File.Exists(filePath))
                 {
                     await this.HandleInvalidBlobAsync(cancellationToken);
                 }
