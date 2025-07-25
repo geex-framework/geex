@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -196,10 +197,12 @@ namespace Geex.Tests.FeatureTests
         {
             // Arrange
             var testFileName = $"large_file_{ObjectId.GenerateNewId()}.txt";
-            // Create a larger file (5MB)
-            var largeData = new byte[5 * 1024 * 1024];
+            // Create a larger file (128MB)
+            var largeData = new byte[128 * 1024 * 1024];
             Array.Fill<byte>(largeData, 42);
             string blobId;
+
+            var st = Stopwatch.StartNew();
 
             // Act
             using (var scope = ScopedService.CreateScope())
@@ -214,6 +217,10 @@ namespace Geex.Tests.FeatureTests
                 blobId = blob.Id;
             }
 
+            st.Stop();
+            var uploadTimeCost = st.ElapsedMilliseconds;
+            Debug.WriteLine($"Large file upload took: {uploadTimeCost} ms");
+
             // Assert
             using (var verifyScope = ScopedService.CreateScope())
             {
@@ -226,6 +233,7 @@ namespace Geex.Tests.FeatureTests
                 var dataStream = await file.StreamFromStorage();
                 dataStream.Length.ShouldBe(largeData.Length);
             }
+            uploadTimeCost.ShouldBeLessThan(1000);
         }
     }
 }
