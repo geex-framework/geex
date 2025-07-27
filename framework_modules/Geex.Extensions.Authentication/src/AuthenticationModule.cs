@@ -296,7 +296,7 @@ namespace Geex.Extensions.Authentication
                     .AddEncryptionCertificate(cert)
                     .AddSigningCertificate(cert);
                 Logger?.LogInformation("证书支持签名和加密，直接使用");
-                return (cert, null);
+                return (cert, new X509SigningCredentials(cert));
             }
 
             // 处理部分支持的情况
@@ -375,7 +375,7 @@ namespace Geex.Extensions.Authentication
                 }
             }
 
-            return (cert, null);
+            return (cert, new X509SigningCredentials(cert));
         }
 
         private string DetermineSigningAlgorithm(SecurityKey securityKey)
@@ -488,7 +488,7 @@ namespace Geex.Extensions.Authentication
             {
                 securityKey = cert.GetECDsaPrivateKey() is { } ecDsa
                     ? new ECDsaSecurityKey(ecDsa)
-                    : new RsaSecurityKey(cert.GetRSAPrivateKey() ?? RSA.Create(2048));
+                    : new X509SecurityKey(cert);
             }
 
             parameters.RequireSignedTokens = parameters.ValidateIssuerSigningKey = securityKey != null;
