@@ -632,7 +632,7 @@ namespace MongoDB.Entities.Tests
                 Name = "a1"
             };
             // Detach状态下转换
-            a1 = a1.Cast<InheritanceEntityChild>();
+            a1 = a1.CastEntity<InheritanceEntityChild>();
             a1.ShouldBeOfType<InheritanceEntityChild>();
             a1.Name.ShouldBe("a1");
             dbContext.Attach(a1);
@@ -662,7 +662,7 @@ namespace MongoDB.Entities.Tests
 
             dbContext.Attach(a1);
             // Attach状态下转换
-            a1 = a1.Cast<InheritanceEntityChild>();
+            a1 = a1.CastEntity<InheritanceEntityChild>();
             a1.ShouldBeOfType<InheritanceEntityChild>();
             a1.Name.ShouldBe("a1");
             await dbContext.SaveChanges();
@@ -695,7 +695,7 @@ namespace MongoDB.Entities.Tests
             dbContext = new DbContext();
             a1 = dbContext.Query<InheritanceEntity>().FirstOrDefault(x => x.Name == "a1");
             // Saved状态下转换
-            a1 = a1.Cast<InheritanceEntityChild>();
+            a1 = a1.CastEntity<InheritanceEntityChild>();
             a1.ShouldBeOfType<InheritanceEntityChild>();
             a1.Name.ShouldBe("a1");
             //await dbContext.SaveChanges();
@@ -706,7 +706,7 @@ namespace MongoDB.Entities.Tests
             a1.ShouldBeOfType<InheritanceEntity>();
             a1.Name.ShouldBe("a1");
 
-            a1 = a1.Cast<InheritanceEntityChild>();
+            a1 = a1.CastEntity<InheritanceEntityChild>();
             a1.ShouldBeOfType<InheritanceEntityChild>();
             a1.Name.ShouldBe("a1");
             await dbContext.SaveChanges();
@@ -724,6 +724,121 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().Count(x => x.Name == "a1").ShouldBe(1);
+        }
+
+        [TestMethod]
+        public async Task batch_type_cast_in_detach_status_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+
+            var entities = new List<InheritanceEntity>()
+            {
+                new InheritanceEntity() { Name = "a1" },
+                new InheritanceEntity() { Name = "a2" },
+                new InheritanceEntity() { Name = "a3" }
+            };
+
+            // Detach状态下批量转换
+            var castedEntities = entities.CastEntity<InheritanceEntityChild>().ToList();
+            castedEntities.Count.ShouldBe(3);
+            castedEntities.All(x => x is InheritanceEntityChild).ShouldBeTrue();
+            castedEntities[0].Name.ShouldBe("a1");
+            castedEntities[1].Name.ShouldBe("a2");
+            castedEntities[2].Name.ShouldBe("a3");
+
+            dbContext.Attach(castedEntities.CastEntity<InheritanceEntity>());
+            await dbContext.SaveChanges();
+
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var children = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList();
+            children.Count.ShouldBe(3);
+            children.Count(x => x.Name.StartsWith("a")).ShouldBe(3);
+            dbContext.Dispose();
+        }
+
+        [TestMethod]
+        public async Task batch_type_cast_in_attach_status_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+
+            var entities = new List<InheritanceEntity>()
+            {
+                new InheritanceEntity() { Name = "b1" },
+                new InheritanceEntity() { Name = "b2" },
+                new InheritanceEntity() { Name = "b3" }
+            };
+
+            dbContext.Attach(entities);
+
+            // Attach状态下批量转换
+            var castedEntities = entities.CastEntity<InheritanceEntityChild>().ToList();
+            castedEntities.Count.ShouldBe(3);
+            castedEntities.All(x => x is InheritanceEntityChild).ShouldBeTrue();
+            castedEntities[0].Name.ShouldBe("b1");
+            castedEntities[1].Name.ShouldBe("b2");
+            castedEntities[2].Name.ShouldBe("b3");
+
+            await dbContext.SaveChanges();
+
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var children = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList();
+            children.Count.ShouldBe(3);
+            children.Count(x => x.Name.StartsWith("b")).ShouldBe(3);
+            dbContext.Dispose();
+        }
+
+        [TestMethod]
+        public async Task batch_type_cast_in_saved_status_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
+
+            var entities = new List<InheritanceEntity>()
+            {
+                new InheritanceEntity() { Name = "c1" },
+                new InheritanceEntity() { Name = "c2" },
+                new InheritanceEntity() { Name = "c3" }
+            };
+
+            dbContext.Attach(entities);
+            await dbContext.SaveChanges();
+
+            dbContext.Dispose();
+            dbContext = new DbContext();
+            var savedEntities = dbContext.Query<InheritanceEntity>().Where(x => x.Name.StartsWith("c")).ToList();
+            savedEntities.Count.ShouldBe(3);
+            savedEntities.All(x => x.GetType() == typeof(InheritanceEntity)).ShouldBeTrue();
+
+            // Saved状态下批量转换
+            var castedEntities = savedEntities.CastEntity<InheritanceEntityChild>().OrderBy(x=>x.Name).ToList();
+            castedEntities.Count.ShouldBe(3);
+            castedEntities.All(x => x is InheritanceEntityChild).ShouldBeTrue();
+            castedEntities[0].Name.ShouldBe("c1");
+            castedEntities[1].Name.ShouldBe("c2");
+            castedEntities[2].Name.ShouldBe("c3");
+
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+
+            dbContext = new DbContext();
+            var children = dbContext.Query<InheritanceEntity>().OfType<InheritanceEntityChild>().ToList();
+            children.Count.ShouldBe(3);
+            children.Count(x => x.Name.StartsWith("c")).ShouldBe(3);
+            children.All(x => x is InheritanceEntityChild).ShouldBeTrue();
+            dbContext.Dispose();
         }
     }
 }

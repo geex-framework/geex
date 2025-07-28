@@ -1050,6 +1050,7 @@ namespace MongoDB.Entities.Tests
                     ArrayAvg = x.Data.Average(),
                     ArrayCount = x.Data.Length
                 })
+                .OrderBy(x=>x.ProcessedName)
                 .ToList();
 
             complexResult.ShouldNotBeEmpty();

@@ -206,7 +206,7 @@ namespace MongoDB.Entities
             var rootType = entity.GetType().GetRootBsonClassMap().ClassType;
             if (this.MemoryDataCache[rootType].TryGetValue(entity.Id, out var existed))
             {
-                return (T)existed;
+                return existed.CastEntity<T>();
             }
             else
             {

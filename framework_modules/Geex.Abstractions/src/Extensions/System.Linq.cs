@@ -1,9 +1,14 @@
-﻿using System.Linq.Expressions;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
+using FastExpressionCompiler;
 using Geex;
 using Geex.Abstractions;
 
 using MongoDB.Entities;
+
+using ZstdSharp;
 
 // ReSharper disable once CheckNamespace
 namespace System.Linq
@@ -33,6 +38,68 @@ namespace System.Linq
         //        throw new ArgumentNullException("source");
         //    return source.Select(x => (TResult)x);
         //}
+
+        public static IEnumerable<TResult> CastEntity<TResult>(this IEnumerable source) where TResult : IEntityBase
+        {
+            if (source is IEnumerable<TResult> results)
+                return results;
+
+            ArgumentNullException.ThrowIfNull(source);
+
+            // 检查源集合的元素类型是否实现了 IEntityBase
+            var sourceType = source.GetType();
+            if (sourceType.IsGenericType)
+            {
+                var elementType = sourceType.GetGenericArguments()[0];
+                if (typeof(IEntityBase).IsAssignableFrom(elementType))
+                {
+                    return source.Cast<IEntityBase>().Select(x => x.CastEntity<TResult>());
+                }
+            }
+
+            return source.Cast<TResult>();
+        }
+
+        public static IQueryable<TResult> CastEntity<TResult>(this IQueryable source) where TResult : IEntityBase
+        {
+            if (source is IQueryable<TResult> selfResults)
+                return selfResults;
+
+            ArgumentNullException.ThrowIfNull(source);
+
+            // 检查源查询的元素类型是否实现了 IEntityBase
+            if (typeof(IEntityBase).IsAssignableFrom(source.ElementType))
+            {
+                return source.Cast<IEntityBase>().Select(x => x.CastEntity<TResult>());
+            }
+
+            return source.Cast<TResult>();
+        }
+
+        //// 这个重载比标准Cast更具体，会被优先选择
+        //public static IEnumerable<TResult> Cast<TSource, TResult>(this IEnumerable<TSource> source)
+        //    where TSource : IEntityBase
+        //    where TResult : IEntityBase
+        //{
+        //    ArgumentNullException.ThrowIfNull(source);
+        //    return source.Select(x => x.Cast<TResult>());
+        //}
+
+        //public static IQueryable<TResult> Cast<TSource, TResult>(this IQueryable<TSource> source)
+        //    where TSource : IEntityBase
+        //    where TResult : IEntityBase
+        //{
+        //    ArgumentNullException.ThrowIfNull(source);
+
+        //    var parameter = Expression.Parameter(typeof(TSource), "x");
+        //    var castToIEntityBase = Expression.Convert(parameter, typeof(IEntityBase));
+        //    var castMethod = typeof(IEntityBase).GetMethod("Cast").MakeGenericMethod(typeof(TResult));
+        //    var castCall = Expression.Call(castToIEntityBase, castMethod);
+        //    var lambda = Expression.Lambda<Func<TSource, TResult>>(castCall, parameter).FromSysExpression();
+
+        //    return source.Select(lambda);
+        //}
+
 
         public static IQueryable<TEntityType> WhereWithPostFilter<TEntityType>(this IQueryable<TEntityType> source, Expression<Func<TEntityType, bool>> expression)
         {

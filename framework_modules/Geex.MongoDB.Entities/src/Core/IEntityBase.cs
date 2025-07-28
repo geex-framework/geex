@@ -40,6 +40,6 @@ namespace MongoDB.Entities
         //   Expression lazyQuery,
         //   Expression batchQuery,
         //   Func<IQueryable> sourceProvider = default);
-        public TChild Cast<TChild>() where TChild : IEntityBase;
+        public TChild CastEntity<TChild>() where TChild : IEntityBase;
     }
 }

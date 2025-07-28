@@ -90,7 +90,7 @@ namespace MongoDB.Entities
         /// <typeparam name="TChild"></typeparam>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public virtual TChild Cast<TChild>() where TChild : IEntityBase
+        public virtual TChild CastEntity<TChild>() where TChild : IEntityBase
         {
             try
             {

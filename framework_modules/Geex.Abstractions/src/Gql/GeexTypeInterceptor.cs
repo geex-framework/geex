@@ -156,13 +156,13 @@ namespace Geex.Gql
 
         private void IgnoreEntityMethods(ObjectTypeDefinition definition)
         {
-            var specialMethods = definition.RuntimeType.GetMethods().Where(x => !x.IsSpecialName);
-            var fieldsToIgnore = definition.Fields.IntersectBy(specialMethods, x => x.Member);
+            //var specialMethods = definition.RuntimeType.GetMethods().Where(x => !x.IsSpecialName);
+            //var fieldsToIgnore = definition.Fields.IntersectBy(specialMethods, x => x.Member);
 
-            foreach (var field in fieldsToIgnore)
-            {
-                field.Ignore = true;
-            }
+            //foreach (var field in fieldsToIgnore)
+            //{
+            //    field.Ignore = true;
+            //}
         }
 
         private void ProcessArgumentDefaults(ITypeCompletionContext completionContext, ObjectTypeDefinition definition)
