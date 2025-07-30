@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-
+using Fasterflect;
 using Geex.Gql.Extensions;
 using Geex.Gql.Types;
 
@@ -96,9 +96,10 @@ namespace Geex.Gql
         private void ProcessInputFieldDefaults(ITypeCompletionContext completionContext,
             InputObjectTypeDefinition definition, Type runtimeType)
         {
-            try
+            var ctor = runtimeType.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).FirstOrDefault(x => x.GetParameters().Length == 0);
+            if (ctor != null)
             {
-                var instance = Activator.CreateInstance(runtimeType, nonPublic: true);
+                var instance = ctor.Invoke([]);
 
                 foreach (var field in definition.Fields)
                 {
@@ -117,10 +118,10 @@ namespace Geex.Gql
                     }
                 }
             }
-            catch (Exception e)
+            else
             {
-                var message = $"Error occurred while creating instance of {runtimeType} when marking nullable fields";
-                _logger.LogError(e, message);
+                var message = $"Error occurred while creating instance of '{runtimeType}', please setup a parameterless ctor for input type for nullable inference.";
+                _logger.LogError(message);
             }
         }
 

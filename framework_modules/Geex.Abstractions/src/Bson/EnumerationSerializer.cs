@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
@@ -7,7 +8,6 @@ using MongoDB.Bson.Serialization.Serializers;
 
 namespace Geex.Bson
 {
-
     public class EnumerationSerializer<TEnum> :
         ClassSerializerBase<TEnum>,
         IRepresentationConfigurable, IEnumerationSerializer where TEnum : Enumeration<TEnum>
@@ -15,10 +15,18 @@ namespace Geex.Bson
         private readonly BsonType _representation = BsonType.String;
         private readonly TypeCode _underlyingTypeCode;
 
+        // 缓存反射方法，避免重复反射调用
+        private static readonly Lazy<MethodInfo> _fromValueMethod = new Lazy<MethodInfo>(() =>
+        {
+            var enumerationType = typeof(Enumeration<>).MakeGenericType(typeof(TEnum));
+            var method = enumerationType.GetMethod(nameof(Enumeration.FromValue), genericParameterCount: 1, types: new[] { typeof(string) });
+            return method?.MakeGenericMethod(typeof(TEnum));
+        });
+
         public EnumerationSerializer()
         {
-
         }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="T:MongoDB.Bson.Serialization.Serializers.EnumSerializer`1" /> class.
         /// </summary>
@@ -80,7 +88,9 @@ namespace Geex.Bson
                 default:
                     throw this.CreateCannotDeserializeFromBsonTypeException(currentBsonType);
             }
-            var result = typeof(Enumeration<>).MakeGenericType(typeof(TEnum)).GetMethod(nameof(Enumeration.FromValue), types: new[] { typeof(string) })?.Invoke(null, new[] { data }) as TEnum;
+
+            // 使用缓存的反射方法
+            var result = _fromValueMethod.Value?.Invoke(null, new[] { data }) as TEnum;
             return result;
         }
 
@@ -119,6 +129,5 @@ namespace Geex.Bson
                     throw new BsonInternalException("Unexpected EnumRepresentation.");
             }
         }
-
     }
 }

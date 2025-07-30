@@ -13,7 +13,6 @@
         <PackageReference Include="DeepCloner" Version="0.10.3" />
         <PackageReference Include="FastExpressionCompiler" Version="5.3.0" />
         <PackageReference Include="LinqToAnything" Version="2.1.28" />
-        <PackageReference Include="Mapster" Version="7.4.0" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.5" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="MongoDB.Driver" Version="2.20.0" />
@@ -38,13 +37,21 @@
         <Reference Include="KellermanSoftware.Compare-NET-Objects">
             <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
         </Reference>
+         <Reference Include="Mapster.Core">
+            <HintPath>..\..\patched_packages\Mapster.Core.dll</HintPath>
+        </Reference>
+        <Reference Include="Mapster">
+            <HintPath>..\..\patched_packages\Mapster.dll</HintPath>
+        </Reference>
     </ItemGroup>
     <PropertyGroup>
-        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
+        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);PatchedDll</TargetsForTfmSpecificBuildOutput>
     </PropertyGroup>
-    <Target Name="CompareDll">
+    <Target Name="PatchedDll">
         <ItemGroup>
             <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />
+            <BuildOutputInPackage Include="..\..\patched_packages\Mapster.Core.dll" />
+            <BuildOutputInPackage Include="..\..\patched_packages\Mapster.dll" />
         </ItemGroup>
     </Target>
 </Project>

@@ -11,6 +11,10 @@ namespace Geex.Extensions.Settings.Requests
         public List<SettingDefinition>? SettingDefinitions { get; set; }
         public string? FilterByName { get; set; }
 
+        protected GetSettingsRequest()
+        {
+
+        }
         public GetSettingsRequest(SettingScopeEnumeration scope)
         {
             Scope = scope;

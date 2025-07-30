@@ -217,7 +217,7 @@ namespace Geex
         }
 
         /// <summary>
-        /// Gets an item associated with the specified value.
+        /// Get or create an item associated with the specified value.
         /// </summary>
         /// <param name="value">The value of the item to get.</param>
         /// <returns>
@@ -235,6 +235,66 @@ namespace Geex
                 return Create(value, value);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Gets an item associated with the specified value.
+        /// </summary>
+        /// <param name="value">The value of the item to get.</param>
+        /// <returns>
+        /// The first item found that is associated with the specified value.
+        /// If the specified value is not found, throws a <see cref="KeyNotFoundException"/>.
+        /// </returns>
+        public static TChildEnum FromValue<TChildEnum>(string value) where TChildEnum: class, TEnum
+        {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
+            if (!_fromValue.TryGetValue(value, out var result))
+            {
+                // Create dynamic instance instead of throwing exception
+                return CreateTyped<TChildEnum>(value, value);
+            }
+
+            if (result is TChildEnum childResult)
+            {
+                return childResult;
+            }
+            else{
+              throw new InvalidOperationException($"Enumeration value '{value}' is not a valid value for type {typeof(TChildEnum).Name}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the item associated with the specified name.
+        /// </summary>
+        /// <param name="name">The name of the item to get.</param>
+        /// <param name="ignoreCase"><c>true</c> to ignore case during the comparison; otherwise, <c>false</c>.</param>
+        /// <returns>
+        /// The item associated with the specified name.
+        /// If the specified name is not found, creates a dynamic instance.
+        /// </returns>
+        /// <exception cref="ArgumentException"><paramref name="name"/> is <c>null</c>.</exception>
+        public static TChildEnum FromName<TChildEnum>(string name, bool ignoreCase = false) where TChildEnum : class, TEnum
+        {
+            if (String.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            var dictionary = ignoreCase ? _fromNameIgnoreCase : _fromName;
+            if (!dictionary.TryGetValue(name, out var result))
+            {
+                // Create dynamic instance instead of throwing exception
+                return CreateTyped<TChildEnum>(name, name);
+            }
+
+            if (result is TChildEnum childResult)
+            {
+                return childResult;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Enumeration name '{name}' is not a valid name for type {typeof(TChildEnum).Name}");
+            }
         }
 
         /// <summary>
@@ -279,12 +339,105 @@ namespace Geex
         }
 
         /// <summary>
+        /// Gets the item associated with the specified name and value, throws if either conflicts with existing ones.
+        /// </summary>
+        /// <param name="name">The name of the item to get or create.</param>
+        /// <param name="value">The value of the item to get or create.</param>
+        /// <returns>The item associated with the specified name and value.</returns>
+        /// <exception cref="ArgumentNullException">If name or value is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">If name or value already exists but with a different value or name.</exception>
+        public static TChildEnum FromNameAndValue<TChildEnum>(string name, string value) where TChildEnum : class, TEnum
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
+            // 优先通过Value查找
+            var byValue = FromExistedValue(value, true);
+            if (byValue != null && byValue.Name != name)
+            {
+                throw new InvalidOperationException($"Enumeration value '{value}' already exists with a different name '{byValue.Name}'.");
+            }
+            if (byValue != null)
+            {
+                if (byValue is TChildEnum childResult)
+                {
+                    return childResult;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Enumeration value '{value}' is not a valid value for type {typeof(TChildEnum).Name}");
+                }
+            }
+
+            // 再通过Name查找
+            var byName = FromExistedName(name, false, true);
+            if (byName != null && byName.Value != value)
+            {
+                throw new InvalidOperationException($"Enumeration name '{name}' already exists with a different value '{byName.Value}'.");
+            }
+            if (byName != null)
+            {
+                if (byName is TChildEnum childResult)
+                {
+                    return childResult;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Enumeration name '{name}' is not a valid name for type {typeof(TChildEnum).Name}");
+                }
+            }
+
+            // 都不存在则创建
+            return CreateTyped<TChildEnum>(name, value);
+        }
+
+        /// <summary>
         /// Gets the item associated with the specified name, throws if not found.
         /// </summary>
         /// <param name="name">The name of the item to get.</param>
         /// <param name="ignoreCase"><c>true</c> to ignore case during the comparison; otherwise, <c>false</c>.</param>
+        /// <param name="noException">If true, returns null instead of throwing exception when not found.</param>
         /// <returns>The item associated with the specified name.</returns>
-        /// <exception cref="KeyNotFoundException">If the specified name is not found.</exception>
+        /// <exception cref="KeyNotFoundException">If the specified name is not found and noException is false.</exception>
+        public static TChildEnum FromExistedName<TChildEnum>(string name, bool ignoreCase = false, bool noException = false) where TChildEnum : class, TEnum
+        {
+            if (String.IsNullOrEmpty(name))
+                throw new ArgumentNullException(nameof(name));
+
+            var dictionary = ignoreCase ? _fromNameIgnoreCase : _fromName;
+            if (!dictionary.TryGetValue(name, out var result))
+            {
+                if (noException)
+                {
+                    return null;
+                }
+                throw new KeyNotFoundException($"Enumeration name '{name}' does not exist.");
+            }
+
+            if (result is TChildEnum childResult)
+            {
+                return childResult;
+            }
+            else
+            {
+                if (noException)
+                {
+                    return null;
+                }
+                throw new InvalidOperationException($"Enumeration name '{name}' is not a valid name for type {typeof(TChildEnum).Name}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the item associated with the specified name, throws if not found.
+        /// </summary>
+        /// <param name="name">The name of the item to get.</param>
+        /// <param name="ignoreCase"><c>true</c> to ignore case during the comparison; otherwise, <c>false</c>.</param>
+        /// <param name="noException">If true, returns null instead of throwing exception when not found.</param>
+        /// <returns>The item associated with the specified name.</returns>
+        /// <exception cref="KeyNotFoundException">If the specified name is not found and noException is false.</exception>
         public static TEnum FromExistedName(string name, bool ignoreCase = false, bool noException = false)
         {
             if (String.IsNullOrEmpty(name))
@@ -299,6 +452,7 @@ namespace Geex
                 }
                 throw new KeyNotFoundException($"Enumeration name '{name}' does not exist.");
             }
+
             return result;
         }
 
@@ -306,8 +460,44 @@ namespace Geex
         /// Gets the item associated with the specified value, throws if not found.
         /// </summary>
         /// <param name="value">The value of the item to get.</param>
+        /// <param name="noException">If true, returns null instead of throwing exception when not found.</param>
         /// <returns>The item associated with the specified value.</returns>
-        /// <exception cref="KeyNotFoundException">If the specified value is not found.</exception>
+        /// <exception cref="KeyNotFoundException">If the specified value is not found and noException is false.</exception>
+        public static TChildEnum FromExistedValue<TChildEnum>(string value, bool noException = false) where TChildEnum : class, TEnum
+        {
+            if (value == null)
+                throw new ArgumentNullException(nameof(value));
+
+            if (!_fromValue.TryGetValue(value, out var result))
+            {
+                if (noException)
+                {
+                    return null;
+                }
+                throw new KeyNotFoundException($"Enumeration value '{value}' does not exist.");
+            }
+
+            if (result is TChildEnum childResult)
+            {
+                return childResult;
+            }
+            else
+            {
+                if (noException)
+                {
+                    return null;
+                }
+                throw new InvalidOperationException($"Enumeration value '{value}' is not a valid value for type {typeof(TChildEnum).Name}");
+            }
+        }
+
+        /// <summary>
+        /// Gets the item associated with the specified value, throws if not found.
+        /// </summary>
+        /// <param name="value">The value of the item to get.</param>
+        /// <param name="noException">If true, returns null instead of throwing exception when not found.</param>
+        /// <returns>The item associated with the specified value.</returns>
+        /// <exception cref="KeyNotFoundException">If the specified value is not found and noException is false.</exception>
         public static TEnum FromExistedValue(string value, bool noException = false)
         {
             if (value == null)
@@ -321,6 +511,7 @@ namespace Geex
                 }
                 throw new KeyNotFoundException($"Enumeration value '{value}' does not exist.");
             }
+
             return result;
         }
 
@@ -455,6 +646,66 @@ namespace Geex
             {
                 // If we can't create an instance, fall back to throwing the original exception
                 throw new InvalidOperationException($"Cannot create enumeration with name '{name}' and value '{value}'");
+            }
+        }
+
+        /// <summary>
+        /// Creates a dynamic enumeration instance of specific child type when no existing instance is found
+        /// </summary>
+        private static TChildEnum CreateTyped<TChildEnum>(string name, string value) where TChildEnum : class, TEnum
+        {
+            // First check if it already exists in the cache
+            if (_fromValue.TryGetValue(value, out var existed))
+            {
+                if (existed.Name != name)
+                {
+                    Logger?.LogWarning($"Enumeration value '{value}' already exists with a different name '{existed.Name}'.");
+                }
+                if (existed is TChildEnum childExisted)
+                {
+                    return childExisted;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Enumeration value '{value}' exists but is not of type {typeof(TChildEnum).Name}");
+                }
+            }
+
+            if (_fromName.TryGetValue(name, out existed))
+            {
+                if (existed.Value != value)
+                {
+                    Logger?.LogWarning($"Enumeration name '{name}' already exists with a different value '{existed.Value}'.");
+                }
+                if (existed is TChildEnum childExisted)
+                {
+                    return childExisted;
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Enumeration name '{name}' exists but is not of type {typeof(TChildEnum).Name}");
+                }
+            }
+
+            // Try to create an instance of the concrete enumeration type
+            var concreteType = typeof(TChildEnum);
+            try
+            {
+                var instance = (TChildEnum)Activator.CreateInstance(concreteType);
+                (instance as Enumeration<TEnum>).SetEnum(name, value);
+                // Cache the new instance
+                _fromName.TryAdd(name, instance);
+                _fromNameIgnoreCase.TryAdd(name, instance);
+                _fromValue.TryAdd(value, instance);
+                ValueCacheDictionary.TryAdd(name, instance);
+                IEnumeration.ValueCacheDictionary.TryAdd($"{typeof(TChildEnum).Name}.{name}", instance);
+
+                return instance;
+            }
+            catch
+            {
+                // If we can't create an instance, fall back to throwing the original exception
+                throw new InvalidOperationException($"Cannot create enumeration with name '{name}' and value '{value}' of type {typeof(TChildEnum).Name}");
             }
         }
     }

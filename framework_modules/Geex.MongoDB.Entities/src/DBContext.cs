@@ -51,6 +51,12 @@ namespace MongoDB.Entities
             TypeAdapterConfig.GlobalSettings.Compiler = exp => exp.CompileFast();
             //TypeAdapterConfig.GlobalSettings.Default.Settings.ShouldMapMember.Add((model, side) =>
             //    model.SetterModifier.HasFlag(AccessModifier.Public | AccessModifier.Protected | AccessModifier.Internal) && !model.Type.IsValueType);
+            //var assembly = Assembly.GetAssembly(typeof(DeepClonerExtensions));
+            //var deepClonerSafeTypes = assembly.GetType("Force.DeepCloner.Helpers.DeepClonerSafeTypes");
+            //var knownTypesField = deepClonerSafeTypes.GetField("KnownTypes", BindingFlags.Static | BindingFlags.NonPublic);
+            //var knownTypes = (ConcurrentDictionary<Type, bool>)knownTypesField.GetValue(null);
+            //knownTypes.TryAdd(typeof(DbContext), true);
+            //knownTypes.TryAdd(typeof(IQueryable), true);
         }
         protected internal IClientSessionHandle
             session; //this will be set by Transaction class when inherited. otherwise null.
