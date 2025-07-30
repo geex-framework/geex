@@ -23,6 +23,7 @@ using MongoDB.Driver;
 using MongoDB.Entities;
 
 using OpenIddict.Abstractions;
+
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -325,17 +326,9 @@ namespace Geex.Extensions.Authentication
                 var certNotBefore = cert.NotBefore;
                 var certNotAfter = cert.NotAfter;
 
-                if (cert.GetECDsaPrivateKey() is { } ecDsa)
-                {
-                    certRequest = new CertificateRequest(signingCertName, ecDsa, HashAlgorithmName.SHA256);
-                    securityKey = new ECDsaSecurityKey(ecDsa);
-                }
-                else
-                {
-                    var rsa = cert.GetRSAPrivateKey() ?? RSA.Create(2048);
-                    certRequest = new CertificateRequest(signingCertName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-                    securityKey = new RsaSecurityKey(rsa);
-                }
+                var rsa = cert.GetRSAPrivateKey() ?? RSA.Create(2048);
+                certRequest = new CertificateRequest(signingCertName, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                securityKey = new RsaSecurityKey(rsa);
 
                 try
                 {
@@ -344,12 +337,6 @@ namespace Geex.Extensions.Authentication
                     certRequest.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(certRequest.PublicKey, false));
 
                     var newCert = certRequest.CreateSelfSigned(certNotBefore, certNotAfter);
-
-                    // 导出为PFX格式以包含私钥
-                    var password = Guid.NewGuid().ToString("N");
-                    byte[] pfxBytes = newCert.Export(X509ContentType.Pfx, password);
-                    newCert = new X509Certificate2(pfxBytes, password,
-                        X509KeyStorageFlags.Exportable | X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
 
                     var algorithm = DetermineSigningAlgorithm(securityKey);
                     var signCredentials = new SigningCredentials(securityKey, algorithm);
