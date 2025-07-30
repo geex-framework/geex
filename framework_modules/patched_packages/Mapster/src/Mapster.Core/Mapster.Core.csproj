@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Lightweight library for Mapster and Mapster CodeGen</Description>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <AssemblyName>Mapster.Core</AssemblyName>
+    <PackageTags>mapster</PackageTags>
+    <Version>1.2.1-pre04</Version>
+    <Nullable>enable</Nullable>
+	<IsPackable>true</IsPackable>
+	<SignAssembly>true</SignAssembly>
+	<AssemblyOriginatorKeyFile>Mapster.Core.snk</AssemblyOriginatorKeyFile>
+	<RootNamespace>Mapster</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

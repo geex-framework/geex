@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>A fast, fun and stimulating object to object mapper.  Kind of like AutoMapper, just simpler and way, way faster.</Description>
+    <Copyright>Copyright (c) 2016 Chaowlert Chaisrichalermpol, Eric Swann</Copyright>
+    <Authors>chaowlert;eric_swann</Authors>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <AssemblyName>Mapster</AssemblyName>
+    <Description>A fast, fun and stimulating object to object mapper. Kind of like AutoMapper, just simpler and way, way faster.</Description>
+    <PackageId>Mapster</PackageId>
+    <PackageTags>Mapper;AutoMapper;Fast;Mapping</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageIconUrl>https://cloud.githubusercontent.com/assets/5763993/26522718/d16f3e42-4330-11e7-9b78-f8c7402624e7.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/MapsterMapper/Mapster</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MapsterMapper/Mapster</RepositoryUrl>
+    <PackageLicenseUrl></PackageLicenseUrl>
+	<IsPackable>true</IsPackable>
+    <RootNamespace>Mapster</RootNamespace>
+    <Version>7.4.0-pre06</Version>
+    <Nullable>enable</Nullable>
+    <NoWarn>1701;1702;8618</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Mapster.Core\Mapster.Core.csproj" />
+  </ItemGroup>
+</Project>

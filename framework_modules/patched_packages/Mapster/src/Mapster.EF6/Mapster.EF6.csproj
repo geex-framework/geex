@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <Description>EF6 plugin for Mapster</Description>
+    <IsPackable>true</IsPackable>
+	<PackageTags>Mapster;EF6</PackageTags>
+    <SignAssembly>True</SignAssembly>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <AssemblyOriginatorKeyFile>Mapster.EF6.snk</AssemblyOriginatorKeyFile>
+    <Version>2.0.1-pre02</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="EntityFramework" Version="6.4.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mapster\Mapster.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <TargetFramework>net9.0</TargetFramework>
+      <CopyLocalLockFileAssemblies Condition=" '$(Configuration)'=='Debug' ">true</CopyLocalLockFileAssemblies>
+      <DefaultItemExcludes>**/*.g.cs</DefaultItemExcludes>
+    </PropertyGroup>
+    <ItemGroup>
+      <Compile Include="CustomerMapper.g.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>CustomerMapper.tt</DependentUpon>
+      </Compile>
+      <Compile Include="FooMapper.g.cs">
+        <DesignTime>True</DesignTime>
+        <AutoGen>True</AutoGen>
+        <DependentUpon>FooMapper.tt</DependentUpon>
+      </Compile>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
+        <PackageReference Include="ExpressionDebugger" Version="2.2.1" />
+        <PackageReference Include="ExpressionTranslator" Version="2.5.0" />
+        <PackageReference Include="AutoMapper" Version="10.1.1" />
+        <PackageReference Include="FastExpressionCompiler" Version="3.2.1" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\ExpressionDebugger\ExpressionDebugger.csproj" />
+        <ProjectReference Include="..\ExpressionTranslator\ExpressionTranslator.csproj" />
+        <ProjectReference Include="..\Mapster\Mapster.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="CustomerMapper.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>CustomerMapper.g.cs</LastGenOutput>
+        </None>
+        <None Update="FooMapper.tt">
+            <Generator>TextTemplatingFileGenerator</Generator>
+            <LastGenOutput>FooMapper.g.cs</LastGenOutput>
+        </None>
+    </ItemGroup>
+    <ItemGroup>
+        <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+    </ItemGroup>
+</Project>
