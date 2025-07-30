@@ -288,9 +288,9 @@ namespace Geex.Extensions.Authentication
 
             var requiredKeyUsage = X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DigitalSignature;
             var keyUsageExtension = cert.Extensions.OfType<X509KeyUsageExtension>().FirstOrDefault();
-
+            var supportedAlgorithm = cert.GetRSAPrivateKey() != default;
             // 如果证书同时支持签名和加密，直接使用
-            if (keyUsageExtension != null && (keyUsageExtension.KeyUsages & requiredKeyUsage) == requiredKeyUsage)
+            if (keyUsageExtension != null && (keyUsageExtension.KeyUsages & requiredKeyUsage) == requiredKeyUsage && supportedAlgorithm)
             {
                 options
                     .AddEncryptionCertificate(cert)
@@ -300,7 +300,7 @@ namespace Geex.Extensions.Authentication
             }
 
             // 处理部分支持的情况
-            if (keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.DigitalSignature) == true)
+            if (keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.DigitalSignature) == true && supportedAlgorithm)
             {
                 options.AddSigningCertificate(cert);
                 Logger?.LogInformation("证书支持数字签名，添加为签名证书");
