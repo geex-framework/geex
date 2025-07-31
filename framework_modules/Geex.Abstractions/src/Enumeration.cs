@@ -84,30 +84,6 @@ namespace Geex
             return options.OrderBy(t => t.Name).ToList();
         }
 
-        public Task SwitchAsync<T>(params (T @case, Func<Task> action)[] cases) where T : TEnum
-        {
-            foreach (var (@case, action) in cases)
-            {
-                if (@case.Value != this.Value)
-                {
-                    continue;
-                }
-
-                return action.Invoke();
-            }
-            return Task.CompletedTask;
-        }
-
-        public void Switch<T>(params (T @case, Action action)[] cases) where T : TEnum
-        {
-            this.SwitchAsync<T>(cases.Select<(T, Action), (T, Func<Task>)>(pair => (pair.Item1, () =>
-                     {
-                         pair.Item2.Invoke();
-                         return Task.CompletedTask;
-                     }
-            )).ToArray()).Wait();
-        }
-
         /// <summary>
         /// Gets a collection containing all the instances of <see cref="Enumeration{TEnum}"/>.
         /// </summary>

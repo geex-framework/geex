@@ -7,13 +7,18 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Settings.Requests;
 using Geex.MultiTenant;
+
 using MediatX;
+
 using Microsoft.Extensions.Logging;
+
 using MongoDB.Entities;
+
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
@@ -196,10 +201,10 @@ namespace Geex.Extensions.Settings.Core.Handlers
             var settingValues = Enumerable.Empty<Setting>();
             if (request.Scope != default)
             {
-                await request.Scope.SwitchAsync(
-                    (SettingScopeEnumeration.User, async () => settingValues = await this.GetUserSettings()),
-                    (SettingScopeEnumeration.Global, async () => settingValues = await this.GetGlobalSettings())
-                );
+                settingValues = await request.Scope.Switch()
+                    .Case(SettingScopeEnumeration.User, async () => await this.GetUserSettings())
+                    .Case(SettingScopeEnumeration.Global, async () => await this.GetGlobalSettings())
+                    .Default(async () => new List<Setting>());
             }
             else
             {
