@@ -19,7 +19,7 @@ public abstract class FireAndForgetTask<TParam> : IFireAndForgetTask<TParam>
     /// <inheritdoc />
     public abstract Task Run(CancellationToken token);
 
-    internal IServiceProvider ServiceProvider { get; set; }
+    public IServiceProvider ServiceProvider { get; set; }
 
     IServiceProvider IFireAndForgetTask.ServiceProvider
     {
