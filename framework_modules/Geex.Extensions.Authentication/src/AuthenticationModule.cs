@@ -299,25 +299,8 @@ namespace Geex.Extensions.Authentication
                 Logger?.LogInformation("证书支持签名和加密，直接使用");
                 return (cert, new X509SigningCredentials(cert));
             }
-
-            // 处理部分支持的情况
-            if (keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.DigitalSignature) == true && supportedAlgorithm)
-            {
-                options.AddSigningCertificate(cert);
-                Logger?.LogInformation("证书支持数字签名，添加为签名证书");
-            }
-
-            if (keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.KeyEncipherment) == true)
-            {
-                options.AddEncryptionCertificate(cert);
-                Logger?.LogInformation("证书支持密钥加密，添加为加密证书");
-            }
-
-            // 如果证书不满足所有要求，创建补充的自签名证书
-            var needsSigningCert = keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.DigitalSignature) != true;
-            var needsEncryptionCert = keyUsageExtension?.KeyUsages.HasFlag(X509KeyUsageFlags.KeyEncipherment) != true;
-
-            if (needsSigningCert || needsEncryptionCert)
+            // 如果证书不满足要求，创建补充的自签名证书
+            else
             {
                 Logger?.LogWarning("证书 {CertName} 不满足所需的签名/加密要求，正在创建补充的自签名证书", cert.Subject);
 
@@ -341,17 +324,8 @@ namespace Geex.Extensions.Authentication
                     var algorithm = DetermineSigningAlgorithm(securityKey);
                     var signCredentials = new SigningCredentials(securityKey, algorithm);
 
-                    if (needsEncryptionCert)
-                    {
-                        options.AddEncryptionCertificate(newCert);
-                        Logger?.LogInformation("添加自签名加密证书");
-                    }
-
-                    if (needsSigningCert)
-                    {
-                        options.AddSigningCredentials(signCredentials);
-                        Logger?.LogInformation("添加自签名签名凭据");
-                    }
+                    options.AddSigningCredentials(signCredentials).AddEncryptionCertificate(newCert);
+                    Logger?.LogInformation("已添加自签名证书");
 
                     return (newCert, signCredentials);
                 }
@@ -361,8 +335,6 @@ namespace Geex.Extensions.Authentication
                     throw;
                 }
             }
-
-            return (cert, new X509SigningCredentials(cert));
         }
 
         private string DetermineSigningAlgorithm(SecurityKey securityKey)
