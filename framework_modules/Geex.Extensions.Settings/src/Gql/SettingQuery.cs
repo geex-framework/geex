@@ -6,6 +6,7 @@ using Geex.Abstractions;
 using Geex.Extensions.Settings.Core;
 using Geex.Extensions.Settings.Requests;
 using Geex.Gql.Types;
+using Geex.Validation;
 using HotChocolate.Data.Filters;
 using HotChocolate.Types;
 

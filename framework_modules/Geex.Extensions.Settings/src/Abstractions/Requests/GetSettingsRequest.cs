@@ -2,6 +2,7 @@
 using System.Linq;
 using Geex.Common.Requests;
 using Geex.Requests;
+using Geex.Validation;
 
 namespace Geex.Extensions.Settings.Requests
 {

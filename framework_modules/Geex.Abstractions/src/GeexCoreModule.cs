@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Geex.Bson;
 using Geex.Gql;
 using Geex.Gql.Types;
-
+using Geex.Validation;
 using HotChocolate;
 using HotChocolate.Configuration;
 using HotChocolate.Types;
@@ -108,6 +108,8 @@ namespace Geex
                 })
                 .AddConvention<INamingConventions>(sp => new GeexNamingConventions(new XmlDocumentationProvider(new XmlDocumentationFileResolver(capturedSchemaOptions.ResolveXmlDocumentationFileName), sp.GetApplicationService<ObjectPool<StringBuilder>>())))
                 .TryAddTypeInterceptor(new GeexTypeInterceptor(ConfigStageLoggerFactory.Create<GeexTypeInterceptor>()))
+                .TryAddTypeInterceptor<ValidateAttributeTypeInterceptor>()
+                .TryAddTypeInterceptor<ValidateTypeInterceptor>()
                 .TryAddTypeInterceptor<LazyQueryTypeInterceptor>()
                 .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
                 {
@@ -151,6 +153,7 @@ namespace Geex
                     return next(context);
                 })
                 .UseDefaultPipeline()
+                .UseField<ValidateMiddleware>()
                 .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
