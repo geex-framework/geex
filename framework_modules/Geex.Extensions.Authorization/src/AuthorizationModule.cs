@@ -1,25 +1,7 @@
-﻿using System;
-using System.Security.Claims;
-using System.Threading.Tasks;
-
-using Geex.Abstractions;
-using Geex.Extensions.Authentication;
+﻿using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization.Core.Casbin;
 using Geex.Extensions.Authorization.Core.Utils;
-using Geex.Gql;
-
-using HotChocolate;
-using HotChocolate.Authorization;
-
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
-
-using OpenIddict.Client.AspNetCore;
-using OpenIddict.Server.AspNetCore;
-using OpenIddict.Validation.AspNetCore;
-
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;

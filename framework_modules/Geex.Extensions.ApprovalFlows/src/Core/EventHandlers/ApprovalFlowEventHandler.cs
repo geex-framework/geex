@@ -1,7 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.Messaging;
 using Geex.Extensions.Messaging.Requests;

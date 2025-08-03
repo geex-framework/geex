@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Geex.Extensions.Authentication;
 using Geex.Extensions.Authentication.Gql;
 using Geex.Gql.Types;
 using HotChocolate.Configuration;

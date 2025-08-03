@@ -1,5 +1,4 @@
-﻿using Geex.Abstractions;
-using Geex.Extensions.Settings.Core.Handlers;
+﻿using Geex.Extensions.Settings.Core.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 
 using Volo.Abp.Modularity;

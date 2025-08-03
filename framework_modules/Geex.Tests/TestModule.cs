@@ -1,16 +1,11 @@
 ﻿using Geex.Common;
-using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows;
-using Geex.Extensions.AuditLogs;
 using Geex.Extensions.MultiTenant;
-using Geex.Extensions.Settings;
 using Geex.Tests.FeatureTests;
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using MongoDB.Entities;
 using Volo.Abp;
 using Volo.Abp.Modularity;
 

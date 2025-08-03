@@ -1,19 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Messaging.Core.Entities;
 using Geex.Extensions.Messaging.Requests;
 using HotChocolate.Subscriptions;
 
 using MediatX;
-
-using MongoDB.Entities;
 
 namespace Geex.Extensions.Messaging.Core.Handlers
 {

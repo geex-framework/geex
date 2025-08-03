@@ -5,9 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Storage;
-using HotChocolate.Subscriptions;
 using MediatX;
-using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;
 
 namespace Geex;

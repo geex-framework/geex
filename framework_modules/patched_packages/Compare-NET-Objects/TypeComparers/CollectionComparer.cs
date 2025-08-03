@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Globalization;
-using System.Reflection;
 using KellermanSoftware.CompareNetObjects.IgnoreOrderTypes;
 
 namespace KellermanSoftware.CompareNetObjects.TypeComparers

@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Linq;
-using System.Security.Claims;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Extensions.Requests;
-using Geex.Abstractions;
-
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Messaging;

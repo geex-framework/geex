@@ -1,4 +1,3 @@
-using Geex.Abstractions;
 using Geex.Extensions.Settings;
 
 namespace Geex.Extensions.BlobStorage

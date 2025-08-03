@@ -24,7 +24,6 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 
 namespace MongoDB.Entities.InnerQuery
 {

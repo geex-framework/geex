@@ -1,7 +1,4 @@
-﻿using Geex.Abstractions;
-using JetBrains.Annotations;
-
-namespace Geex.Common.Captcha.Domain
+﻿namespace Geex.Common.Captcha.Domain
 {
     public class CaptchaProvider : Enumeration<CaptchaProvider>
     {

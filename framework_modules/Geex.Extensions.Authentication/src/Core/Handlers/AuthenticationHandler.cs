@@ -8,9 +8,6 @@ using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Authentication.Requests;
 
 using MediatX;
-
-using MongoDB.Bson;
-
 using OpenIddict.Abstractions;
 
 using StackExchange.Redis.Extensions.Core;

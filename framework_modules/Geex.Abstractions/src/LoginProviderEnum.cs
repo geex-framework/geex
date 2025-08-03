@@ -1,6 +1,4 @@
-﻿using JetBrains.Annotations;
-
-namespace Geex;
+﻿namespace Geex;
 
 public class LoginProviderEnum : Enumeration<LoginProviderEnum>
 {

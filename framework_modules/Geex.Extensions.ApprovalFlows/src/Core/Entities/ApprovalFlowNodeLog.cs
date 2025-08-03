@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Geex.Abstractions;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Storage;

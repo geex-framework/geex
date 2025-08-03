@@ -2,16 +2,8 @@ using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Requests;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
 using Geex.Abstractions;
-using Geex.Extensions.Authentication.Requests;
 using MongoDB.Bson;
-using Newtonsoft.Json;
 
 namespace Geex.Tests.FeatureTests
 {

@@ -39,22 +39,4 @@ namespace Geex.Validation
             return new ValidateDirective(RuleKey, Message);
         }
     }
-
-    /// <summary>
-    /// Provides compile-time constants for common validation rule keys
-    /// </summary>
-    public static class ValidateRuleKeys
-    {
-        public const string Email = nameof(ValidateRule.Email);
-        public const string ChinesePhone = nameof(ValidateRule.ChinesePhone);
-        public const string NotDisposableEmail = nameof(ValidateRule.NotDisposableEmail);
-        public const string Price = nameof(ValidateRule.Price);
-        public const string LengthMin = nameof(ValidateRule.LengthMin);
-        public const string LengthMax = nameof(ValidateRule.LengthMax);
-        public const string LengthRange = nameof(ValidateRule.LengthRange);
-        public const string Min = nameof(ValidateRule.Min);
-        public const string Max = nameof(ValidateRule.Max);
-        public const string Range = nameof(ValidateRule.Range);
-        public const string Regex = nameof(ValidateRule.Regex);
-    }
 }

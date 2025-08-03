@@ -1,9 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Requests;
-using Geex.Requests;
 using MediatX;
 using MongoDB.Entities;
 

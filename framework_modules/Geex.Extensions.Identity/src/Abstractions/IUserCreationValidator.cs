@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Geex.Abstractions;
 using Geex.Extensions.Identity.Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Entities;

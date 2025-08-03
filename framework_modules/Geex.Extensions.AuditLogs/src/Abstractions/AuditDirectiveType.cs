@@ -1,20 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-
-using Geex.Abstractions;
 using Geex.Extensions.AuditLogs.Core.Entities;
 using Geex.Extensions.Authentication;
 using Geex.Storage;
-using HotChocolate.Language;
 using HotChocolate.Types;
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using DirectiveLocation = HotChocolate.Types.DirectiveLocation;

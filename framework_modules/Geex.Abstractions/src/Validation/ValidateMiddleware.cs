@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -9,8 +7,6 @@ using HotChocolate.Resolvers;
 using HotChocolate.Types;
 
 using Microsoft.Extensions.Logging;
-
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Geex.Validation
 {

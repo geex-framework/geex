@@ -1,16 +1,4 @@
-using Geex.Extensions.BackgroundJob;
-
-using Microsoft.Extensions.DependencyInjection;
-
 using Shouldly;
-
-using System;
-using System.Linq;
-using System.Text.Json.Nodes;
-using System.Threading;
-using System.Threading.Tasks;
-using MongoDB.Bson;
-using MongoDB.Entities;
 
 namespace Geex.Tests.FeatureTests
 {

@@ -1,6 +1,4 @@
-﻿using Geex.Abstractions;
-
-namespace Geex.Extensions.Settings
+﻿namespace Geex.Extensions.Settings
 {
     public class SettingScopeEnumeration : Enumeration<SettingScopeEnumeration>
     {

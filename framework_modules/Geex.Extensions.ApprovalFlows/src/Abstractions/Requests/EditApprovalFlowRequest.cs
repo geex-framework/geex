@@ -1,6 +1,5 @@
 
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Geex.Extensions.ApprovalFlows.Core.Entities;
 using MediatX;
 

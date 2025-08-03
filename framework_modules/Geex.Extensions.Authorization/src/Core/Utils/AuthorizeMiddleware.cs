@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 using HotChocolate;
 using HotChocolate.Authorization;
-using HotChocolate.Authorization.Properties;
 using HotChocolate.Language;
 using HotChocolate.Resolvers;
 

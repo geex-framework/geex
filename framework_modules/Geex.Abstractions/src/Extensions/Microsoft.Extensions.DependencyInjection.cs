@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Geex;
 using Geex.Common;
-using Geex.Abstractions;
 using Geex.Gql;
 using Geex.Gql.Types;
 using Geex.Storage;
@@ -17,20 +16,12 @@ using HotChocolate.Execution.Configuration;
 using HotChocolate.Types;
 
 using MediatX;
-
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-
-using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Events;
 using MongoDB.Driver.Linq;
 using MongoDB.Entities;
-
-using StackExchange.Redis;
-
-using Volo.Abp.Modularity;
 
 
 // ReSharper disable once CheckNamespace

@@ -1,12 +1,9 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Extensions.BackgroundJob.Gql.Requests;
 using Geex.Extensions.BackgroundJob.Gql.Types;
 using Geex.Gql.Types;
 using HotChocolate.Types;
-using HotChocolate.Data;
-using MongoDB.Driver.Linq;
 
 namespace Geex.Extensions.BackgroundJob.Gql
 {

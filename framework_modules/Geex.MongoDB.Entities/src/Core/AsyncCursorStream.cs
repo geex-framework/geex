@@ -1,12 +1,5 @@
-﻿using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Buffers;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
 using MongoDB.Driver;
 
 namespace Geex.MongoDB.Entities.Core
@@ -15,12 +8,6 @@ namespace Geex.MongoDB.Entities.Core
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-
-    using System;
-    using System.IO;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using LinqToAnything;
 
     public class AsyncCursorStream : Stream
     {

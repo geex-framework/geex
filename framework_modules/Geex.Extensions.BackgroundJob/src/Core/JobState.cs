@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 using Geex.Extensions.BackgroundJob.Gql.Types;
@@ -8,7 +6,6 @@ using Geex.Storage;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Entities;
 
 namespace Geex.Extensions.BackgroundJob;
 

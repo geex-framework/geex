@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Geex.Abstractions;
 
 
 namespace Geex.Extensions.Authentication

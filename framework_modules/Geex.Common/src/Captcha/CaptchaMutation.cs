@@ -1,12 +1,7 @@
 ﻿using System.Threading.Tasks;
-
-using Geex.Abstractions;
 using Geex.Common.Requests.Captcha;
 using Geex.Gql.Types;
-using HotChocolate;
 using HotChocolate.Types;
-
-using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Common.Captcha
 {

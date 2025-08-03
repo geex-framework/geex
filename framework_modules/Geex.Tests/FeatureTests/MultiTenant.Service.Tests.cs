@@ -1,11 +1,6 @@
-using Geex.Extensions.MultiTenant;
 using Geex.Extensions.Requests.MultiTenant;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Extensions.MultiTenant.Core.Aggregates.Tenants;
 using Geex.MultiTenant;

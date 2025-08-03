@@ -1,10 +1,4 @@
-﻿using System;
-using System.Linq;
-
-using Geex.Extensions.Identity.Core.Entities;
-using Geex.MultiTenant;
-using MongoDB.Bson;
-using MongoDB.Entities.Utilities;
+﻿using System.Linq;
 
 
 namespace Geex.Extensions.Identity

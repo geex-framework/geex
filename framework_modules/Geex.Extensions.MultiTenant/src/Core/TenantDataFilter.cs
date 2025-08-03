@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using Geex.Abstractions;
 using Geex.MultiTenant;
 using MongoDB.Entities.Interceptors;
 

@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Geex.Extensions.AuditLogs.Utils;
+﻿using Geex.Extensions.AuditLogs.Utils;
 using Geex.Extensions.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;

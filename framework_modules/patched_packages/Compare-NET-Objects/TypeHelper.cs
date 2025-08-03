@@ -2,16 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Reflection;
 using System.Text;
 #if !NETSTANDARD1
 using System.Dynamic;
 #endif
 #if !NETSTANDARD
 using System.Data;
-using System.Drawing;
-using System.Runtime.CompilerServices;
 #endif
 
 namespace KellermanSoftware.CompareNetObjects

@@ -17,8 +17,6 @@ using MediatX;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Entities;
 

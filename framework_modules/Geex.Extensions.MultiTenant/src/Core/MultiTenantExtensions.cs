@@ -1,5 +1,4 @@
-﻿using Geex.Abstractions;
-using Geex.Extensions.Authentication.Core.Utils;
+﻿using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.MultiTenant.Api;
 using Geex.Extensions.MultiTenant.Core.Utils;
 using Geex.MultiTenant;

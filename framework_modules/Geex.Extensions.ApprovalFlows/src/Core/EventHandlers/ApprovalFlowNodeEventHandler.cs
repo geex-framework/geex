@@ -2,8 +2,6 @@
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Abstractions;
-
 using Geex.Extensions.ApprovalFlows.Core.Entities;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.Identity;

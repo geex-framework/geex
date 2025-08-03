@@ -1,5 +1,4 @@
-﻿using Geex.Abstractions;
-using Volo.Abp.Modularity;
+﻿using Volo.Abp.Modularity;
 
 namespace Geex.Common.Captcha
 {

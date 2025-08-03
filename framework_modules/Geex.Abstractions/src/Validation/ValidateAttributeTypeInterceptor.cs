@@ -1,8 +1,5 @@
-using System;
-using System.Linq;
 using System.Reflection;
 using HotChocolate.Configuration;
-using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 using HotChocolate.Types.Helpers;
 using Microsoft.Extensions.DependencyInjection;

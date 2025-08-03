@@ -8,7 +8,6 @@ using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization.Requests;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Requests;
-using Geex.MultiTenant;
 using Geex.Storage;
 
 using Microsoft.AspNetCore.Identity;

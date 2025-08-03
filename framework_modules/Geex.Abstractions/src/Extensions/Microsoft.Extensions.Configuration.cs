@@ -1,6 +1,5 @@
 ﻿using System;
 using Geex;
-using Geex.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.Configuration

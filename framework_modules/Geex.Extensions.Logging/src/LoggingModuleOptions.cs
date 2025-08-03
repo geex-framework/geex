@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using Elastic.Apm.Config;
 using Elastic.Apm.Helpers;
 using Elastic.Apm.Logging;
-
-using Geex.Abstractions;
 using HotChocolate.Execution.Options;
 
 namespace Geex.Extensions.Logging

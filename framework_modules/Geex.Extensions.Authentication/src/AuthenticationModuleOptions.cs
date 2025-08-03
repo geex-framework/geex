@@ -1,6 +1,4 @@
-﻿using Geex.Abstractions;
-
-namespace Geex.Extensions.Authentication
+﻿namespace Geex.Extensions.Authentication
 {
     public class AuthenticationModuleOptions : GeexModuleOption<AuthenticationModule>
     {

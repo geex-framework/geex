@@ -3,18 +3,11 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
-
 using Geex.Migrations;
 using Geex.Storage;
-
-using HotChocolate;
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Voyager;
-using HotChocolate.Configuration;
 using HotChocolate.Execution.Configuration;
-using HotChocolate.Types.Descriptors.Definitions;
-
 using MediatX;
 
 using Microsoft.AspNetCore.Builder;

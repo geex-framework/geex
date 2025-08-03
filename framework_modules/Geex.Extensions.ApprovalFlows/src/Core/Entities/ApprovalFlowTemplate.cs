@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity;
 using Geex.Storage;

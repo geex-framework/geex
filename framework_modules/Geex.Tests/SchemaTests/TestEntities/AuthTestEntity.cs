@@ -1,6 +1,4 @@
-﻿using Geex.Gql.Types;
-using Geex.Storage;
-using HotChocolate.Types;
+﻿using Geex.Storage;
 
 namespace Geex.Tests.SchemaTests.TestEntities
 {

@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Core.Entities;
 using Geex.Extensions.ApprovalFlows.Requests;
 using Geex.Gql.Types;

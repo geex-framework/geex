@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using Geex.Abstractions;
 using Geex.Extensions.MultiTenant.Api;
 using Geex.Extensions.MultiTenant.Core.Aggregates.Tenants;
 using Geex.MultiTenant;
-using MongoDB.Entities;
-
 using Volo.Abp;
 
 namespace Geex.Extensions.MultiTenant.Core

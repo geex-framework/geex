@@ -1,10 +1,4 @@
-﻿using System.Threading.Tasks;
-
-using Elastic.Apm.AspNetCore;
-
-using Geex.Abstractions;
-
-using Microsoft.Extensions.Configuration;
+﻿using Elastic.Apm.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using Volo.Abp;

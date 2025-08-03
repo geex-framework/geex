@@ -1,13 +1,9 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Abstractions;
-using Geex.Extensions.Requests;
 using Geex.Extensions.MultiTenant.Core.Aggregates.Tenants;
 
 using MediatX;
-
-using MongoDB.Entities;
 using Geex.Extensions.Requests.MultiTenant;
 using Geex.MultiTenant;
 

@@ -1,14 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Geex.Extensions.Requests;
-using HotChocolate.Types;
-
-using MediatX;
-
-using StackExchange.Redis.Extensions.Core.Abstractions;
 using Geex.Extensions.Requests.MultiTenant;
-using Geex.Abstractions;
-using Geex.Common.Requests;
 using Geex.Gql.Types;
 using Geex.MultiTenant;
 using Geex.Requests;

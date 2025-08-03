@@ -1,5 +1,3 @@
-using Geex.Abstractions;
-
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 

@@ -1,7 +1,5 @@
 using System.Threading.Tasks;
 
-using MediatX;
-
 namespace MediatX
 {
     public interface IRequest : MediatR.IRequest { }

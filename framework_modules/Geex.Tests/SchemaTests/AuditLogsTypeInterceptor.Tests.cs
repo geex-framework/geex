@@ -1,7 +1,6 @@
 using Geex.Extensions.AuditLogs;
 using Geex.Extensions.AuditLogs.Utils;
 using Geex.Gql.Types;
-using Geex.Tests.FeatureTests;
 using HotChocolate;
 using HotChocolate.Types;
 

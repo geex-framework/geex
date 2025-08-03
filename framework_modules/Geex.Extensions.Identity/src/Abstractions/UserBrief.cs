@@ -1,6 +1,4 @@
-﻿using Geex.Abstractions;
-
-namespace Geex.Extensions.Identity
+﻿namespace Geex.Extensions.Identity
 {
     public record UserBrief
     {

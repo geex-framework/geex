@@ -1,6 +1,4 @@
-﻿using Geex.Abstractions;
-
-namespace Geex.Extensions.MultiTenant.Core
+﻿namespace Geex.Extensions.MultiTenant.Core
 {
     public class MultiTenantModuleOptions : GeexModuleOption<MultiTenantModule>
     {

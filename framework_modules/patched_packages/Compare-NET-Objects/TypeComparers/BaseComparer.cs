@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Globalization;
-using System.Net;
-using System.Text;
 
 namespace KellermanSoftware.CompareNetObjects.TypeComparers
 {

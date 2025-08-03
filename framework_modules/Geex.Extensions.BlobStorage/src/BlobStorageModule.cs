@@ -1,11 +1,8 @@
 using System.IO;
-using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Extensions.BlobStorage.Extensions;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;

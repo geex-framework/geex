@@ -1,6 +1,4 @@
-﻿using Geex.Abstractions;
-
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace Geex.Extensions.Settings
 {

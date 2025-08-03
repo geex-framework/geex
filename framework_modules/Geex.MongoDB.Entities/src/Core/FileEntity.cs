@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -8,13 +7,8 @@ using System.Threading.Tasks;
 
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
-using System.IO.Pipelines;
 using System.Security.Cryptography;
-using SharpCompress.Compressors.Xz;
-using MongoDB.Bson;
 using Geex.MongoDB.Entities.Core;
-using System.Drawing;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 [assembly: InternalsVisibleTo("MongoDB.Entities.Tests")]
 namespace MongoDB.Entities

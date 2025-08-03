@@ -2,9 +2,6 @@ using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Requests;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using MongoDB.Bson;
 
 namespace Geex.Tests.FeatureTests

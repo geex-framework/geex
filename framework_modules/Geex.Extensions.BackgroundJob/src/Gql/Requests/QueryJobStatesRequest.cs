@@ -1,7 +1,4 @@
 using System.Linq;
-using System.Threading.Tasks;
-
-using Geex.Abstractions;
 using Geex.Extensions.BackgroundJob.Gql.Types;
 
 using MediatX;

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Geex.Abstractions;
 
 namespace Geex.Extensions.BackgroundJob
 {

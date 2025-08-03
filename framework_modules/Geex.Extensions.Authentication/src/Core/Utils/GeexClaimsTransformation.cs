@@ -7,9 +7,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
 
-using StackExchange.Redis.Extensions.Core;
-using StackExchange.Redis.Extensions.Core.Abstractions;
-
 namespace Geex.Extensions.Authentication.Core.Utils
 {
     public class GeexClaimsTransformation : IClaimsTransformation

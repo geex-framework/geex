@@ -3,17 +3,13 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-
 using Geex.Bson;
 using Geex.Gql;
 using Geex.Gql.Types;
 using Geex.Validation;
 using HotChocolate;
-using HotChocolate.Configuration;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
-using HotChocolate.Types.Descriptors.Definitions;
 using HotChocolate.Types.Pagination;
 using HotChocolate.Utilities;
 

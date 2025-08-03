@@ -1,6 +1,4 @@
-﻿using System;
-using Geex.Extensions.Authorization;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 
 namespace Geex.Extensions.Identity
 {

@@ -1,16 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using Geex.Validation;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Extensions.Authorization;
 using Geex.MultiTenant;
 using Geex.Storage;
-using HotChocolate.Types;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Bson.Serialization;
 
 namespace Geex.Extensions.Identity.Core.Entities
 {

@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 
 using EasyCronJob.Abstractions;
-
-using Geex;
-using Geex.Abstractions;
 using Geex.Extensions.BackgroundJob;
 using Geex.Extensions.BackgroundJob.Core;
 

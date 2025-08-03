@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -9,7 +8,7 @@ using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Extensions.BlobStorage.Requests;
 using Geex.Storage;
-
+using Geex.Validation;
 using HotChocolate.Types;
 
 using Microsoft.Extensions.DependencyInjection;

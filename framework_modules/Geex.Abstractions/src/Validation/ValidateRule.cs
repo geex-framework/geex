@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -32,7 +31,7 @@ namespace Geex.Validation
             if (parameters?.Length == 0)
                 return validatorName;
 
-            var capacity = validatorName.Length + 1; // "?" 
+            var capacity = validatorName.Length + 1; // "?"
             if (parameters != null)
             {
                 capacity += parameters.Length * 10; // Rough estimate
@@ -62,14 +61,14 @@ namespace Geex.Validation
                 {
                     return ValidationResult.Success;
                 }
-                
+
                 // Create more informative error message
                 var valueString = value?.ToString() ?? "null";
                 if (valueString.Length > 50)
                 {
                     valueString = valueString.Substring(0, 47) + "...";
                 }
-                
+
                 return new ValidationResult($"Validation failed for rule '{RuleKey}' with value '{valueString}'.", new[] { RuleKey });
             }
             catch (Exception ex)
@@ -82,8 +81,9 @@ namespace Geex.Validation
         {
             if (first == null) throw new ArgumentNullException(nameof(first));
             if (second == null) throw new ArgumentNullException(nameof(second));
-            
-            var ruleKey = $"And_{first.RuleKey}_{second.RuleKey}";
+
+            // Use a more structured approach with parentheses
+            var ruleKey = $"And({first.RuleKey},{second.RuleKey})";
             return (ValidateRule<T>)_cache.GetOrAdd(ruleKey, _ => new ValidateRule<T>(ruleKey, value => first.Predicate(value) && second.Predicate(value)));
         }
 
@@ -91,8 +91,9 @@ namespace Geex.Validation
         {
             if (first == null) throw new ArgumentNullException(nameof(first));
             if (second == null) throw new ArgumentNullException(nameof(second));
-            
-            var ruleKey = $"Or_{first.RuleKey}_{second.RuleKey}";
+
+            // Use a more structured approach with parentheses
+            var ruleKey = $"Or({first.RuleKey},{second.RuleKey})";
             return (ValidateRule<T>)_cache.GetOrAdd(ruleKey, _ => new ValidateRule<T>(ruleKey, value => first.Predicate(value) || second.Predicate(value)));
         }
 
@@ -103,112 +104,21 @@ namespace Geex.Validation
         }
     }
 
-    public abstract class ValidateRule
+    public abstract partial class ValidateRule
     {
         protected static readonly ConcurrentDictionary<string, ValidateRule> _cache = new();
         private static readonly ConcurrentDictionary<string, Regex> _regexCache = new();
         private static readonly ConcurrentDictionary<string, MethodInfo> _methodCache = new();
-        
+
+        /// <inheritdoc />
+        public override string ToString() => $"{nameof(ValidateRule)}/{this.RuleKey}";
+
         public string RuleKey { get; protected set; }
         protected static ValidateRule<T> CreateRule<T>(Func<T, bool> predicate, object[] parameters = default, [CallerMemberName] string callMemberName = default)
         {
             return ValidateRule<T>.Create(predicate, callMemberName, parameters: parameters);
         }
 
-        // String validation
-        public static ValidateRule<string> Regex(string pattern)
-        {
-            return CreateRule<string>(value => 
-            {
-                if (string.IsNullOrEmpty(value)) return false;
-                var regex = _regexCache.GetOrAdd(pattern, p => new Regex(p, RegexOptions.Compiled));
-                return regex.IsMatch(value);
-            }, [pattern]);
-        }
-
-        public static ValidateRule<string> LengthMin(int minLength)
-        {
-            if (minLength < 0) throw new ArgumentOutOfRangeException(nameof(minLength), "Minimum length cannot be negative");
-            return CreateRule<string>(value => (value?.Length ?? 0) >= minLength, [minLength]);
-        }
-
-        public static ValidateRule<string> LengthMax(int maxLength)
-        {
-            if (maxLength < 0) throw new ArgumentOutOfRangeException(nameof(maxLength), "Maximum length cannot be negative");
-            return CreateRule<string>(value => (value?.Length ?? 0) <= maxLength, [maxLength]);
-        }
-
-        public static ValidateRule<string> LengthRange(int minLength, int maxLength)
-        {
-            if (minLength < 0) throw new ArgumentOutOfRangeException(nameof(minLength), "Minimum length cannot be negative");
-            if (maxLength < 0) throw new ArgumentOutOfRangeException(nameof(maxLength), "Maximum length cannot be negative");
-            if (minLength > maxLength) throw new ArgumentException("Minimum length cannot be greater than maximum length");
-            
-            return CreateRule<string>(value =>
-            {
-                var length = value?.Length ?? 0;
-                return length >= minLength && length <= maxLength;
-            }, [minLength, maxLength]);
-        }
-
-        // Numeric validation
-        public static ValidateRule<T> Min<T>(T minValue) where T : IComparable<T>
-        {
-            return CreateRule<T>(value => value.CompareTo(minValue) >= 0, [minValue]);
-        }
-
-        public static ValidateRule<T> Max<T>(T maxValue) where T : IComparable<T>
-        {
-            return CreateRule<T>(value => value.CompareTo(maxValue) <= 0, [maxValue]);
-        }
-
-        public static ValidateRule<T> Range<T>(T minValue, T maxValue) where T : IComparable<T>
-        {
-            return CreateRule<T>(value =>
-                value.CompareTo(minValue) >= 0 && value.CompareTo(maxValue) <= 0, [minValue, maxValue]);
-        }
-
-        // Email validation
-        private static readonly Regex EmailRegex = new Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", RegexOptions.Compiled);
-        public static ValidateRule<string> Email()
-        {
-            return CreateRule<string>(value =>
-                !string.IsNullOrEmpty(value) &&
-                EmailRegex.IsMatch(value));
-        }
-
-        private static readonly HashSet<string> DisposableDomains = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            "10minutemail.com", "tempmail.org", "guerrillamail.com", "mailinator.com", 
-            "yopmail.com", "throwaway.email", "temp-mail.org"
-        };
-        
-        public static ValidateRule<string> NotDisposableEmail()
-        {
-            return CreateRule<string>(value =>
-            {
-                if (string.IsNullOrEmpty(value)) return false;
-                var atIndex = value.LastIndexOf('@');
-                if (atIndex <= 0 || atIndex == value.Length - 1) return false;
-                var domain = value.Substring(atIndex + 1);
-                return !DisposableDomains.Contains(domain);
-            });
-        }
-
-        // Phone validation
-        private static readonly Regex ChinesePhoneRegex = new Regex(@"^1[3-9]\d{9}$", RegexOptions.Compiled);
-        public static ValidateRule<string> ChinesePhone()
-        {
-            return CreateRule<string>(value =>
-                !string.IsNullOrEmpty(value) &&
-                ChinesePhoneRegex.IsMatch(value));
-        }
-
-        // Business validation
-        public static ValidateRule<decimal> Price()
-        {
-            return CreateRule<decimal>(value => value >= 0 && value <= 999999.99m);
-        }
         public static ValidateRule Null = new ValidateRule<object>(string.Empty, _ => true);
 
         public abstract ValidationResult Validate(object value);
@@ -228,7 +138,7 @@ namespace Geex.Validation
             try
             {
                 // Handle composite rules (And/Or operations)
-                if (ruleKey.StartsWith("And_") || ruleKey.StartsWith("Or_"))
+                if (ruleKey.StartsWith("And(") || ruleKey.StartsWith("Or("))
                 {
                     return ReconstructCompositeRule(ruleKey);
                 }
@@ -245,9 +155,9 @@ namespace Geex.Validation
                 }
 
                 // Find and invoke the corresponding static method
-                var method = _methodCache.GetOrAdd(validatorName, methodName => 
+                var method = _methodCache.GetOrAdd(validatorName, methodName =>
                     typeof(ValidateRule).GetMethod(methodName, BindingFlags.Public | BindingFlags.Static));
-                    
+
                 if (method != null)
                 {
                     var rule = method.Invoke(null, parameters) as ValidateRule;
@@ -272,33 +182,24 @@ namespace Geex.Validation
         {
             try
             {
-                if (ruleKey.StartsWith("And_"))
+                bool isAnd = ruleKey.StartsWith("And(");
+                int prefixLength = isAnd ? 4 : 3; // "And(" or "Or("
+
+                // Ensure the rule key ends with ")"
+                if (!ruleKey.EndsWith(")"))
+                    return Null;
+
+                // Extract the content between the parentheses
+                var content = ruleKey.Substring(prefixLength, ruleKey.Length - prefixLength - 1);
+                var (firstKey, secondKey) = SplitCompositeRuleKey(content);
+
+                if (!string.IsNullOrEmpty(firstKey) && !string.IsNullOrEmpty(secondKey))
                 {
-                    var content = ruleKey.Substring(4);
-                    var (firstKey, secondKey) = SplitCompositeRuleKey(content);
+                    var firstRule = FromRuleKey(firstKey);
+                    var secondRule = FromRuleKey(secondKey);
 
-                    if (!string.IsNullOrEmpty(firstKey) && !string.IsNullOrEmpty(secondKey))
-                    {
-                        var firstRule = FromRuleKey(firstKey);
-                        var secondRule = FromRuleKey(secondKey);
-
-                        // Create a dynamic And rule
-                        return CreateDynamicCompositeRule(ruleKey, firstRule, secondRule, true);
-                    }
-                }
-                else if (ruleKey.StartsWith("Or_"))
-                {
-                    var content = ruleKey.Substring(3);
-                    var (firstKey, secondKey) = SplitCompositeRuleKey(content);
-
-                    if (!string.IsNullOrEmpty(firstKey) && !string.IsNullOrEmpty(secondKey))
-                    {
-                        var firstRule = FromRuleKey(firstKey);
-                        var secondRule = FromRuleKey(secondKey);
-
-                        // Create a dynamic Or rule
-                        return CreateDynamicCompositeRule(ruleKey, firstRule, secondRule, false);
-                    }
+                    // Create a dynamic composite rule
+                    return CreateDynamicCompositeRule(ruleKey, firstRule, secondRule, isAnd);
                 }
 
                 return Null;
@@ -311,29 +212,31 @@ namespace Geex.Validation
 
         private static (string firstKey, string secondKey) SplitCompositeRuleKey(string content)
         {
-            // Find the split point by looking for the pattern that separates two rule keys
-            // This is more complex than simple splitting by "_" because rule keys themselves may contain "_"
+            // Split a string of format "ruleKey1,ruleKey2" handling nested parentheses correctly
+            int nestingLevel = 0;
+            int commaIndex = -1;
 
-            // Strategy: Try to find known validator names at the beginning
-            var validatorNames = new[] { "Regex", "LengthMin", "LengthMax", "LengthRange", "Min", "Max", "Range", "Email", "NotDisposableEmail", "ChinesePhone", "Price", "And_", "Or_" };
-
-            foreach (var validatorName in validatorNames)
+            for (int i = 0; i < content.Length; i++)
             {
-                var searchPattern = "_" + validatorName;
-                var index = content.IndexOf(searchPattern);
-                if (index > 0)
+                char c = content[i];
+                if (c == '(')
                 {
-                    var firstKey = content.Substring(0, index);
-                    var secondKey = content.Substring(index + 1);
-                    return (firstKey, secondKey);
+                    nestingLevel++;
+                }
+                else if (c == ')')
+                {
+                    nestingLevel--;
+                }
+                else if (c == ',' && nestingLevel == 0)
+                {
+                    commaIndex = i;
+                    break;
                 }
             }
 
-            // Fallback: simple split (may not work for all cases)
-            var parts = content.Split(new[] { '_' }, 2);
-            if (parts.Length == 2)
+            if (commaIndex > 0)
             {
-                return (parts[0], parts[1]);
+                return (content.Substring(0, commaIndex), content.Substring(commaIndex + 1));
             }
 
             return (string.Empty, string.Empty);

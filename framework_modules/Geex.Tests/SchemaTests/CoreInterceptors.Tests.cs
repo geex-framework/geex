@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Geex.Gql;
-using Geex.Gql.Types;
-using Geex.Tests.FeatureTests;
+﻿using Geex.Gql.Types;
 using Geex.Tests.SchemaTests.TestEntities;
 
 using HotChocolate;

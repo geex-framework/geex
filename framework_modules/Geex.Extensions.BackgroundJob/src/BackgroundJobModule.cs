@@ -1,7 +1,4 @@
-﻿using System.Threading.Tasks;
-using Geex.Abstractions;
-using Geex.Extensions.BackgroundJob.Gql;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;

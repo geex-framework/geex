@@ -1,4 +1,3 @@
-using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;
 using HotChocolate.Types;

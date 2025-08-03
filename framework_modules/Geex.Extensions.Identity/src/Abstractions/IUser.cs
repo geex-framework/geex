@@ -6,7 +6,6 @@ using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;
 using Geex.MultiTenant;
 using Geex.Storage;
-using MongoDB.Entities;
 
 namespace Geex.Extensions.Identity
 {

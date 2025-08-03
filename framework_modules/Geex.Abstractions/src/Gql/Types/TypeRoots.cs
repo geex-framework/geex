@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using HotChocolate.Types;
+﻿using HotChocolate.Types;
 using Volo.Abp.DependencyInjection;
 
 namespace Geex.Gql.Types

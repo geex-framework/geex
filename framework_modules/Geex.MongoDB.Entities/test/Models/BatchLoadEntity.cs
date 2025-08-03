@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-using MongoDB.Driver;
-
 namespace MongoDB.Entities.Tests.Models;
 
 public class BatchLoadEntity : EntityBase<BatchLoadEntity>

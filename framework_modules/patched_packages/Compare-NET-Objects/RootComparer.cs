@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using KellermanSoftware.CompareNetObjects.TypeComparers;
-using System.Reflection;
 
 namespace KellermanSoftware.CompareNetObjects
 {

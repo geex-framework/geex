@@ -4,18 +4,9 @@ using Geex.Extensions.BlobStorage.Requests;
 using Microsoft.Extensions.DependencyInjection;
 
 using Shouldly;
-
-using System;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Text;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using HotChocolate.Types;
 using MongoDB.Bson;
-
-using Newtonsoft.Json;
 
 namespace Geex.Tests.FeatureTests
 {

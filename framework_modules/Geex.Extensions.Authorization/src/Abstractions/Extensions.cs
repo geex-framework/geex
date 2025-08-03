@@ -1,16 +1,4 @@
-﻿using System;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Geex.Abstractions;
-
-using HotChocolate.Types;
-
-using Microsoft.Extensions.DependencyInjection;
-
-using MongoDB.Entities;
-
-using NetCasbin.Abstractions;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace Geex.Extensions.Authorization
 {

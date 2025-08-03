@@ -1,12 +1,5 @@
 using HotChocolate;
 using HotChocolate.Types;
-using HotChocolate.Resolvers;
-using System;
-using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Reflection;
-using Geex;
 
 namespace Geex.Validation
 {
@@ -48,7 +41,7 @@ namespace Geex.Validation
             protected override void Configure(IDirectiveTypeDescriptor<ValidateDirective> descriptor)
             {
                 descriptor.Name(ValidateDirective.DirectiveName);
-                descriptor.Location(DirectiveLocation.ArgumentDefinition | DirectiveLocation.InputFieldDefinition | DirectiveLocation.FieldDefinition);
+                descriptor.Location(DirectiveLocation.ArgumentDefinition | DirectiveLocation.InputFieldDefinition);
                 descriptor.Repeatable();
 
                 descriptor.Argument(t => t.RuleKey).Type<StringType>();

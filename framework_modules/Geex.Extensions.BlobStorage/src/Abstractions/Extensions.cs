@@ -1,14 +1,11 @@
 ﻿using System.Linq;
 using System.Net;
-using Geex.Extensions.BlobStorage;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
 using RestSharp.Extensions;
-using Geex.Abstractions;
 
 
 // ReSharper disable once CheckNamespace

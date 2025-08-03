@@ -1,7 +1,4 @@
-using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Gql.Types;
-using HotChocolate.Types;
 
 namespace Geex.Extensions.BackgroundJob.Gql
 {

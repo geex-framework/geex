@@ -1,15 +1,9 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Geex.Abstractions;
-using Geex.Extensions.Requests;
 using Geex.Gql.Types;
 using Geex.MultiTenant;
 using Geex.Requests;
 using HotChocolate.Types;
-
-using MediatX;
-
-using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Extensions.MultiTenant.Gql.Schemas
 {

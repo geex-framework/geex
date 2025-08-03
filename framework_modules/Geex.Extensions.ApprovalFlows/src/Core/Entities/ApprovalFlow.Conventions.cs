@@ -1,5 +1,4 @@
-﻿using Geex.Abstractions;
-using HotChocolate.Types;
+﻿using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 
 namespace Geex.Extensions.ApprovalFlows.Core.Entities;

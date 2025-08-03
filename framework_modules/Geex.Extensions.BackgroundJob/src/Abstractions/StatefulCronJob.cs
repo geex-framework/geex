@@ -2,14 +2,11 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Geex.Abstractions;
 using Geex.Extensions.BackgroundJob.Core;
 using Geex.Extensions.BackgroundJob.Gql.Types;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using MongoDB.Bson.Serialization;
 
 namespace Geex.Extensions.BackgroundJob

@@ -6,9 +6,6 @@ using System.Threading.Tasks;
 using Cronos;
 
 using EasyCronJob.Abstractions;
-
-using Geex.Extensions.BackgroundJob.Gql.Types;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

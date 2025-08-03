@@ -1,14 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-
-using HotChocolate;
 using HotChocolate.Configuration;
 using HotChocolate.Language;
-using HotChocolate.Resolvers;
-using HotChocolate.Types;
-using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 
 using Microsoft.Extensions.DependencyInjection;

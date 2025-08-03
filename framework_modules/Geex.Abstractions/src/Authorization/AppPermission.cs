@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace Geex
+﻿namespace Geex
 {
     public class AppPermission : Enumeration<AppPermission>
     {

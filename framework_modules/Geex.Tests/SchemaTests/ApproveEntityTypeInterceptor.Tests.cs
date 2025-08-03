@@ -1,7 +1,6 @@
 using Geex.Extensions.ApprovalFlows;
 using Geex.Gql;
 using Geex.Gql.Types;
-using Geex.Tests.FeatureTests;
 using Geex.Tests.SchemaTests.TestEntities;
 using HotChocolate;
 using HotChocolate.Types;

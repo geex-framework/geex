@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 
 using HotChocolate.Configuration;
-using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 
 namespace Geex.Gql

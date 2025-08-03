@@ -1,7 +1,5 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using Geex.Abstractions;
-
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
 using Geex.Gql.Types;

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.ApprovalFlows.Requests;
 using Geex.Extensions.Authentication;

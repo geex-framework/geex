@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity.Core.Entities;
 using MediatX;

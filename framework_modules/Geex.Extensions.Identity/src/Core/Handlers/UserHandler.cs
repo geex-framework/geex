@@ -3,27 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-using Geex.Abstractions;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Requests.Accounting;
-using HotChocolate.Utilities;
-
 using MediatX;
 
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
-
-using MongoDB.Entities;
-
 using StackExchange.Redis;
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
 using Volo.Abp;
-using Role = Geex.Extensions.Identity.Core.Entities.Role;
 
 namespace Geex.Extensions.Identity.Core.Handlers
 {

@@ -1,14 +1,10 @@
 ﻿using System;
-
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Entities;
-using OpenIddict.Client.AspNetCore;
 using OpenIddict.Server.AspNetCore;
-using OpenIddict.Validation.AspNetCore;
 
 namespace Geex.Extensions.Authorization.Core.Casbin
 {

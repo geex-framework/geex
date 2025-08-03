@@ -1,7 +1,4 @@
-﻿using Geex.Abstractions;
-using Geex.Extensions.BlobStorage.Core;
-
-namespace Geex.Extensions.BlobStorage
+﻿namespace Geex.Extensions.BlobStorage
 {
     public class BlobStorageModuleOptions : GeexModuleOption<BlobStorageModule>
     {

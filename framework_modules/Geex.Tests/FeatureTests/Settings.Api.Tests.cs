@@ -1,23 +1,10 @@
-using System;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json.Nodes;
-using System.Threading.Tasks;
-
-using Elastic.Apm.Api;
-
 using Geex.Extensions.Settings;
 using Geex.Extensions.Settings.Requests;
 
 using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson;
-
-using Newtonsoft.Json;
-
 using Shouldly;
-
-using Xunit;
 
 namespace Geex.Tests.FeatureTests
 {

@@ -1,8 +1,5 @@
 using Geex.Extensions.Authorization.Core.Utils;
-using Geex.Gql;
 using Geex.Gql.Types;
-using Geex.Storage;
-using Geex.Tests.FeatureTests;
 using Geex.Tests.SchemaTests.TestEntities;
 
 using HotChocolate;
@@ -56,17 +53,17 @@ namespace Geex.Tests.SchemaTests
 
             var queryType = schema.GetType<ObjectType>(nameof(Query));
             var authQueryField = queryType.Fields.First(x => x.Name == nameof(AuthTestQuery.AuthTestQueryField).ToCamelCase());
-            authQueryField.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor)).ShouldBeTrue();
+            authQueryField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeTrue();
 
             var mutationType = schema.GetType<ObjectType>(nameof(Mutation));
             var authMutationField = mutationType.Fields.First(x => x.Name == nameof(AuthTestMutation.AuthTestMutationField).ToCamelCase());
-            authMutationField.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor)).ShouldBeTrue();
+            authMutationField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeTrue();
 
             // Check if permission-based field authorization is applied to fields
             var authFields = aggregateType.Fields.Where(x => x.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor))).ToList();
             authFields.ShouldNotBeEmpty();
             var authTestField = authFields.FirstOrDefault(x => x.Name == nameof(AuthTestEntity.AuthorizedField).ToCamelCase());
-            authTestField.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor)).ShouldBeTrue();
+            authTestField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeTrue();
         }
 
         [Fact]

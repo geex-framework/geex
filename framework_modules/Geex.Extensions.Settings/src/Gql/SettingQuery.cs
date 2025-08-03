@@ -1,12 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
-using Geex.Abstractions;
 using Geex.Extensions.Settings.Core;
 using Geex.Extensions.Settings.Requests;
 using Geex.Gql.Types;
-using Geex.Validation;
 using HotChocolate.Data.Filters;
 using HotChocolate.Types;
 

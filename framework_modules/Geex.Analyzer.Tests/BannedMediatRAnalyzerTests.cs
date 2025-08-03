@@ -2,8 +2,6 @@ using System.Threading.Tasks;
 
 using Geex.Analyzer.Analyzer;
 using Geex.Analyzer.Analyzers;
-
-using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 
 using Xunit;

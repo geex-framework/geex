@@ -3,14 +3,7 @@ using Geex.Extensions.BackgroundJob.Core;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-
 using Shouldly;
-
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using EasyCronJob.Abstractions;
 using MongoDB.Bson;
 

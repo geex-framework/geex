@@ -1,5 +1,4 @@
-﻿using Geex.Abstractions;
-using Geex.Extensions.AuditLogs;
+﻿using Geex.Extensions.AuditLogs;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization;
 using Geex.Extensions.BackgroundJob;
@@ -7,7 +6,6 @@ using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Logging;
 using Geex.Extensions.Messaging;
-using Geex.Extensions.Messaging.Core;
 using Geex.Extensions.Settings;
 using Volo.Abp.Modularity;
 
