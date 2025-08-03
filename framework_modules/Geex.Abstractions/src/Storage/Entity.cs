@@ -17,6 +17,11 @@ namespace Geex.Storage
     }
     public abstract class Entity<T> : EntityBase<T>, IEntity, IModifiedOn, IHasId where T : class, IEntityBase
     {
+        public Entity()
+        {
+            CreatedOn = DateTimeOffset.MinValue;
+            ModifiedOn = DateTimeOffset.MinValue;
+        }
         public DateTimeOffset ModifiedOn { get; set; }
 
         public void AddDomainEvent(params IEvent[] events)

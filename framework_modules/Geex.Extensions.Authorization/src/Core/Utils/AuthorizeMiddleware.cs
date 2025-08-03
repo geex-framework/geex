@@ -12,17 +12,17 @@ namespace Geex.Extensions.Authorization.Core.Utils
 {
     internal sealed class AuthorizeMiddleware
     {
-        private readonly FieldDelegate _next;
         private readonly AuthorizeDirective _directive;
 
-        public AuthorizeMiddleware(FieldDelegate next, AuthorizeDirective directive)
+        public AuthorizeMiddleware(AuthorizeDirective directive)
         {
-            this._next = next ?? throw new ArgumentNullException(nameof(next));
             this._directive = directive ?? throw new ArgumentNullException(nameof(directive));
         }
 
-        public async Task InvokeAsync(IMiddlewareContext context)
+        public async Task InvokeAsync(IMiddlewareContext context, FieldDelegate next)
         {
+            if (next == null) throw new ArgumentNullException(nameof(next));
+            
             IAuthorizationHandler handler = context.GetGlobalStateOrDefault<IAuthorizationHandler>("HotChocolate.Authorization.AuthorizationHandler");
             if (handler == null)
                 throw new MissingStateException("Authorization", "HotChocolate.Authorization.AuthorizationHandler", StateKind.Global);
@@ -32,37 +32,31 @@ namespace Geex.Extensions.Authorization.Core.Utils
                     AuthorizeResult state1 = await handler.AuthorizeAsync(context, this._directive).ConfigureAwait(false);
                     if (state1 == AuthorizeResult.Allowed)
                     {
-                        await this._next(context).ConfigureAwait(false);
-                        handler = (IAuthorizationHandler)null;
+                        await next(context).ConfigureAwait(false);
                         break;
                     }
                     this.SetError(context, state1);
-                    handler = (IAuthorizationHandler)null;
+
                     break;
                 case ApplyPolicy.AfterResolver:
-                    await this._next(context).ConfigureAwait(false);
+                    await next(context).ConfigureAwait(false);
                     if (context.Result == null)
                     {
-                        handler = (IAuthorizationHandler)null;
                         break;
                     }
                     AuthorizeResult state2 = await handler.AuthorizeAsync(context, this._directive).ConfigureAwait(false);
                     if (state2 == AuthorizeResult.Allowed)
                     {
-                        handler = (IAuthorizationHandler)null;
                         break;
                     }
                     if (AuthorizeMiddleware.IsErrorResult(context))
                     {
-                        handler = (IAuthorizationHandler)null;
                         break;
                     }
                     this.SetError(context, state2);
-                    handler = (IAuthorizationHandler)null;
                     break;
                 default:
-                    await this._next(context).ConfigureAwait(false);
-                    handler = (IAuthorizationHandler)null;
+                    await next(context).ConfigureAwait(false);
                     break;
             }
         }

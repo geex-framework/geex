@@ -6,8 +6,8 @@ namespace Geex.Tests.SchemaTests.TestEntities
 {
     public class ValidateTestEntity : Entity<ValidateTestEntity>
     {
-        public string ValidatedField { get; set; }
-        public string EmailField { get; set; }
+        public string? ValidatedField { get; set; }
+        public string? EmailField { get; set; }
         public int AgeField { get; set; }
     }
 

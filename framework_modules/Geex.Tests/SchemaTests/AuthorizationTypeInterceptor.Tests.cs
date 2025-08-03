@@ -8,6 +8,8 @@ using HotChocolate.Types;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using MongoDB.Bson;
+
 using Shouldly;
 
 namespace Geex.Tests.SchemaTests
@@ -20,7 +22,10 @@ namespace Geex.Tests.SchemaTests
             base.Configure(descriptor);
         }
 
-        public AuthTestEntity AuthTestQueryField(string id) => throw new NotImplementedException();
+        public AuthTestEntity AuthTestQueryField(string id) => new AuthTestEntity()
+        {
+            Id = ObjectId.GenerateNewId().ToString()
+        };
     }
     public class AuthTestMutation : MutationExtension<AuthTestMutation>
     {
@@ -30,7 +35,7 @@ namespace Geex.Tests.SchemaTests
             base.Configure(descriptor);
         }
 
-        public bool AuthTestMutationField(string name) => throw new NotImplementedException();
+        public bool AuthTestMutationField(string name) => true;
     }
     [Collection(nameof(TestsCollection))]
     public class AuthorizationTypeInterceptorTests : TestsBase
@@ -60,7 +65,7 @@ namespace Geex.Tests.SchemaTests
             authMutationField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeTrue();
 
             // Check if permission-based field authorization is applied to fields
-            var authFields = aggregateType.Fields.Where(x => x.Middleware.Method.DeclaringType.FullName.Contains(nameof(AuthorizationTypeInterceptor))).ToList();
+            var authFields = aggregateType.Fields.Where(x => x.Directives.ContainsDirective<AuthorizeDirective>()).ToList();
             authFields.ShouldNotBeEmpty();
             var authTestField = authFields.FirstOrDefault(x => x.Name == nameof(AuthTestEntity.AuthorizedField).ToCamelCase());
             authTestField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeTrue();

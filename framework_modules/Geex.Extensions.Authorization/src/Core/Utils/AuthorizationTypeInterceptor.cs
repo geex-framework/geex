@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
 using HotChocolate.Authorization;
 using HotChocolate.Configuration;
 using HotChocolate.Resolvers;
+using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -17,13 +20,13 @@ namespace Geex.Extensions.Authorization.Core.Utils
     /// </summary>
     public class AuthorizationTypeInterceptor : TypeInterceptor
     {
-        static Type AuthorizeMiddlewareType = typeof(AuthorizeDirective).Assembly.GetType("HotChocolate.Authorization.AuthorizeMiddleware", true);
-        private static readonly ConstructorInfo Ctor = AuthorizeMiddlewareType.GetConstructor(new[] { typeof(FieldDelegate), typeof(AuthorizeDirective) });
-        private static readonly MethodInfo Invoke = AuthorizeMiddlewareType.GetMethod("InvokeAsync");
+        // Cache for middleware instances by policy
+        private readonly Dictionary<string, AuthorizeMiddleware> _middlewareCache = new();
+
         /// <summary>
         /// mod_query_user, mod_query_user_email
         /// </summary>
-        Dictionary<string, string[]> Permissions = AppPermission.List
+        Dictionary<string, string[]> Permissions = AppPermission.DynamicValues
             .GroupBy(x => x.Obj).ToDictionary(x => x.Key, x => x.Select(y => y.Field).ToArray());
 
         /// <inheritdoc />
@@ -50,16 +53,13 @@ namespace Geex.Extensions.Authorization.Core.Utils
                 {
                     var descriptor = ObjectFieldDescriptor.From(completionContext.DescriptorContext, fieldDefinition);
                     var policy = $"*_{typeName}_{fieldDefinition.Name}";
-                    //descriptor.Authorize(policy);
-                    //if (!fieldDefinition.Directives.Any(x => (x.Value is AuthorizeDirective)))
-                    //{
-                    //    fieldDefinition.AddDirective(new AuthorizeDirective(policy), completionContext.TypeInspector);
-                    //}
-                    var directive = new AuthorizeDirective(policy);
-                    //fieldDefinition.MiddlewareDefinitions.Add(new FieldMiddlewareDefinition(next => async context =>
-                    //    await new AuthorizeMiddleware(next, directive).InvokeAsync(context).ConfigureAwait(false)));
-                    descriptor.Use(next => async context =>
-                        await new AuthorizeMiddleware(next, directive).InvokeAsync(context));
+                    descriptor.Authorize(policy);
+
+                    // Get or create middleware instance for this policy
+                    var middleware = GetOrCreateMiddleware(policy);
+
+                    // Use the middleware with the next delegate passed at runtime
+                    descriptor.Use(next => async context => await middleware.InvokeAsync(context, next));
                     logger.LogInformation($@"成功匹配权限规则:{policy}");
                 }
                 foreach (var misMatch in misMatches)
@@ -68,6 +68,18 @@ namespace Geex.Extensions.Authorization.Core.Utils
                     logger.LogWarning($@"跳过匹配权限规则:{policy}");
                 }
             }
+        }
+
+        // Factory method to get or create middleware instances
+        private AuthorizeMiddleware GetOrCreateMiddleware(string policy)
+        {
+            if (!_middlewareCache.TryGetValue(policy, out var middleware))
+            {
+                var directive = new AuthorizeDirective(policy);
+                middleware = new AuthorizeMiddleware(directive);
+                _middlewareCache[policy] = middleware;
+            }
+            return middleware;
         }
     }
 }

@@ -38,7 +38,7 @@ public static class ObjectFieldDescriptorExtensions
     public static IObjectFieldDescriptor<T, TValue> Authorize<T, TValue>(
         this IObjectFieldDescriptor<T, TValue> descriptor)
     {
-        return (ObjectFieldDescriptor<T, TValue>)((descriptor as IObjectFieldDescriptor).Authorize());
+        return new ObjectFieldDescriptor<T, TValue>((descriptor as IObjectFieldDescriptor).Authorize());
     }
     /// <summary>
     /// 为强类型字段描述符添加偏移分页支持，自动推断分页类型

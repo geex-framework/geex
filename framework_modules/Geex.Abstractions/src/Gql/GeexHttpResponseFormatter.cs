@@ -2,9 +2,13 @@
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+
+using Geex.Validation;
+
 using HotChocolate;
 using HotChocolate.AspNetCore.Serialization;
 using HotChocolate.Execution;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Geex.Gql
@@ -31,7 +35,12 @@ namespace Geex.Gql
                     return authenticated ? HttpStatusCode.Forbidden : HttpStatusCode.Unauthorized;
                 }
 
-                if (result.Errors.All(x => x.Code == ErrorCodes.Execution.NonNullViolation || x.Code == ErrorCodes.Execution.CannotResolveAbstractType))
+                if (result.Errors.Any(e => e.Code == ValidateRule.ValidationErrorCode))
+                {
+                    return HttpStatusCode.BadRequest;
+                }
+
+                if (result.Errors.All(x => x.Code is ErrorCodes.Execution.NonNullViolation or ErrorCodes.Execution.CannotResolveAbstractType or ValidateRule.ValidationErrorCode))
                 {
                     return HttpStatusCode.OK;
                 }

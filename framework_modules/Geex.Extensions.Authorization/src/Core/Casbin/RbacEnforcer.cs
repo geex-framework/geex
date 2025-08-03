@@ -78,7 +78,7 @@ m = (p.sub == ""*"" || g(r.sub, p.sub) || r.sub == p.sub) && r.obj == p.obj && (
 
         public bool Enforce(string sub, string mod, string obj, string fields = "")
         {
-            if (sub == "000000000000000000000001")
+            if (sub == GeexConstants.SuperAdminId)
             {
                 return true;
             }

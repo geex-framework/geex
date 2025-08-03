@@ -39,9 +39,6 @@ namespace Geex.Validation
                     context.Result = null;
                     return;
                 }
-
-                // 如果验证通过，继续执行
-                await _next(context);
             }
             catch (Exception ex)
             {
@@ -53,6 +50,9 @@ namespace Geex.Validation
                     .Build();
                 context.ReportError(error);
             }
+
+            // 如果验证通过，继续执行
+            await _next(context);
         }
 
         private async Task ValidateFieldArguments(IMiddlewareContext context)
@@ -183,7 +183,7 @@ namespace Geex.Validation
                     var error = ErrorBuilder.New()
                         .SetMessage($"{message} at {fieldPath}")
                         .SetPath(context.Path)
-                        .SetCode("VALIDATION_ERROR")
+                        .SetCode(ValidateRule.ValidationErrorCode)
                         .SetExtension("ruleKey", validationDirective.RuleKey)
                         .SetExtension("fieldPath", fieldPath)
                         .Build();

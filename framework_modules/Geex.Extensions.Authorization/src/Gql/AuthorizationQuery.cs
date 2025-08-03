@@ -23,6 +23,7 @@ namespace Geex.Extensions.Authorization.Gql
         /// <inheritdoc />
         protected override void Configure(IObjectTypeDescriptor<AuthorizationQuery> descriptor)
         {
+            descriptor.TypedField(x=>x.MyPermissions(default)).Authorize();
             base.Configure(descriptor);
         }
 

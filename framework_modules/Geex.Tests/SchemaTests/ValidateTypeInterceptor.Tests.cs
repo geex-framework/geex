@@ -6,7 +6,7 @@ using HotChocolate;
 using HotChocolate.Types;
 
 using Microsoft.Extensions.DependencyInjection;
-
+using MongoDB.Bson;
 using Shouldly;
 
 namespace Geex.Tests.SchemaTests
@@ -26,9 +26,15 @@ namespace Geex.Tests.SchemaTests
 
         public ValidateTestEntity ValidateTestQueryField(
             [Validate(nameof(ValidateRule.Email), "Invalid email format")] string email,
-            [Validate(nameof(ValidateRule.LengthMin), [3], "Name must be at least 3 characters")] string name) => throw new NotImplementedException();
+            [Validate(nameof(ValidateRule.LengthMin), [3], "Name must be at least 3 characters")] string name) => new ValidateTestEntity()
+        {
+            Id = ObjectId.GenerateNewId().ToString(),
+        };
 
-        public ValidateTestEntity ValidateTestQueryFieldWithInput(ValidateTestInput input) => throw new NotImplementedException();
+        public ValidateTestEntity ValidateTestQueryFieldWithInput(ValidateTestInput input) => new ValidateTestEntity()
+        {
+            Id = ObjectId.GenerateNewId().ToString()
+        };
     }
 
     public class ValidateTestMutation : MutationExtension<ValidateTestMutation>
@@ -47,9 +53,9 @@ namespace Geex.Tests.SchemaTests
 
         public bool ValidateTestMutationField(
             [Validate(nameof(ValidateRule.LengthMin), [3], "Name must be at least 3 characters")] string name,
-            [Validate(nameof(ValidateRule.Range), [1, 100], "Count must be between 1 and 100")] int count) => throw new NotImplementedException();
+            [Validate(nameof(ValidateRule.Range), [1, 100], "Count must be between 1 and 100")] int count) => true;
 
-        public bool ValidateCreateUserInput(ValidateTestInput input) => throw new NotImplementedException();
+        public bool ValidateCreateUserInput(ValidateTestInput input) => true;
     }
 
     [Collection(nameof(TestsCollection))]

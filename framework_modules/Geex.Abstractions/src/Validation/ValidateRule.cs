@@ -106,6 +106,7 @@ namespace Geex.Validation
 
     public abstract partial class ValidateRule
     {
+        public const string ValidationErrorCode = "VALIDATION_ERROR";
         protected static readonly ConcurrentDictionary<string, ValidateRule> _cache = new();
         private static readonly ConcurrentDictionary<string, Regex> _regexCache = new();
         private static readonly ConcurrentDictionary<string, MethodInfo> _methodCache = new();
