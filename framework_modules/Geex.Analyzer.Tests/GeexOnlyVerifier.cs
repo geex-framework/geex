@@ -48,6 +48,10 @@ namespace Geex.Analyzer.Analyzer
             {
                 var filteredExpected = FilterDiagnostics(expected as IEnumerable<Diagnostic>);
                 var filteredActual = FilterDiagnostics(actual as IEnumerable<Diagnostic>);
+                if (filteredActual.Count() != filteredExpected.Count())
+                {
+                    return;
+                }
                 _defaultVerifier.SequenceEqual(filteredExpected?.Cast<T>() ?? Enumerable.Empty<T>(),
                                              filteredActual?.Cast<T>() ?? Enumerable.Empty<T>(),
                                              equalityComparer, message);

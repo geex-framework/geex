@@ -4,8 +4,9 @@ namespace Geex.Extensions.Identity
 {
     public class IdentityPermission : AppPermission<IdentityPermission>
     {
+        public const string Prefix = "identity";
 
-        public IdentityPermission(string value) : base($"identity_{value}")
+        public IdentityPermission(string value) : base($"{Prefix}_{value}")
         {
         }
         public class UserPermission : IdentityPermission
