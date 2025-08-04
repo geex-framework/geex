@@ -6,6 +6,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <ProjectReference Include="..\Geex.Analyzer\src\Geex.Analyzer.csproj" />
+        <ProjectReference Include="..\Geex.Analyzer.TestCode\Geex.Analyzer.TestCode.csproj" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.XUnit" Version="1.1.2" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.XUnit" Version="1.1.2" />

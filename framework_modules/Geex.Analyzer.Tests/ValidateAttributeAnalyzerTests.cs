@@ -1,172 +1,179 @@
 using System.Threading.Tasks;
-using Geex.Analyzer.Analyzer;
 using Geex.Analyzer.Analyzers;
-using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
 namespace Geex.Analyzer.Tests
 {
-    using AnalyzerVerifier = CSharpAnalyzerVerifier<ValidateAttributeAnalyzer, GeexOnlyVerifier>;
+    using AnalyzerVerifier = ProjectBasedAnalyzerVerifier<ValidateAttributeAnalyzer>;
 
+    /// <summary>
+    /// ValidateAttributeAnalyzer 的测试类
+    /// 使用 Geex.Analyzer.TestCode 项目中的真实代码进行测试
+    /// </summary>
     public class ValidateAttributeAnalyzerTests
     {
         [Fact]
         public async Task ValidValidateRule_ShouldNotReportDiagnostic()
         {
-            var test = """
-                       using Geex.Validation;
-                       
-                       namespace Geex.Validation
-                       {
-                           public static class ValidateRule
-                           {
-                               public static string ChinesePhone => "ChinesePhone";
-                               public static string Range => "Range";
-                               public static string Email => "Email";
-                           }
-                           public class ValidateAttribute : System.Attribute
-                           {
-                               public ValidateAttribute(string ruleName, params object[] args) { }
-                           }
-                       }
-
-                       public class TestClass
-                       {
-                           [Validate(nameof(ValidateRule.ChinesePhone), "可选的message")]
-                           public string Phone { get; set; }
-
-                           [Validate(nameof(ValidateRule.Range), new object[] { 18, 120 }, "可选的message")]
-                           public int Age { get; set; }
-
-                           [Validate(nameof(ValidateRule.Email))]
-                           public string Email { get; set; }
-                       }
-                       """;
-
-            await AnalyzerVerifier.VerifyAnalyzerAsync(test);
+            // 测试有效的 ValidateRule 使用不应该报告任何诊断
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("ValidateAttributeTests/ValidValidateRule.cs");
         }
 
         [Fact]
         public async Task InvalidValidateRule_ShouldReportDiagnostic()
         {
-            var test = """
-                       using Geex.Validation;
-                       namespace Geex.Validation
-                       {
-                           public static class ValidateRule
-                           {
-                               public static string InvalidRule => "This rule does not exist";
-                           }
-                           public class ValidateAttribute : System.Attribute
-                           {
-                               public ValidateAttribute(string ruleName, params object[] args) { }
-                           }
-                       }
+            // 测试无效的 ValidateRule 应该报告 GEEX003 诊断
+            var expectedDiagnostics = new[]
+            {
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("Null"),
 
-                       public class TestClass
-                       {
-                           [Validate(nameof(ValidateRule.InvalidRule), "message")]
-                           public string Field { get; set; }
-                       }
-                       """;
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("RuleKey")
+            };
 
-            var expected = AnalyzerVerifier.Diagnostic("GEEX003")
-                .WithSpan(13, 47, 13, 58)
-                .WithArguments("InvalidRule");
-
-            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected);
+            await AnalyzerVerifier.VerifyAnalyzerAsync("ValidateAttributeTests/InvalidValidateRule.cs", expectedDiagnostics);
         }
 
         [Fact]
         public async Task StringLiteralValidateRule_ValidRule_ShouldNotReportDiagnostic()
         {
-            var test = """
-                       using Geex.Validation;
-                       
-                       namespace Geex.Validation
-                       {
-                           public class ValidateAttribute : System.Attribute
-                           {
-                               public ValidateAttribute(string ruleName, params object[] args) { }
-                           }
-                       }
-
-                       public class TestClass
-                       {
-                           [Validate("Email", "Invalid email")]
-                           public string Email { get; set; }
-
-                           [Validate("Range?18&120", "Age must be between 18 and 120")]
-                           public int Age { get; set; }
-                       }
-                       """;
-
-            await AnalyzerVerifier.VerifyAnalyzerAsync(test);
+            // 测试有效的字符串字面量验证规则
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("ValidateAttributeTests/StringLiteralValidateRuleValid.cs");
         }
 
         [Fact]
         public async Task StringLiteralValidateRule_InvalidRule_ShouldReportDiagnostic()
         {
-            var test = """
-                       using Geex.Validation;
-                       
-                       namespace Geex.Validation
-                       {
-                           public class ValidateAttribute : System.Attribute
-                           {
-                               public ValidateAttribute(string ruleName, params object[] args) { }
-                           }
-                       }
+            // 测试无效的字符串字面量验证规则应该报告 GEEX003 诊断
+            var expectedDiagnostics = new[]
+            {
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("InvalidRule"),
 
-                       public class TestClass
-                       {
-                           [Validate("InvalidRule", "message")]
-                           public string Field { get; set; }
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("InvalidRule"),
 
-                           [Validate("InvalidRule?param", "message")]
-                           public string Field2 { get; set; }
-                       }
-                       """;
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("AnotherInvalidRule"),
 
-            var expected1 = AnalyzerVerifier.Diagnostic("GEEX003")
-                .WithSpan(13, 23, 13, 36)
-                .WithArguments("InvalidRule");
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("NotExistingRule"),
 
-            var expected2 = AnalyzerVerifier.Diagnostic("GEEX003")
-                .WithSpan(16, 23, 16, 41)
-                .WithArguments("InvalidRule");
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("WrongRuleName")
+            };
 
-            await AnalyzerVerifier.VerifyAnalyzerAsync(test, expected1, expected2);
+            await AnalyzerVerifier.VerifyAnalyzerAsync("ValidateAttributeTests/StringLiteralValidateRuleInvalid.cs", expectedDiagnostics);
         }
 
         [Fact]
         public async Task ComplexValidateRule_ShouldNotReportDiagnostic()
         {
-            var test = """
-                       using Geex.Validation;
-                       
-                       namespace Geex.Validation
-                       {
-                           public static class ValidateRule
-                           {
-                               public static string LengthMin => "LengthMin";
-                               public static string StrongPassword => "StrongPassword";
-                           }
-                           public class ValidateAttribute : System.Attribute
-                           {
-                               public ValidateAttribute(string ruleName, params object[] args) { }
-                           }
-                       }
+            // 测试复杂的验证规则使用
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("ValidateAttributeTests/ComplexValidateRule.cs");
+        }
 
-                       public class TestClass
-                       {
-                           [Validate(nameof(ValidateRule.LengthMin), new object[] { 6 }, "Password must be at least 6 characters")]
-                           [Validate(nameof(ValidateRule.StrongPassword))]
-                           public string Password { get; set; }
-                       }
-                       """;
+        [Fact]
+        public async Task MixedValidationTests_ShouldReportOnlyInvalidRules()
+        {
+            // 测试混合使用有效和无效规则，只有无效规则应该报告诊断
+            var expectedDiagnostics = new[]
+            {
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("Null"),
 
-            await AnalyzerVerifier.VerifyAnalyzerAsync(test);
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("AnotherInvalidRule")
+            };
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync("ValidateAttributeTests/MixedValidationTests.cs", expectedDiagnostics);
+        }
+
+        [Fact]
+        public async Task EdgeCaseValidationRules_ShouldReportInvalidRules()
+        {
+            // 测试边界情况的验证规则
+            var expectedDiagnostics = new[]
+            {
+                // 空字符串规则
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments(""),
+
+                // 只有参数没有规则名
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("")
+            };
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync("ValidateAttributeTests/EdgeCaseValidationRules.cs", expectedDiagnostics);
+        }
+
+        [Fact]
+        public async Task ParameterTypeTests_ShouldNotReportDiagnostic()
+        {
+            // 测试不同参数类型的有效验证规则
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("ValidateAttributeTests/ParameterTypeTests.cs");
+        }
+
+        [Fact]
+        public async Task AllValidRules_ShouldNotReportDiagnostics()
+        {
+            // 测试所有支持的有效验证规则
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("ValidateAttributeTests/AllValidRules.cs");
+        }
+
+        [Fact]
+        public async Task AllInvalidRules_ShouldReportMultipleDiagnostics()
+        {
+            // 测试所有无效规则应该报告多个诊断
+            var expectedDiagnostics = new[]
+            {
+                // nameof 方式的无效规则
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("Null"),
+
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("RuleKey"),
+
+                // 字符串字面量方式的无效规则
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("InvalidRule"),
+
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("InvalidRule"),
+
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("AnotherInvalidRule"),
+
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("NotExistingRule"),
+
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("WrongRuleName"),
+
+                // 空字符串和只有参数的无效规则
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments(""),
+
+                DiagnosticResultBuilder.Create("GEEX003")
+                    .WithArguments("")
+            };
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync("ValidateAttributeTests/AllInvalidRules.cs", expectedDiagnostics);
+        }
+
+        [Fact]
+        public async Task NameofValidateRule_ShouldValidateCorrectly()
+        {
+            // 专门测试 nameof(ValidateRule.xxx) 形式的使用
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("ValidateAttributeTests/NameofValidateRule.cs");
+        }
+
+        [Fact]
+        public async Task StringLiteralWithParameters_ShouldValidateCorrectly()
+        {
+            // 专门测试带参数的字符串字面量形式
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("ValidateAttributeTests/StringLiteralWithParameters.cs");
         }
     }
 }

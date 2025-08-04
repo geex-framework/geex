@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <!-- 不生成编译错误，允许代码中存在故意的错误用于测试 -->
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <WarningsAsErrors />
+        <NoWarn>CS0246;CS0103;CS0117;CS0234;CS0305;CS0308;CS0311;CS0518;CS0535;CS0619;CS0620;CS0649;CS0660;CS0661;CS0693;CS1061;CS1503;CS1729;CS7036</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+    </ItemGroup>
+</Project>
