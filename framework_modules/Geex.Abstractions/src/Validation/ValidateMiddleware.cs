@@ -175,7 +175,7 @@ namespace Geex.Validation
                 }
 
                 var validationResult = rule.Validate(value);
-                if (!string.IsNullOrEmpty(validationResult?.ErrorMessage))
+                if (validationResult != ValidationResult.Success)
                 {
                     var message = validationDirective.Message ?? validationResult.ErrorMessage ?? $"Validation failed for rule: {validationDirective.RuleKey}";
                     _logger?.LogDebug("Validation failed for rule '{RuleKey}' at {FieldPath}: {Message}", validationDirective.RuleKey, fieldPath, message);
