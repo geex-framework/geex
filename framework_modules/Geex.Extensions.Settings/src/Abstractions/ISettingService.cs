@@ -50,7 +50,7 @@ namespace Geex.Extensions.Settings
         /// <param name="settingScope">Setting scope</param>
         /// <param name="scopedKey">Scoped key</param>
         /// <returns>Setting entity or null</returns>
-        Task<ISetting?> GetOrNullAsync(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope = default, string? scopedKey = default);
+        Task<ISetting> GetSetting(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope = default, string? scopedKey = default);
 
         /// <summary>
         /// Gets all available setting definitions

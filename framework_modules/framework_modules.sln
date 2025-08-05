@@ -39,8 +39,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatX.RabbitMQ", "Geex.Me
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MediatX", "Geex.MediatX\MediatX\MediatX.csproj", "{3B0A9854-B72A-41D0-B75A-1D87BF43794E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compare-NET-Objects", "patched_packages\Compare-NET-Objects\Compare-NET-Objects.csproj", "{3C6D84D9-CA61-432D-8320-1B2180296124}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.AuditLogs", "Geex.Extensions.AuditLogs\src\Geex.Extensions.AuditLogs.csproj", "{20573EB5-B7A2-4106-9015-6E188977C8AA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Analyzer", "Geex.Analyzer\src\Geex.Analyzer.csproj", "{4B52A79F-D740-49F8-9720-4930BA7AE29A}"
@@ -129,10 +127,6 @@ Global
 		{3B0A9854-B72A-41D0-B75A-1D87BF43794E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B0A9854-B72A-41D0-B75A-1D87BF43794E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B0A9854-B72A-41D0-B75A-1D87BF43794E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3C6D84D9-CA61-432D-8320-1B2180296124}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3C6D84D9-CA61-432D-8320-1B2180296124}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3C6D84D9-CA61-432D-8320-1B2180296124}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3C6D84D9-CA61-432D-8320-1B2180296124}.Release|Any CPU.Build.0 = Release|Any CPU
 		{20573EB5-B7A2-4106-9015-6E188977C8AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{20573EB5-B7A2-4106-9015-6E188977C8AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20573EB5-B7A2-4106-9015-6E188977C8AA}.Release|Any CPU.ActiveCfg = Release|Any CPU

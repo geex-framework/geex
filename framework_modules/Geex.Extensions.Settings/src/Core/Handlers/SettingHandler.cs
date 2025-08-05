@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Settings.Requests;
 using Geex.MultiTenant;
@@ -79,7 +80,7 @@ namespace Geex.Extensions.Settings.Core.Handlers
             return result.Union(SettingDefaults.Where(x => x.Scope == SettingScopeEnumeration.Global), new GenericEqualityComparer<Setting>().With(x => x.Name)).ToList();
         }
 
-        public async Task<Setting?> GetOrNullAsync(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope = default,
+        public async Task<Setting> GetSetting(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope = default,
             string? scopedKey = default)
         {
             return await _redisClient.GetNamedAsync<Setting>(new Setting(settingDefinition, default, settingScope, scopedKey).GetRedisKey());
@@ -216,7 +217,16 @@ namespace Geex.Extensions.Settings.Core.Handlers
 
         async Task<List<ISetting>> ISettingService.GetGlobalSettings() => (await this.GetGlobalSettings()).Cast<ISetting>().ToList();
 
-        async Task<ISetting?> ISettingService.GetOrNullAsync(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope, string? scopedKey) => await GetOrNullAsync(settingDefinition, settingScope, scopedKey);
+        async Task<ISetting> ISettingService.GetSetting(SettingDefinition settingDefinition,
+            SettingScopeEnumeration settingScope, string? scopedKey)
+        {
+            var redisSetting = await GetSetting(settingDefinition, settingScope, scopedKey);
+            if (redisSetting != default)
+            {
+                return redisSetting;
+            }
+            return new Setting(settingDefinition, settingDefinition.DefaultValue, SettingScopeEnumeration.Global, null);
+        }
 
         async Task<List<ISetting>> ISettingService.GetTenantSettings() => (await this.GetTenantSettings()).Cast<ISetting>().ToList();
 
