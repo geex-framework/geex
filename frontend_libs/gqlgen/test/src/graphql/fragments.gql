@@ -1,0 +1,6 @@
+# Fragment for settings
+fragment SettingInfo on Setting {
+  id
+  name
+  value
+}

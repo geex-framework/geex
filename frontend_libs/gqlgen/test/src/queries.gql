@@ -1,0 +1,22 @@
+# Query to get initial settings
+query GetInitialSettings {
+  initSettings {
+    ...SettingInfo
+  }
+}
+
+query OrgCount($orgName: String!) {
+  orgs(filter: { name: { eq: $orgName } }) {
+    totalCount
+  }
+}
+
+# Mutation to create setting
+mutation editSetting($name: SettingDefinition!, $value: Any!) {
+  editSetting(request: {
+    name: $name
+    value: $value
+  }) {
+    ...SettingInfo
+  }
+}
