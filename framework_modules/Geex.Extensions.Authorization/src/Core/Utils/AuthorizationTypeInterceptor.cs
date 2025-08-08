@@ -20,8 +20,11 @@ namespace Geex.Extensions.Authorization.Core.Utils
     /// </summary>
     public class AuthorizationTypeInterceptor : TypeInterceptor
     {
-        // Cache for middleware instances by policy
-        private readonly Dictionary<string, AuthorizeMiddleware> _middlewareCache = new();
+        // Single middleware instance reused for all fields
+        private static readonly AuthorizeMiddleware _authorizeMiddleware = new();
+
+        // Cache for directives by policy
+        private readonly Dictionary<string, AuthorizeDirective> _directiveCache = new();
 
         /// <summary>
         /// mod_query_user, mod_query_user_email
@@ -53,13 +56,14 @@ namespace Geex.Extensions.Authorization.Core.Utils
                 {
                     var descriptor = ObjectFieldDescriptor.From(completionContext.DescriptorContext, fieldDefinition);
                     var policy = $"*_{typeName}_{fieldDefinition.Name}";
-                    descriptor.Authorize(policy);
+                    // this approach is not working, limited by HotChocolate's design
+                    //descriptor.Authorize(policy);
 
-                    // Get or create middleware instance for this policy
-                    var middleware = GetOrCreateMiddleware(policy);
+                    // Get or create directive instance for this policy
+                    var directive = GetOrCreateDirective(policy);
 
-                    // Use the middleware with the next delegate passed at runtime
-                    descriptor.Use(next => async context => await middleware.InvokeAsync(context, next));
+                    // Use the singleton middleware, passing the directive per invocation
+                    descriptor.Use(next => async context => await _authorizeMiddleware.InvokeAsync(context, next, directive));
                     logger.LogInformation($@"成功匹配权限规则:{policy}");
                 }
                 foreach (var misMatch in misMatches)
@@ -70,16 +74,15 @@ namespace Geex.Extensions.Authorization.Core.Utils
             }
         }
 
-        // Factory method to get or create middleware instances
-        private AuthorizeMiddleware GetOrCreateMiddleware(string policy)
+        // Factory method to get or create directive instances
+        private AuthorizeDirective GetOrCreateDirective(string policy)
         {
-            if (!_middlewareCache.TryGetValue(policy, out var middleware))
+            if (!_directiveCache.TryGetValue(policy, out var directive))
             {
-                var directive = new AuthorizeDirective(policy);
-                middleware = new AuthorizeMiddleware(directive);
-                _middlewareCache[policy] = middleware;
+                directive = new AuthorizeDirective(policy);
+                _directiveCache[policy] = directive;
             }
-            return middleware;
+            return directive;
         }
     }
 }

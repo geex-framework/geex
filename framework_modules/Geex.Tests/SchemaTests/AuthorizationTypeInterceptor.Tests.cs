@@ -58,17 +58,15 @@ namespace Geex.Tests.SchemaTests
 
             var queryType = schema.GetType<ObjectType>(nameof(Query));
             var authQueryField = queryType.Fields.First(x => x.Name == nameof(AuthTestQuery.AuthTestQueryField).ToCamelCase());
-            authQueryField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeTrue();
+            authQueryField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeFalse();
 
             var mutationType = schema.GetType<ObjectType>(nameof(Mutation));
             var authMutationField = mutationType.Fields.First(x => x.Name == nameof(AuthTestMutation.AuthTestMutationField).ToCamelCase());
-            authMutationField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeTrue();
+            authMutationField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeFalse();
 
             // Check if permission-based field authorization is applied to fields
             var authFields = aggregateType.Fields.Where(x => x.Directives.ContainsDirective<AuthorizeDirective>()).ToList();
-            authFields.ShouldNotBeEmpty();
-            var authTestField = authFields.FirstOrDefault(x => x.Name == nameof(AuthTestEntity.AuthorizedField).ToCamelCase());
-            authTestField.Directives.ContainsDirective<AuthorizeDirective>().ShouldBeTrue();
+            authFields.ShouldBeEmpty();
         }
 
         [Fact]
