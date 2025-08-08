@@ -1,4 +1,5 @@
 ﻿using HotChocolate.Types;
+
 using MongoDB.Bson.Serialization;
 
 namespace Geex.Extensions.Settings.Core;
@@ -29,9 +30,16 @@ public partial class Setting
         {
             descriptor.BindFieldsImplicitly();
             descriptor.Implements<InterfaceType<ISetting>>();
-            descriptor.ConfigEntity();
 
-            descriptor.Field(x => x.Id).Resolve(x => x.Parent<Setting>().Id ?? "").Type<NonNullType<StringType>>();
+            descriptor.Field(x => x.Id).Resolve(x =>
+            {
+                var setting = x.Parent<Setting>();
+                if (string.IsNullOrEmpty(setting.Id))
+                {
+                    return $"{setting.Name}@{setting.Scope}{(string.IsNullOrEmpty(setting.ScopedKey) ? "" : "@" + setting.ScopedKey)}";
+                }
+                return setting.Id;
+            }).Type<NonNullType<StringType>>();
             //descriptor.Field(x => x.ValidScopes);
             //descriptor.Field(x => x.ScopedKey);
             //descriptor.Field(x => x.Name);
