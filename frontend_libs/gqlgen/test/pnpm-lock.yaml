@@ -2523,6 +2523,7 @@ snapshots:
       graphql: 16.11.0
       graphql-tag: 2.12.6(graphql@16.11.0)
       vite: 4.5.14(@types/node@24.2.0)
+      yaml: 2.8.1
     transitivePeerDependencies:
       - '@fastify/websocket'
       - '@parcel/watcher'

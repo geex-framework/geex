@@ -2,6 +2,7 @@ schema:
   - schemas/api.dev.geexcode.com.schema.graphql
   - https://api.dev.geexcode.com/graphql
 documents:
-  - 'src/**/*.{graphql,gql,js,ts,jsx,tsx,vue}'
-  - '!src/**/*.test.{graphql,gql,js,ts,jsx,tsx,vue}'
-  - '!src/**/*.gql.{js,ts}'
+  - src/**/*.{ts,tsx,vue,gql,graphql}
+  - "!src/**/*.{test,spec}.*"
+  - "!src/**/*.gql.ts"
+  - "!src/**/*.graphql.ts"

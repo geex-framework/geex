@@ -43,7 +43,8 @@
     "release": "pnpm publish --access public --registry https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@graphql-codegen/cli": "^5.0.0"
+    "@graphql-codegen/cli": "^5.0.0",
+    "yaml": "^2.5.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
