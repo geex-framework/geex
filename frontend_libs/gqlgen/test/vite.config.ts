@@ -1,4 +1,4 @@
-import { defineConfig, PluginOption } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import gqlgen from '@geexbox/gqlgen';
 
@@ -8,10 +8,12 @@ export default defineConfig({
     react(),
     gqlgen({
       // optional overrides for testing
-      // schemaLocal: ['src/gql/schema.graphql'],
-      // schemaRemote: ['https://your-graphql-endpoint.com/graphql'],
       // sharedTypesDir: 'src/graphql',
-      // scalars: { URL: 'string' },
+      // scalars: { URL: 'string' }, { Long: { input: BigInt; output: BigInt; }}
+      localSchemaMap:{
+        'https://api.dev.geexcode.com/graphql': 'schemas/api.dev.geexcode.com.schema.graphql',
+        // 'https://api1.dev.geexcode.com/graphql': 'schemas/api1.dev.geexcode.com.schema.graphql',
+      }
     }),
   ],
   build: {

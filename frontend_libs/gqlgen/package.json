@@ -2,7 +2,7 @@
   "name": "@geexbox/gqlgen",
   "version": "1.0.0",
   "description": "Vite plugin to generate typed GraphQL operations near files via GraphQL Code Generator",
-  "keywords": ["vite", "plugin", "graphql", "codegen", "typed-document-node"],
+  "keywords": ["geex", "vite", "plugin", "graphql", "codegen", "typed-document-node"],
   "license": "MIT",
   "type": "module",
   "files": [

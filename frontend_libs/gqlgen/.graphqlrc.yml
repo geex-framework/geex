@@ -1,9 +1,0 @@
-overwrite: true
-# Minimal editor support only; generation is handled by the Vite plugin.
-schema:
-  - ./src/gql/schema.graphql
-  - https://api.dev.geexcode.com/graphql
-documents:
-  - "./src/**/*.{ts,tsx,vue,gql}"
-  - "!./src/**/*.{test,spec}.*"
-  - "!./src/**/*.gql.ts"

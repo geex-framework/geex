@@ -1,0 +1,2103 @@
+directive @audit on FIELD_DEFINITION
+
+directive @first(count: Int = 1) on FIELD
+
+directive @validate(ruleKey: String) on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+
+directive @noLog on FIELD_DEFINITION
+
+directive @last(count: Int = 1) on FIELD
+
+directive @nullBubbling(enable: Boolean! = true) on QUERY | MUTATION | SUBSCRIPTION
+
+"""
+The @tag directive is used to apply arbitrary string
+metadata to a schema location. Custom tooling can use
+this metadata during any step of the schema delivery flow,
+including composition, static analysis, and documentation.
+
+interface Book {
+  id: ID! @tag(name: "your-value")
+  title: String!
+  author: String!
+}
+"""
+directive @tag(name: String!) on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+type Query {
+  _: String
+
+  """列表获取BlobObject"""
+  blobObjects(filter: IBlobObjectFilterInput, skip: Int, take: Int): BlobObjectsCollectionSegment
+  currentUser: IUser
+
+  """
+  获取设备在所有Squad中的授权状态
+  
+  
+  **Returns:**
+  设备授权状态
+  """
+  deviceAuthorizationStatus(
+    """设备ID"""
+    deviceId: String!
+  ): DeviceAuthorizationStatusResult
+
+  """
+  获取当前用户的所有设备
+  
+  
+  **Returns:**
+  设备列表
+  """
+  deviceById(deviceId: String!): QuicollabDevice!
+
+  """获取初始化应用所需的settings"""
+  initSettings: [ISetting!]!
+
+  """Query job states with filtering and pagination"""
+  jobState(filter: JobStateFilterInput, request: QueryJobStatesRequest, skip: Int, sort: [JobStateSortInput!], take: Int): JobStateCollectionSegment
+
+  """列表获取message"""
+  messages(filter: IMessageFilterInput, skip: Int, take: Int): MessagesCollectionSegment
+
+  """
+  获取当前用户的所有设备
+  
+  
+  **Returns:**
+  设备列表
+  """
+  myDevices: [QuicollabDevice!]
+  myPermissions: [String!]!
+
+  """列表获取Squad"""
+  mySquad: [Squad!]
+  orgs(filter: IOrgFilterInput, skip: Int, take: Int): OrgsCollectionSegment
+  roles(filter: IRoleFilterInput, skip: Int, take: Int): RolesCollectionSegment
+
+  """根据provider获取全量设置"""
+  settings(filter: ISettingFilterInput, request: GetSettingsRequest!, skip: Int, take: Int): SettingsCollectionSegment
+
+  """列表获取Squad"""
+  squad(filter: SquadFilterInput, request: QuerySquadRequest, skip: Int, sort: [SquadSortInput!], take: Int): SquadCollectionSegment
+
+  """根据Id获取Squad"""
+  squadById(id: String): Squad
+
+  """Query the current invite code of a squad (creator or admin only)"""
+  squadInviteCode(squadId: String!): String
+
+  """获取当前模板的更新时间"""
+  templateUpdateDate(template: Template!): DateTime!
+
+  """列表获取message"""
+  unreadMessages: [IMessage!]!
+
+  """列表获取User"""
+  users(filter: IUserFilterInput, skip: Int, sort: [IUserSortInput!], take: Int): UsersCollectionSegment
+}
+
+type Mutation {
+  _: String
+
+  """
+  添加成员到Squad（仅Squad管理员）
+  
+  
+  **Returns:**
+  更新后的Squad
+  """
+  addMember(
+    """是否设为管理员"""
+    isAdmin: Boolean = false
+
+    """Squad ID"""
+    squadId: String!
+
+    """要添加的用户ID"""
+    userId: String!
+  ): Squad
+  assignOrgs(request: AssignOrgRequest!): Boolean!
+  assignRoles(request: AssignRoleRequest!): Boolean!
+  authenticate(request: AuthenticateRequest!): UserToken!
+  authorize(request: AuthorizeRequest!): Boolean!
+
+  """
+  设置设备授权状态（Squad管理员）
+  
+  
+  **Returns:**
+  更新后的Squad
+  """
+  authorizeDevice(
+    """设备ID"""
+    deviceId: String!
+
+    """Squad ID"""
+    squadId: String!
+  ): Squad
+
+  """
+  批量授权设备（仅Squad管理员）
+  
+  
+  **Returns:**
+  授权结果
+  """
+  batchAuthorizeDevices(
+    """设备ID数组"""
+    deviceIds: [String!]!
+
+    """Squad ID"""
+    squadId: String!
+  ): [QuicollabDevice!]
+
+  """
+  批量撤销设备授权（仅Squad管理员）
+  
+  
+  **Returns:**
+  撤销结果
+  """
+  batchRevokeDevices(
+    """设备ID数组"""
+    deviceIds: [String!]!
+
+    """Squad ID"""
+    squadId: String!
+  ): [QuicollabDevice!]
+  cancelAuthentication: Boolean!
+
+  """更新设置"""
+  changePassword(request: ChangePasswordRequest!): Boolean!
+
+  """创建BlobObject"""
+  createBlobObject(request: CreateBlobObjectRequest!): IBlobObject!
+
+  """创建消息"""
+  createMessage(request: CreateMessageRequest!): IMessage!
+  createOrg(request: CreateOrgRequest!): IOrg!
+  createRole(request: CreateRoleRequest!): IRole!
+
+  """
+  创建Squad
+  
+  
+  **Returns:**
+  创建的Squad
+  """
+  createSquad(
+    """创建请求"""
+    request: CreateSquadRequest
+  ): Squad
+  createUser(request: CreateUserRequest!): IUser!
+
+  """删除BlobObject"""
+  deleteBlobObject(request: DeleteBlobObjectRequest!): Boolean!
+
+  """删除消息分配"""
+  deleteMessageDistributions(request: DeleteMessageDistributionsRequest!): Boolean!
+  deleteOrg(id: String!): Boolean!
+
+  """
+  删除Squad（仅Squad创建者）
+  
+  
+  **Returns:**
+  删除的数量
+  """
+  deleteSquad(
+    """要删除的Squad ID数组"""
+    ids: [String!]
+  ): Long!
+  deleteUser(request: DeleteUserRequest!): Boolean!
+
+  """编辑消息"""
+  editMessage(request: EditMessageRequest!): Boolean!
+
+  """更新设置"""
+  editSetting(request: EditSettingRequest!): ISetting!
+
+  """
+  编辑Squad信息（仅Squad管理员）
+  
+  
+  **Returns:**
+  更新后的Squad
+  """
+  editSquad(
+    """编辑请求"""
+    request: EditSquadRequest
+  ): Squad
+  editUser(request: EditUserRequest!): IUser!
+  federateAuthenticate(request: FederateAuthenticateRequest!): UserToken!
+  fixUserOrg: Boolean!
+  generateCaptcha(request: SendCaptchaRequest!): Captcha!
+  generateTemplate(args: TemplateGenerationArgsInput!, template: Template!): IBlobObject!
+
+  """
+  加入Squad
+  
+  
+  **Returns:**
+  加入后的Squad
+  """
+  joinSquad(
+    """Squad邀请码"""
+    inviteCode: String!
+  ): Squad
+
+  """
+  离开所有Squad（删除账户前的清理操作）
+  
+  
+  **Returns:**
+  离开的Squad数量
+  """
+  leaveAllSquads: Int!
+
+  """
+  离开Squad
+  
+  
+  **Returns:**
+  操作结果
+  """
+  leaveSquad(
+    """Squad ID"""
+    squadId: String!
+  ): Boolean!
+
+  """标记消息已读"""
+  markMessagesRead(request: MarkMessagesReadRequest!): Boolean!
+  register(request: RegisterUserRequest!): Boolean!
+
+  """
+  注册/转移当前设备到用户名下（在用户登录时自动调用）
+  
+  
+  **Returns:**
+  注册的设备
+  """
+  registerDevice(
+    """注册请求"""
+    request: RegisterDeviceRequest
+  ): QuicollabDevice
+
+  """
+  从Squad中移除设备（设备所有者或Squad管理员）
+  
+  
+  **Returns:**
+  更新后的Squad
+  """
+  removeDeviceFromSquad(
+    """设备ID"""
+    deviceId: String!
+
+    """Squad ID"""
+    squadId: String!
+  ): Squad
+
+  """
+  从Squad移除成员（仅Squad管理员）
+  
+  
+  **Returns:**
+  更新后的Squad
+  """
+  removeMember(
+    """Squad ID"""
+    squadId: String!
+
+    """要移除的用户ID"""
+    userId: String!
+  ): Squad
+
+  """
+  移除成员的管理员权限（仅Squad创建者）
+  
+  
+  **Returns:**
+  更新后的Squad
+  """
+  removeMemberAdmin(
+    """Squad ID"""
+    squadId: String!
+
+    """用户ID"""
+    userId: String!
+  ): Squad
+
+  """
+  移除我的设备
+  
+  
+  **Returns:**
+  操作结果
+  """
+  removeMyDevice(
+    """设备ID"""
+    deviceId: String!
+  ): Boolean!
+
+  """
+  移除用户在Squad中的所有设备（仅Squad管理员）
+  
+  
+  **Returns:**
+  移除的设备数量
+  """
+  removeUserDevicesFromSquad(
+    """Squad ID"""
+    squadId: String!
+
+    """用户ID"""
+    userId: String!
+  ): Long!
+  resetUserPassword(request: ResetUserPasswordRequest!): IUser!
+
+  """
+  撤销设备网络授权（仅Squad管理员）
+  
+  
+  **Returns:**
+  设备信息
+  """
+  revokeDevice(
+    """设备ID"""
+    deviceId: String!
+
+    """Squad ID"""
+    squadId: String!
+  ): QuicollabDevice
+
+  """发送消息"""
+  sendMessage(request: SendNotificationMessageRequest!): Boolean!
+
+  """
+  设置成员为管理员（仅Squad创建者）
+  
+  
+  **Returns:**
+  更新后的Squad
+  """
+  setMemberAsAdmin(
+    """Squad ID"""
+    squadId: String!
+
+    """用户ID"""
+    userId: String!
+  ): Squad
+  setRoleDefault(request: SetRoleDefaultRequest!): Boolean!
+
+  """设置/重置Squad邀请码（仅Squad管理员）"""
+  setSquadInviteCode(inviteCode: String!, squadId: String!): Squad
+
+  """
+  转移设备所有权（仅Squad管理员）
+  
+  
+  **Returns:**
+  更新后的设备
+  """
+  transferDeviceOwnership(
+    """设备ID"""
+    deviceId: String!
+
+    """新所有者ID"""
+    newOwnerId: String!
+  ): QuicollabDevice
+
+  """转移Squad创建者（仅当前创建者）"""
+  transferSquadOwnership(newCreatorUserId: String!, squadId: String!): Squad
+
+  """
+  更新设备信息（设备所有者或Squad管理员）
+  
+  
+  **Returns:**
+  更新后的设备
+  """
+  updateDevice(
+    """设备ID"""
+    deviceId: String!
+
+    """新设备名称"""
+    name: String
+
+    """新设备类型"""
+    type: String
+  ): QuicollabDevice
+
+  """
+  更新设备在线状态（系统内部使用）
+  
+  
+  **Returns:**
+  更新后的设备
+  """
+  updateDeviceOnlineStatus(
+    """设备ID"""
+    deviceId: String!
+
+    """是否在线"""
+    isOnline: Boolean!
+  ): QuicollabDevice
+
+  """
+  更新Squad设置（仅Squad管理员）
+  
+  
+  **Returns:**
+  更新后的Squad
+  """
+  updateSquadSettings(
+    """是否自动授权设备"""
+    autoAuthorizeDevices: Boolean
+
+    """最大成员数量"""
+    maxMemberCount: Int
+
+    """Squad ID"""
+    squadId: String!
+  ): Squad
+
+  """
+  更新用户设备名称
+  
+  
+  **Returns:**
+  更新后的设备
+  """
+  updateUserDeviceName(
+    """设备ID"""
+    deviceId: String!
+
+    """新名称"""
+    newName: String!
+  ): QuicollabDevice
+  validateCaptcha(request: ValidateCaptchaRequest!): Boolean!
+}
+
+type Subscription {
+  _: String
+
+  """测试"""
+  echo(text: String!): String!
+
+  """订阅服务器对单个用户的前端调用"""
+  onPrivateNotify: ClientNotify!
+
+  """订阅广播"""
+  onPublicNotify: ClientNotify!
+}
+
+"""The contract for Entity classes"""
+interface IEntityBase {
+  createdOn: DateTime!
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+}
+
+interface IPagedList {
+  pageIndex: Int!
+  pageSize: Int!
+  totalCount: Int!
+  totalPage: Int!
+}
+
+"""The `Upload` scalar type represents a file upload."""
+scalar Upload
+
+type IMessageContent {
+  _: String!
+}
+
+type User implements IUser & IEntityBase & IAuthUser {
+  avatarFile: IBlobObject
+  avatarFileId: String
+  claims(filter: UserClaimFilterInput): [UserClaim!]!
+  createdOn: DateTime!
+  email: String
+  id: String!
+  isEnable: Boolean!
+  loginProvider: LoginProviderEnum!
+  modifiedOn: DateTime!
+  nickname: String
+  openId: String
+  orgCodes: [String!]!
+  orgs: [IOrg!]!
+  permissions: [String!]!
+  phoneNumber: String
+  roleIds: [String!]!
+  roleNames: [String!]!
+  roles: [IRole!]!
+  tenantCode: String
+  username: String!
+}
+
+"""mime type, e.g. application/json"""
+scalar MimeType
+
+type AuditLog implements IEntityBase {
+  clientIp: String
+  createdOn: DateTime!
+  id: String!
+  isSuccess: Boolean!
+  modifiedOn: DateTime!
+  operation: String
+  operationName: String!
+  operationType: OperationType!
+  operatorId: String
+  result: Any
+
+  """租户编码, 为null时为宿主数据"""
+  tenantCode: String
+  variables: Any
+}
+
+scalar ObjectId
+
+"""Squad中的设备状态"""
+type SquadDeviceStatus {
+  """是否已授权"""
+  isAuthorized: Boolean!
+
+  """当前用户是否为该Squad管理员"""
+  isUserSquadAdmin: Boolean!
+
+  """Squad ID"""
+  squadId: String!
+
+  """Squad名称"""
+  squadName: String!
+}
+
+"""设备授权状态结果"""
+type DeviceAuthorizationStatusResult {
+  """设备ID"""
+  deviceId: String!
+
+  """设备名称"""
+  deviceName: String!
+
+  """Squad状态列表"""
+  squadStatuses: [SquadDeviceStatus!]!
+
+  """设备所有者ID"""
+  userId: String!
+}
+
+type Org implements IEntityBase & IOrg {
+  """所有父组织编码"""
+  allParentOrgCodes: [String!]!
+
+  """所有父组织"""
+  allParentOrgs: [IOrg!]!
+
+  """所有子组织编码"""
+  allSubOrgCodes: [String!]!
+
+  """所有子组织"""
+  allSubOrgs: [IOrg!]!
+
+  """编码"""
+  code: String!
+  createdOn: DateTime!
+
+  """直系子组织编码"""
+  directSubOrgCodes: [String!]!
+
+  """直系子组织"""
+  directSubOrgs: [IOrg!]!
+  id: String!
+  modifiedOn: DateTime!
+  name: String!
+
+  """组织类型"""
+  orgType: OrgTypeEnum!
+
+  """父组织"""
+  parentOrg: IOrg!
+
+  """父组织编码"""
+  parentOrgCode: String!
+
+  """租户编码, 为null时为宿主数据"""
+  tenantCode: String
+}
+
+scalar Any
+
+type JobExecutionHistory implements IEntityBase {
+  createdOn: DateTime!
+  executionEndTime: DateTime
+  executionStartTime: DateTime!
+  id: String!
+  isSuccess: Boolean!
+  jobName: String!
+  message: String!
+  modifiedOn: DateTime!
+}
+
+"""Squad聚合根 - 远程协作小组"""
+type Squad implements IEntityBase {
+  """Squad管理员用户ID列表"""
+  adminUserIds: [String!]!
+
+  """设备授权状态字典，Key为设备ID，Value为是否已授权"""
+  authorizedDevices: [String!]!
+
+  """Squad是否启用设备自动授权"""
+  autoAuthorizeDevices: Boolean!
+  createdOn: DateTime!
+
+  """Squad创建者ID"""
+  creatorId: String!
+  id: String!
+
+  """邀请码（用于加入Squad）"""
+  inviteCode: String!
+
+  """Squad最大成员数量限制"""
+  maxMemberCount: Int!
+  modifiedOn: DateTime!
+
+  """Squad名称"""
+  name: String!
+
+  """Squad成员用户ID列表"""
+  userIds: [String!]!
+
+  """Squad成员用户, 此处自动将系统默认类型User转换为子类QuicollabUser实体"""
+  users: [IQuicollabUser!]!
+
+  """ZeroTier网络ID"""
+  ztNetNetworkId: String!
+}
+
+type UserToken {
+  loginProvider: LoginProviderEnum
+  name: String!
+  token: String
+  user: IAuthUser!
+  userId: String!
+}
+
+input QuerySquadRequest {
+  _: String
+  name: String
+}
+
+"""role为了方便和string的相互转化, 采用class的形式"""
+type Role implements IEntityBase & IRole {
+  code: String!
+  createdOn: DateTime!
+  id: String!
+  isDefault: Boolean!
+  isEnabled: Boolean!
+  isStatic: Boolean!
+  modifiedOn: DateTime!
+  name: String!
+  permissions: [String!]!
+  tenantCode: String
+  users: [IUser!]!
+}
+
+"""普通message"""
+type Message implements IMessage & IEntityBase {
+  content: IMessageContent!
+  createdOn: DateTime!
+  distributions: [MessageDistribution!]!
+  fromUserId: String
+  id: String!
+  messageType: MessageType!
+  modifiedOn: DateTime!
+  severity: MessageSeverityType!
+  tenantCode: String
+  time: DateTime!
+  title: String!
+  toUserIds: [String!]!
+}
+
+type QuicollabDevice implements IEntityBase {
+  createdOn: DateTime!
+
+  """全局设备名称（用于ZeroTier网络中的标识）"""
+  globalName: String!
+  id: String!
+  isAuthorizedInSquad(squadId: String!): Boolean!
+
+  """设备是否在线"""
+  isOnline: Boolean!
+
+  """最后上线时间"""
+  lastOnlineTime: DateTime
+  modifiedOn: DateTime!
+
+  """设备名称"""
+  name: String!
+
+  """设备类型（如：PC、Mobile、Mac等）"""
+  type: String!
+
+  """设备所属用户"""
+  user: IQuicollabUser
+
+  """设备所属用户ID"""
+  userId: String!
+  ztDeviceIp(squadId: String!): String
+
+  """ZeroTier设备ID，全局唯一"""
+  ztNetDeviceId: String!
+}
+
+"""Represents a blob object in the storage system"""
+type BlobObject implements IBlobObject & IEntityBase {
+  createdOn: DateTime!
+  expireAt: DateTime
+  fileName: String
+  fileSize: Long!
+  id: String!
+  md5: String
+  mimeType: String
+  modifiedOn: DateTime!
+  storageType: BlobStorageType!
+  url: String
+}
+
+type NewMessageClientNotify implements ClientNotify {
+  createdOn: DateTime!
+  message: Message!
+}
+
+"""^[1]([3-9])[0-9]{9}$"""
+scalar ChinesePhoneNumber
+
+type Captcha {
+  bitmap: String
+  captchaType: CaptchaType!
+  key: String!
+}
+
+type QuicollabUser implements IEntityBase & IUser & IAuthUser & IQuicollabUser {
+  avatarFile: IBlobObject
+  avatarFileId: String
+  claims: [UserClaim!]!
+  createdOn: DateTime!
+  devices: [QuicollabDevice!]!
+  email: String
+  id: String!
+  isEnable: Boolean!
+  loginProvider: LoginProviderEnum!
+  modifiedOn: DateTime!
+  nickname: String
+  openId: String
+  orgCodes: [String!]!
+  orgs: [IOrg!]!
+
+  """注意：此处的 Password 是经过二次哈希处理的密码，前端会单独将密码进行哈希处理后传入, 数据库存储值为二次加盐哈希后的值。"""
+  password: String!
+  permissions: [String!]!
+  phoneNumber: String
+  roleIds: [String!]!
+  roleNames: [String!]!
+  roles: [IRole!]!
+  tenantCode: String
+  username: String!
+}
+
+type DataChangeClientNotify implements ClientNotify {
+  createdOn: DateTime!
+  dataChangeType: DataChangeType!
+}
+
+type Setting implements ISetting & IEntityBase {
+  createdOn: DateTime!
+  id: String!
+  modifiedOn: DateTime!
+  name: SettingDefinition!
+  scope: SettingScopeEnumeration!
+  scopedKey: String
+  validScopes: [SettingScopeEnumeration!]!
+  value: Any
+}
+
+type JobState implements IEntityBase {
+  createdOn: DateTime!
+  cron: String!
+  executionHistories(filter: JobExecutionHistoryFilterInput, skip: Int, take: Int): ExecutionHistoriesCollectionSegment
+  id: String!
+  jobName: String!
+  lastExecutionTime: DateTime
+  modifiedOn: DateTime!
+  nextExecutionTime: DateTime
+}
+
+interface ClientNotify {
+  createdOn: DateTime!
+}
+
+enum SchematicsPermission {
+  schematics_query_template
+  schematics_mutation_editTemplate
+}
+
+"""
+this is a aggregate root of this module, we name it the same as the module feel free to change it to its real name
+"""
+enum Template {
+  module
+  schematics_admin_module
+  solution
+  client_admin
+  client_docs
+}
+
+enum SettingsPermission {
+  settings_mutation_editSetting
+}
+
+enum AuthorizationPermission {
+  authorization_mutation_authorize
+}
+
+enum TemplatePermission {
+  schematics_query_template
+  schematics_mutation_editTemplate
+}
+
+enum QuicollabPermission {
+  quicollab_mutation_addDeviceToSquad
+  quicollab_mutation_removeMemberAdmin
+  quicollab_mutation_setMemberAsAdmin
+  quicollab_mutation_updateSquadSettings
+  quicollab_mutation_removeMember
+  quicollab_mutation_removeDeviceFromSquad
+  quicollab_mutation_authorizeDevice
+  quicollab_mutation_addMember
+  quicollab_mutation_batchRevokeDevices
+  quicollab_mutation_batchAuthorizeDevices
+  quicollab_mutation_updateDevice
+  quicollab_mutation_deleteSquad
+  quicollab_mutation_editSquad
+  quicollab_mutation_revokeDevice
+  quicollab_mutation_setActiveDevice
+  quicollab_mutation_createSquad
+}
+
+enum BlobStorageType {
+  FileSystem
+  Cache
+  Db
+}
+
+enum AppPermission {
+  schematics_query_template
+  identity_mutation_createRole
+  quicollab_mutation_addDeviceToSquad
+  settings_mutation_editSetting
+  quicollab_mutation_removeMemberAdmin
+  quicollab_mutation_setMemberAsAdmin
+  identity_query_roles
+  quicollab_mutation_updateSquadSettings
+  quicollab_mutation_removeMember
+  quicollab_mutation_removeDeviceFromSquad
+  authorization_mutation_authorize
+  identity_mutation_editUser
+  identity_query_users
+  quicollab_mutation_authorizeDevice
+  identity_mutation_createUser
+  identity_mutation_editRole
+  quicollab_mutation_addMember
+  quicollab_mutation_batchRevokeDevices
+  quicollab_mutation_batchAuthorizeDevices
+  quicollab_mutation_updateDevice
+  identity_mutation_editOrg
+  quicollab_mutation_deleteSquad
+  quicollab_mutation_editSquad
+  quicollab_mutation_revokeDevice
+  schematics_mutation_editTemplate
+  quicollab_mutation_setActiveDevice
+  identity_mutation_createOrg
+  quicollab_mutation_createSquad
+}
+
+enum AppSettings {
+  AppPermissions
+  AppAppMenu
+  AppAppName
+}
+
+enum QuicollabSettings {
+  QuicollabModuleName
+}
+
+enum GeexClaimType {
+  Provider
+  Org
+  ClientId
+  Tenant
+  Sub
+  Role
+  FullName
+  Expires
+  Nickname
+}
+
+enum DataChangeType {
+  Org
+  Tenant
+  Role
+  User
+}
+
+enum MessagingSettings {
+  MessagingModuleName
+}
+
+enum LoginProviderEnum {
+  Geex
+  Local
+}
+
+enum OperationType {
+  Query
+  Subscription
+  Mutation
+}
+
+enum SettingScopeEnumeration {
+  Tenant
+  User
+  Global
+}
+
+enum CaptchaProvider {
+  Image
+  Sms
+}
+
+enum AuthorizeTargetType {
+  Role
+  User
+}
+
+enum LocalizationSettings {
+  LocalizationData
+  LocalizationLanguage
+}
+
+enum OrgTypeEnum {
+  Default
+}
+
+enum SettingDefinition {
+  SchematicsModuleName
+  AppPermissions
+  AppAppMenu
+  LocalizationData
+  QuicollabModuleName
+  BlobStorageModuleName
+  AppAppName
+  LocalizationLanguage
+  MessagingModuleName
+}
+
+enum OrgPermission {
+  identity_mutation_editOrg
+  identity_mutation_createOrg
+}
+
+enum RolePermission {
+  identity_mutation_createRole
+  identity_query_roles
+  identity_mutation_editRole
+}
+
+enum SquadPermission {
+  quicollab_mutation_addDeviceToSquad
+  quicollab_mutation_removeMemberAdmin
+  quicollab_mutation_setMemberAsAdmin
+  quicollab_mutation_updateSquadSettings
+  quicollab_mutation_removeMember
+  quicollab_mutation_removeDeviceFromSquad
+  quicollab_mutation_addMember
+  quicollab_mutation_deleteSquad
+  quicollab_mutation_editSquad
+  quicollab_mutation_createSquad
+}
+
+enum BlobStorageSettings {
+  BlobStorageModuleName
+}
+
+enum UserPermission {
+  identity_mutation_editUser
+  identity_query_users
+  identity_mutation_createUser
+}
+
+"""inherit this enumeration to customise your own business exceptions"""
+enum GeexExceptionType {
+  ValidationFailed
+  ExternalError
+  Unknown
+  OnPurpose
+  NotFound
+  Conflict
+}
+
+enum SchematicsSettings {
+  SchematicsModuleName
+}
+
+enum IdentityPermission {
+  identity_mutation_createRole
+  identity_query_roles
+  identity_mutation_editUser
+  identity_query_users
+  identity_mutation_createUser
+  identity_mutation_editRole
+  identity_mutation_editOrg
+  identity_mutation_createOrg
+}
+
+enum GeexLoginProviders {
+  Geex
+}
+
+enum DevicePermission {
+  quicollab_mutation_authorizeDevice
+  quicollab_mutation_batchRevokeDevices
+  quicollab_mutation_batchAuthorizeDevices
+  quicollab_mutation_updateDevice
+  quicollab_mutation_revokeDevice
+  quicollab_mutation_setActiveDevice
+}
+
+enum ApplyPolicy {
+  BEFORE_RESOLVER
+  AFTER_RESOLVER
+  VALIDATION
+}
+
+"""Represents a blob object in the storage system"""
+input IBlobObjectFilterInput {
+  and: [IBlobObjectFilterInput!]
+  or: [IBlobObjectFilterInput!]
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: StringOperationFilterInput
+
+  """MD5 hash of the file content"""
+  md5: StringOperationFilterInput
+
+  """MIME type of the file"""
+  mimeType: StringOperationFilterInput
+
+  """Storage type used for this blob"""
+  storageType: ClassEnumOperationFilterInputTypeOfBlobStorageTypeFilterInput
+
+  """Size of the file in bytes"""
+  fileSize: LongOperationFilterInput
+
+  """Name of the file"""
+  fileName: StringOperationFilterInput
+}
+
+"""A segment of a collection."""
+type BlobObjectsCollectionSegment {
+  """A flattened list of the items."""
+  items: [IBlobObject]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+input ISettingFilterInput {
+  and: [ISettingFilterInput!]
+  or: [ISettingFilterInput!]
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: StringOperationFilterInput
+  name: SettingDefinitionOperationFilterInput
+  scope: SettingScopeEnumerationOperationFilterInput
+  scopedKey: StringOperationFilterInput
+}
+
+"""A segment of a collection."""
+type SettingsCollectionSegment {
+  """A flattened list of the items."""
+  items: [Setting]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+input IOrgFilterInput {
+  and: [IOrgFilterInput!]
+  or: [IOrgFilterInput!]
+  name: StringOperationFilterInput
+
+  """以.作为分割线的编码"""
+  code: StringOperationFilterInput
+
+  """父组织编码"""
+  parentOrgCode: StringOperationFilterInput
+
+  """组织类型"""
+  orgType: ClassEnumOperationFilterInputTypeOfOrgTypeEnumFilterInput
+}
+
+"""A segment of a collection."""
+type OrgsCollectionSegment {
+  """A flattened list of the items."""
+  items: [IOrg]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+input IRoleFilterInput {
+  and: [IRoleFilterInput!]
+  or: [IRoleFilterInput!]
+  name: StringOperationFilterInput
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: StringOperationFilterInput
+  users: ListFilterInputTypeOfIUserFilterInput
+}
+
+"""A segment of a collection."""
+type RolesCollectionSegment {
+  """A flattened list of the items."""
+  items: [IRole]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+input IUserFilterInput {
+  and: [IUserFilterInput!]
+  or: [IUserFilterInput!]
+  username: StringOperationFilterInput
+  nickname: StringOperationFilterInput
+  isEnable: BooleanOperationFilterInput
+  phoneNumber: StringOperationFilterInput
+  createdOn: DateTimeOperationFilterInput
+  orgCodes: ListStringOperationFilterInput
+  roleIds: ListStringOperationFilterInput
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: StringOperationFilterInput
+}
+
+input IUserSortInput {
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: SortEnumType
+  createdOn: SortEnumType
+}
+
+"""A segment of a collection."""
+type UsersCollectionSegment {
+  """A flattened list of the items."""
+  items: [IUser]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+"""
+this is a aggregate root of this module, we name it the same as the module feel free to change it to its real name
+"""
+input IMessageFilterInput {
+  and: [IMessageFilterInput!]
+  or: [IMessageFilterInput!]
+  messageType: MessageTypeOperationFilterInput
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: StringOperationFilterInput
+  fromUserId: StringOperationFilterInput
+  content: IMessageContentFilterInput
+  toUserIds: ListStringOperationFilterInput
+  severity: MessageSeverityTypeOperationFilterInput
+  title: StringOperationFilterInput
+  time: DateTimeOperationFilterInput
+}
+
+"""A segment of a collection."""
+type MessagesCollectionSegment {
+  """A flattened list of the items."""
+  items: [Message]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+input JobStateFilterInput {
+  and: [JobStateFilterInput!]
+  or: [JobStateFilterInput!]
+  jobName: StringOperationFilterInput
+  cron: StringOperationFilterInput
+  lastExecutionTime: DateTimeOperationFilterInput
+  nextExecutionTime: DateTimeOperationFilterInput
+  executionHistories: ListFilterInputTypeOfJobExecutionHistoryFilterInput
+  modifiedOn: DateTimeOperationFilterInput
+  id: StringOperationFilterInput
+  createdOn: DateTimeOperationFilterInput
+}
+
+input JobStateSortInput {
+  jobName: SortEnumType
+  cron: SortEnumType
+  lastExecutionTime: SortEnumType
+  nextExecutionTime: SortEnumType
+  modifiedOn: SortEnumType
+  id: SortEnumType
+  createdOn: SortEnumType
+}
+
+"""A segment of a collection."""
+type JobStateCollectionSegment {
+  """A flattened list of the items."""
+  items: [JobState]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+"""Squad聚合根 - 远程协作小组"""
+input SquadFilterInput {
+  and: [SquadFilterInput!]
+  or: [SquadFilterInput!]
+
+  """Squad名称"""
+  name: StringOperationFilterInput
+
+  """ZeroTier网络ID"""
+  ztNetNetworkId: StringOperationFilterInput
+
+  """Squad成员用户ID列表"""
+  userIds: ListStringOperationFilterInput
+
+  """Squad管理员用户ID列表"""
+  adminUserIds: ListStringOperationFilterInput
+
+  """Squad创建者ID"""
+  creatorId: StringOperationFilterInput
+
+  """Squad是否启用设备自动授权"""
+  autoAuthorizeDevices: BooleanOperationFilterInput
+
+  """Squad最大成员数量限制"""
+  maxMemberCount: IntOperationFilterInput
+
+  """邀请码（用于加入Squad）"""
+  inviteCode: StringOperationFilterInput
+
+  """设备授权状态字典，Key为设备ID，Value为是否已授权"""
+  authorizedDevices: ListStringOperationFilterInput
+
+  """Squad成员用户, 此处自动将系统默认类型User转换为子类QuicollabUser实体"""
+  users: ListFilterInputTypeOfIQuicollabUserFilterInput
+  modifiedOn: DateTimeOperationFilterInput
+  id: StringOperationFilterInput
+  createdOn: DateTimeOperationFilterInput
+}
+
+"""Squad聚合根 - 远程协作小组"""
+input SquadSortInput {
+  """Squad名称"""
+  name: SortEnumType
+
+  """ZeroTier网络ID"""
+  ztNetNetworkId: SortEnumType
+
+  """Squad创建者ID"""
+  creatorId: SortEnumType
+
+  """Squad是否启用设备自动授权"""
+  autoAuthorizeDevices: SortEnumType
+
+  """Squad最大成员数量限制"""
+  maxMemberCount: SortEnumType
+
+  """邀请码（用于加入Squad）"""
+  inviteCode: SortEnumType
+  modifiedOn: SortEnumType
+  id: SortEnumType
+  createdOn: SortEnumType
+}
+
+"""A segment of a collection."""
+type SquadCollectionSegment {
+  """A flattened list of the items."""
+  items: [Squad]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+input UserClaimFilterInput {
+  and: [UserClaimFilterInput!]
+  or: [UserClaimFilterInput!]
+  claimType: StringOperationFilterInput
+  claimValue: StringOperationFilterInput
+}
+
+interface IUser implements IAuthUser & IEntityBase {
+  avatarFile: IBlobObject
+  avatarFileId: String
+  claims: [UserClaim!]!
+  createdOn: DateTime!
+  email: String
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+  isEnable: Boolean!
+  loginProvider: LoginProviderEnum!
+  nickname: String
+  openId: String
+  orgCodes: [String!]!
+  orgs: [IOrg!]!
+  permissions: [String!]!
+  phoneNumber: String
+  roleIds: [String!]!
+  roleNames: [String!]!
+  roles: [IRole!]!
+  username: String!
+}
+
+"""Represents a blob object in the storage system"""
+interface IBlobObject implements IEntityBase {
+  createdOn: DateTime!
+
+  """Expiration time for the blob (if applicable)"""
+  expireAt: DateTime
+
+  """Name of the file"""
+  fileName: String
+
+  """Size of the file in bytes"""
+  fileSize: Long!
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+
+  """MD5 hash of the file content"""
+  md5: String
+
+  """MIME type of the file"""
+  mimeType: String
+
+  """Storage type used for this blob"""
+  storageType: BlobStorageType
+
+  """URL to access the file"""
+  url: String
+}
+
+"""
+this is a aggregate root of this module, we name it the same as the module feel free to change it to its real name
+"""
+interface IMessage implements IEntityBase {
+  content: IMessageContent!
+  createdOn: DateTime!
+  fromUserId: String
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+  messageType: MessageType!
+  severity: MessageSeverityType!
+  time: DateTime!
+  title: String!
+  toUserIds: [String!]!
+}
+
+interface ISetting implements IEntityBase {
+  createdOn: DateTime!
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+  name: SettingDefinition!
+  scope: SettingScopeEnumeration!
+  scopedKey: String
+  value: Any
+}
+
+input JobExecutionHistoryFilterInput {
+  and: [JobExecutionHistoryFilterInput!]
+  or: [JobExecutionHistoryFilterInput!]
+  jobName: StringOperationFilterInput
+  executionStartTime: DateTimeOperationFilterInput
+  executionEndTime: DateTimeOperationFilterInput
+  isSuccess: BooleanOperationFilterInput
+  message: StringOperationFilterInput
+  modifiedOn: DateTimeOperationFilterInput
+  id: StringOperationFilterInput
+  createdOn: DateTimeOperationFilterInput
+}
+
+"""A segment of a collection."""
+type ExecutionHistoriesCollectionSegment {
+  """A flattened list of the items."""
+  items: [JobExecutionHistory!]
+
+  """Information to aid in pagination."""
+  pageInfo: CollectionSegmentInfo!
+  totalCount: Int!
+}
+
+input StringOperationFilterInput {
+  and: [StringOperationFilterInput!]
+  or: [StringOperationFilterInput!]
+  eq: String
+  neq: String
+  contains: String
+  ncontains: String
+  in: [String]
+  nin: [String]
+  startsWith: String
+  nstartsWith: String
+  endsWith: String
+  nendsWith: String
+}
+
+input ClassEnumOperationFilterInputTypeOfBlobStorageTypeFilterInput {
+  eq: BlobStorageType
+  neq: BlobStorageType
+  in: [BlobStorageType]
+  nin: [BlobStorageType]
+}
+
+input LongOperationFilterInput {
+  eq: Long
+  neq: Long
+  in: [Long]
+  nin: [Long]
+  gt: Long
+  ngt: Long
+  gte: Long
+  ngte: Long
+  lt: Long
+  nlt: Long
+  lte: Long
+  nlte: Long
+}
+
+"""Information about the offset pagination."""
+type CollectionSegmentInfo {
+  """
+  Indicates whether more items exist following the set defined by the clients arguments.
+  """
+  hasNextPage: Boolean!
+
+  """
+  Indicates whether more items exist prior the set defined by the clients arguments.
+  """
+  hasPreviousPage: Boolean!
+}
+
+input SettingDefinitionOperationFilterInput {
+  eq: SettingDefinition
+  neq: SettingDefinition
+  in: [SettingDefinition]
+  nin: [SettingDefinition]
+}
+
+input SettingScopeEnumerationOperationFilterInput {
+  eq: SettingScopeEnumeration
+  neq: SettingScopeEnumeration
+  in: [SettingScopeEnumeration]
+  nin: [SettingScopeEnumeration]
+}
+
+input ClassEnumOperationFilterInputTypeOfOrgTypeEnumFilterInput {
+  eq: OrgTypeEnum
+  neq: OrgTypeEnum
+  in: [OrgTypeEnum]
+  nin: [OrgTypeEnum]
+}
+
+interface IOrg implements IEntityBase {
+  """所有父组织编码"""
+  allParentOrgCodes: [String!]!
+
+  """所有父组织"""
+  allParentOrgs: [IOrg!]!
+
+  """所有子组织编码"""
+  allSubOrgCodes: [String!]!
+
+  """所有子组织"""
+  allSubOrgs: [IOrg!]!
+
+  """以.作为分割线的编码"""
+  code: String!
+  createdOn: DateTime!
+
+  """直系子组织编码"""
+  directSubOrgCodes: [String!]!
+
+  """直系子组织"""
+  directSubOrgs: [IOrg!]!
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+  name: String!
+
+  """组织类型"""
+  orgType: OrgTypeEnum!
+
+  """父组织"""
+  parentOrg: IOrg!
+
+  """父组织编码"""
+  parentOrgCode: String!
+}
+
+input ListFilterInputTypeOfIUserFilterInput {
+  all: IUserFilterInput
+  none: IUserFilterInput
+  some: IUserFilterInput
+  any: Boolean
+}
+
+interface IRole implements IEntityBase {
+  code: String!
+  createdOn: DateTime!
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+  isDefault: Boolean!
+  isEnabled: Boolean!
+  isStatic: Boolean!
+  name: String!
+  permissions: [String!]!
+  users: [IUser!]!
+}
+
+input BooleanOperationFilterInput {
+  eq: Boolean
+  neq: Boolean
+}
+
+input DateTimeOperationFilterInput {
+  eq: DateTime
+  neq: DateTime
+  in: [DateTime]
+  nin: [DateTime]
+  gt: DateTime
+  ngt: DateTime
+  gte: DateTime
+  ngte: DateTime
+  lt: DateTime
+  nlt: DateTime
+  lte: DateTime
+  nlte: DateTime
+}
+
+input ListStringOperationFilterInput {
+  all: StringOperationFilterInput
+  none: StringOperationFilterInput
+  some: StringOperationFilterInput
+  any: Boolean
+}
+
+enum SortEnumType {
+  ascend
+  descend
+}
+
+input MessageTypeOperationFilterInput {
+  eq: MessageType
+  neq: MessageType
+  in: [MessageType!]
+  nin: [MessageType!]
+}
+
+input IMessageContentFilterInput {
+  and: [IMessageContentFilterInput!]
+  or: [IMessageContentFilterInput!]
+  _: StringOperationFilterInput
+}
+
+input MessageSeverityTypeOperationFilterInput {
+  eq: MessageSeverityType
+  neq: MessageSeverityType
+  in: [MessageSeverityType!]
+  nin: [MessageSeverityType!]
+}
+
+input ListFilterInputTypeOfJobExecutionHistoryFilterInput {
+  all: JobExecutionHistoryFilterInput
+  none: JobExecutionHistoryFilterInput
+  some: JobExecutionHistoryFilterInput
+  any: Boolean
+}
+
+input IntOperationFilterInput {
+  eq: Int
+  neq: Int
+  in: [Int]
+  nin: [Int]
+  gt: Int
+  ngt: Int
+  gte: Int
+  ngte: Int
+  lt: Int
+  nlt: Int
+  lte: Int
+  nlte: Int
+}
+
+input ListFilterInputTypeOfIQuicollabUserFilterInput {
+  all: IQuicollabUserFilterInput
+  none: IQuicollabUserFilterInput
+  some: IQuicollabUserFilterInput
+  any: Boolean
+}
+
+"""
+The `Long` scalar type represents non-fractional signed whole 64-bit numeric values. Long can represent values between -(2^63) and 2^63 - 1.
+"""
+scalar Long
+
+"""The `DateTime` scalar represents an ISO-8601 compliant date time type."""
+scalar DateTime
+
+input IQuicollabUserFilterInput {
+  and: [IQuicollabUserFilterInput!]
+  or: [IQuicollabUserFilterInput!]
+  devices: ListFilterInputTypeOfQuicollabDeviceFilterInput
+}
+
+input ListFilterInputTypeOfQuicollabDeviceFilterInput {
+  all: QuicollabDeviceFilterInput
+  none: QuicollabDeviceFilterInput
+  some: QuicollabDeviceFilterInput
+  any: Boolean
+}
+
+input QuicollabDeviceFilterInput {
+  and: [QuicollabDeviceFilterInput!]
+  or: [QuicollabDeviceFilterInput!]
+
+  """ZeroTier设备ID，全局唯一"""
+  ztNetDeviceId: StringOperationFilterInput
+
+  """设备所属用户ID"""
+  userId: StringOperationFilterInput
+
+  """设备名称"""
+  name: StringOperationFilterInput
+
+  """设备类型（如：PC、Mobile、Mac等）"""
+  type: StringOperationFilterInput
+
+  """最后上线时间"""
+  lastOnlineTime: DateTimeOperationFilterInput
+
+  """设备是否在线"""
+  isOnline: BooleanOperationFilterInput
+
+  """设备所属用户"""
+  user: IQuicollabUserFilterInput
+
+  """全局设备名称（用于ZeroTier网络中的标识）"""
+  globalName: StringOperationFilterInput
+  modifiedOn: DateTimeOperationFilterInput
+  id: StringOperationFilterInput
+  createdOn: DateTimeOperationFilterInput
+}
+
+input AuthenticateRequest {
+  password: String!
+  userIdentifier: String!
+}
+
+input FederateAuthenticateRequest {
+  """OAuth Code"""
+  code: String!
+
+  """登陆提供方"""
+  loginProvider: LoginProviderEnum = Local
+}
+
+type KeyValuePairOfStringAndObject {
+  key: String!
+}
+
+input AuthorizeRequest {
+  allowedPermissions: [AppPermission!]!
+  authorizeTargetType: AuthorizeTargetType!
+
+  """
+  授权目标:
+  用户or角色id
+  """
+  target: String!
+}
+
+type UserClaim {
+  claimType: String!
+  claimValue: String!
+}
+
+input CreateBlobObjectRequest {
+  file: Upload!
+
+  """can pass null, will be calculated"""
+  md5: String
+  storageType: BlobStorageType!
+}
+
+input DeleteBlobObjectRequest {
+  ids: [String!]!
+  storageType: BlobStorageType!
+}
+
+input EditSettingRequest {
+  name: SettingDefinition
+  scope: SettingScopeEnumeration
+  scopedKey: String
+  value: Any
+}
+
+input GetSettingsRequest {
+  _: String
+  filterByName: String
+  scope: SettingScopeEnumeration
+  settingDefinitions: [SettingDefinition!]
+}
+
+enum MessageSeverityType {
+  """Info."""
+  INFO
+
+  """Success."""
+  SUCCESS
+
+  """Warn."""
+  WARN
+
+  """Error."""
+  ERROR
+
+  """Fatal."""
+  FATAL
+}
+
+input CreateOrgRequest {
+  code: String!
+  createUserId: String
+  name: String!
+  orgType: OrgTypeEnum = Default
+}
+
+enum MessageType {
+  """
+  通知, 告知某个信息的消息
+  区别于单独的toast, 这个消息会留档
+  """
+  NOTIFICATION
+
+  """待办, 带有链接跳转/当前状态等交互功能的消息"""
+  TODO
+
+  """用户交互消息, 通常有一个非系统的触发者"""
+  INTERACT
+}
+
+input CreateRoleRequest {
+  isDefault: Boolean
+  isStatic: Boolean
+  roleCode: String!
+  roleName: String!
+}
+
+input SetRoleDefaultRequest {
+  roleId: String!
+}
+
+input AssignRoleRequest {
+  roles: [String!]!
+  userIds: [String!]!
+}
+
+input AssignOrgRequest {
+  userOrgsMap: [UserOrgMapItemInput!]!
+}
+
+interface IQuicollabUser implements IUser & IAuthUser & IEntityBase {
+  avatarFile: IBlobObject
+  avatarFileId: String
+  claims: [UserClaim!]!
+  createdOn: DateTime!
+  devices: [QuicollabDevice!]!
+  email: String
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+  isEnable: Boolean!
+  loginProvider: LoginProviderEnum!
+  nickname: String
+  openId: String
+  orgCodes: [String!]!
+  orgs: [IOrg!]!
+  permissions: [String!]!
+  phoneNumber: String
+  roleIds: [String!]!
+  roleNames: [String!]!
+  roles: [IRole!]!
+  username: String!
+}
+
+input EditUserRequest {
+  avatarFileId: String
+  claims: [UserClaimInput!] = []
+  email: String
+  id: String!
+  isEnable: Boolean
+  nickname: String!
+  orgCodes: [String!]
+  phoneNumber: String
+  roleIds: [String!]
+  username: String
+}
+
+input CreateUserRequest {
+  avatarFileId: String
+  claims: [UserClaimInput!]
+  email: String
+  isEnable: Boolean = true
+  nickname: String = ""
+  openId: String = ""
+  orgCodes: [String!] = []
+  password: String
+  phoneNumber: String
+  provider: LoginProviderEnum = Local
+  roleIds: [String!] = []
+  username: String!
+}
+
+input DeleteUserRequest {
+  id: String!
+}
+
+input ResetUserPasswordRequest {
+  """
+  新密码
+  注：此处的 Password 应是经过前端哈希处理后的密码
+  """
+  password: String!
+
+  """用户ID"""
+  userId: String!
+}
+
+input ChangePasswordRequest {
+  """
+  新密码(建议前端二次确认)
+  注：此处的 Password 应是经过前端哈希处理后的密码
+  """
+  newPassword: String!
+
+  """
+  原密码
+  注：此处的 Password 应是经过前端哈希处理后的密码
+  """
+  originPassword: String!
+}
+
+input RegisterUserRequest {
+  email: String
+
+  """注：此处的 Password 应是经过前端哈希处理后的密码"""
+  password: String!
+  phoneNumber: String
+  username: String!
+}
+
+input MarkMessagesReadRequest {
+  messageIds: [String!]!
+  userId: String!
+}
+
+input DeleteMessageDistributionsRequest {
+  messageId: String!
+  userIds: [String!]!
+}
+
+input SendNotificationMessageRequest {
+  messageId: String!
+  toUserIds: [String!]!
+}
+
+type MessageDistribution implements IEntityBase {
+  createdOn: DateTime!
+  id: String!
+
+  """
+  是否已读
+  bug: 未读消息最好放入redis, 避免全表遍历
+  """
+  isRead: Boolean!
+  messageId: String!
+  modifiedOn: DateTime!
+  toUserId: String!
+}
+
+input CreateMessageRequest {
+  meta: Any
+  severity: MessageSeverityType
+  text: String!
+}
+
+input EditMessageRequest {
+  id: String!
+  messageType: MessageType
+  severity: MessageSeverityType
+  text: String
+}
+
+input QueryJobStatesRequest {
+  jobName: String!
+}
+
+input SendCaptchaRequest {
+  captchaProvider: CaptchaProvider!
+  smsCaptchaPhoneNumber: ChinesePhoneNumber
+}
+
+input ValidateCaptchaRequest {
+  captchaCode: String!
+  captchaKey: String!
+  captchaProvider: CaptchaProvider!
+}
+
+input TemplateGenerationArgsInput {
+  entityName: String
+  moduleName: String
+  orgName: String
+}
+
+"""设备注册请求"""
+input RegisterDeviceRequest {
+  """设备名称"""
+  name: String!
+
+  """设备类型"""
+  type: String!
+
+  """ZeroTier设备ID"""
+  ztNetMemberId: String!
+}
+
+input CreateSquadRequest {
+  """是否启用设备自动授权，默认false"""
+  autoAuthorizeDevices: Boolean = false
+
+  """Squad创建者ID（由系统自动设置）"""
+  creatorId: String
+
+  """邀请码，用于其他用户加入Squad，默认为Squad名称"""
+  inviteCode: String
+
+  """Squad最大成员数量限制，默认50"""
+  maxMemberCount: Int = 50
+  name: String!
+}
+
+input EditSquadRequest {
+  id: String
+  name: String
+}
+
+interface IAuthUser implements IEntityBase {
+  createdOn: DateTime!
+  email: String
+
+  """
+  The Id property for this entity type.
+  注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+  """
+  id: String!
+  isEnable: Boolean!
+  loginProvider: LoginProviderEnum!
+  nickname: String
+  openId: String
+  phoneNumber: String
+  username: String!
+}
+
+enum CaptchaType {
+  NUMBER
+  ENGLISH
+  NUMBER_AND_LETTER
+  CHINESE
+}
+
+input UserClaimInput {
+  claimType: String!
+  claimValue: String!
+}
+
+input UserOrgMapItemInput {
+  orgCodes: [String!]!
+  userId: String!
+}

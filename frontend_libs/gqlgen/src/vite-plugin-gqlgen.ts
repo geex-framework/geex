@@ -2,6 +2,7 @@ import type { Plugin } from 'vite';
 import path from 'node:path';
 import fs from 'node:fs';
 import { generate } from '@graphql-codegen/cli';
+import { buildClientSchema, getIntrospectionQuery, printSchema } from 'graphql';
 
 export type GqlgenOptions = {
   /**
@@ -15,13 +16,11 @@ export type GqlgenOptions = {
    */
   scalars?: Record<string, string>;
   /**
-   * Optional local schema file(s). Relative paths are resolved from project root.
+   * Map of remote schema URL to local schema file path (relative to project root).
+   * The plugin will download schemas for these URLs to the target file paths
+   * and ensure those files are listed in .graphqlrc.yml's schema list.
    */
-  schemaLocal?: string | string[];
-  /**
-   * Optional remote schema URL(s).
-   */
-  schemaRemote?: string | string[];
+  localSchemaMap?: Record<string, string>;
 };
 
 type ViteState = {
@@ -84,9 +83,33 @@ function isHttpUrl(value: string): boolean {
   return /^(https?:)?\/\//i.test(value);
 }
 
-function normalizeToArray<T>(value?: T | T[]): T[] {
-  if (value === undefined) return [];
-  return Array.isArray(value) ? value : [value];
+// Required documents globs to ensure exist in .graphqlrc.yml
+const REQUIRED_DOCUMENTS_GLOBS_UNQUOTED: readonly string[] = [
+  "src/**/*.{graphql,gql,js,ts,jsx,tsx,vue}",
+  "!src/**/*.test.{graphql,gql,js,ts,jsx,tsx,vue}",
+  "!src/**/*.gql.{js,ts}",
+] as const;
+
+const REQUIRED_DOCUMENTS_GLOBS_WRITABLE: readonly string[] = [
+  "'src/**/*.{graphql,gql,js,ts,jsx,tsx,vue}'",
+  "'!src/**/*.test.{graphql,gql,js,ts,jsx,tsx,vue}'",
+  "'!src/**/*.gql.{js,ts}'",
+] as const;
+
+const REQUIRED_DOCUMENTS_MAP: Readonly<Record<string, string>> = {
+  [REQUIRED_DOCUMENTS_GLOBS_UNQUOTED[0]]: REQUIRED_DOCUMENTS_GLOBS_WRITABLE[0],
+  [REQUIRED_DOCUMENTS_GLOBS_UNQUOTED[1]]: REQUIRED_DOCUMENTS_GLOBS_WRITABLE[1],
+  [REQUIRED_DOCUMENTS_GLOBS_UNQUOTED[2]]: REQUIRED_DOCUMENTS_GLOBS_WRITABLE[2],
+};
+
+function stripSurroundingQuotes(value: string): string {
+  if (!value) return value;
+  const first = value[0];
+  const last = value[value.length - 1];
+  if ((first === "'" && last === "'") || (first === '"' && last === '"')) {
+    return value.substring(1, value.length - 1);
+  }
+  return value;
 }
 
 function readRcSchemas(projectRoot: string): string[] {
@@ -119,26 +142,192 @@ function readRcSchemas(projectRoot: string): string[] {
   }
 }
 
-function resolveSchemas(projectRoot: string, sourceRootAbs: string, opts: GqlgenOptions): string[] {
-  // 1) Explicit options have top priority
-  const locals = normalizeToArray(opts.schemaLocal).map((p) =>
-    toPosix(path.isAbsolute(p) || isHttpUrl(p) ? p : path.join(projectRoot, p)),
-  );
-  const remotes = normalizeToArray(opts.schemaRemote);
-  const fromOptions = [...locals, ...remotes];
-  if (fromOptions.length > 0) return fromOptions;
+type GraphqlRcParsed = {
+  content: string;
+  schemaEntries: string[];
+  schemaBlockRange?: { start: number; end: number };
+  documentsEntries: string[];
+  documentsBlockRange?: { start: number; end: number };
+};
 
-  // 2) Respect .graphqlrc.yml if present
+function parseGraphqlRc(projectRoot: string): GraphqlRcParsed | undefined {
+  const rcPath = path.join(projectRoot, '.graphqlrc.yml');
+  if (!fs.existsSync(rcPath)) return undefined;
+  const content = fs.readFileSync(rcPath, 'utf8');
+  const lines = content.split(/\r?\n/);
+
+  const schemaEntries: string[] = [];
+  const documentsEntries: string[] = [];
+  let inSchema = false;
+  let schemaStart = -1;
+  let schemaEnd = -1;
+  let inDocuments = false;
+  let documentsStart = -1;
+  let documentsEnd = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const line = rawLine.replace(/\t/g, '  ');
+    const topKeyMatch = line.match(/^([A-Za-z0-9_\-]+):\s*(.*)$/);
+    if (topKeyMatch) {
+      const key = topKeyMatch[1];
+      // close any open block before starting a new top-level block
+      if (inSchema && schemaEnd === -1) {
+        schemaEnd = i - 1;
+        inSchema = false;
+      }
+      if (inDocuments && documentsEnd === -1) {
+        documentsEnd = i - 1;
+        inDocuments = false;
+      }
+      if (key === 'schema') {
+        inSchema = true;
+        schemaStart = i;
+        continue;
+      }
+      if (key === 'documents') {
+        inDocuments = true;
+        documentsStart = i;
+        continue;
+      }
+      continue;
+    }
+
+    if (inSchema) {
+      const m = line.match(/^\s*-\s*(.+)\s*$/);
+      if (m) {
+        const entry = m[1].trim();
+        if (entry) schemaEntries.push(entry);
+      }
+    }
+    if (inDocuments) {
+      const m = line.match(/^\s*-\s*(.+)\s*$/);
+      if (m) {
+        const entry = m[1].trim();
+        if (entry) documentsEntries.push(entry);
+      }
+    }
+  }
+  if (inSchema && schemaEnd === -1) schemaEnd = lines.length - 1;
+  if (inDocuments && documentsEnd === -1) documentsEnd = lines.length - 1;
+
+  return {
+    content,
+    schemaEntries,
+    schemaBlockRange: schemaStart >= 0 ? { start: schemaStart, end: schemaEnd } : undefined,
+    documentsEntries,
+    documentsBlockRange: documentsStart >= 0 ? { start: documentsStart, end: documentsEnd } : undefined,
+  };
+}
+
+function writeGraphqlRcSchemaBlock(projectRoot: string, parsed: GraphqlRcParsed, newSchemaEntries: string[]): void {
+  const rcPath = path.join(projectRoot, '.graphqlrc.yml');
+  const lines = parsed.content.split(/\r?\n/);
+
+  const blockLines = ['schema:', ...newSchemaEntries.map((e) => `  - ${e}`)];
+
+  if (parsed.schemaBlockRange) {
+    const { start, end } = parsed.schemaBlockRange;
+    const before = lines.slice(0, start);
+    const after = lines.slice(end + 1);
+    const next = [...before, ...blockLines, ...after];
+    fs.writeFileSync(rcPath, next.join('\n'), 'utf8');
+  } else {
+    // Append at end with a separating newline
+    const needSep = parsed.content.length > 0 && !/\n$/.test(parsed.content);
+    const next = parsed.content + (needSep ? '\n' : '') + blockLines.join('\n') + '\n';
+    fs.writeFileSync(rcPath, next, 'utf8');
+  }
+}
+
+function writeGraphqlRcDocumentsBlock(projectRoot: string, parsed: GraphqlRcParsed, newDocumentsEntries: string[]): void {
+  const rcPath = path.join(projectRoot, '.graphqlrc.yml');
+  const lines = parsed.content.split(/\r?\n/);
+
+  const blockLines = ['documents:', ...newDocumentsEntries.map((e) => `  - ${e}`)];
+
+  if (parsed.documentsBlockRange) {
+    const { start, end } = parsed.documentsBlockRange;
+    const before = lines.slice(0, start);
+    const after = lines.slice(end + 1);
+    const next = [...before, ...blockLines, ...after];
+    fs.writeFileSync(rcPath, next.join('\n'), 'utf8');
+  } else {
+    // Append at end with a separating newline
+    const needSep = parsed.content.length > 0 && !/\n$/.test(parsed.content);
+    const next = parsed.content + (needSep ? '\n' : '') + blockLines.join('\n') + '\n';
+    fs.writeFileSync(rcPath, next, 'utf8');
+  }
+}
+
+function writeNewGraphqlRcWithSchemaEntries(projectRoot: string, entries: string[]): void {
+  const rcPath = path.join(projectRoot, '.graphqlrc.yml');
+  const lines: string[] = [];
+  lines.push('schema:');
+  for (const e of entries) lines.push(`  - ${e}`);
+  // also write default documents block
+  lines.push('documents:');
+  for (const e of REQUIRED_DOCUMENTS_GLOBS_WRITABLE) lines.push(`  - ${e}`);
+  const content = lines.join('\n') + '\n';
+  fs.writeFileSync(rcPath, content, 'utf8');
+}
+
+function domainFromUrl(urlString: string): string | undefined {
+  try {
+    const u = new URL(urlString);
+    return u.hostname;
+  } catch {
+    return undefined;
+  }
+}
+
+function domainFromFilePath(filePath: string): string | undefined {
+  try {
+    const base = path.basename(filePath);
+    const withoutExt = base.replace(/\.graphql$/i, '').replace(/\.gql$/i, '');
+    const withoutSchema = withoutExt.replace(/\.schema$/i, '');
+    // Basic heuristic: return as-is
+    return withoutSchema || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function fetchRemoteSchemaSdl(urlString: string): Promise<string> {
+  const introspectionQuery = getIntrospectionQuery();
+  const response = await fetch(urlString, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'accept': 'application/json',
+    },
+    body: JSON.stringify({ query: introspectionQuery }),
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Failed to fetch GraphQL schema from ${urlString}: ${response.status} ${response.statusText}. ${text}`);
+  }
+  const json = await response.json();
+  if (json.errors) {
+    throw new Error(`Introspection error from ${urlString}: ${JSON.stringify(json.errors)}`);
+  }
+  const sdl = printSchema(buildClientSchema(json.data));
+  return sdl;
+}
+
+// Removed interactive prompts per requirements; schema sync is driven solely by vite config options
+
+function resolveSchemas(projectRoot: string, sourceRootAbs: string): string[] {
+  // 1) Respect .graphqlrc.yml if present
   const fromRc = readRcSchemas(projectRoot).map((p) =>
     isHttpUrl(p) ? p : toPosix(path.isAbsolute(p) ? p : path.join(projectRoot, p)),
   );
   if (fromRc.length > 0) return fromRc;
 
-  // 3) Fallback defaults
+  // 2) Fallback defaults
   const schemaLocalDefault = toPosix(path.join(sourceRootAbs, 'gql', 'schema.graphql'));
   const defaults: string[] = [];
   if (fs.existsSync(schemaLocalDefault)) defaults.push(schemaLocalDefault);
-  defaults.push('https://api.dev.geexcode.com/graphql');
   return defaults;
 }
 
@@ -201,7 +390,55 @@ const gqlgen = (options: GqlgenOptions = {}): Plugin => {
         const baseTypesImportPath = computeBaseTypesImportPath(sourceRootAbs, sharedTypesDirAbs);
         const scalars = { ...DEFAULT_SCALARS, ...(options.scalars || {}) };
 
-        const schemaEntries = resolveSchemas(projectRoot, sourceRootAbs, options);
+        // Sync schemas based on vite config option localSchemaMap; keep other .graphqlrc.yml entries intact
+        try {
+          const parsed = parseGraphqlRc(projectRoot);
+          const map = options.localSchemaMap ?? {};
+          const urls = Object.keys(map).filter((k) => isHttpUrl(k));
+          if (urls.length > 0) {
+            const generatedFiles: string[] = [];
+            for (const url of urls) {
+              const rel = toPosix(map[url]);
+              const abs = toPosix(path.isAbsolute(rel) ? rel : path.join(projectRoot, rel));
+              fs.mkdirSync(path.dirname(abs), { recursive: true });
+              const sdl = await fetchRemoteSchemaSdl(url);
+              fs.writeFileSync(abs, sdl, 'utf8');
+              generatedFiles.push(toPosix(path.relative(projectRoot, abs)) || rel);
+              console.info(`[gqlgen] Downloaded schema from ${url} -> ${rel}`);
+            }
+            if (generatedFiles.length > 0) {
+              const toAdd = Array.from(new Set([...generatedFiles, ...urls]));
+              if (parsed) {
+                const nextEntries = Array.from(new Set([...toAdd, ...parsed.schemaEntries]));
+                writeGraphqlRcSchemaBlock(projectRoot, parsed, nextEntries);
+              } else {
+                writeNewGraphqlRcWithSchemaEntries(projectRoot, toAdd);
+              }
+              console.info('[gqlgen] Updated .graphqlrc.yml: ensured mapped schema files and URLs are listed.');
+            }
+          }
+          // Ensure required documents globs are present
+          const parsedAfter = parseGraphqlRc(projectRoot);
+          if (parsedAfter) {
+            const existingDocsNormalized = new Set(
+              (parsedAfter.documentsEntries || []).map((e) => stripSurroundingQuotes(e)),
+            );
+            const missing = REQUIRED_DOCUMENTS_GLOBS_UNQUOTED.filter((u) => !existingDocsNormalized.has(u));
+            if (missing.length > 0) {
+              const nextDocumentsEntries = [...(parsedAfter.documentsEntries || [])];
+              for (const unq of missing) {
+                const writable = REQUIRED_DOCUMENTS_MAP[unq] || unq;
+                nextDocumentsEntries.push(writable);
+              }
+              writeGraphqlRcDocumentsBlock(projectRoot, parsedAfter, Array.from(new Set(nextDocumentsEntries)));
+              console.info('[gqlgen] Updated .graphqlrc.yml: ensured required documents globs exist.');
+            }
+          }
+        } catch (e) {
+          console.warn('[gqlgen] Unable to update .graphqlrc.yml based on localSchemaMap:', e);
+        }
+
+        const schemaEntries = resolveSchemas(projectRoot, sourceRootAbs);
         // Build whitelist of allowed .graphql paths (schema entries that are local files)
         const allowedGraphqlPathsAbs = new Set(
           schemaEntries
@@ -210,6 +447,11 @@ const gqlgen = (options: GqlgenOptions = {}): Plugin => {
         );
         // Enforce no .graphql documents (only .gql allowed) except whitelisted schema files
         assertNoGraphqlDocuments(sourceRootAbs, allowedGraphqlPathsAbs);
+
+        if (schemaEntries.length === 0) {
+          console.error('[gqlgen] No GraphQL schema configured. Please specify schema files/URLs via plugin options or .graphqlrc.yml.');
+          return;
+        }
 
         const codegenConfig = {
           overwrite: true,

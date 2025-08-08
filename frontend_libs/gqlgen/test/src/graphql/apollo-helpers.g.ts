@@ -260,7 +260,7 @@ export type MessagesCollectionSegmentFieldPolicy = {
 	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
 	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MutationKeySpecifier = ('_' | 'addMember' | 'assignOrgs' | 'assignRoles' | 'authenticate' | 'authorize' | 'authorizeDevice' | 'batchAuthorizeDevices' | 'batchRevokeDevices' | 'cancelAuthentication' | 'changePassword' | 'createBlobObject' | 'createMessage' | 'createOrg' | 'createRole' | 'createSquad' | 'createUser' | 'deleteBlobObject' | 'deleteMessageDistributions' | 'deleteOrg' | 'deleteSquad' | 'deleteUser' | 'editMessage' | 'editSetting' | 'editSquad' | 'editUser' | 'federateAuthenticate' | 'fixUserOrg' | 'generateCaptcha' | 'joinSquad' | 'leaveAllSquads' | 'leaveSquad' | 'markMessagesRead' | 'register' | 'registerDevice' | 'removeDeviceFromSquad' | 'removeMember' | 'removeMemberAdmin' | 'removeMyDevice' | 'removeUserDevicesFromSquad' | 'resetUserPassword' | 'revokeDevice' | 'sendMessage' | 'setMemberAsAdmin' | 'setRoleDefault' | 'setSquadInviteCode' | 'transferDeviceOwnership' | 'transferSquadOwnership' | 'updateDevice' | 'updateDeviceOnlineStatus' | 'updateSquadSettings' | 'updateUserDeviceName' | 'validateCaptcha' | MutationKeySpecifier)[];
+export type MutationKeySpecifier = ('_' | 'addMember' | 'assignOrgs' | 'assignRoles' | 'authenticate' | 'authorize' | 'authorizeDevice' | 'batchAuthorizeDevices' | 'batchRevokeDevices' | 'cancelAuthentication' | 'changePassword' | 'createBlobObject' | 'createMessage' | 'createOrg' | 'createRole' | 'createSquad' | 'createUser' | 'deleteBlobObject' | 'deleteMessageDistributions' | 'deleteOrg' | 'deleteSquad' | 'deleteUser' | 'editMessage' | 'editSetting' | 'editSquad' | 'editUser' | 'federateAuthenticate' | 'fixUserOrg' | 'generateCaptcha' | 'generateTemplate' | 'joinSquad' | 'leaveAllSquads' | 'leaveSquad' | 'markMessagesRead' | 'register' | 'registerDevice' | 'removeDeviceFromSquad' | 'removeMember' | 'removeMemberAdmin' | 'removeMyDevice' | 'removeUserDevicesFromSquad' | 'resetUserPassword' | 'revokeDevice' | 'sendMessage' | 'setMemberAsAdmin' | 'setRoleDefault' | 'setSquadInviteCode' | 'transferDeviceOwnership' | 'transferSquadOwnership' | 'updateDevice' | 'updateDeviceOnlineStatus' | 'updateSquadSettings' | 'updateUserDeviceName' | 'validateCaptcha' | MutationKeySpecifier)[];
 export type MutationFieldPolicy = {
 	_?: FieldPolicy<any> | FieldReadFunction<any>,
 	addMember?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -291,6 +291,7 @@ export type MutationFieldPolicy = {
 	federateAuthenticate?: FieldPolicy<any> | FieldReadFunction<any>,
 	fixUserOrg?: FieldPolicy<any> | FieldReadFunction<any>,
 	generateCaptcha?: FieldPolicy<any> | FieldReadFunction<any>,
+	generateTemplate?: FieldPolicy<any> | FieldReadFunction<any>,
 	joinSquad?: FieldPolicy<any> | FieldReadFunction<any>,
 	leaveAllSquads?: FieldPolicy<any> | FieldReadFunction<any>,
 	leaveSquad?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -345,7 +346,7 @@ export type OrgsCollectionSegmentFieldPolicy = {
 	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
 	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type QueryKeySpecifier = ('_' | 'blobObjects' | 'currentUser' | 'deviceAuthorizationStatus' | 'deviceById' | 'initSettings' | 'jobState' | 'messages' | 'myDevices' | 'myPermissions' | 'mySquad' | 'orgs' | 'roles' | 'settings' | 'squad' | 'squadById' | 'squadInviteCode' | 'unreadMessages' | 'users' | QueryKeySpecifier)[];
+export type QueryKeySpecifier = ('_' | 'blobObjects' | 'currentUser' | 'deviceAuthorizationStatus' | 'deviceById' | 'initSettings' | 'jobState' | 'messages' | 'myDevices' | 'myPermissions' | 'mySquad' | 'orgs' | 'roles' | 'settings' | 'squad' | 'squadById' | 'squadInviteCode' | 'templateUpdateDate' | 'unreadMessages' | 'users' | QueryKeySpecifier)[];
 export type QueryFieldPolicy = {
 	_?: FieldPolicy<any> | FieldReadFunction<any>,
 	blobObjects?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -364,6 +365,7 @@ export type QueryFieldPolicy = {
 	squad?: FieldPolicy<any> | FieldReadFunction<any>,
 	squadById?: FieldPolicy<any> | FieldReadFunction<any>,
 	squadInviteCode?: FieldPolicy<any> | FieldReadFunction<any>,
+	templateUpdateDate?: FieldPolicy<any> | FieldReadFunction<any>,
 	unreadMessages?: FieldPolicy<any> | FieldReadFunction<any>,
 	users?: FieldPolicy<any> | FieldReadFunction<any>
 };

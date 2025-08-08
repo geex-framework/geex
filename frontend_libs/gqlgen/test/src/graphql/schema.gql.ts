@@ -13,11 +13,16 @@ export interface Scalars {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   Any: { input: any; output: any; }
+  /** ^[1]([3-9])[0-9]{9}$ */
   ChinesePhoneNumber: { input: string; output: string; }
+  /** The `DateTime` scalar represents an ISO-8601 compliant date time type. */
   DateTime: { input: Date; output: Date; }
+  /** The `Long` scalar type represents non-fractional signed whole 64-bit numeric values. Long can represent values between -(2^63) and 2^63 - 1. */
   Long: { input: BigInt; output: BigInt; }
+  /** mime type, e.g. application/json */
   MimeType: { input: string; output: string; }
   ObjectId: { input: string; output: string; }
+  /** The `Upload` scalar type represents a file upload. */
   Upload: { input: any; output: any; }
 }
 
@@ -47,6 +52,8 @@ export enum AppPermission {
   quicollab_mutation_setMemberAsAdmin = 'quicollab_mutation_setMemberAsAdmin',
   quicollab_mutation_updateDevice = 'quicollab_mutation_updateDevice',
   quicollab_mutation_updateSquadSettings = 'quicollab_mutation_updateSquadSettings',
+  schematics_mutation_editTemplate = 'schematics_mutation_editTemplate',
+  schematics_query_template = 'schematics_query_template',
   settings_mutation_editSetting = 'settings_mutation_editSetting'
 }
 
@@ -83,6 +90,10 @@ export enum AuthorizationPermission {
 export interface AuthorizeRequest {
   allowedPermissions: Array<AppPermission>;
   authorizeTargetType: AuthorizeTargetType;
+  /**
+   * 授权目标:
+   * 用户or角色id
+   */
   target: Scalars['String']['input'];
 }
 
@@ -119,7 +130,15 @@ export enum CaptchaType {
 }
 
 export interface ChangePasswordRequest {
+  /**
+   * 新密码(建议前端二次确认)
+   * 注：此处的 Password 应是经过前端哈希处理后的密码
+   */
   newPassword: Scalars['String']['input'];
+  /**
+   * 原密码
+   * 注：此处的 Password 应是经过前端哈希处理后的密码
+   */
   originPassword: Scalars['String']['input'];
 }
 
@@ -139,6 +158,7 @@ export interface ClassEnumOperationFilterInputTypeOfOrgTypeEnumFilterInput {
 
 export interface CreateBlobObjectRequest {
   file: Scalars['Upload']['input'];
+  /** can pass null, will be calculated */
   md5?: InputMaybe<Scalars['String']['input']>;
   storageType: BlobStorageType;
 }
@@ -268,7 +288,9 @@ export interface EditUserRequest {
 }
 
 export interface FederateAuthenticateRequest {
+  /** OAuth Code */
   code: Scalars['String']['input'];
+  /** 登陆提供方 */
   loginProvider?: InputMaybe<LoginProviderEnum>;
 }
 
@@ -284,6 +306,7 @@ export enum GeexClaimType {
   Tenant = 'Tenant'
 }
 
+/** inherit this enumeration to customise your own business exceptions */
 export enum GeexExceptionType {
   Conflict = 'Conflict',
   ExternalError = 'ExternalError',
@@ -304,14 +327,24 @@ export interface GetSettingsRequest {
   settingDefinitions?: InputMaybe<Array<SettingDefinition>>;
 }
 
+/** Represents a blob object in the storage system */
 export interface IBlobObjectFilterInput {
   and?: InputMaybe<Array<IBlobObjectFilterInput>>;
+  /** Name of the file */
   fileName?: InputMaybe<StringOperationFilterInput>;
+  /** Size of the file in bytes */
   fileSize?: InputMaybe<LongOperationFilterInput>;
+  /**
+   * The Id property for this entity type.
+   * 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+   */
   id?: InputMaybe<StringOperationFilterInput>;
+  /** MD5 hash of the file content */
   md5?: InputMaybe<StringOperationFilterInput>;
+  /** MIME type of the file */
   mimeType?: InputMaybe<StringOperationFilterInput>;
   or?: InputMaybe<Array<IBlobObjectFilterInput>>;
+  /** Storage type used for this blob */
   storageType?: InputMaybe<ClassEnumOperationFilterInputTypeOfBlobStorageTypeFilterInput>;
 }
 
@@ -321,10 +354,15 @@ export interface IMessageContentFilterInput {
   or?: InputMaybe<Array<IMessageContentFilterInput>>;
 }
 
+/** this is a aggregate root of this module, we name it the same as the module feel free to change it to its real name */
 export interface IMessageFilterInput {
   and?: InputMaybe<Array<IMessageFilterInput>>;
   content?: InputMaybe<IMessageContentFilterInput>;
   fromUserId?: InputMaybe<StringOperationFilterInput>;
+  /**
+   * The Id property for this entity type.
+   * 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+   */
   id?: InputMaybe<StringOperationFilterInput>;
   messageType?: InputMaybe<MessageTypeOperationFilterInput>;
   or?: InputMaybe<Array<IMessageFilterInput>>;
@@ -336,10 +374,13 @@ export interface IMessageFilterInput {
 
 export interface IOrgFilterInput {
   and?: InputMaybe<Array<IOrgFilterInput>>;
+  /** 以.作为分割线的编码 */
   code?: InputMaybe<StringOperationFilterInput>;
   name?: InputMaybe<StringOperationFilterInput>;
   or?: InputMaybe<Array<IOrgFilterInput>>;
+  /** 组织类型 */
   orgType?: InputMaybe<ClassEnumOperationFilterInputTypeOfOrgTypeEnumFilterInput>;
+  /** 父组织编码 */
   parentOrgCode?: InputMaybe<StringOperationFilterInput>;
 }
 
@@ -351,6 +392,10 @@ export interface IQuicollabUserFilterInput {
 
 export interface IRoleFilterInput {
   and?: InputMaybe<Array<IRoleFilterInput>>;
+  /**
+   * The Id property for this entity type.
+   * 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+   */
   id?: InputMaybe<StringOperationFilterInput>;
   name?: InputMaybe<StringOperationFilterInput>;
   or?: InputMaybe<Array<IRoleFilterInput>>;
@@ -359,6 +404,10 @@ export interface IRoleFilterInput {
 
 export interface ISettingFilterInput {
   and?: InputMaybe<Array<ISettingFilterInput>>;
+  /**
+   * The Id property for this entity type.
+   * 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+   */
   id?: InputMaybe<StringOperationFilterInput>;
   name?: InputMaybe<SettingDefinitionOperationFilterInput>;
   or?: InputMaybe<Array<ISettingFilterInput>>;
@@ -369,6 +418,10 @@ export interface ISettingFilterInput {
 export interface IUserFilterInput {
   and?: InputMaybe<Array<IUserFilterInput>>;
   createdOn?: InputMaybe<DateTimeOperationFilterInput>;
+  /**
+   * The Id property for this entity type.
+   * 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+   */
   id?: InputMaybe<StringOperationFilterInput>;
   isEnable?: InputMaybe<BooleanOperationFilterInput>;
   nickname?: InputMaybe<StringOperationFilterInput>;
@@ -381,6 +434,10 @@ export interface IUserFilterInput {
 
 export interface IUserSortInput {
   createdOn?: InputMaybe<SortEnumType>;
+  /**
+   * The Id property for this entity type.
+   * 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
+   */
   id?: InputMaybe<SortEnumType>;
 }
 
@@ -512,10 +569,15 @@ export interface MarkMessagesReadRequest {
 }
 
 export enum MessageSeverityType {
+  /** Error. */
   ERROR = 'ERROR',
+  /** Fatal. */
   FATAL = 'FATAL',
+  /** Info. */
   INFO = 'INFO',
+  /** Success. */
   SUCCESS = 'SUCCESS',
+  /** Warn. */
   WARN = 'WARN'
 }
 
@@ -527,8 +589,14 @@ export interface MessageSeverityTypeOperationFilterInput {
 }
 
 export enum MessageType {
+  /** 用户交互消息, 通常有一个非系统的触发者 */
   INTERACT = 'INTERACT',
+  /**
+   * 通知, 告知某个信息的消息
+   * 区别于单独的toast, 这个消息会留档
+   */
   NOTIFICATION = 'NOTIFICATION',
+  /** 待办, 带有链接跳转/当前状态等交互功能的消息 */
   TODO = 'TODO'
 }
 
@@ -626,13 +694,19 @@ export interface RegisterDeviceRequest {
 
 export interface RegisterUserRequest {
   email?: InputMaybe<Scalars['String']['input']>;
+  /** 注：此处的 Password 应是经过前端哈希处理后的密码 */
   password: Scalars['String']['input'];
   phoneNumber?: InputMaybe<Scalars['String']['input']>;
   username: Scalars['String']['input'];
 }
 
 export interface ResetUserPasswordRequest {
+  /**
+   * 新密码
+   * 注：此处的 Password 应是经过前端哈希处理后的密码
+   */
   password: Scalars['String']['input'];
+  /** 用户ID */
   userId: Scalars['String']['input'];
 }
 
@@ -640,6 +714,15 @@ export enum RolePermission {
   identity_mutation_createRole = 'identity_mutation_createRole',
   identity_mutation_editRole = 'identity_mutation_editRole',
   identity_query_roles = 'identity_query_roles'
+}
+
+export enum SchematicsPermission {
+  schematics_mutation_editTemplate = 'schematics_mutation_editTemplate',
+  schematics_query_template = 'schematics_query_template'
+}
+
+export enum SchematicsSettings {
+  SchematicsModuleName = 'SchematicsModuleName'
 }
 
 export interface SendCaptchaRequest {
@@ -664,7 +747,8 @@ export enum SettingDefinition {
   LocalizationData = 'LocalizationData',
   LocalizationLanguage = 'LocalizationLanguage',
   MessagingModuleName = 'MessagingModuleName',
-  QuicollabModuleName = 'QuicollabModuleName'
+  QuicollabModuleName = 'QuicollabModuleName',
+  SchematicsModuleName = 'SchematicsModuleName'
 }
 
 export interface SettingDefinitionOperationFilterInput {
@@ -770,6 +854,26 @@ export interface StringOperationFilterInput {
   nstartsWith?: InputMaybe<Scalars['String']['input']>;
   or?: InputMaybe<Array<StringOperationFilterInput>>;
   startsWith?: InputMaybe<Scalars['String']['input']>;
+}
+
+/** this is a aggregate root of this module, we name it the same as the module feel free to change it to its real name */
+export enum Template {
+  client_admin = 'client_admin',
+  client_docs = 'client_docs',
+  module = 'module',
+  schematics_admin_module = 'schematics_admin_module',
+  solution = 'solution'
+}
+
+export interface TemplateGenerationArgsInput {
+  entityName?: InputMaybe<Scalars['String']['input']>;
+  moduleName?: InputMaybe<Scalars['String']['input']>;
+  orgName?: InputMaybe<Scalars['String']['input']>;
+}
+
+export enum TemplatePermission {
+  schematics_mutation_editTemplate = 'schematics_mutation_editTemplate',
+  schematics_query_template = 'schematics_query_template'
 }
 
 export interface UserClaimFilterInput {
