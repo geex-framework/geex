@@ -4,31 +4,24 @@ import fs from 'node:fs';
 import * as YAML from 'yaml';
 import { generate } from '@graphql-codegen/cli';
 import { buildClientSchema, getIntrospectionQuery, printSchema } from 'graphql';
+import { createInterface } from 'node:readline';
 
-export type GqlgenOptions = {
-  /**
-   * Where to emit shared types like schema types and fragments.
-   * Defaults to `${sourceRoot}/graphql`.
-   */
+export interface GqlgenOptions {
+  /** Where to emit shared types. Defaults to `${sourceRoot}/graphql` */
   sharedTypesDir?: string;
-  /**
-   * Additional custom scalar mappings to merge with defaults.
-   * Example: { URL: 'string' }
-   */
+  /** Custom scalar mappings. Example: { URL: 'string' } */
   scalars?: Record<string, string>;
-  /**
-   * Map of remote schema URL to local schema file path (relative to project root).
-   * The plugin will download schemas for these URLs to the target file paths
-   * and ensure those files are listed in .graphqlrc.yml's schema list.
-   */
-  localSchemaMap?: Record<string, string>;
-};
+  /** GraphQL document file extension. Defaults to 'gql' */
+  gqlDocFileExtension?: 'gql' | 'graphql';
+}
 
-type ViteState = {
+interface PluginState {
   projectRoot: string;
   sourceRoot: string;
-};
+  extensionMap: Map<string, string>;
+}
 
+// Default scalar mappings
 const DEFAULT_SCALARS: Record<string, string> = {
   ChinesePhoneNumber: 'string',
   DateTime: 'Date',
@@ -38,361 +31,394 @@ const DEFAULT_SCALARS: Record<string, string> = {
   MimeType: 'string',
 };
 
-function toPosix(p: string): string {
-  return p.replace(/\\/g, '/');
+// Path utilities
+const toPosix = (p: string): string => p.replace(/\\/g, '/');
+const ensureDotPrefix = (p: string): string => p.startsWith('.') ? p : `./${p}`;
+const isHttpUrl = (value: string): boolean => /^(https?:)?\/\//i.test(value);
+
+// User interaction utilities
+function askUserConfirmation(message: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    rl.question(`${message} (y/N): `, (answer) => {
+      rl.close();
+      resolve(answer.toLowerCase().trim() === 'y' || answer.toLowerCase().trim() === 'yes');
+    });
+  });
 }
 
+// Project structure helpers
 function resolveSourceRoot(projectRoot: string): string {
   const tsconfigPath = path.join(projectRoot, 'tsconfig.json');
   try {
     if (fs.existsSync(tsconfigPath)) {
-      const json = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8'));
-      const compilerOptions = json?.compilerOptions ?? {};
-      const rootDir: string | undefined = compilerOptions.rootDir || compilerOptions.sourceRoot;
-      if (rootDir && typeof rootDir === 'string') {
+      const config = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8'));
+      const { compilerOptions = {}, include = [] } = config;
+      
+      // Check explicit root directories
+      const rootDir = compilerOptions.rootDir || compilerOptions.sourceRoot;
+      if (rootDir) {
         return toPosix(path.isAbsolute(rootDir) ? rootDir : path.join(projectRoot, rootDir));
+      }
+      
+      // Check include patterns for src
+      if (include.some((inc: string) => inc.includes('src'))) {
+        return toPosix(path.join(projectRoot, 'src'));
       }
     }
   } catch {
-    // Fallback below
+    // Fallback
   }
   return toPosix(path.join(projectRoot, 'src'));
 }
 
-function buildDocumentsGlobsRelative(sourceRootRel: string): string[] {
-  const s = sourceRootRel.replace(/\\/g, '/').replace(/\/$/, '');
-  const base = s === '' || s === '.' ? '' : `${s}/`;
+function buildDocumentGlobs(sourceRootRel: string, extension: string): string[] {
+  const base = sourceRootRel === '.' || sourceRootRel === '' ? '' : `${sourceRootRel}/`;
+  
   return [
-    `${base}**/*.{ts,tsx,vue,gql,graphql}`,
+    `${base}**/*.{ts,tsx,vue,${extension}}`,
     `!${base}**/*.{test,spec}.*`,
-    `!${base}**/*.gql.ts`,
-    `!${base}**/*.graphql.ts`,
+    `!${base}**/*.{gql,graphql}.ts`,
+    `!${base}**/node_modules/**`,
   ];
 }
 
-function ensureDotPrefix(p: string): string {
-  return p.startsWith('.') ? p : `./${p}`;
-}
-
-function computeBaseTypesImportPath(sourceRootAbs: string, sharedTypesDirAbs: string): string {
-  const relativeFromSourceRoot = toPosix(
-    path.relative(sourceRootAbs, path.join(sharedTypesDirAbs, 'schema.gql.ts')),
+function computeBaseTypesImportPath(sourceRootAbs: string, sharedTypesDirAbs: string, gqlDocExtension: string): string {
+  const schemaFileName = gqlDocExtension === 'graphql' ? 'schema.graphql.ts' : 'schema.gql.ts';
+  const relativePath = toPosix(
+    path.relative(sourceRootAbs, path.join(sharedTypesDirAbs, schemaFileName))
   );
-  return ensureDotPrefix(relativeFromSourceRoot);
+  return ensureDotPrefix(relativePath);
 }
 
-function isHttpUrl(value: string): boolean {
-  return /^(https?:)?\/\//i.test(value);
-}
-
-// YAML helpers for .graphqlrc.yml
-function loadGraphqlRcDocument(projectRoot: string): { rcPath: string; doc: any } {
+// GraphQL RC configuration helpers
+function loadGraphqlRc(projectRoot: string): { rcPath: string; doc: any } {
   const rcPath = path.join(projectRoot, '.graphqlrc.yml');
+  let doc;
+  
   if (fs.existsSync(rcPath)) {
     const content = fs.readFileSync(rcPath, 'utf8');
-    const doc = YAML.parseDocument(content);
-    if (doc.contents == null) doc.contents = YAML.createNode({});
-    return { rcPath, doc };
+    doc = YAML.parseDocument(content);
+    if (!doc.contents) doc.contents = YAML.createNode({});
+  } else {
+    doc = YAML.parseDocument('');
+    doc.contents = YAML.createNode({});
   }
-  const doc = YAML.parseDocument('');
-  doc.contents = YAML.createNode({});
+  
   return { rcPath, doc };
 }
 
-function yamlGetStringArray(value: unknown): string[] {
-  if (value == null) return [];
-  if (Array.isArray(value)) return value.map((v) => String(v));
+function yamlToStringArray(value: unknown): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(String);
   if (typeof value === 'string') return [value];
-  // YAML AST support: YAMLSeq and Scalar nodes
+  
   const asAny = value as any;
-  // YAMLSeq has an 'items' array
-  if (asAny && typeof asAny === 'object' && Array.isArray(asAny.items)) {
-    return asAny.items.map((item: any) => {
-      if (item == null) return '';
-      if (typeof item === 'string') return item;
-      if (typeof item === 'object' && 'value' in item) return String(item.value);
-      if (typeof item?.toJSON === 'function') return String(item.toJSON());
-      if (typeof item?.toString === 'function') return String(item.toString());
-      return String(item);
-    }).filter((s: string) => s.length > 0);
+  if (asAny?.items?.length) {
+    return asAny.items.map((item: any) => String(item?.value ?? item)).filter(Boolean);
   }
-  // Scalar node
-  if (asAny && typeof asAny === 'object' && 'value' in asAny) {
-    return [String(asAny.value)];
-  }
+  if (asAny?.value) return [String(asAny.value)];
+  
   return [];
 }
 
-function readRcSchemasYaml(projectRoot: string): string[] {
-  try {
-    const { doc } = loadGraphqlRcDocument(projectRoot);
-    const schemas = yamlGetStringArray(doc.get('schema') as any);
-    return schemas;
-  } catch {
-    return [];
-  }
-}
-
-function ensureGraphqlRcUpdated(projectRoot: string, updater: (doc: any) => void): void {
-  const { rcPath, doc } = loadGraphqlRcDocument(projectRoot);
+function updateGraphqlRc(projectRoot: string, updater: (doc: any) => void): void {
+  const { rcPath, doc } = loadGraphqlRc(projectRoot);
   updater(doc);
   fs.writeFileSync(rcPath, doc.toString(), 'utf8');
 }
 
-function domainFromUrl(urlString: string): string | undefined {
-  try {
-    const u = new URL(urlString);
-    return u.hostname;
-  } catch {
-    return undefined;
-  }
-}
-
-function domainFromFilePath(filePath: string): string | undefined {
-  try {
-    const base = path.basename(filePath);
-    const withoutExt = base.replace(/\.graphql$/i, '').replace(/\.gql$/i, '');
-    const withoutSchema = withoutExt.replace(/\.schema$/i, '');
-    // Basic heuristic: return as-is
-    return withoutSchema || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-async function fetchRemoteSchemaSdl(urlString: string): Promise<string> {
+// Schema fetching
+async function fetchRemoteSchema(url: string): Promise<string> {
   const introspectionQuery = getIntrospectionQuery();
-  const response = await fetch(urlString, {
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'accept': 'application/json',
-    },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ query: introspectionQuery }),
   });
+  
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw `Failed to fetch GraphQL schema from ${urlString}: ${response.status} ${response.statusText}. ${text}`;
+    throw `Failed to fetch schema from ${url}: ${response.status}`;
   }
-  const json = await response.json();
-  if (json.errors) {
-    throw `Introspection error from ${urlString}: ${JSON.stringify(json.errors)}`;
+  
+  const result = await response.json();
+  if (result.errors) {
+    throw `Schema introspection failed: ${JSON.stringify(result.errors)}`;
   }
-  const sdl = printSchema(buildClientSchema(json.data));
-  return sdl;
+  
+  return printSchema(buildClientSchema(result.data));
 }
 
-// Removed interactive prompts per requirements; schema sync is driven solely by vite config options
+// Schema resolution
+function resolveSchemas(projectRoot: string): string[] {
+  try {
+    const { doc } = loadGraphqlRc(projectRoot);
+    const schemas = yamlToStringArray(doc.get('schema'));
+    
+    if (schemas.length > 0) {
+      return schemas.map(p => 
+        isHttpUrl(p) ? p : toPosix(path.isAbsolute(p) ? p : path.join(projectRoot, p))
+      );
+    }
+  } catch {
+    // Continue to fallback
+  }
 
-function resolveSchemas(projectRoot: string, sourceRootAbs: string): string[] {
-  // 1) Respect .graphqlrc.yml if present
-  const fromRc = readRcSchemasYaml(projectRoot).map((p) =>
-    isHttpUrl(p) ? p : toPosix(path.isAbsolute(p) ? p : path.join(projectRoot, p)),
-  );
-  if (fromRc.length > 0) return fromRc;
+  // Check schemas directory
+  const schemasDir = path.join(projectRoot, 'schemas');
+  if (fs.existsSync(schemasDir)) {
+    const schemaFiles = fs.readdirSync(schemasDir)
+      .filter(file => file.endsWith('.graphql') || file.endsWith('.gql'))
+      .map(file => toPosix(path.join(schemasDir, file)));
+    if (schemaFiles.length > 0) return schemaFiles;
+  }
 
-  // 2) Fallback defaults
-  const schemaLocalDefault = toPosix(path.join(sourceRootAbs, 'gql', 'schema.graphql'));
-  const defaults: string[] = [];
-  if (fs.existsSync(schemaLocalDefault)) defaults.push(schemaLocalDefault);
-  return defaults;
+  return [];
 }
 
-function walkDirectoryCollectFiles(rootDir: string): string[] {
-  const results: string[] = [];
-  const stack: string[] = [rootDir];
-  while (stack.length) {
-    const current = stack.pop()!;
-    const entries = fs.readdirSync(current, { withFileTypes: true });
-    for (const entry of entries) {
-      const full = path.join(current, entry.name);
-      if (entry.isDirectory()) {
-        stack.push(full);
-      } else if (entry.isFile()) {
-        results.push(toPosix(full));
+// File extension normalization  
+async function createExtensionMap(sourceRoot: string, options: GqlgenOptions, sharedTypesDir: string): Promise<Map<string, string>> {
+  const extensionMap = new Map<string, string>();
+  const targetExt = options.gqlDocFileExtension || 'gql';
+  const sourceExt = targetExt === 'gql' ? 'graphql' : 'gql';
+  const filesToRename: Array<{ from: string; to: string; fromTs: string; toTs: string }> = [];
+  
+  try {
+    const findFiles = (dir: string): void => {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        
+        if (entry.isDirectory() && entry.name !== 'node_modules') {
+          findFiles(fullPath);
+        } else if (entry.isFile() && entry.name.endsWith(`.${sourceExt}`)) {
+          const targetPath = fullPath.replace(`.${sourceExt}`, `.${targetExt}`);
+          const fromTsPath = `${fullPath}.ts`;
+          const toTsPath = `${targetPath}.ts`;
+          extensionMap.set(toPosix(fullPath), toPosix(targetPath));
+          filesToRename.push({ from: fullPath, to: targetPath, fromTs: fromTsPath, toTs: toTsPath });
+        }
+      }
+    };
+    
+    findFiles(sourceRoot);
+    
+    // Also check for old schema file in shared types directory
+    const oldSchemaFileName = sourceExt === 'gql' ? 'schema.gql.ts' : 'schema.graphql.ts';
+    const newSchemaFileName = targetExt === 'gql' ? 'schema.gql.ts' : 'schema.graphql.ts';
+    const oldSchemaPath = path.join(sharedTypesDir, oldSchemaFileName);
+    const newSchemaPath = path.join(sharedTypesDir, newSchemaFileName);
+    
+    if (fs.existsSync(oldSchemaPath) && oldSchemaFileName !== newSchemaFileName) {
+      filesToRename.push({ 
+        from: oldSchemaPath, 
+        to: newSchemaPath, 
+        fromTs: oldSchemaPath, // Schema file is already a .ts file
+        toTs: newSchemaPath 
+      });
+    }
+    
+    if (filesToRename.length > 0) {
+      console.info(`\n[gqlgen] Found ${filesToRename.length} files to normalize to .${targetExt} extension:`);
+      filesToRename.forEach(({ from, to, fromTs, toTs }) => {
+        console.info(`  ${path.relative(process.cwd(), from)} → ${path.relative(process.cwd(), to)}`);
+        if (fs.existsSync(fromTs) && fromTs !== from) {
+          console.info(`  ${path.relative(process.cwd(), fromTs)} → ${path.relative(process.cwd(), toTs)}`);
+        }
+      });
+      
+      const confirmed = await askUserConfirmation(
+        `\n[gqlgen] Do you want to proceed with normalization? This will:\n` +
+        `  - Rename ${filesToRename.length} files to use .${targetExt} extension\n` +
+        `  - Also rename corresponding TypeScript files`
+      );
+      
+      if (confirmed) {
+        let successCount = 0;
+        for (const { from, to, fromTs, toTs } of filesToRename) {
+          try {
+            // Check if this is a schema file (fromTs === from means it's already a .ts file)
+            if (fromTs === from) {
+              // This is a schema file, just rename it
+              const content = fs.readFileSync(from, 'utf8');
+              fs.writeFileSync(to, content, 'utf8');
+              fs.rmSync(from);
+              console.info(`[gqlgen] ✓ Normalized: ${path.relative(process.cwd(), from)}`);
+            } else {
+              // This is a GraphQL document file
+              const content = fs.readFileSync(from, 'utf8');
+              fs.writeFileSync(to, content, 'utf8');
+              fs.rmSync(from);
+              
+              // Rename corresponding TypeScript file if it exists
+              if (fs.existsSync(fromTs)) {
+                const tsContent = fs.readFileSync(fromTs, 'utf8');
+                fs.writeFileSync(toTs, tsContent, 'utf8');
+                fs.rmSync(fromTs);
+                console.info(`[gqlgen] ✓ Normalized: ${path.relative(process.cwd(), from)} and ${path.relative(process.cwd(), fromTs)}`);
+              } else {
+                console.info(`[gqlgen] ✓ Normalized: ${path.relative(process.cwd(), from)}`);
+              }
+            }
+            
+            successCount++;
+          } catch (err) {
+            console.warn(`[gqlgen] ✗ Failed to normalize ${path.relative(process.cwd(), from)}:`, err);
+          }
+        }
+        console.info(`\n[gqlgen] Successfully normalized ${successCount}/${filesToRename.length} files`);
+      } else {
+        console.info('[gqlgen] File normalization cancelled by user');
+        return new Map(); // Return empty map if cancelled
       }
     }
+  } catch (err) {
+    console.warn('[gqlgen] Error creating extension map:', err);
   }
-  return results;
+  
+  return extensionMap;
 }
 
-// NOTE: previously enforced no .graphql documents; now we support both .gql and .graphql documents.
-
-function ensureGraphqlDts(sharedTypesDirAbs: string): void {
-  try {
-    const targetDir = sharedTypesDirAbs;
-    const targetFile = path.join(targetDir, 'graphql.d.ts');
-    const content = [
-      '// Auto-generated type declarations for importing .gql files',
-      '// Generated by vite-plugin-gqlgen. Do not edit.',
-      "declare module '*.gql' {",
-      "  import type { DocumentNode } from '@apollo/client';",
-      '  const document: DocumentNode;',
-      '  export default document;',
-      '}',
-      '',
-      "declare module '*.graphql' {",
-      "  import type { DocumentNode } from '@apollo/client';",
-      '  const document: DocumentNode;',
-      '  export default document;',
-      '}',
-      '',
-    ].join('\n');
-
-    fs.mkdirSync(targetDir, { recursive: true });
-    if (fs.existsSync(targetFile)) {
-      const existing = fs.readFileSync(targetFile, 'utf8');
-      if (existing === content) return;
+// Code generation
+async function generateCode(
+  schemas: string[], 
+  sourceRoot: string, 
+  sharedTypesDir: string, 
+  baseTypesImportPath: string, 
+  scalars: Record<string, string>, 
+  options: GqlgenOptions,
+  projectRoot: string
+) {
+  const gqlDocExtension = options.gqlDocFileExtension || 'gql';
+  const documents = buildDocumentGlobs(path.relative(projectRoot, sourceRoot) || '.', gqlDocExtension);
+  
+  const baseConfig = {
+    schema: schemas,
+    overwrite: true,
+    documents,
+    config: {
+      onlyOperationTypes: true,
+      enumsAsTypes: false,
+      declarationKind: 'interface',
+      omitOperationSuffix: true,
+      documentMode: 'graphQLTag',
+      defaultScalarType: 'any',
+      operationResultSuffix: 'Result',
+      documentVariableSuffix: '',
+      fragmentVariableSuffix: '',
+      namingConvention: 'keep',
+      scalars,
     }
-    fs.writeFileSync(targetFile, content, 'utf8');
-    console.info(`[gqlgen] Ensured type declarations at ${toPosix(targetFile)}`);
-  } catch (e) {
-    console.warn('[gqlgen] Failed to ensure graphql.d.ts:', e);
-  }
+  };
+
+  const outputExtension = gqlDocExtension === 'graphql' ? '.graphql.ts' : '.gql.ts';
+  const schemaFileName = gqlDocExtension === 'graphql' ? 'schema.graphql.ts' : 'schema.gql.ts';
+
+  await generate({
+    ...baseConfig,
+    generates: {
+      [path.join(sharedTypesDir, schemaFileName)]: {
+        plugins: ['typescript'],
+      },
+      [sourceRoot]: {
+        preset: 'near-operation-file',
+        presetConfig: {
+          extension: outputExtension,
+          baseTypesPath: baseTypesImportPath,
+        },
+        plugins: ['typescript-operations', 'typed-document-node'],
+      },
+      [path.join(sharedTypesDir, 'apollo-helpers.g.ts')]: {
+        plugins: ['typescript-apollo-client-helpers'],
+      },
+    },
+  } as any, true);
 }
 
-const gqlgen = (options: GqlgenOptions = {}): Plugin => {
-  const state: ViteState = { projectRoot: '', sourceRoot: '' };
+const gqlgen = (options: GqlgenOptions): Plugin => {
+  const state: PluginState = { 
+    projectRoot: '', 
+    sourceRoot: '', 
+    extensionMap: new Map() 
+  };
 
   return {
     name: 'vite-plugin-gqlgen',
     enforce: 'pre',
 
     configResolved(config) {
-      const projectRoot = toPosix(config.root || process.cwd());
-      const sourceRoot = resolveSourceRoot(projectRoot);
-      state.projectRoot = projectRoot;
-      state.sourceRoot = sourceRoot;
+      state.projectRoot = toPosix(config.root || process.cwd());
+      state.sourceRoot = resolveSourceRoot(state.projectRoot);
     },
 
     async buildStart() {
-      try {
-        const projectRoot = state.projectRoot || toPosix(process.cwd());
-        const sourceRootAbs = state.sourceRoot || resolveSourceRoot(projectRoot);
-        const sharedTypesDirAbs = toPosix(
-          options.sharedTypesDir
-            ? path.isAbsolute(options.sharedTypesDir)
-              ? options.sharedTypesDir
-              : path.join(projectRoot, options.sharedTypesDir)
-            : path.join(sourceRootAbs, 'graphql'),
-        );
+      const { projectRoot, sourceRoot } = state;
+      const sharedTypesDir = options.sharedTypesDir
+        ? path.isAbsolute(options.sharedTypesDir)
+          ? options.sharedTypesDir
+          : path.join(projectRoot, options.sharedTypesDir)
+        : path.join(sourceRoot, 'graphql');
 
-        const sourceRootRelRaw = path.relative(projectRoot, sourceRootAbs);
-        const sourceRootRel = sourceRootRelRaw === '' ? '.' : toPosix(sourceRootRelRaw);
-        const documentsAll = buildDocumentsGlobsRelative(sourceRootRel);
-        const baseTypesImportPath = computeBaseTypesImportPath(sourceRootAbs, sharedTypesDirAbs);
-        const scalars = { ...DEFAULT_SCALARS, ...(options.scalars || {}) };
+      // Handle extension normalization
+      state.extensionMap = await createExtensionMap(sourceRoot, options, sharedTypesDir);
 
-        // Ensure graphql.d.ts exists alongside generated shared types
-        ensureGraphqlDts(sharedTypesDirAbs);
+      // Setup paths and configuration
+      const gqlDocExtension = options.gqlDocFileExtension || 'gql';
+      const sourceRootRel = path.relative(projectRoot, sourceRoot) || '.';
+      const baseTypesImportPath = computeBaseTypesImportPath(sourceRoot, sharedTypesDir, gqlDocExtension);
+      const scalars = { ...DEFAULT_SCALARS, ...(options.scalars || {}) };
 
-        // Sync schemas based on vite config option localSchemaMap; keep other .graphqlrc.yml entries intact
-        try {
-          const map = options.localSchemaMap ?? {};
-          const urls = Object.keys(map).filter((k) => isHttpUrl(k));
-          if (urls.length > 0) {
-            const generatedFiles: string[] = [];
-            for (const url of urls) {
-              const rel = toPosix(map[url]);
-              const abs = toPosix(path.isAbsolute(rel) ? rel : path.join(projectRoot, rel));
-              fs.mkdirSync(path.dirname(abs), { recursive: true });
-              const sdl = await fetchRemoteSchemaSdl(url);
-              fs.writeFileSync(abs, sdl, 'utf8');
-              generatedFiles.push(toPosix(path.relative(projectRoot, abs)) || rel);
-              console.info(`[gqlgen] Downloaded schema from ${url} -> ${rel}`);
-            }
-            if (generatedFiles.length > 0) {
-              const toAdd = Array.from(new Set([...generatedFiles, ...urls]));
-              ensureGraphqlRcUpdated(projectRoot, (doc) => {
-                const existing = yamlGetStringArray(doc.get('schema') as any);
-                const combined = Array.from(new Set<string>([...toAdd, ...existing]));
-                doc.set('schema', combined);
-              });
-              console.info('[gqlgen] Updated .graphqlrc.yml: ensured mapped schema files and URLs are listed.');
-            }
-          }
-          // Ensure required documents globs are present
-          ensureGraphqlRcUpdated(projectRoot, (doc) => {
-            const existingDocs = yamlGetStringArray(doc.get('documents') as any);
-            const next = Array.from(new Set<string>([...existingDocs, ...documentsAll]));
-            doc.set('documents', next);
-          });
-          console.info('[gqlgen] Updated .graphqlrc.yml: ensured documents globs aligned to sourceRoot.');
-        } catch (e) {
-          console.warn('[gqlgen] Unable to update .graphqlrc.yml based on localSchemaMap:', e);
-        }
-        const schemaEntries = resolveSchemas(projectRoot, sourceRootAbs);
+      // Update document globs in .graphqlrc.yml
+      const documentGlobs = buildDocumentGlobs(sourceRootRel, gqlDocExtension);
+      updateGraphqlRc(projectRoot, (doc) => {
+        const existing = yamlToStringArray(doc.get('documents'));
+        doc.set('documents', [...new Set([...existing, ...documentGlobs])]);
+      });
 
-        if (schemaEntries.length === 0) {
-          throw '[gqlgen] No GraphQL schema configured. Please specify schema files/URLs via plugin options or .graphqlrc.yml.';
-        }
-
-        // Build separate documents globs for .gql (and embedded) and for .graphql only
-        const s = sourceRootRel.replace(/\\/g, '/').replace(/\/$/, '');
-        const base = s === '' || s === '.' ? '' : `${s}/`;
-
-        const codegenConfigGql = {
-          overwrite: true,
-          schema: schemaEntries,
-          documents: documentsAll,
-          config: {
-            onlyOperationTypes: true,
-            enumsAsTypes: false,
-            declarationKind: 'interface',
-            omitOperationSuffix: true,
-            documentMode: 'graphQLTag',
-            defaultScalarType: 'any',
-            operationResultSuffix: 'Result',
-            documentVariableSuffix: '',
-            fragmentVariableSuffix: '',
-            namingConvention: 'keep',
-            scalars,
-          },
-          generates: {
-            [toPosix(path.join(sharedTypesDirAbs, 'schema.gql.ts'))]: {
-              plugins: ['typescript'],
-            },
-            [toPosix(path.join(sourceRootAbs))]: {
-              preset: 'near-operation-file',
-              presetConfig: {
-                extension: '.gql.ts',
-                baseTypesPath: baseTypesImportPath,
-              },
-              plugins: ['typescript-operations', 'typed-document-node'],
-            },
-            [toPosix(path.join(sharedTypesDirAbs, 'apollo-helpers.g.ts'))]: {
-              plugins: ['typescript-apollo-client-helpers'],
-            },
-          },
-        } as const;
-
-        await generate(codegenConfigGql as any, true);
-
-      } catch (error) {
-        throw error;
+      // Resolve schema sources
+      const schemas = resolveSchemas(projectRoot);
+      if (schemas.length === 0) {
+        throw '[gqlgen] No GraphQL schema configured. Please add schema files or URLs.';
       }
+
+      // Generate TypeScript from GraphQL
+      await generateCode(schemas, sourceRoot, sharedTypesDir, baseTypesImportPath, scalars, options, projectRoot);
     },
 
     resolveId(id, importer) {
-      // Support importing raw .gql in user code by redirecting to generated .gql.ts
-      if (id.endsWith('.gql') || id.endsWith('.graphql')) {
-        const stripQuery = (p: string) => p.split('?')[0].split('#')[0];
-        let baseDir: string = state.projectRoot || process.cwd();
-        if (importer) {
-          const importerPath = stripQuery(importer);
-          baseDir = path.dirname(importerPath);
-        }
-        const rawResolved = id.startsWith('.') || id.startsWith('/')
-          ? path.resolve(id.startsWith('/') ? (state.projectRoot || process.cwd()) : baseDir, id)
-          : path.resolve(baseDir, id);
-        const candidateTs = `${rawResolved}.ts`;
-        if (fs.existsSync(candidateTs)) {
-          return toPosix(candidateTs);
-        }
-        // If the generated file is missing, surface a helpful error
-        throw  `Importing "${id}" requires its generated neighbor "${id}.ts". \n It was not found at ${toPosix(candidateTs)}. Run the build/dev server to generate code, or check your gql file path.`;
+      if (!id.endsWith('.gql') && !id.endsWith('.graphql')) {
+        return null;
       }
-      return null;
+
+      // Resolve the GraphQL file path
+      const baseDir = importer ? path.dirname(importer.split('?')[0]) : state.projectRoot;
+      const resolvedPath = path.resolve(baseDir, id);
+      
+      // Check for normalized extension mapping
+      const normalizedPath = state.extensionMap.get(toPosix(resolvedPath));
+      if (normalizedPath) {
+        const gqlDocExtension = options.gqlDocFileExtension || 'gql';
+        const ext = gqlDocExtension === 'graphql' ? '.graphql.ts' : '.gql.ts';
+        const tsFile = normalizedPath.replace(/\.(gql|graphql)$/, ext);
+        if (fs.existsSync(tsFile)) {
+          return toPosix(tsFile);
+        }
+      }
+      
+      // Standard resolution - look for generated TypeScript file
+      const gqlDocExtension = options.gqlDocFileExtension || 'gql';
+      const ext = gqlDocExtension === 'graphql' ? '.graphql.ts' : '.gql.ts';
+      const tsFile = resolvedPath.replace(/\.(gql|graphql)$/, ext);
+      
+      if (fs.existsSync(tsFile)) {
+        return toPosix(tsFile);
+      }
+      
+      throw `GraphQL file "${id}" has no generated TypeScript file. Run the build to generate types.`;
     },
   };
 };

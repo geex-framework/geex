@@ -11,9 +11,10 @@ export default defineConfig({
       // sharedTypesDir: 'src/graphql',
       // scalars: { URL: 'string' }, { Long: { input: BigInt; output: BigInt; }}
       localSchemaMap:{
-        'https://api.dev.geexcode.com/graphql': 'schemas/api.dev.geexcode.com.schema.graphql',
+        'https://api.dev.geexcode.com/graphql': '',
         // 'https://api1.dev.geexcode.com/graphql': 'schemas/api1.dev.geexcode.com.schema.graphql',
-      }
+      },
+      gqlDocFileExtension: "gql"
     }),
   ],
   build: {

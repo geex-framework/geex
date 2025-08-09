@@ -1,8 +1,8 @@
 schema:
-  - schemas/api.dev.geexcode.com.schema.graphql
+  - schemas/api.dev.geexcode.com.graphql
   - https://api.dev.geexcode.com/graphql
 documents:
-  - src/**/*.{ts,tsx,vue,gql,graphql}
+  - src/**/*.{ts,tsx,vue,gql}
   - "!src/**/*.{test,spec}.*"
-  - "!src/**/*.gql.ts"
-  - "!src/**/*.graphql.ts"
+  - "!src/**/*.{gql,graphql}.ts"
+  - "!src/**/node_modules/**"

@@ -1,6 +1,0 @@
-# Query to get initial settings
-query GetInitialSettings2 {
-  initSettings {
-    ...SettingInfo
-  }
-}
