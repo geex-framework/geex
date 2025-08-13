@@ -1,6 +1,6 @@
 ﻿namespace Geex.Extensions.Identity
 {
-    public class OrgCodeChangedEvent : MediatR.INotification
+    public class OrgCodeChangedEvent : MediatX.IEvent
     {
 
         public OrgCodeChangedEvent(string oldOrgCode, string newOrgCode)

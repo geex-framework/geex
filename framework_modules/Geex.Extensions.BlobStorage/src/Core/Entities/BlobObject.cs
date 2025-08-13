@@ -9,6 +9,7 @@ using Geex.Abstractions;
 using Geex.Extensions.BlobStorage.Requests;
 using Geex.Storage;
 using Geex.Validation;
+
 using HotChocolate.Types;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -54,12 +55,12 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
             this.Md5 = request.Md5;
             this.StorageType = request.StorageType;
             this.FileSize = file.Length ?? dataStream.Length;
+            this.SaveAsync().GetAwaiter().GetResult();
+            uow.Attach(this);
             this._streamToStorageTask = Task.Run(async () =>
             {
                 // 保存到存储
-                await this.SaveAsync();
                 // 重新跟踪对象
-                uow.Attach(this);
                 await this.StreamToStorage(dataStream);
                 await dataStream.DisposeAsync();
             });

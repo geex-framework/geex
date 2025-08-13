@@ -13,7 +13,6 @@ namespace Microsoft.AspNetCore.Hosting
             return hostEnvironment.EnvironmentName == "UnitTest";
         }
 
-        [Obsolete("ServiceLocator will be automatically registered.")]
         public static IHost ConfigServiceLocator(this IHost host)
         {
             ServiceLocator.Global = host.Services;

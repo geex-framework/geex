@@ -194,7 +194,6 @@ namespace Geex
         /// <inheritdoc />
         public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
         {
-            ServiceLocator.Global = context.ServiceProvider;
             this.ConfigureModuleEntityMaps(context.ServiceProvider);
             var _env = context.GetEnvironment();
             var app = context.GetApplicationBuilder();

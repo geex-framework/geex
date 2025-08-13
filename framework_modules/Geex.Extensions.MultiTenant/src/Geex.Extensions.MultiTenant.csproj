@@ -16,7 +16,7 @@
         <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
         <ProjectReference Include="..\..\Geex.Extensions.Identity\src\Geex.Extensions.Identity.csproj" />
         <ProjectReference Include="Abstractions\Geex.Extensions.MultiTenant.Abstractions.csproj" />
-        <PackageReference Include="Geex.Analyzer" Version="8.1.1.4" />
+        <PackageReference Include="Geex.Analyzer" Version="8.1.5.6" />
     </ItemGroup>
     <ItemGroup>
         <Folder Include="Gql\Types\" />
