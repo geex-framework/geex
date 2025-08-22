@@ -197,6 +197,7 @@ namespace Geex
             this.ConfigureModuleEntityMaps(context.ServiceProvider);
             var _env = context.GetEnvironment();
             var app = context.GetApplicationBuilder();
+            ServiceLocator.Global = app.ApplicationServices;
             var logger = context.ServiceProvider.GetService<ILogger<GeexCoreModule>>();
             logger.LogInformation("Loaded geex modules:");
             logger.LogInformation(GeexModule.LoadedModules.Select(x => x.ModuleName).ToJsonSafe());

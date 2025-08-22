@@ -28,6 +28,8 @@ export interface Scalars {
 
 export enum AppPermission {
   authorization_mutation_authorize = 'authorization_mutation_authorize',
+  geexModGeex_mutation_editGeexEntityGeex = 'geexModGeex_mutation_editGeexEntityGeex',
+  geexModGeex_query_geexEntityGeex = 'geexModGeex_query_geexEntityGeex',
   identity_mutation_createOrg = 'identity_mutation_createOrg',
   identity_mutation_createRole = 'identity_mutation_createRole',
   identity_mutation_createUser = 'identity_mutation_createUser',
@@ -36,6 +38,10 @@ export enum AppPermission {
   identity_mutation_editUser = 'identity_mutation_editUser',
   identity_query_roles = 'identity_query_roles',
   identity_query_users = 'identity_query_users',
+  multiTenant_mutation_createTenant = 'multiTenant_mutation_createTenant',
+  multiTenant_mutation_deleteTenant = 'multiTenant_mutation_deleteTenant',
+  multiTenant_mutation_editTenant = 'multiTenant_mutation_editTenant',
+  multiTenant_query_tenants = 'multiTenant_query_tenants',
   quicollab_mutation_addDeviceToSquad = 'quicollab_mutation_addDeviceToSquad',
   quicollab_mutation_addMember = 'quicollab_mutation_addMember',
   quicollab_mutation_authorizeDevice = 'quicollab_mutation_authorizeDevice',
@@ -69,6 +75,270 @@ export enum ApplyPolicy {
   VALIDATION = 'VALIDATION'
 }
 
+export interface ApprovalFlowFilterInput {
+  activeIndex?: InputMaybe<IntOperationFilterInput>;
+  activeNode?: InputMaybe<ApprovalFlowNodeFilterInput>;
+  and?: InputMaybe<Array<ApprovalFlowFilterInput>>;
+  /** 关联的实体对象 */
+  associatedEntity?: InputMaybe<IApproveEntityFilterInput>;
+  associatedEntityId?: InputMaybe<StringOperationFilterInput>;
+  /** 关联的实体对象类型 */
+  associatedEntityType?: InputMaybe<ClassEnumOperationFilterInputTypeOfAssociatedEntityTypeFilterInput>;
+  canEdit?: InputMaybe<BooleanOperationFilterInput>;
+  createdOn?: InputMaybe<DateTimeOperationFilterInput>;
+  creatorUser?: InputMaybe<UserFilterInput>;
+  creatorUserId?: InputMaybe<StringOperationFilterInput>;
+  description?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  modifiedOn?: InputMaybe<DateTimeOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  nodes?: InputMaybe<ListFilterInputTypeOfApprovalFlowNodeFilterInput>;
+  or?: InputMaybe<Array<ApprovalFlowFilterInput>>;
+  orgCode?: InputMaybe<StringOperationFilterInput>;
+  stakeholders?: InputMaybe<ListFilterInputTypeOfApprovalFlowUserRefFilterInput>;
+  status?: InputMaybe<ApprovalFlowStatusOperationFilterInput>;
+  templateId?: InputMaybe<StringOperationFilterInput>;
+  /** 租户编码, 为null时为宿主数据 */
+  tenantCode?: InputMaybe<StringOperationFilterInput>;
+}
+
+export interface ApprovalFlowNodeDataInput {
+  approvalFlowId?: InputMaybe<Scalars['String']['input']>;
+  auditRole?: InputMaybe<Scalars['String']['input']>;
+  auditUserId?: InputMaybe<Scalars['String']['input']>;
+  carbonCopyUserIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['String']['input']>;
+  index?: InputMaybe<Scalars['Int']['input']>;
+  isFromTemplate?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+}
+
+export interface ApprovalFlowNodeFilterInput {
+  and?: InputMaybe<Array<ApprovalFlowNodeFilterInput>>;
+  approvalComment?: InputMaybe<StringOperationFilterInput>;
+  approvalFlow?: InputMaybe<ApprovalFlowFilterInput>;
+  approvalFlowId?: InputMaybe<StringOperationFilterInput>;
+  approvalTime?: InputMaybe<DateTimeOperationFilterInput>;
+  auditRole?: InputMaybe<StringOperationFilterInput>;
+  auditUser?: InputMaybe<IUserFilterInput>;
+  auditUserId?: InputMaybe<StringOperationFilterInput>;
+  carbonCopyUserIds?: InputMaybe<ListStringOperationFilterInput>;
+  chatLogs?: InputMaybe<ListFilterInputTypeOfApprovalFlowNodeLogFilterInput>;
+  consultUser?: InputMaybe<IUserFilterInput>;
+  consultUserId?: InputMaybe<StringOperationFilterInput>;
+  createdOn?: InputMaybe<DateTimeOperationFilterInput>;
+  description?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  index?: InputMaybe<IntOperationFilterInput>;
+  isFromTemplate?: InputMaybe<BooleanOperationFilterInput>;
+  modifiedOn?: InputMaybe<DateTimeOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  nextNode?: InputMaybe<ApprovalFlowNodeFilterInput>;
+  nodeStatus?: InputMaybe<ApprovalFlowNodeStatusOperationFilterInput>;
+  or?: InputMaybe<Array<ApprovalFlowNodeFilterInput>>;
+  previousNode?: InputMaybe<ApprovalFlowNodeFilterInput>;
+}
+
+export interface ApprovalFlowNodeLogFilterInput {
+  and?: InputMaybe<Array<ApprovalFlowNodeLogFilterInput>>;
+  approvalFlowNode?: InputMaybe<ApprovalFlowNodeFilterInput>;
+  approvalFlowNodeId?: InputMaybe<StringOperationFilterInput>;
+  createdOn?: InputMaybe<DateTimeOperationFilterInput>;
+  creationTime?: InputMaybe<DateTimeOperationFilterInput>;
+  from?: InputMaybe<UserFilterInput>;
+  fromUserId?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  logType?: InputMaybe<ApprovalFlowNodeLogTypeOperationFilterInput>;
+  message?: InputMaybe<StringOperationFilterInput>;
+  modifiedOn?: InputMaybe<DateTimeOperationFilterInput>;
+  or?: InputMaybe<Array<ApprovalFlowNodeLogFilterInput>>;
+  to?: InputMaybe<UserFilterInput>;
+  toUserId?: InputMaybe<StringOperationFilterInput>;
+}
+
+export enum ApprovalFlowNodeLogType {
+  APPROVE = 'APPROVE',
+  ATTACH_FILE = 'ATTACH_FILE',
+  CARBON_COPY = 'CARBON_COPY',
+  CHAT = 'CHAT',
+  CONSULT = 'CONSULT',
+  CONSULT_CHAT = 'CONSULT_CHAT',
+  EDIT = 'EDIT',
+  REJECT = 'REJECT',
+  TRANSFER = 'TRANSFER',
+  VIEW = 'VIEW',
+  WITHDRAW = 'WITHDRAW'
+}
+
+export interface ApprovalFlowNodeLogTypeOperationFilterInput {
+  eq?: InputMaybe<ApprovalFlowNodeLogType>;
+  in?: InputMaybe<Array<ApprovalFlowNodeLogType>>;
+  neq?: InputMaybe<ApprovalFlowNodeLogType>;
+  nin?: InputMaybe<Array<ApprovalFlowNodeLogType>>;
+}
+
+export interface ApprovalFlowNodeSortInput {
+  approvalComment?: InputMaybe<SortEnumType>;
+  approvalFlow?: InputMaybe<ApprovalFlowSortInput>;
+  approvalFlowId?: InputMaybe<SortEnumType>;
+  approvalTime?: InputMaybe<SortEnumType>;
+  auditRole?: InputMaybe<SortEnumType>;
+  auditUser?: InputMaybe<IUserSortInput>;
+  auditUserId?: InputMaybe<SortEnumType>;
+  consultUser?: InputMaybe<IUserSortInput>;
+  consultUserId?: InputMaybe<SortEnumType>;
+  createdOn?: InputMaybe<SortEnumType>;
+  description?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  index?: InputMaybe<SortEnumType>;
+  isFromTemplate?: InputMaybe<SortEnumType>;
+  modifiedOn?: InputMaybe<SortEnumType>;
+  name?: InputMaybe<SortEnumType>;
+  nextNode?: InputMaybe<ApprovalFlowNodeSortInput>;
+  nodeStatus?: InputMaybe<SortEnumType>;
+  previousNode?: InputMaybe<ApprovalFlowNodeSortInput>;
+}
+
+export interface ApprovalFlowNodeStatusFlagsInput {
+  isApproved?: InputMaybe<Scalars['Boolean']['input']>;
+  isConsulting?: InputMaybe<Scalars['Boolean']['input']>;
+  isCreated?: InputMaybe<Scalars['Boolean']['input']>;
+  isRejected?: InputMaybe<Scalars['Boolean']['input']>;
+  isStarted?: InputMaybe<Scalars['Boolean']['input']>;
+  isTransferred?: InputMaybe<Scalars['Boolean']['input']>;
+  isViewed?: InputMaybe<Scalars['Boolean']['input']>;
+}
+
+export interface ApprovalFlowNodeStatusOperationFilterInput {
+  eq?: InputMaybe<ApprovalFlowNodeStatusFlagsInput>;
+  in?: InputMaybe<Array<ApprovalFlowNodeStatusFlagsInput>>;
+  neq?: InputMaybe<ApprovalFlowNodeStatusFlagsInput>;
+  nin?: InputMaybe<Array<ApprovalFlowNodeStatusFlagsInput>>;
+}
+
+export interface ApprovalFlowNodeTemplateDataInput {
+  associatedEntityType?: InputMaybe<AssociatedEntityType>;
+  auditRole: Scalars['String']['input'];
+  carbonCopyUserIds?: InputMaybe<Array<Scalars['String']['input']>>;
+  id: Scalars['String']['input'];
+  index?: InputMaybe<Scalars['Int']['input']>;
+  name: Scalars['String']['input'];
+}
+
+export interface ApprovalFlowNodeTemplateFilterInput {
+  and?: InputMaybe<Array<ApprovalFlowNodeTemplateFilterInput>>;
+  auditRole?: InputMaybe<StringOperationFilterInput>;
+  carbonCopyUserIds?: InputMaybe<ListStringOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  index?: InputMaybe<IntOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<ApprovalFlowNodeTemplateFilterInput>>;
+}
+
+export enum ApprovalFlowOwnershipType {
+  CARBON_COPY = 'CARBON_COPY',
+  CONSULT = 'CONSULT',
+  CREATE = 'CREATE',
+  PARTICIPATE = 'PARTICIPATE',
+  SUBSCRIBE = 'SUBSCRIBE'
+}
+
+export interface ApprovalFlowOwnershipTypeOperationFilterInput {
+  eq?: InputMaybe<ApprovalFlowOwnershipType>;
+  in?: InputMaybe<Array<ApprovalFlowOwnershipType>>;
+  neq?: InputMaybe<ApprovalFlowOwnershipType>;
+  nin?: InputMaybe<Array<ApprovalFlowOwnershipType>>;
+}
+
+export interface ApprovalFlowSortInput {
+  activeIndex?: InputMaybe<SortEnumType>;
+  activeNode?: InputMaybe<ApprovalFlowNodeSortInput>;
+  /** 关联的实体对象 */
+  associatedEntity?: InputMaybe<IApproveEntitySortInput>;
+  associatedEntityId?: InputMaybe<SortEnumType>;
+  /** 关联的实体对象类型 */
+  associatedEntityType?: InputMaybe<SortEnumType>;
+  canEdit?: InputMaybe<SortEnumType>;
+  createdOn?: InputMaybe<SortEnumType>;
+  creatorUser?: InputMaybe<UserSortInput>;
+  creatorUserId?: InputMaybe<SortEnumType>;
+  description?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  modifiedOn?: InputMaybe<SortEnumType>;
+  name?: InputMaybe<SortEnumType>;
+  orgCode?: InputMaybe<SortEnumType>;
+  status?: InputMaybe<SortEnumType>;
+  templateId?: InputMaybe<SortEnumType>;
+  /** 租户编码, 为null时为宿主数据 */
+  tenantCode?: InputMaybe<SortEnumType>;
+}
+
+export enum ApprovalFlowStatus {
+  CANCELED = 'CANCELED',
+  FINISHED = 'FINISHED',
+  PROCESSING = 'PROCESSING'
+}
+
+export interface ApprovalFlowStatusOperationFilterInput {
+  eq?: InputMaybe<ApprovalFlowStatus>;
+  in?: InputMaybe<Array<ApprovalFlowStatus>>;
+  neq?: InputMaybe<ApprovalFlowStatus>;
+  nin?: InputMaybe<Array<ApprovalFlowStatus>>;
+}
+
+export interface ApprovalFlowTemplateFilterInput {
+  and?: InputMaybe<Array<ApprovalFlowTemplateFilterInput>>;
+  createdOn?: InputMaybe<DateTimeOperationFilterInput>;
+  creatorUser?: InputMaybe<IUserFilterInput>;
+  creatorUserId?: InputMaybe<StringOperationFilterInput>;
+  description?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  modifiedOn?: InputMaybe<DateTimeOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  nodes?: InputMaybe<ListFilterInputTypeOfApprovalFlowNodeTemplateFilterInput>;
+  or?: InputMaybe<Array<ApprovalFlowTemplateFilterInput>>;
+  orgCode?: InputMaybe<StringOperationFilterInput>;
+}
+
+export interface ApprovalFlowTemplateSortInput {
+  createdOn?: InputMaybe<SortEnumType>;
+  creatorUser?: InputMaybe<IUserSortInput>;
+  creatorUserId?: InputMaybe<SortEnumType>;
+  description?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  modifiedOn?: InputMaybe<SortEnumType>;
+  name?: InputMaybe<SortEnumType>;
+  orgCode?: InputMaybe<SortEnumType>;
+}
+
+export interface ApprovalFlowUserRefFilterInput {
+  and?: InputMaybe<Array<ApprovalFlowUserRefFilterInput>>;
+  approvalFlowId?: InputMaybe<StringOperationFilterInput>;
+  createdOn?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  modifiedOn?: InputMaybe<DateTimeOperationFilterInput>;
+  or?: InputMaybe<Array<ApprovalFlowUserRefFilterInput>>;
+  ownershipType?: InputMaybe<ApprovalFlowOwnershipTypeOperationFilterInput>;
+  userId?: InputMaybe<StringOperationFilterInput>;
+}
+
+export enum ApproveStatus {
+  /** 已审批 */
+  APPROVED = 'APPROVED',
+  /** 待上报/默认 */
+  DEFAULT = 'DEFAULT',
+  /** 已上报 */
+  SUBMITTED = 'SUBMITTED'
+}
+
+export interface ApproveStatusOperationFilterInput {
+  eq?: InputMaybe<ApproveStatus>;
+  in?: InputMaybe<Array<ApproveStatus>>;
+  neq?: InputMaybe<ApproveStatus>;
+  nin?: InputMaybe<Array<ApproveStatus>>;
+}
+
 export interface AssignOrgRequest {
   userOrgsMap: Array<UserOrgMapItemInput>;
 }
@@ -76,6 +346,10 @@ export interface AssignOrgRequest {
 export interface AssignRoleRequest {
   roles: Array<Scalars['String']['input']>;
   userIds: Array<Scalars['String']['input']>;
+}
+
+export enum AssociatedEntityType {
+  Object = 'Object'
 }
 
 export interface AuthenticateRequest {
@@ -142,11 +416,25 @@ export interface ChangePasswordRequest {
   originPassword: Scalars['String']['input'];
 }
 
+export interface ClassEnumOperationFilterInputTypeOfAssociatedEntityTypeFilterInput {
+  eq?: InputMaybe<AssociatedEntityType>;
+  in?: InputMaybe<Array<InputMaybe<AssociatedEntityType>>>;
+  neq?: InputMaybe<AssociatedEntityType>;
+  nin?: InputMaybe<Array<InputMaybe<AssociatedEntityType>>>;
+}
+
 export interface ClassEnumOperationFilterInputTypeOfBlobStorageTypeFilterInput {
   eq?: InputMaybe<BlobStorageType>;
   in?: InputMaybe<Array<InputMaybe<BlobStorageType>>>;
   neq?: InputMaybe<BlobStorageType>;
   nin?: InputMaybe<Array<InputMaybe<BlobStorageType>>>;
+}
+
+export interface ClassEnumOperationFilterInputTypeOfLoginProviderEnumFilterInput {
+  eq?: InputMaybe<LoginProviderEnum>;
+  in?: InputMaybe<Array<InputMaybe<LoginProviderEnum>>>;
+  neq?: InputMaybe<LoginProviderEnum>;
+  nin?: InputMaybe<Array<InputMaybe<LoginProviderEnum>>>;
 }
 
 export interface ClassEnumOperationFilterInputTypeOfOrgTypeEnumFilterInput {
@@ -156,11 +444,32 @@ export interface ClassEnumOperationFilterInputTypeOfOrgTypeEnumFilterInput {
   nin?: InputMaybe<Array<InputMaybe<OrgTypeEnum>>>;
 }
 
+export interface CreateApprovalFlowRequest {
+  associatedEntityId?: InputMaybe<Scalars['String']['input']>;
+  associatedEntityType?: InputMaybe<AssociatedEntityType>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  nodes: Array<ApprovalFlowNodeDataInput>;
+  orgCode: Scalars['String']['input'];
+  templateId?: InputMaybe<Scalars['String']['input']>;
+}
+
+export interface CreateApprovalFlowTemplateRequest {
+  approvalFlowNodeTemplates: Array<ApprovalFlowNodeTemplateDataInput>;
+  description: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  orgCode: Scalars['String']['input'];
+}
+
 export interface CreateBlobObjectRequest {
   file: Scalars['Upload']['input'];
   /** can pass null, will be calculated */
   md5?: InputMaybe<Scalars['String']['input']>;
   storageType: BlobStorageType;
+}
+
+export interface CreateGeexEntityGeexRequest {
+  name: Scalars['String']['input'];
 }
 
 export interface CreateMessageRequest {
@@ -192,6 +501,12 @@ export interface CreateSquadRequest {
   inviteCode?: InputMaybe<Scalars['String']['input']>;
   /** Squad最大成员数量限制，默认50 */
   maxMemberCount?: InputMaybe<Scalars['Int']['input']>;
+  name: Scalars['String']['input'];
+}
+
+export interface CreateTenantRequest {
+  code: Scalars['String']['input'];
+  externalInfo?: InputMaybe<Scalars['Any']['input']>;
   name: Scalars['String']['input'];
 }
 
@@ -255,6 +570,28 @@ export enum DevicePermission {
   quicollab_mutation_updateDevice = 'quicollab_mutation_updateDevice'
 }
 
+export interface EditApprovalFlowRequest {
+  associatedEntityId?: InputMaybe<Scalars['String']['input']>;
+  associatedEntityType?: InputMaybe<AssociatedEntityType>;
+  description: Scalars['String']['input'];
+  id: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  nodes: Array<ApprovalFlowNodeDataInput>;
+}
+
+export interface EditApprovalFlowTemplateRequest {
+  approvalFlowNodeTemplates: Array<ApprovalFlowNodeTemplateDataInput>;
+  description: Scalars['String']['input'];
+  id: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  orgCode?: InputMaybe<Scalars['String']['input']>;
+}
+
+export interface EditGeexEntityGeexRequest {
+  id: Scalars['String']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+}
+
 export interface EditMessageRequest {
   id: Scalars['String']['input'];
   messageType?: InputMaybe<MessageType>;
@@ -272,6 +609,11 @@ export interface EditSettingRequest {
 export interface EditSquadRequest {
   id?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+}
+
+export interface EditTenantRequest {
+  code: Scalars['String']['input'];
+  name: Scalars['String']['input'];
 }
 
 export interface EditUserRequest {
@@ -306,6 +648,29 @@ export enum GeexClaimType {
   Tenant = 'Tenant'
 }
 
+/** this is a aggregate root of this module, we name it the same as the module feel free to change it to its real name */
+export interface GeexEntityGeexFilterInput {
+  and?: InputMaybe<Array<GeexEntityGeexFilterInput>>;
+  createdOn?: InputMaybe<DateTimeOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  modifiedOn?: InputMaybe<DateTimeOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<GeexEntityGeexFilterInput>>;
+}
+
+export enum GeexEntityGeexPermission {
+  geexModGeex_mutation_editGeexEntityGeex = 'geexModGeex_mutation_editGeexEntityGeex',
+  geexModGeex_query_geexEntityGeex = 'geexModGeex_query_geexEntityGeex'
+}
+
+/** this is a aggregate root of this module, we name it the same as the module feel free to change it to its real name */
+export interface GeexEntityGeexSortInput {
+  createdOn?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  modifiedOn?: InputMaybe<SortEnumType>;
+  name?: InputMaybe<SortEnumType>;
+}
+
 /** inherit this enumeration to customise your own business exceptions */
 export enum GeexExceptionType {
   Conflict = 'Conflict',
@@ -320,11 +685,44 @@ export enum GeexLoginProviders {
   Geex = 'Geex'
 }
 
+export enum GeexModGeexPermission {
+  geexModGeex_mutation_editGeexEntityGeex = 'geexModGeex_mutation_editGeexEntityGeex',
+  geexModGeex_query_geexEntityGeex = 'geexModGeex_query_geexEntityGeex'
+}
+
+export enum GeexModGeexSettings {
+  GeexModGeexModuleName = 'GeexModGeexModuleName'
+}
+
+export enum GeexOrgGeexLoginProviders {
+  GeexOrgGeex = 'GeexOrgGeex'
+}
+
 export interface GetSettingsRequest {
   _?: InputMaybe<Scalars['String']['input']>;
   filterByName?: InputMaybe<Scalars['String']['input']>;
   scope?: InputMaybe<SettingScopeEnumeration>;
   settingDefinitions?: InputMaybe<Array<SettingDefinition>>;
+}
+
+export interface IApproveEntityFilterInput {
+  and?: InputMaybe<Array<IApproveEntityFilterInput>>;
+  /** 审批操作备注文本 */
+  approveRemark?: InputMaybe<StringOperationFilterInput>;
+  /** 对象审批状态 */
+  approveStatus?: InputMaybe<ApproveStatusOperationFilterInput>;
+  or?: InputMaybe<Array<IApproveEntityFilterInput>>;
+  /** 是否满足提交条件 */
+  submittable?: InputMaybe<BooleanOperationFilterInput>;
+}
+
+export interface IApproveEntitySortInput {
+  /** 审批操作备注文本 */
+  approveRemark?: InputMaybe<SortEnumType>;
+  /** 对象审批状态 */
+  approveStatus?: InputMaybe<SortEnumType>;
+  /** 是否满足提交条件 */
+  submittable?: InputMaybe<SortEnumType>;
 }
 
 /** Represents a blob object in the storage system */
@@ -346,6 +744,24 @@ export interface IBlobObjectFilterInput {
   or?: InputMaybe<Array<IBlobObjectFilterInput>>;
   /** Storage type used for this blob */
   storageType?: InputMaybe<ClassEnumOperationFilterInputTypeOfBlobStorageTypeFilterInput>;
+}
+
+/** Represents a blob object in the storage system */
+export interface IBlobObjectSortInput {
+  /** Expiration time for the blob (if applicable) */
+  expireAt?: InputMaybe<SortEnumType>;
+  /** Name of the file */
+  fileName?: InputMaybe<SortEnumType>;
+  /** Size of the file in bytes */
+  fileSize?: InputMaybe<SortEnumType>;
+  /** MD5 hash of the file content */
+  md5?: InputMaybe<SortEnumType>;
+  /** MIME type of the file */
+  mimeType?: InputMaybe<SortEnumType>;
+  /** Storage type used for this blob */
+  storageType?: InputMaybe<SortEnumType>;
+  /** URL to access the file */
+  url?: InputMaybe<SortEnumType>;
 }
 
 export interface IMessageContentFilterInput {
@@ -413,6 +829,15 @@ export interface ISettingFilterInput {
   or?: InputMaybe<Array<ISettingFilterInput>>;
   scope?: InputMaybe<SettingScopeEnumerationOperationFilterInput>;
   scopedKey?: InputMaybe<StringOperationFilterInput>;
+}
+
+export interface ITenantFilterInput {
+  and?: InputMaybe<Array<ITenantFilterInput>>;
+  code?: InputMaybe<StringOperationFilterInput>;
+  externalInfo?: InputMaybe<JsonNodeFilterInput>;
+  isEnabled?: InputMaybe<BooleanOperationFilterInput>;
+  name?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<ITenantFilterInput>>;
 }
 
 export interface IUserFilterInput {
@@ -503,11 +928,67 @@ export interface JobStateSortInput {
   nextExecutionTime?: InputMaybe<SortEnumType>;
 }
 
+export interface JsonNodeFilterInput {
+  and?: InputMaybe<Array<JsonNodeFilterInput>>;
+  options?: InputMaybe<JsonNodeOptionsFilterInput>;
+  or?: InputMaybe<Array<JsonNodeFilterInput>>;
+  parent?: InputMaybe<JsonNodeFilterInput>;
+  root?: InputMaybe<JsonNodeFilterInput>;
+}
+
+export interface JsonNodeOptionsFilterInput {
+  and?: InputMaybe<Array<JsonNodeOptionsFilterInput>>;
+  or?: InputMaybe<Array<JsonNodeOptionsFilterInput>>;
+  propertyNameCaseInsensitive?: InputMaybe<BooleanOperationFilterInput>;
+}
+
+export interface ListFilterInputTypeOfApprovalFlowNodeFilterInput {
+  all?: InputMaybe<ApprovalFlowNodeFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<ApprovalFlowNodeFilterInput>;
+  some?: InputMaybe<ApprovalFlowNodeFilterInput>;
+}
+
+export interface ListFilterInputTypeOfApprovalFlowNodeLogFilterInput {
+  all?: InputMaybe<ApprovalFlowNodeLogFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<ApprovalFlowNodeLogFilterInput>;
+  some?: InputMaybe<ApprovalFlowNodeLogFilterInput>;
+}
+
+export interface ListFilterInputTypeOfApprovalFlowNodeTemplateFilterInput {
+  all?: InputMaybe<ApprovalFlowNodeTemplateFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<ApprovalFlowNodeTemplateFilterInput>;
+  some?: InputMaybe<ApprovalFlowNodeTemplateFilterInput>;
+}
+
+export interface ListFilterInputTypeOfApprovalFlowUserRefFilterInput {
+  all?: InputMaybe<ApprovalFlowUserRefFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<ApprovalFlowUserRefFilterInput>;
+  some?: InputMaybe<ApprovalFlowUserRefFilterInput>;
+}
+
+export interface ListFilterInputTypeOfIOrgFilterInput {
+  all?: InputMaybe<IOrgFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<IOrgFilterInput>;
+  some?: InputMaybe<IOrgFilterInput>;
+}
+
 export interface ListFilterInputTypeOfIQuicollabUserFilterInput {
   all?: InputMaybe<IQuicollabUserFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
   none?: InputMaybe<IQuicollabUserFilterInput>;
   some?: InputMaybe<IQuicollabUserFilterInput>;
+}
+
+export interface ListFilterInputTypeOfIRoleFilterInput {
+  all?: InputMaybe<IRoleFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<IRoleFilterInput>;
+  some?: InputMaybe<IRoleFilterInput>;
 }
 
 export interface ListFilterInputTypeOfIUserFilterInput {
@@ -531,6 +1012,13 @@ export interface ListFilterInputTypeOfQuicollabDeviceFilterInput {
   some?: InputMaybe<QuicollabDeviceFilterInput>;
 }
 
+export interface ListFilterInputTypeOfUserClaimFilterInput {
+  all?: InputMaybe<UserClaimFilterInput>;
+  any?: InputMaybe<Scalars['Boolean']['input']>;
+  none?: InputMaybe<UserClaimFilterInput>;
+  some?: InputMaybe<UserClaimFilterInput>;
+}
+
 export interface ListStringOperationFilterInput {
   all?: InputMaybe<StringOperationFilterInput>;
   any?: InputMaybe<Scalars['Boolean']['input']>;
@@ -545,6 +1033,7 @@ export enum LocalizationSettings {
 
 export enum LoginProviderEnum {
   Geex = 'Geex',
+  GeexOrgGeex = 'GeexOrgGeex',
   Local = 'Local'
 }
 
@@ -611,6 +1100,13 @@ export enum MessagingSettings {
   MessagingModuleName = 'MessagingModuleName'
 }
 
+export enum MultiTenantPermission {
+  multiTenant_mutation_createTenant = 'multiTenant_mutation_createTenant',
+  multiTenant_mutation_deleteTenant = 'multiTenant_mutation_deleteTenant',
+  multiTenant_mutation_editTenant = 'multiTenant_mutation_editTenant',
+  multiTenant_query_tenants = 'multiTenant_query_tenants'
+}
+
 export enum OperationType {
   Mutation = 'Mutation',
   Query = 'Query',
@@ -624,6 +1120,26 @@ export enum OrgPermission {
 
 export enum OrgTypeEnum {
   Default = 'Default'
+}
+
+export interface QueryApprovalFlowRequest {
+  creatorUserId?: InputMaybe<Scalars['String']['input']>;
+  endTime?: InputMaybe<Scalars['DateTime']['input']>;
+  startTime?: InputMaybe<Scalars['DateTime']['input']>;
+  status?: InputMaybe<ApprovalFlowStatus>;
+  templateId?: InputMaybe<Scalars['String']['input']>;
+}
+
+export interface QueryApprovalFlowTemplateRequest {
+  creatorUserId?: InputMaybe<Scalars['String']['input']>;
+  endTime?: InputMaybe<Scalars['DateTime']['input']>;
+  orgCode?: InputMaybe<Scalars['String']['input']>;
+  startTime?: InputMaybe<Scalars['DateTime']['input']>;
+}
+
+export interface QueryGeexEntityGeexRequest {
+  _?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 }
 
 export interface QueryJobStatesRequest {
@@ -744,6 +1260,7 @@ export enum SettingDefinition {
   AppAppName = 'AppAppName',
   AppPermissions = 'AppPermissions',
   BlobStorageModuleName = 'BlobStorageModuleName',
+  GeexModGeexModuleName = 'GeexModGeexModuleName',
   LocalizationData = 'LocalizationData',
   LocalizationLanguage = 'LocalizationLanguage',
   MessagingModuleName = 'MessagingModuleName',
@@ -876,6 +1393,17 @@ export enum TemplatePermission {
   schematics_query_template = 'schematics_query_template'
 }
 
+export enum TenantPermission {
+  multiTenant_mutation_createTenant = 'multiTenant_mutation_createTenant',
+  multiTenant_mutation_deleteTenant = 'multiTenant_mutation_deleteTenant',
+  multiTenant_mutation_editTenant = 'multiTenant_mutation_editTenant',
+  multiTenant_query_tenants = 'multiTenant_query_tenants'
+}
+
+export interface ToggleTenantAvailabilityRequest {
+  code: Scalars['String']['input'];
+}
+
 export interface UserClaimFilterInput {
   and?: InputMaybe<Array<UserClaimFilterInput>>;
   claimType?: InputMaybe<StringOperationFilterInput>;
@@ -888,6 +1416,33 @@ export interface UserClaimInput {
   claimValue: Scalars['String']['input'];
 }
 
+export interface UserFilterInput {
+  and?: InputMaybe<Array<UserFilterInput>>;
+  avatarFile?: InputMaybe<IBlobObjectFilterInput>;
+  avatarFileId?: InputMaybe<StringOperationFilterInput>;
+  claims?: InputMaybe<ListFilterInputTypeOfUserClaimFilterInput>;
+  createdOn?: InputMaybe<DateTimeOperationFilterInput>;
+  email?: InputMaybe<StringOperationFilterInput>;
+  id?: InputMaybe<StringOperationFilterInput>;
+  isEnable?: InputMaybe<BooleanOperationFilterInput>;
+  loginProvider?: InputMaybe<ClassEnumOperationFilterInputTypeOfLoginProviderEnumFilterInput>;
+  modifiedOn?: InputMaybe<DateTimeOperationFilterInput>;
+  nickname?: InputMaybe<StringOperationFilterInput>;
+  openId?: InputMaybe<StringOperationFilterInput>;
+  or?: InputMaybe<Array<UserFilterInput>>;
+  orgCodes?: InputMaybe<ListStringOperationFilterInput>;
+  orgs?: InputMaybe<ListFilterInputTypeOfIOrgFilterInput>;
+  /** 注意：此处的 Password 是经过二次哈希处理的密码，前端会单独将密码进行哈希处理后传入, 数据库存储值为二次加盐哈希后的值。 */
+  password?: InputMaybe<StringOperationFilterInput>;
+  permissions?: InputMaybe<ListStringOperationFilterInput>;
+  phoneNumber?: InputMaybe<StringOperationFilterInput>;
+  roleIds?: InputMaybe<ListStringOperationFilterInput>;
+  roleNames?: InputMaybe<ListStringOperationFilterInput>;
+  roles?: InputMaybe<ListFilterInputTypeOfIRoleFilterInput>;
+  tenantCode?: InputMaybe<StringOperationFilterInput>;
+  username?: InputMaybe<StringOperationFilterInput>;
+}
+
 export interface UserOrgMapItemInput {
   orgCodes: Array<Scalars['String']['input']>;
   userId: Scalars['String']['input'];
@@ -897,6 +1452,24 @@ export enum UserPermission {
   identity_mutation_createUser = 'identity_mutation_createUser',
   identity_mutation_editUser = 'identity_mutation_editUser',
   identity_query_users = 'identity_query_users'
+}
+
+export interface UserSortInput {
+  avatarFile?: InputMaybe<IBlobObjectSortInput>;
+  avatarFileId?: InputMaybe<SortEnumType>;
+  createdOn?: InputMaybe<SortEnumType>;
+  email?: InputMaybe<SortEnumType>;
+  id?: InputMaybe<SortEnumType>;
+  isEnable?: InputMaybe<SortEnumType>;
+  loginProvider?: InputMaybe<SortEnumType>;
+  modifiedOn?: InputMaybe<SortEnumType>;
+  nickname?: InputMaybe<SortEnumType>;
+  openId?: InputMaybe<SortEnumType>;
+  /** 注意：此处的 Password 是经过二次哈希处理的密码，前端会单独将密码进行哈希处理后传入, 数据库存储值为二次加盐哈希后的值。 */
+  password?: InputMaybe<SortEnumType>;
+  phoneNumber?: InputMaybe<SortEnumType>;
+  tenantCode?: InputMaybe<SortEnumType>;
+  username?: InputMaybe<SortEnumType>;
 }
 
 export interface ValidateCaptchaRequest {

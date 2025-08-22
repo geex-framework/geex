@@ -1,4 +1,116 @@
 import { FieldPolicy, FieldReadFunction, TypePolicies, TypePolicy } from '@apollo/client/cache';
+export type ApprovalFlowKeySpecifier = ('activeIndex' | 'activeNode' | 'associatedEntity' | 'associatedEntityId' | 'associatedEntityType' | 'canEdit' | 'createdOn' | 'creatorUser' | 'creatorUserId' | 'description' | 'id' | 'modifiedOn' | 'name' | 'nodes' | 'orgCode' | 'stakeholders' | 'status' | 'templateId' | 'tenantCode' | ApprovalFlowKeySpecifier)[];
+export type ApprovalFlowFieldPolicy = {
+	activeIndex?: FieldPolicy<any> | FieldReadFunction<any>,
+	activeNode?: FieldPolicy<any> | FieldReadFunction<any>,
+	associatedEntity?: FieldPolicy<any> | FieldReadFunction<any>,
+	associatedEntityId?: FieldPolicy<any> | FieldReadFunction<any>,
+	associatedEntityType?: FieldPolicy<any> | FieldReadFunction<any>,
+	canEdit?: FieldPolicy<any> | FieldReadFunction<any>,
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	creatorUser?: FieldPolicy<any> | FieldReadFunction<any>,
+	creatorUserId?: FieldPolicy<any> | FieldReadFunction<any>,
+	description?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	modifiedOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	name?: FieldPolicy<any> | FieldReadFunction<any>,
+	nodes?: FieldPolicy<any> | FieldReadFunction<any>,
+	orgCode?: FieldPolicy<any> | FieldReadFunction<any>,
+	stakeholders?: FieldPolicy<any> | FieldReadFunction<any>,
+	status?: FieldPolicy<any> | FieldReadFunction<any>,
+	templateId?: FieldPolicy<any> | FieldReadFunction<any>,
+	tenantCode?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ApprovalFlowCollectionSegmentKeySpecifier = ('items' | 'pageInfo' | 'totalCount' | ApprovalFlowCollectionSegmentKeySpecifier)[];
+export type ApprovalFlowCollectionSegmentFieldPolicy = {
+	items?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ApprovalFlowNodeKeySpecifier = ('approvalComment' | 'approvalFlow' | 'approvalFlowId' | 'approvalTime' | 'auditRole' | 'auditUser' | 'auditUserId' | 'carbonCopyUserIds' | 'chatLogs' | 'consultUser' | 'consultUserId' | 'createdOn' | 'description' | 'id' | 'index' | 'isFromTemplate' | 'modifiedOn' | 'name' | 'nextNode' | 'nodeStatus' | 'previousNode' | ApprovalFlowNodeKeySpecifier)[];
+export type ApprovalFlowNodeFieldPolicy = {
+	approvalComment?: FieldPolicy<any> | FieldReadFunction<any>,
+	approvalFlow?: FieldPolicy<any> | FieldReadFunction<any>,
+	approvalFlowId?: FieldPolicy<any> | FieldReadFunction<any>,
+	approvalTime?: FieldPolicy<any> | FieldReadFunction<any>,
+	auditRole?: FieldPolicy<any> | FieldReadFunction<any>,
+	auditUser?: FieldPolicy<any> | FieldReadFunction<any>,
+	auditUserId?: FieldPolicy<any> | FieldReadFunction<any>,
+	carbonCopyUserIds?: FieldPolicy<any> | FieldReadFunction<any>,
+	chatLogs?: FieldPolicy<any> | FieldReadFunction<any>,
+	consultUser?: FieldPolicy<any> | FieldReadFunction<any>,
+	consultUserId?: FieldPolicy<any> | FieldReadFunction<any>,
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	description?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	index?: FieldPolicy<any> | FieldReadFunction<any>,
+	isFromTemplate?: FieldPolicy<any> | FieldReadFunction<any>,
+	modifiedOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	name?: FieldPolicy<any> | FieldReadFunction<any>,
+	nextNode?: FieldPolicy<any> | FieldReadFunction<any>,
+	nodeStatus?: FieldPolicy<any> | FieldReadFunction<any>,
+	previousNode?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ApprovalFlowNodeLogKeySpecifier = ('approvalFlowNode' | 'approvalFlowNodeId' | 'createdOn' | 'creationTime' | 'from' | 'fromUserId' | 'id' | 'logType' | 'message' | 'modifiedOn' | 'to' | 'toUserId' | ApprovalFlowNodeLogKeySpecifier)[];
+export type ApprovalFlowNodeLogFieldPolicy = {
+	approvalFlowNode?: FieldPolicy<any> | FieldReadFunction<any>,
+	approvalFlowNodeId?: FieldPolicy<any> | FieldReadFunction<any>,
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	creationTime?: FieldPolicy<any> | FieldReadFunction<any>,
+	from?: FieldPolicy<any> | FieldReadFunction<any>,
+	fromUserId?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	logType?: FieldPolicy<any> | FieldReadFunction<any>,
+	message?: FieldPolicy<any> | FieldReadFunction<any>,
+	modifiedOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	to?: FieldPolicy<any> | FieldReadFunction<any>,
+	toUserId?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ApprovalFlowNodeStatusFlagsKeySpecifier = ('isApproved' | 'isConsulting' | 'isCreated' | 'isRejected' | 'isStarted' | 'isTransferred' | 'isViewed' | ApprovalFlowNodeStatusFlagsKeySpecifier)[];
+export type ApprovalFlowNodeStatusFlagsFieldPolicy = {
+	isApproved?: FieldPolicy<any> | FieldReadFunction<any>,
+	isConsulting?: FieldPolicy<any> | FieldReadFunction<any>,
+	isCreated?: FieldPolicy<any> | FieldReadFunction<any>,
+	isRejected?: FieldPolicy<any> | FieldReadFunction<any>,
+	isStarted?: FieldPolicy<any> | FieldReadFunction<any>,
+	isTransferred?: FieldPolicy<any> | FieldReadFunction<any>,
+	isViewed?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ApprovalFlowNodeTemplateKeySpecifier = ('auditRole' | 'carbonCopyUserIds' | 'id' | 'index' | 'name' | ApprovalFlowNodeTemplateKeySpecifier)[];
+export type ApprovalFlowNodeTemplateFieldPolicy = {
+	auditRole?: FieldPolicy<any> | FieldReadFunction<any>,
+	carbonCopyUserIds?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	index?: FieldPolicy<any> | FieldReadFunction<any>,
+	name?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ApprovalFlowTemplateKeySpecifier = ('createdOn' | 'creatorUser' | 'creatorUserId' | 'description' | 'id' | 'modifiedOn' | 'name' | 'nodes' | 'orgCode' | ApprovalFlowTemplateKeySpecifier)[];
+export type ApprovalFlowTemplateFieldPolicy = {
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	creatorUser?: FieldPolicy<any> | FieldReadFunction<any>,
+	creatorUserId?: FieldPolicy<any> | FieldReadFunction<any>,
+	description?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	modifiedOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	name?: FieldPolicy<any> | FieldReadFunction<any>,
+	nodes?: FieldPolicy<any> | FieldReadFunction<any>,
+	orgCode?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ApprovalFlowTemplateCollectionSegmentKeySpecifier = ('items' | 'pageInfo' | 'totalCount' | ApprovalFlowTemplateCollectionSegmentKeySpecifier)[];
+export type ApprovalFlowTemplateCollectionSegmentFieldPolicy = {
+	items?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type ApprovalFlowUserRefKeySpecifier = ('approvalFlowId' | 'createdOn' | 'id' | 'modifiedOn' | 'ownershipType' | 'userId' | ApprovalFlowUserRefKeySpecifier)[];
+export type ApprovalFlowUserRefFieldPolicy = {
+	approvalFlowId?: FieldPolicy<any> | FieldReadFunction<any>,
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	modifiedOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	ownershipType?: FieldPolicy<any> | FieldReadFunction<any>,
+	userId?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type AuditLogKeySpecifier = ('clientIp' | 'createdOn' | 'id' | 'isSuccess' | 'modifiedOn' | 'operation' | 'operationName' | 'operationType' | 'operatorId' | 'result' | 'tenantCode' | 'variables' | AuditLogKeySpecifier)[];
 export type AuditLogFieldPolicy = {
 	clientIp?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -65,6 +177,26 @@ export type ExecutionHistoriesCollectionSegmentFieldPolicy = {
 	items?: FieldPolicy<any> | FieldReadFunction<any>,
 	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
 	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type GeexEntityGeexKeySpecifier = ('createdOn' | 'id' | 'modifiedOn' | 'name' | GeexEntityGeexKeySpecifier)[];
+export type GeexEntityGeexFieldPolicy = {
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	modifiedOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	name?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type GeexEntityGeexCollectionSegmentKeySpecifier = ('items' | 'pageInfo' | 'totalCount' | GeexEntityGeexCollectionSegmentKeySpecifier)[];
+export type GeexEntityGeexCollectionSegmentFieldPolicy = {
+	items?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type IApproveEntityKeySpecifier = ('approveStatus' | 'createdOn' | 'id' | 'submittable' | IApproveEntityKeySpecifier)[];
+export type IApproveEntityFieldPolicy = {
+	approveStatus?: FieldPolicy<any> | FieldReadFunction<any>,
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	submittable?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type IAuthUserKeySpecifier = ('createdOn' | 'email' | 'id' | 'isEnable' | 'loginProvider' | 'nickname' | 'openId' | 'phoneNumber' | 'username' | IAuthUserKeySpecifier)[];
 export type IAuthUserFieldPolicy = {
@@ -177,6 +309,15 @@ export type ISettingFieldPolicy = {
 	scopedKey?: FieldPolicy<any> | FieldReadFunction<any>,
 	value?: FieldPolicy<any> | FieldReadFunction<any>
 };
+export type ITenantKeySpecifier = ('code' | 'createdOn' | 'externalInfo' | 'id' | 'isEnabled' | 'name' | ITenantKeySpecifier)[];
+export type ITenantFieldPolicy = {
+	code?: FieldPolicy<any> | FieldReadFunction<any>,
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	externalInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	isEnabled?: FieldPolicy<any> | FieldReadFunction<any>,
+	name?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type IUserKeySpecifier = ('avatarFile' | 'avatarFileId' | 'claims' | 'createdOn' | 'email' | 'id' | 'isEnable' | 'loginProvider' | 'nickname' | 'openId' | 'orgCodes' | 'orgs' | 'permissions' | 'phoneNumber' | 'roleIds' | 'roleNames' | 'roles' | 'username' | IUserKeySpecifier)[];
 export type IUserFieldPolicy = {
 	avatarFile?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -260,10 +401,11 @@ export type MessagesCollectionSegmentFieldPolicy = {
 	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
 	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type MutationKeySpecifier = ('_' | 'addMember' | 'assignOrgs' | 'assignRoles' | 'authenticate' | 'authorize' | 'authorizeDevice' | 'batchAuthorizeDevices' | 'batchRevokeDevices' | 'cancelAuthentication' | 'changePassword' | 'createBlobObject' | 'createMessage' | 'createOrg' | 'createRole' | 'createSquad' | 'createUser' | 'deleteBlobObject' | 'deleteMessageDistributions' | 'deleteOrg' | 'deleteSquad' | 'deleteUser' | 'editMessage' | 'editSetting' | 'editSquad' | 'editUser' | 'federateAuthenticate' | 'fixUserOrg' | 'generateCaptcha' | 'generateTemplate' | 'joinSquad' | 'leaveAllSquads' | 'leaveSquad' | 'markMessagesRead' | 'register' | 'registerDevice' | 'removeDeviceFromSquad' | 'removeMember' | 'removeMemberAdmin' | 'removeMyDevice' | 'removeUserDevicesFromSquad' | 'resetUserPassword' | 'revokeDevice' | 'sendMessage' | 'setMemberAsAdmin' | 'setRoleDefault' | 'setSquadInviteCode' | 'transferDeviceOwnership' | 'transferSquadOwnership' | 'updateDevice' | 'updateDeviceOnlineStatus' | 'updateSquadSettings' | 'updateUserDeviceName' | 'validateCaptcha' | MutationKeySpecifier)[];
+export type MutationKeySpecifier = ('_' | 'addMember' | 'approveApprovalFlowNode' | 'assignOrgs' | 'assignRoles' | 'authenticate' | 'authorize' | 'authorizeDevice' | 'batchAuthorizeDevices' | 'batchRevokeDevices' | 'cancelApprovalFlow' | 'cancelAuthentication' | 'carbonCopyApprovalFlowNode' | 'changePassword' | 'checkTenant' | 'consultApprovalFlowNode' | 'createApprovalFlow' | 'createApprovalFlowTemplate' | 'createBlobObject' | 'createGeexEntityGeex' | 'createMessage' | 'createOrg' | 'createRole' | 'createSquad' | 'createTenant' | 'createUser' | 'deleteApprovalFlowTemplate' | 'deleteBlobObject' | 'deleteGeexEntityGeex' | 'deleteMessageDistributions' | 'deleteOrg' | 'deleteSquad' | 'deleteUser' | 'editApprovalFlow' | 'editApprovalFlowTemplate' | 'editGeexEntityGeex' | 'editMessage' | 'editSetting' | 'editSquad' | 'editTenant' | 'editUser' | 'federateAuthenticate' | 'finishApprovalFlow' | 'fixUserOrg' | 'generateCaptcha' | 'generateTemplate' | 'joinSquad' | 'leaveAllSquads' | 'leaveSquad' | 'markApprovalFlowNodeViewed' | 'markMessagesRead' | 'markNodeAsViewed' | 'register' | 'registerDevice' | 'rejectApprovalFlowNode' | 'removeDeviceFromSquad' | 'removeMember' | 'removeMemberAdmin' | 'removeMyDevice' | 'removeUserDevicesFromSquad' | 'replyApprovalFlowNode' | 'resetUserPassword' | 'revokeDevice' | 'sendMessage' | 'setMemberAsAdmin' | 'setRoleDefault' | 'setSquadInviteCode' | 'toggleTenantAvailability' | 'transferApprovalFlowNode' | 'transferDeviceOwnership' | 'transferSquadOwnership' | 'updateDevice' | 'updateDeviceOnlineStatus' | 'updateSquadSettings' | 'updateUserDeviceName' | 'validateCaptcha' | 'withdrawApprovalFlowNode' | MutationKeySpecifier)[];
 export type MutationFieldPolicy = {
 	_?: FieldPolicy<any> | FieldReadFunction<any>,
 	addMember?: FieldPolicy<any> | FieldReadFunction<any>,
+	approveApprovalFlowNode?: FieldPolicy<any> | FieldReadFunction<any>,
 	assignOrgs?: FieldPolicy<any> | FieldReadFunction<any>,
 	assignRoles?: FieldPolicy<any> | FieldReadFunction<any>,
 	authenticate?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -271,51 +413,73 @@ export type MutationFieldPolicy = {
 	authorizeDevice?: FieldPolicy<any> | FieldReadFunction<any>,
 	batchAuthorizeDevices?: FieldPolicy<any> | FieldReadFunction<any>,
 	batchRevokeDevices?: FieldPolicy<any> | FieldReadFunction<any>,
+	cancelApprovalFlow?: FieldPolicy<any> | FieldReadFunction<any>,
 	cancelAuthentication?: FieldPolicy<any> | FieldReadFunction<any>,
+	carbonCopyApprovalFlowNode?: FieldPolicy<any> | FieldReadFunction<any>,
 	changePassword?: FieldPolicy<any> | FieldReadFunction<any>,
+	checkTenant?: FieldPolicy<any> | FieldReadFunction<any>,
+	consultApprovalFlowNode?: FieldPolicy<any> | FieldReadFunction<any>,
+	createApprovalFlow?: FieldPolicy<any> | FieldReadFunction<any>,
+	createApprovalFlowTemplate?: FieldPolicy<any> | FieldReadFunction<any>,
 	createBlobObject?: FieldPolicy<any> | FieldReadFunction<any>,
+	createGeexEntityGeex?: FieldPolicy<any> | FieldReadFunction<any>,
 	createMessage?: FieldPolicy<any> | FieldReadFunction<any>,
 	createOrg?: FieldPolicy<any> | FieldReadFunction<any>,
 	createRole?: FieldPolicy<any> | FieldReadFunction<any>,
 	createSquad?: FieldPolicy<any> | FieldReadFunction<any>,
+	createTenant?: FieldPolicy<any> | FieldReadFunction<any>,
 	createUser?: FieldPolicy<any> | FieldReadFunction<any>,
+	deleteApprovalFlowTemplate?: FieldPolicy<any> | FieldReadFunction<any>,
 	deleteBlobObject?: FieldPolicy<any> | FieldReadFunction<any>,
+	deleteGeexEntityGeex?: FieldPolicy<any> | FieldReadFunction<any>,
 	deleteMessageDistributions?: FieldPolicy<any> | FieldReadFunction<any>,
 	deleteOrg?: FieldPolicy<any> | FieldReadFunction<any>,
 	deleteSquad?: FieldPolicy<any> | FieldReadFunction<any>,
 	deleteUser?: FieldPolicy<any> | FieldReadFunction<any>,
+	editApprovalFlow?: FieldPolicy<any> | FieldReadFunction<any>,
+	editApprovalFlowTemplate?: FieldPolicy<any> | FieldReadFunction<any>,
+	editGeexEntityGeex?: FieldPolicy<any> | FieldReadFunction<any>,
 	editMessage?: FieldPolicy<any> | FieldReadFunction<any>,
 	editSetting?: FieldPolicy<any> | FieldReadFunction<any>,
 	editSquad?: FieldPolicy<any> | FieldReadFunction<any>,
+	editTenant?: FieldPolicy<any> | FieldReadFunction<any>,
 	editUser?: FieldPolicy<any> | FieldReadFunction<any>,
 	federateAuthenticate?: FieldPolicy<any> | FieldReadFunction<any>,
+	finishApprovalFlow?: FieldPolicy<any> | FieldReadFunction<any>,
 	fixUserOrg?: FieldPolicy<any> | FieldReadFunction<any>,
 	generateCaptcha?: FieldPolicy<any> | FieldReadFunction<any>,
 	generateTemplate?: FieldPolicy<any> | FieldReadFunction<any>,
 	joinSquad?: FieldPolicy<any> | FieldReadFunction<any>,
 	leaveAllSquads?: FieldPolicy<any> | FieldReadFunction<any>,
 	leaveSquad?: FieldPolicy<any> | FieldReadFunction<any>,
+	markApprovalFlowNodeViewed?: FieldPolicy<any> | FieldReadFunction<any>,
 	markMessagesRead?: FieldPolicy<any> | FieldReadFunction<any>,
+	markNodeAsViewed?: FieldPolicy<any> | FieldReadFunction<any>,
 	register?: FieldPolicy<any> | FieldReadFunction<any>,
 	registerDevice?: FieldPolicy<any> | FieldReadFunction<any>,
+	rejectApprovalFlowNode?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeDeviceFromSquad?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeMember?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeMemberAdmin?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeMyDevice?: FieldPolicy<any> | FieldReadFunction<any>,
 	removeUserDevicesFromSquad?: FieldPolicy<any> | FieldReadFunction<any>,
+	replyApprovalFlowNode?: FieldPolicy<any> | FieldReadFunction<any>,
 	resetUserPassword?: FieldPolicy<any> | FieldReadFunction<any>,
 	revokeDevice?: FieldPolicy<any> | FieldReadFunction<any>,
 	sendMessage?: FieldPolicy<any> | FieldReadFunction<any>,
 	setMemberAsAdmin?: FieldPolicy<any> | FieldReadFunction<any>,
 	setRoleDefault?: FieldPolicy<any> | FieldReadFunction<any>,
 	setSquadInviteCode?: FieldPolicy<any> | FieldReadFunction<any>,
+	toggleTenantAvailability?: FieldPolicy<any> | FieldReadFunction<any>,
+	transferApprovalFlowNode?: FieldPolicy<any> | FieldReadFunction<any>,
 	transferDeviceOwnership?: FieldPolicy<any> | FieldReadFunction<any>,
 	transferSquadOwnership?: FieldPolicy<any> | FieldReadFunction<any>,
 	updateDevice?: FieldPolicy<any> | FieldReadFunction<any>,
 	updateDeviceOnlineStatus?: FieldPolicy<any> | FieldReadFunction<any>,
 	updateSquadSettings?: FieldPolicy<any> | FieldReadFunction<any>,
 	updateUserDeviceName?: FieldPolicy<any> | FieldReadFunction<any>,
-	validateCaptcha?: FieldPolicy<any> | FieldReadFunction<any>
+	validateCaptcha?: FieldPolicy<any> | FieldReadFunction<any>,
+	withdrawApprovalFlowNode?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type NewMessageClientNotifyKeySpecifier = ('createdOn' | 'message' | NewMessageClientNotifyKeySpecifier)[];
 export type NewMessageClientNotifyFieldPolicy = {
@@ -346,13 +510,19 @@ export type OrgsCollectionSegmentFieldPolicy = {
 	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
 	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type QueryKeySpecifier = ('_' | 'blobObjects' | 'currentUser' | 'deviceAuthorizationStatus' | 'deviceById' | 'initSettings' | 'jobState' | 'messages' | 'myDevices' | 'myPermissions' | 'mySquad' | 'orgs' | 'roles' | 'settings' | 'squad' | 'squadById' | 'squadInviteCode' | 'templateUpdateDate' | 'unreadMessages' | 'users' | QueryKeySpecifier)[];
+export type QueryKeySpecifier = ('_' | 'approvalFlow' | 'approvalFlowById' | 'approvalFlowTemplate' | 'approvalFlowTemplateById' | 'blobObjects' | 'currentUser' | 'deviceAuthorizationStatus' | 'deviceById' | 'geexEntityGeex' | 'geexEntityGeexById' | 'initSettings' | 'jobState' | 'messages' | 'myDevices' | 'myPermissions' | 'mySquad' | 'orgs' | 'roles' | 'settings' | 'squad' | 'squadById' | 'squadInviteCode' | 'templateUpdateDate' | 'tenants' | 'unreadMessages' | 'users' | QueryKeySpecifier)[];
 export type QueryFieldPolicy = {
 	_?: FieldPolicy<any> | FieldReadFunction<any>,
+	approvalFlow?: FieldPolicy<any> | FieldReadFunction<any>,
+	approvalFlowById?: FieldPolicy<any> | FieldReadFunction<any>,
+	approvalFlowTemplate?: FieldPolicy<any> | FieldReadFunction<any>,
+	approvalFlowTemplateById?: FieldPolicy<any> | FieldReadFunction<any>,
 	blobObjects?: FieldPolicy<any> | FieldReadFunction<any>,
 	currentUser?: FieldPolicy<any> | FieldReadFunction<any>,
 	deviceAuthorizationStatus?: FieldPolicy<any> | FieldReadFunction<any>,
 	deviceById?: FieldPolicy<any> | FieldReadFunction<any>,
+	geexEntityGeex?: FieldPolicy<any> | FieldReadFunction<any>,
+	geexEntityGeexById?: FieldPolicy<any> | FieldReadFunction<any>,
 	initSettings?: FieldPolicy<any> | FieldReadFunction<any>,
 	jobState?: FieldPolicy<any> | FieldReadFunction<any>,
 	messages?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -366,6 +536,7 @@ export type QueryFieldPolicy = {
 	squadById?: FieldPolicy<any> | FieldReadFunction<any>,
 	squadInviteCode?: FieldPolicy<any> | FieldReadFunction<any>,
 	templateUpdateDate?: FieldPolicy<any> | FieldReadFunction<any>,
+	tenants?: FieldPolicy<any> | FieldReadFunction<any>,
 	unreadMessages?: FieldPolicy<any> | FieldReadFunction<any>,
 	users?: FieldPolicy<any> | FieldReadFunction<any>
 };
@@ -483,6 +654,22 @@ export type SubscriptionFieldPolicy = {
 	onPrivateNotify?: FieldPolicy<any> | FieldReadFunction<any>,
 	onPublicNotify?: FieldPolicy<any> | FieldReadFunction<any>
 };
+export type TenantKeySpecifier = ('code' | 'createdOn' | 'externalInfo' | 'id' | 'isEnabled' | 'modifiedOn' | 'name' | TenantKeySpecifier)[];
+export type TenantFieldPolicy = {
+	code?: FieldPolicy<any> | FieldReadFunction<any>,
+	createdOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	externalInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	id?: FieldPolicy<any> | FieldReadFunction<any>,
+	isEnabled?: FieldPolicy<any> | FieldReadFunction<any>,
+	modifiedOn?: FieldPolicy<any> | FieldReadFunction<any>,
+	name?: FieldPolicy<any> | FieldReadFunction<any>
+};
+export type TenantsCollectionSegmentKeySpecifier = ('items' | 'pageInfo' | 'totalCount' | TenantsCollectionSegmentKeySpecifier)[];
+export type TenantsCollectionSegmentFieldPolicy = {
+	items?: FieldPolicy<any> | FieldReadFunction<any>,
+	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
+	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
+};
 export type UserKeySpecifier = ('avatarFile' | 'avatarFileId' | 'claims' | 'createdOn' | 'email' | 'id' | 'isEnable' | 'loginProvider' | 'modifiedOn' | 'nickname' | 'openId' | 'orgCodes' | 'orgs' | 'permissions' | 'phoneNumber' | 'roleIds' | 'roleNames' | 'roles' | 'tenantCode' | 'username' | UserKeySpecifier)[];
 export type UserFieldPolicy = {
 	avatarFile?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -526,6 +713,42 @@ export type UsersCollectionSegmentFieldPolicy = {
 	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
 };
 export type StrictTypedTypePolicies = {
+	ApprovalFlow?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowKeySpecifier | (() => undefined | ApprovalFlowKeySpecifier),
+		fields?: ApprovalFlowFieldPolicy,
+	},
+	ApprovalFlowCollectionSegment?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowCollectionSegmentKeySpecifier | (() => undefined | ApprovalFlowCollectionSegmentKeySpecifier),
+		fields?: ApprovalFlowCollectionSegmentFieldPolicy,
+	},
+	ApprovalFlowNode?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowNodeKeySpecifier | (() => undefined | ApprovalFlowNodeKeySpecifier),
+		fields?: ApprovalFlowNodeFieldPolicy,
+	},
+	ApprovalFlowNodeLog?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowNodeLogKeySpecifier | (() => undefined | ApprovalFlowNodeLogKeySpecifier),
+		fields?: ApprovalFlowNodeLogFieldPolicy,
+	},
+	ApprovalFlowNodeStatusFlags?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowNodeStatusFlagsKeySpecifier | (() => undefined | ApprovalFlowNodeStatusFlagsKeySpecifier),
+		fields?: ApprovalFlowNodeStatusFlagsFieldPolicy,
+	},
+	ApprovalFlowNodeTemplate?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowNodeTemplateKeySpecifier | (() => undefined | ApprovalFlowNodeTemplateKeySpecifier),
+		fields?: ApprovalFlowNodeTemplateFieldPolicy,
+	},
+	ApprovalFlowTemplate?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowTemplateKeySpecifier | (() => undefined | ApprovalFlowTemplateKeySpecifier),
+		fields?: ApprovalFlowTemplateFieldPolicy,
+	},
+	ApprovalFlowTemplateCollectionSegment?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowTemplateCollectionSegmentKeySpecifier | (() => undefined | ApprovalFlowTemplateCollectionSegmentKeySpecifier),
+		fields?: ApprovalFlowTemplateCollectionSegmentFieldPolicy,
+	},
+	ApprovalFlowUserRef?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ApprovalFlowUserRefKeySpecifier | (() => undefined | ApprovalFlowUserRefKeySpecifier),
+		fields?: ApprovalFlowUserRefFieldPolicy,
+	},
 	AuditLog?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | AuditLogKeySpecifier | (() => undefined | AuditLogKeySpecifier),
 		fields?: AuditLogFieldPolicy,
@@ -561,6 +784,18 @@ export type StrictTypedTypePolicies = {
 	ExecutionHistoriesCollectionSegment?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | ExecutionHistoriesCollectionSegmentKeySpecifier | (() => undefined | ExecutionHistoriesCollectionSegmentKeySpecifier),
 		fields?: ExecutionHistoriesCollectionSegmentFieldPolicy,
+	},
+	GeexEntityGeex?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | GeexEntityGeexKeySpecifier | (() => undefined | GeexEntityGeexKeySpecifier),
+		fields?: GeexEntityGeexFieldPolicy,
+	},
+	GeexEntityGeexCollectionSegment?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | GeexEntityGeexCollectionSegmentKeySpecifier | (() => undefined | GeexEntityGeexCollectionSegmentKeySpecifier),
+		fields?: GeexEntityGeexCollectionSegmentFieldPolicy,
+	},
+	IApproveEntity?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | IApproveEntityKeySpecifier | (() => undefined | IApproveEntityKeySpecifier),
+		fields?: IApproveEntityFieldPolicy,
 	},
 	IAuthUser?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | IAuthUserKeySpecifier | (() => undefined | IAuthUserKeySpecifier),
@@ -601,6 +836,10 @@ export type StrictTypedTypePolicies = {
 	ISetting?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | ISettingKeySpecifier | (() => undefined | ISettingKeySpecifier),
 		fields?: ISettingFieldPolicy,
+	},
+	ITenant?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | ITenantKeySpecifier | (() => undefined | ITenantKeySpecifier),
+		fields?: ITenantFieldPolicy,
 	},
 	IUser?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | IUserKeySpecifier | (() => undefined | IUserKeySpecifier),
@@ -693,6 +932,14 @@ export type StrictTypedTypePolicies = {
 	Subscription?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | SubscriptionKeySpecifier | (() => undefined | SubscriptionKeySpecifier),
 		fields?: SubscriptionFieldPolicy,
+	},
+	Tenant?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | TenantKeySpecifier | (() => undefined | TenantKeySpecifier),
+		fields?: TenantFieldPolicy,
+	},
+	TenantsCollectionSegment?: Omit<TypePolicy, "fields" | "keyFields"> & {
+		keyFields?: false | TenantsCollectionSegmentKeySpecifier | (() => undefined | TenantsCollectionSegmentKeySpecifier),
+		fields?: TenantsCollectionSegmentFieldPolicy,
 	},
 	User?: Omit<TypePolicy, "fields" | "keyFields"> & {
 		keyFields?: false | UserKeySpecifier | (() => undefined | UserKeySpecifier),

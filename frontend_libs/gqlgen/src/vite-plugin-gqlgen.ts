@@ -317,7 +317,22 @@ async function generateCode(
 
   const outputExtension = gqlDocExtension === 'graphql' ? '.graphql.ts' : '.gql.ts';
   const schemaFileName = gqlDocExtension === 'graphql' ? 'schema.graphql.ts' : 'schema.gql.ts';
-
+  throw JSON.stringify({
+    [path.join(sharedTypesDir, schemaFileName)]: {
+      plugins: ['typescript'],
+    },
+    [sourceRoot]: {
+      preset: 'near-operation-file',
+      presetConfig: {
+        extension: outputExtension,
+        baseTypesPath: baseTypesImportPath,
+      },
+      plugins: ['typescript-operations', 'typed-document-node'],
+    },
+    [path.join(sharedTypesDir, 'apollo-helpers.g.ts')]: {
+      plugins: ['typescript-apollo-client-helpers'],
+    },
+  })
   await generate({
     ...baseConfig,
     generates: {
