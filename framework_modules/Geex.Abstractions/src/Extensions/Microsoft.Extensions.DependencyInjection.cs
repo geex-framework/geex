@@ -34,7 +34,6 @@ namespace Microsoft.Extensions.DependencyInjection
             var commonModuleOptions = builder.GetSingletonInstance<GeexCoreModuleOptions>();
             var mongoUrl = new MongoUrl(commonModuleOptions.ConnectionString) { };
             var mongoSettings = MongoClientSettings.FromUrl(mongoUrl);
-            mongoSettings.LinqProvider = LinqProvider.V2;
             if (commonModuleOptions.EnableDataLogging)
             {
                 mongoSettings.ClusterConfigurator = cb =>

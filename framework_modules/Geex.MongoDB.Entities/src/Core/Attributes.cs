@@ -46,7 +46,7 @@ namespace MongoDB.Entities
     /// <summary>
     /// Use this attribute to mark a property in order to save it in MongoDB server as ObjectId
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
     public class ObjectIdAttribute : BsonRepresentationAttribute
     {
         public ObjectIdAttribute() : base(BsonType.ObjectId)

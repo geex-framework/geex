@@ -9,8 +9,8 @@
     <ItemGroup>
         <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <PackageReference Include="Geex.Analyzer" Version="8.1.5.6" />
-        <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
-        <PackageReference Include="OpenIddict.MongoDb" Version="5.8.0" />
+        <PackageReference Include="OpenIddict.AspNetCore" Version="7.0.0" />
+        <PackageReference Include="OpenIddict.MongoDb" Version="7.0.0" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
         <ProjectReference Include="..\..\Geex.Extensions.Identity\src\Geex.Extensions.Identity.csproj" />
     </ItemGroup>

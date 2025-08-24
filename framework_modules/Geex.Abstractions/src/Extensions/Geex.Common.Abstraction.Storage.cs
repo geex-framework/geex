@@ -52,7 +52,6 @@ namespace Geex.Abstractions
         /// <param name="cancellation">An optional cancellation token</param>
         public static Task<ReplaceOneResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
         {
-            (entity.DbContext)?.Detach<T>(entity);
             return DB.SaveAsync(entity, cancellation: cancellation);
         }
 
@@ -69,7 +68,6 @@ namespace Geex.Abstractions
             {
                 throw new InvalidOperationException("bulksave entities should be in the same session");
             }
-            (dbContext)?.Detach(entities);
 
             return DB.SaveAsync(entities, dbContext, cancellation);
         }
@@ -98,7 +96,6 @@ namespace Geex.Abstractions
         /// <param name="cancellation">An optional cancellation token</param>
         public static Task<UpdateResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
-            (entity.DbContext)?.Detach(entity);
             return DB.SaveOnlyAsync(entity, members, entity.DbContext, cancellation);
         }
 

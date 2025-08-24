@@ -34,7 +34,7 @@ namespace Geex.Json
             }
 
             var value = reader.GetString();
-            return new BsonObjectId(Convert.FromBase64String(value));
+            return new BsonObjectId(new ObjectId(Convert.FromBase64String(value)));
         }
 
         public override void Write(Utf8JsonWriter writer, BsonObjectId value, JsonSerializerOptions options)

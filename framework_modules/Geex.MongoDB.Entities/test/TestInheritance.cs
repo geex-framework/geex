@@ -158,8 +158,9 @@ namespace MongoDB.Entities.Tests
                 Name = "test"
             };
             dbContext.Attach(testEntity);
-            await testEntity.SaveAsync();
             dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldNotBeEmpty();
+            await testEntity.SaveAsync();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldBeEmpty();
             dbContext.Dispose();
         }
 
@@ -168,6 +169,9 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
             var testEntity = new InheritanceEntityChild()
             {
                 Name = "test"
@@ -189,6 +193,9 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
             var testEntities = new List<InheritanceEntity>()
             {
                 new InheritanceEntity()
@@ -248,6 +255,9 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
             var testEntity = new InheritanceEntityChild()
             {
                 Name = "test"
@@ -280,6 +290,9 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+            dbContext = new DbContext();
             var testEntity = new InheritanceEntityChild()
             {
                 Name = "test"
@@ -823,7 +836,7 @@ namespace MongoDB.Entities.Tests
             savedEntities.All(x => x.GetType() == typeof(InheritanceEntity)).ShouldBeTrue();
 
             // Saved状态下批量转换
-            var castedEntities = savedEntities.CastEntity<InheritanceEntityChild>().OrderBy(x=>x.Name).ToList();
+            var castedEntities = savedEntities.CastEntity<InheritanceEntityChild>().OrderBy(x => x.Name).ToList();
             castedEntities.Count.ShouldBe(3);
             castedEntities.All(x => x is InheritanceEntityChild).ShouldBeTrue();
             castedEntities[0].Name.ShouldBe("c1");

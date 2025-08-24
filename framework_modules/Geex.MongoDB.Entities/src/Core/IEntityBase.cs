@@ -1,8 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
+using KellermanSoftware.CompareNetObjects;
+
 using Mapster;
+
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
@@ -16,7 +21,7 @@ namespace MongoDB.Entities
         /// The Id property for this entity type.
         /// 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
         /// </summary>
-        [ObjectId]
+        [BsonId, ObjectId]
         string Id { get; set; }
         [AdaptIgnore]
         DbContext DbContext { get; set; }
@@ -40,5 +45,13 @@ namespace MongoDB.Entities
         //   Expression batchQuery,
         //   Func<IQueryable> sourceProvider = default);
         public TChild CastEntity<TChild>() where TChild : IEntityBase;
+        public ComparisonResult DetectChangeSet()
+        {
+            return this.DbContext.DetectChangeSet(this);
+        }
+        public ComparisonResult DetectChangeSet<T>() where T : IEntityBase
+        {
+            return this.DbContext.DetectChangeSet<T>((T)this);
+        }
     }
 }

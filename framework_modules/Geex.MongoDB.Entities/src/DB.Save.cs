@@ -1,13 +1,16 @@
-﻿using MongoDB.Driver;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+
+using MongoDB.Driver;
 using MongoDB.Entities.Interceptors;
+
+using static FastExpressionCompiler.ExpressionCompiler;
 
 namespace MongoDB.Entities
 {
@@ -27,10 +30,12 @@ namespace MongoDB.Entities
         public static async Task<ReplaceOneResult> SaveAsync<T>(T entity, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             await PrepareForSave(entity, dbContext);
-
+            dbContext?.Detach(entity);
+            var filter = Builders<T>.Filter.Eq(d => d.Id, entity.Id);
+            var replaceOptions = new ReplaceOptions<T>() { IsUpsert = true };
             return dbContext?.Session == null
-                   ? await Collection<T>().ReplaceOneAsync(x => x.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true }, cancellation)
-                   : await Collection<T>().ReplaceOneAsync(dbContext.Session, x => x.Id == entity.Id, entity, new ReplaceOptions { IsUpsert = true }, cancellation);
+                   ? await Collection<T>().ReplaceOneAsync(filter, entity, replaceOptions, cancellation)
+                   : await Collection<T>().ReplaceOneAsync(dbContext.Session, filter, entity, replaceOptions, cancellation);
         }
 
         /// <summary>
@@ -55,9 +60,13 @@ namespace MongoDB.Entities
                 models.Add(upsert);
             }
 
-            return dbContext?.Session == null
+            dbContext?.Detach(entities);
+
+            var result = dbContext?.Session == null
                    ? await Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)
                    : await Collection<T>().BulkWriteAsync(dbContext.Session, models, unOrdBlkOpts, cancellation);
+
+            return result;
         }
 
         /// <summary>
@@ -71,9 +80,11 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<UpdateResult> SaveOnlyAsync<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<UpdateResult> SaveOnlyAsync<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            return SavePartial(entity, members, dbContext, cancellation);
+            var result = await SavePartial(entity, members, dbContext, cancellation);
+
+            return result;
         }
 
         /// <summary>
@@ -87,9 +98,10 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveOnlyAsync<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<BulkWriteResult<T>> SaveOnlyAsync<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            return SavePartial(entities, members, dbContext, cancellation);
+            var result = await SavePartial(entities, members, dbContext, cancellation);
+            return result;
         }
 
         /// <summary>
@@ -103,9 +115,10 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<UpdateResult> SaveExceptAsync<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<UpdateResult> SaveExceptAsync<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            return SavePartial(entity, members, dbContext, cancellation, true);
+            var result = await SavePartial(entity, members, dbContext, cancellation, true);
+            return result;
         }
 
         /// <summary>
@@ -119,9 +132,10 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveExceptAsync<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<BulkWriteResult<T>> SaveExceptAsync<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            return SavePartial(entities, members, dbContext, cancellation, true);
+            var result = await SavePartial(entities, members, dbContext, cancellation, true);
+            return result;
         }
 
         /// <summary>
@@ -132,7 +146,7 @@ namespace MongoDB.Entities
         /// <param name="entity">The entity to save</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<UpdateResult> SavePreservingAsync<T>(T entity, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<UpdateResult> SavePreservingAsync<T>(T entity, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             var propsToUpdate = Cache<T>.UpdatableProps(entity);
 
@@ -141,13 +155,15 @@ namespace MongoDB.Entities
             var dontProps = propsToUpdate.Where(p => p.IsDefined(typeof(DontPreserveAttribute), false)).Select(p => p.Name);
             var presProps = propsToUpdate.Where(p => p.IsDefined(typeof(PreserveAttribute), false)).Select(p => p.Name);
 
-            if (dontProps.Any() && presProps.Any())
+            var containsDont = dontProps.Any();
+            var containsPres = presProps.Any();
+            if (containsDont && containsPres)
                 throw new NotSupportedException("[Preseve] and [DontPreserve] attributes cannot be used together on the same entity!");
 
-            if (dontProps.Any())
+            if (containsDont)
                 propsToPreserve = propsToUpdate.Where(p => !dontProps.Contains(p.Name)).Select(p => p.Name);
 
-            if (presProps.Any())
+            if (containsPres)
                 propsToPreserve = propsToUpdate.Where(p => presProps.Contains(p.Name)).Select(p => p.Name);
 
             if (!propsToPreserve.Any())
@@ -168,10 +184,12 @@ namespace MongoDB.Entities
                     defs.Add(Builders<T>.Update.Set(p.Name, p.GetValue(entity)));
             }
 
+            dbContext?.Detach(entity);
+
             return
-                session == null
+                dbContext?.session == null
                 ? Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, Builders<T>.Update.Combine(defs), updateOptions, cancellation)
-                : Collection<T>().UpdateOneAsync(session, e => e.Id == entity.Id, Builders<T>.Update.Combine(defs), updateOptions, cancellation);
+                : Collection<T>().UpdateOneAsync(dbContext.session, e => e.Id == entity.Id, Builders<T>.Update.Combine(defs), updateOptions, cancellation);
         }
 
         private static async Task PrepareForSave<T>(T entity, DbContext dbContext) where T : IEntityBase
@@ -228,6 +246,7 @@ namespace MongoDB.Entities
 
         private static async Task<UpdateResult> SavePartial<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
         {
+            dbContext?.Detach(entity);
             return
                 dbContext?.Session == null
                 ? await Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, Builders<T>.Update.Combine(await BuildUpdateDefs(entity, members, dbContext, excludeMode)), updateOptions, cancellation)
@@ -248,6 +267,8 @@ namespace MongoDB.Entities
                 { IsUpsert = true };
                 models.Add(upsert);
             }
+
+            dbContext?.Detach(entities);
 
             return dbContext?.Session == null
                 ? await Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)

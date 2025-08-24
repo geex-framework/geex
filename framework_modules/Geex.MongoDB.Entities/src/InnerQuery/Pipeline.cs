@@ -68,7 +68,7 @@ namespace MongoDB.Entities.InnerQuery
         internal const string PIPELINE_DOCUMENT_RESULT_NAME = "_result_";
         internal const string JOINED_DOC_PROPERTY_NAME = "__JOINED__";
 
-        private JsonWriterSettings _jsonWriterSettings = new JsonWriterSettings { OutputMode = JsonOutputMode.Strict, Indent = true, NewLineChars = "\r\n" };
+        private JsonWriterSettings _jsonWriterSettings = new JsonWriterSettings { OutputMode = JsonOutputMode.RelaxedExtendedJson, Indent = true, NewLineChars = "\r\n" };
 
         private List<PipelineStage> _pipeline = [];
         private PipelineResultType _lastPipelineOperation = PipelineResultType.Enumerable;
@@ -556,70 +556,69 @@ namespace MongoDB.Entities.InnerQuery
                 // .Where(c => c.ObjectId.CreationTime > new DateTime(2018,1,1)
                 // We want to get this exactly right so we can take advantage of an index on ObjectId.
                 // If we project our ObjectId into a date, then we'll blow the index.
-                if ((binExp.NodeType == ExpressionType.GreaterThan
-                    || binExp.NodeType == ExpressionType.GreaterThanOrEqual
-                    || binExp.NodeType == ExpressionType.LessThan
-                    || binExp.NodeType == ExpressionType.LessThanOrEqual
-                    || binExp.NodeType == ExpressionType.Equal)
-                    && (ExpressionIsObjectIdCreationTime(binExp.Left) || ExpressionIsObjectIdCreationTime(binExp.Right))
-                    && (binExp.Left.NodeType == ExpressionType.Constant || binExp.Right.NodeType == ExpressionType.Constant))
-                {
-                    // We now have an expression in this form:
-                    //     comparisonOperator(LHS, RHS)
-                    // that can take two forms:
-                    //     1) comparisonOperator(ObjectId.CreationDate, Constant)
-                    //     2) comparisonOperator(Constant, ObjectId.CreationDate)
+                //if ((binExp.NodeType == ExpressionType.GreaterThan
+                //    || binExp.NodeType == ExpressionType.GreaterThanOrEqual
+                //    || binExp.NodeType == ExpressionType.LessThan
+                //    || binExp.NodeType == ExpressionType.LessThanOrEqual
+                //    || binExp.NodeType == ExpressionType.Equal)
+                //    && (ExpressionIsObjectIdCreationTime(binExp.Left) || ExpressionIsObjectIdCreationTime(binExp.Right))
+                //    && (binExp.Left.NodeType == ExpressionType.Constant || binExp.Right.NodeType == ExpressionType.Constant))
+                //{
+                //    // We now have an expression in this form:
+                //    //     comparisonOperator(LHS, RHS)
+                //    // that can take two forms:
+                //    //     1) comparisonOperator(ObjectId.CreationDate, Constant)
+                //    //     2) comparisonOperator(Constant, ObjectId.CreationDate)
 
-                    // We'll convert case 2 into case 1 to simplify this exercise for us.
+                //    // We'll convert case 2 into case 1 to simplify this exercise for us.
 
-                    ConstantExpression constExp;
-                    MemberExpression memberExp;
-                    ExpressionType comparisonType;
+                //    ConstantExpression constExp;
+                //    MemberExpression memberExp;
+                //    ExpressionType comparisonType;
 
 
-                    if (binExp.Left.NodeType == ExpressionType.Constant)
-                    {
-                        // Case 2 : Swap it around to look like case 1
-                        constExp = (ConstantExpression)binExp.Left;
-                        memberExp = (MemberExpression)binExp.Right;
+                //    if (binExp.Left.NodeType == ExpressionType.Constant)
+                //    {
+                //        // Case 2 : Swap it around to look like case 1
+                //        constExp = (ConstantExpression)binExp.Left;
+                //        memberExp = (MemberExpression)binExp.Right;
 
-                        comparisonType = binExp.NodeType.Flip();
-                    }
-                    else
-                    {
-                        // Case 1: nothing to swap
-                        constExp = (ConstantExpression)binExp.Right;
-                        memberExp = (MemberExpression)binExp.Left;
-                        comparisonType = binExp.NodeType;
-                    }
+                //        comparisonType = binExp.NodeType.Flip();
+                //    }
+                //    else
+                //    {
+                //        // Case 1: nothing to swap
+                //        constExp = (ConstantExpression)binExp.Right;
+                //        memberExp = (MemberExpression)binExp.Left;
+                //        comparisonType = binExp.NodeType;
+                //    }
 
-                    // Now our ObjectId.CreationDate is the LHS
+                //    // Now our ObjectId.CreationDate is the LHS
 
-                    // Pull the DateTime we're comparing our ObjectId.CreationDate to
-                    var comparisonValue = (DateTime)constExp.Value;
+                //    // Pull the DateTime we're comparing our ObjectId.CreationDate to
+                //    var comparisonValue = (DateTime)constExp.Value;
+                //    var comparisonValueAsObjectIdMin = new ObjectId(comparisonValue, 0, 0, 0);
+                //    var comparisonValueAsObjectIdMax = new ObjectId(comparisonValue, 16777215, -1, 16777215);
 
-                    var comparisonValueAsObjectIdMin = new ObjectId(comparisonValue, 0, 0, 0);
-                    var comparisonValueAsObjectIdMax = new ObjectId(comparisonValue, 16777215, -1, 16777215);
+                //    // GT  memberExp > comparisonValueAsObjectIdMax
+                //    // GTE memberExp >= comparisonValueAsObjectIdMin
+                //    // LT memberExp < comparisonValueAsObjectIdMin
+                //    // LTE memberExp <= comparisonValueAsObjectIdMax
+                //    // EQ  memberExp >= comparisonValueAsObjectIdMin && memberExp <= comparisonValueAsObjectIdMax
 
-                    // GT  memberExp > comparisonValueAsObjectIdMax
-                    // GTE memberExp >= comparisonValueAsObjectIdMin
-                    // LT memberExp < comparisonValueAsObjectIdMin
-                    // LTE memberExp <= comparisonValueAsObjectIdMax
-                    // EQ  memberExp >= comparisonValueAsObjectIdMin && memberExp <= comparisonValueAsObjectIdMax
+                //    string mongoFieldName = GetMongoFieldNameInMatchStage(memberExp, isLambdaParamResultHack);
+                //    if (comparisonType == ExpressionType.GreaterThan)
+                //        return Builders<TDocType>.Filter.Gt(mongoFieldName, comparisonValueAsObjectIdMax);
+                //    if (comparisonType == ExpressionType.GreaterThanOrEqual)
+                //        return Builders<TDocType>.Filter.Gte(mongoFieldName, comparisonValueAsObjectIdMin);
+                //    if (comparisonType == ExpressionType.LessThan)
+                //        return Builders<TDocType>.Filter.Lt(mongoFieldName, comparisonValueAsObjectIdMin);
+                //    if (comparisonType == ExpressionType.LessThanOrEqual)
+                //        return Builders<TDocType>.Filter.Lte(mongoFieldName, comparisonValueAsObjectIdMax);
 
-                    string mongoFieldName = GetMongoFieldNameInMatchStage(memberExp, isLambdaParamResultHack);
-                    if (comparisonType == ExpressionType.GreaterThan)
-                        return Builders<TDocType>.Filter.Gt(mongoFieldName, comparisonValueAsObjectIdMax);
-                    if (comparisonType == ExpressionType.GreaterThanOrEqual)
-                        return Builders<TDocType>.Filter.Gte(mongoFieldName, comparisonValueAsObjectIdMin);
-                    if (comparisonType == ExpressionType.LessThan)
-                        return Builders<TDocType>.Filter.Lt(mongoFieldName, comparisonValueAsObjectIdMin);
-                    if (comparisonType == ExpressionType.LessThanOrEqual)
-                        return Builders<TDocType>.Filter.Lte(mongoFieldName, comparisonValueAsObjectIdMax);
-
-                    // EQ
-                    return Builders<TDocType>.Filter.And(Builders<TDocType>.Filter.Gte(mongoFieldName, comparisonValueAsObjectIdMin), Builders<TDocType>.Filter.Lte(mongoFieldName, comparisonValueAsObjectIdMax));
-                }
+                //    // EQ
+                //    return Builders<TDocType>.Filter.And(Builders<TDocType>.Filter.Gte(mongoFieldName, comparisonValueAsObjectIdMin), Builders<TDocType>.Filter.Lte(mongoFieldName, comparisonValueAsObjectIdMax));
+                //}
 
                 // If the LHS is an array length, then we use special operators.
                 if (binExp.Left.NodeType == ExpressionType.ArrayLength)

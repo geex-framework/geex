@@ -89,7 +89,7 @@ namespace MongoDB.Entities.InnerQuery
                 this FilterDefinition<TDocument> filter
           )
         {
-            return filter.Render(BsonSerializer.LookupSerializer<TDocument>(), BsonSerializer.SerializerRegistry, LinqProvider.V2);
+            return filter.Render(new RenderArgs<TDocument>(BsonSerializer.LookupSerializer<TDocument>(), BsonSerializer.SerializerRegistry));
         }
     }
 }

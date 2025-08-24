@@ -313,7 +313,7 @@ namespace MongoDB.Entities
         /// <param name="cancellation">An optional cancellation token</param>
         internal static Task<UpdateResult> SavePreservingAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
         {
-            return DB.SavePreservingAsync(entity, entity.DbContext?.Session, cancellation);
+            return DB.SavePreservingAsync(entity, entity.DbContext, cancellation);
         }
 
         /// <summary>

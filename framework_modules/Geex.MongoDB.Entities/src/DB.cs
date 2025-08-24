@@ -27,9 +27,8 @@ namespace MongoDB.Entities
         public static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, Type>> InheritanceTreeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, Type>>();
         static DB()
         {
-
-            BsonSerializer.RegisterSerializer(typeof(string), new ObjectIdCompatibleStringSerializer());
-            BsonSerializer.RegisterSerializer(typeof(ObjectId), new StringCompatibleObjectIdSerializer());
+            BsonSerializer.RegisterSerializer(new ObjectIdCompatibleStringSerializer());
+            BsonSerializer.RegisterSerializer(new StringCompatibleObjectIdSerializer());
             //BsonSerializer.RegisterSerializer(typeof(object), new AnonymousObjectBsonSerializer());
             BsonSerializer.RegisterSerializer(new JsonNodeSerializer());
             BsonSerializer.RegisterSerializer(new JsonValueSerializer());
@@ -73,7 +72,6 @@ namespace MongoDB.Entities
                 new MongoClientSettings
                 {
                     Server = new MongoServerAddress(host, port),
-                    LinqProvider = LinqProvider.V2
                 }, database);
         }
 

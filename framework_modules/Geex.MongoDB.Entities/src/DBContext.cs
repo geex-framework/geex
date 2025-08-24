@@ -26,6 +26,7 @@ using MongoDB.Driver.Core.Clusters;
 using MongoDB.Entities.Core.Comparers;
 using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
+
 using ReadConcern = MongoDB.Driver.ReadConcern;
 using WriteConcern = MongoDB.Driver.WriteConcern;
 
@@ -185,7 +186,7 @@ namespace MongoDB.Entities
         {
             if (entity == null)
             {
-                return default(T);
+                return entity;
             }
 
             if (!this.EntityTrackingEnabled)
@@ -203,25 +204,30 @@ namespace MongoDB.Entities
 
             if (entity is IModifiedOn modifiedOn)
                 modifiedOn.ModifiedOn = now;
-            var rootType = entity.GetType().GetRootBsonClassMap().ClassType;
-            if (this.MemoryDataCache[rootType].TryGetValue(entity.Id, out var existed))
+            var rootType = typeof(T).GetRootBsonClassMap().ClassType;
+
+            var addOrUpdateResult = this.MemoryDataCache[rootType].AddOrUpdate(entity.Id, (id) =>
             {
-                return existed.CastEntity<T>();
-            }
-            else
-            {
-                if (this.MemoryDataCache[rootType].Count > 10000)
-                {
-                    //throw new NotSupportedException("Queryable Api不支持数量过多的Entity查询/写入, 请考虑使用原生Api");
-                }
-                this.MemoryDataCache[rootType].TryAdd(entity.Id, entity);
                 entity.DbContext = this;
                 if (entity is IAttachIntercepted intercepted)
                 {
                     intercepted.InterceptOnAttached();
                 }
                 return entity;
-            }
+            }, (id, existed) =>
+            {
+                if (ReferenceEquals(entity, existed))
+                {
+                    return existed.CastEntity<T>();
+                }
+                entity.DbContext = this;
+                if (entity is IAttachIntercepted intercepted)
+                {
+                    intercepted.InterceptOnAttached();
+                }
+                return entity;
+            });
+            return (T)addOrUpdateResult;
         }
         /// <summary>
         /// 本地内存缓存
@@ -512,7 +518,7 @@ namespace MongoDB.Entities
         public virtual Task<UpdateResult> SavePreservingAsync<T>(T entity, CancellationToken cancellation = default)
             where T : IEntityBase
         {
-            return DB.SavePreservingAsync(entity, session, cancellation);
+            return DB.SavePreservingAsync(entity, this, cancellation);
         }
 
         /// <summary>
@@ -764,13 +770,13 @@ namespace MongoDB.Entities
                 throw new NotSupportedException("Cancellation is only supported within transactions for delete operations!");
         }
 
-        public void UpdateDbDataCache<T>(T dbEntity, bool force = false) where T : IEntityBase
+        public void UpdateDbDataCache<T>(T dbEntity) where T : IEntityBase
         {
             var rootType = typeof(T).GetRootBsonClassMap().ClassType;
-            UpdateDbDataCache(dbEntity, rootType, force);
+            UpdateDbDataCache(dbEntity, rootType);
         }
 
-        public void UpdateDbDataCache<T>(IEnumerable<T> dbEntities, bool force = false) where T : IEntityBase
+        public void UpdateDbDataCache<T>(IEnumerable<T> dbEntities) where T : IEntityBase
         {
             if (!dbEntities.Any())
             {
@@ -779,26 +785,15 @@ namespace MongoDB.Entities
             var rootType = typeof(T).GetRootBsonClassMap().ClassType;
             foreach (var dbEntity in dbEntities)
             {
-                UpdateDbDataCache(dbEntity, rootType, force);
+                UpdateDbDataCache(dbEntity, rootType);
             }
         }
 
-        private void UpdateDbDataCache<T>(T dbEntity, Type rootType, bool force = false) where T : IEntityBase
+        private void UpdateDbDataCache<T>(T dbEntity, Type rootType) where T : IEntityBase
         {
-            if (force)
-            {
-                var tobeCached = dbEntity.ShallowClone();
-                tobeCached = dbEntity.Adapt(tobeCached);
-                this.DbDataCache[rootType].AddOrUpdate(dbEntity.Id, tobeCached, (_, _) => tobeCached);
-                return;
-            }
-            if (!DbDataCache[rootType].ContainsKey(dbEntity.Id))
-            {
-                // todo: Copy dbEntity and save it to OriginLocal
-                var tobeCached = dbEntity.ShallowClone();
-                tobeCached = dbEntity.Adapt(tobeCached);
-                this.DbDataCache[rootType].TryAdd(dbEntity.Id, dbEntity.Adapt(tobeCached));
-            }
+            var tobeCached = dbEntity.ShallowClone();
+            tobeCached = dbEntity.Adapt(tobeCached);
+            this.DbDataCache[rootType].AddOrUpdate(dbEntity.Id, tobeCached, (_, _) => tobeCached);
         }
 
         /// <summary>
@@ -841,6 +836,22 @@ namespace MongoDB.Entities
                 this.MemoryDataCache[rootType].TryRemove(entity.Id, out _);
                 this.DbDataCache[rootType].TryRemove(entity.Id, out _);
             }
+        }
+
+        public ComparisonResult DetectChangeSet(IEntityBase entityBase)
+        {
+            ArgumentNullException.ThrowIfNull(entityBase);
+            var rootType = entityBase.GetType().GetRootBsonClassMap().ClassType;
+            var result = _compareLogic.Compare(this.DbDataCache[rootType].GetValueOrDefault(entityBase.Id), entityBase);
+            return result;
+        }
+
+        public ComparisonResult DetectChangeSet<T>(T entityBase) where T : IEntityBase
+        {
+            ArgumentNullException.ThrowIfNull(entityBase);
+            var rootType = typeof(T).GetRootBsonClassMap().ClassType;
+            var result = _compareLogic.Compare(this.DbDataCache[rootType].GetValueOrDefault(entityBase.Id), entityBase);
+            return result;
         }
     }
 }

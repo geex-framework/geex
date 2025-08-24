@@ -485,7 +485,7 @@ namespace MongoDB.Entities
 
             options.Projection =
                 options.Projection
-                .Render(BsonSerializer.SerializerRegistry.GetSerializer<T>(), BsonSerializer.SerializerRegistry)
+                .Render(new RenderArgs<T>(BsonSerializer.SerializerRegistry.GetSerializer<T>(), BsonSerializer.SerializerRegistry))
                 .Document.Add(propName, new BsonDocument { { "$meta", "textScore" } });
         }
     }

@@ -25,10 +25,14 @@ namespace MongoDB.Entities.Tests
             await testEntity.SaveAsync();
             testEntity.Value.ShouldBe(2);
             await dbContext.SaveChanges();
+            testEntity.Value.ShouldBe(2);
+            dbContext.Attach(testEntity);
             testEntity.Value.ShouldBe(3);
+            await dbContext.SaveChanges();
+            testEntity.Value.ShouldBe(4);
             dbContext = new DbContext();
             testEntity = dbContext.Query<InterceptedAndFiltered>().FirstOrDefault(x => x.Id == testEntity.Id);
-            testEntity.Value.ShouldBe(4);
+            testEntity.Value.ShouldBe(5);
         }
 
         [TestMethod]

@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+  </PropertyGroup>
+
+  <!-- Optional target -->
+  <Target Name="DeleteArtifactsFolder" AfterTargets="Clean">
+    <Message Text="Removing '$(ArtifactsPath)'..." Importance="high" />
+    <RemoveDir Directories="$(ArtifactsPath)" ContinueOnError="true" />
+  </Target>
+</Project>

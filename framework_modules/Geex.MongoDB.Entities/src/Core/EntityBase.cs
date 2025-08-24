@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
@@ -73,7 +74,6 @@ namespace MongoDB.Entities
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;
         }
-
         public EntityBase()
         {
 
@@ -144,7 +144,7 @@ namespace MongoDB.Entities
             return (dynamic)lazyQuery.Value;
         }
         /// <summary>
-        /// This property is auto managed. A new Id will be assigned for new entities upon saving.
+        /// This property is auto managed. A new Id will be assigned for new entities upon attaching.
         /// </summary>
         [BsonId, ObjectId]
         public string Id { get; [Obsolete("请勿手动设置Id!")] set; }

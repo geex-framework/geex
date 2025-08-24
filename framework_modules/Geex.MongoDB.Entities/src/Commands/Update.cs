@@ -282,7 +282,7 @@ namespace MongoDB.Entities
             return
                 Cache<T>.HasModifiedOn &&
                 !defs.Any(d => d
-                       .Render(BsonSerializer.SerializerRegistry.GetSerializer<T>(), BsonSerializer.SerializerRegistry)
+                       .Render(new RenderArgs<T>(BsonSerializer.SerializerRegistry.GetSerializer<T>(), BsonSerializer.SerializerRegistry))
                        .ToString()
                        .Contains($"\"{Cache<T>.ModifiedOnPropName}\""));
         }

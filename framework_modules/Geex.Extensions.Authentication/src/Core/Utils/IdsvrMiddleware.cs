@@ -74,24 +74,24 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 case OpenIddictServerEndpointType.Token:
                     await this.Token(context, next);
                     break;
-                case OpenIddictServerEndpointType.Logout:
-                    await this.Logout(context, next);
+                case OpenIddictServerEndpointType.EndSession:
+                    await this.EndSession(context, next);
                     break;
                 case OpenIddictServerEndpointType.Configuration:
                     break;
-                case OpenIddictServerEndpointType.Cryptography:
+                case OpenIddictServerEndpointType.JsonWebKeySet:
                     break;
-                case OpenIddictServerEndpointType.Userinfo:
+                case OpenIddictServerEndpointType.UserInfo:
                     await this.UserInfo(context, next);
                     break;
                 case OpenIddictServerEndpointType.Introspection:
                     break;
                 case OpenIddictServerEndpointType.Revocation:
                     break;
-                case OpenIddictServerEndpointType.Device:
+                case OpenIddictServerEndpointType.DeviceAuthorization:
                     break;
-                case OpenIddictServerEndpointType.Verification:
-                    await this.Verification(context, next);
+                case OpenIddictServerEndpointType.EndUserVerification:
+                    await this.EndUserVerification(context, next);
                     break;
                 default:
                     await next(context);
@@ -99,7 +99,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
             }
         }
 
-        private async Task Verification(HttpContext context, RequestDelegate next)
+        private async Task EndUserVerification(HttpContext context, RequestDelegate next)
         {
             var request = context.GetOpenIddictServerRequest() ??
                 throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
@@ -126,7 +126,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
             await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
         }
 
-        private async Task Logout(HttpContext context, RequestDelegate next)
+        private async Task EndSession(HttpContext context, RequestDelegate next)
         {
             var request = context.GetOpenIddictServerRequest() ??
         throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");

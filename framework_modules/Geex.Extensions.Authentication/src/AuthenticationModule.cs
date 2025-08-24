@@ -192,14 +192,14 @@ namespace Geex.Extensions.Authentication
         private void ConfigureOpenIddictEndpoints(OpenIddictServerBuilder options)
         {
             options
-                .SetUserinfoEndpointUris("/idsvr/userinfo")
-                .SetLogoutEndpointUris("/idsvr/logout")
+                .SetUserInfoEndpointUris("/idsvr/userinfo")
+                .SetEndSessionEndpointUris("/idsvr/endsession")
                 .SetRevocationEndpointUris("/idsvr/revocation")
-                .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
-                .SetIntrospectionEndpointUris("/idsvr/introspect")
-                .SetVerificationEndpointUris("/idsvr/deviceauthorization")
+                .SetJsonWebKeySetEndpointUris("/.well-known/openid-configuration/jwks")
+                .SetIntrospectionEndpointUris("/idsvr/introspection")
+                .SetEndUserVerificationEndpointUris("/idsvr/verification")
                 .SetAuthorizationEndpointUris("/idsvr/authorize")
-                .SetDeviceEndpointUris("/idsvr/device")
+                .SetDeviceAuthorizationEndpointUris("/idsvr/deviceauthorization")
                 .SetTokenEndpointUris("/idsvr/token")
                 .SetConfigurationEndpointUris("/.well-known/openid-configuration");
         }
@@ -237,7 +237,7 @@ namespace Geex.Extensions.Authentication
                 .AllowAuthorizationCodeFlow()
                 .RequireProofKeyForCodeExchange()
                 .AllowClientCredentialsFlow()
-                .AllowDeviceCodeFlow()
+                .AllowDeviceAuthorizationFlow()
                 .AllowRefreshTokenFlow()
                 .AllowImplicitFlow()
                 .AllowHybridFlow()
@@ -379,10 +379,10 @@ namespace Geex.Extensions.Authentication
             var aspNetCoreBuilder = options.UseAspNetCore();
             aspNetCoreBuilder
                 .EnableAuthorizationEndpointPassthrough()
-                .EnableLogoutEndpointPassthrough()
+                .EnableEndSessionEndpointPassthrough()
                 .EnableTokenEndpointPassthrough()
-                .EnableUserinfoEndpointPassthrough()
-                .EnableVerificationEndpointPassthrough()
+                .EnableUserInfoEndpointPassthrough()
+                .EnableEndUserVerificationEndpointPassthrough()
                 .EnableErrorPassthrough()
                 .DisableTransportSecurityRequirement();
         }
