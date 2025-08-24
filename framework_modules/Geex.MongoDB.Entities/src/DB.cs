@@ -27,8 +27,10 @@ namespace MongoDB.Entities
         public static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, Type>> InheritanceTreeCache = new ConcurrentDictionary<Type, ConcurrentDictionary<string, Type>>();
         static DB()
         {
-            BsonSerializer.RegisterSerializer(new ObjectIdCompatibleStringSerializer());
-            BsonSerializer.RegisterSerializer(new StringCompatibleObjectIdSerializer());
+            BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+            BsonSerializer.RegisterSerializer(new ObjectIdSerializer(BsonType.ObjectId));
+            //BsonSerializer.RegisterSerializer(new ObjectIdCompatibleStringSerializer());
+            //BsonSerializer.RegisterSerializer(new StringCompatibleObjectIdSerializer());
             //BsonSerializer.RegisterSerializer(typeof(object), new AnonymousObjectBsonSerializer());
             BsonSerializer.RegisterSerializer(new JsonNodeSerializer());
             BsonSerializer.RegisterSerializer(new JsonValueSerializer());
@@ -220,7 +222,7 @@ namespace MongoDB.Entities
         /// </summary>
         /// <typeparam name="T">Any class that implements IEntity</typeparam>
         /// <param name="id">The Id to set on the returned instance</param>
-        public static T Entity<T>(string id) where T : IEntityBase, new()
+        public static T Entity<T>(ObjectId id) where T : IEntityBase, new()
         {
             return new T { Id = id };
         }
@@ -298,6 +300,7 @@ namespace MongoDB.Entities
 
     internal static class Cache<T> where T : IEntityBase
     {
+        static PropertyInfo idProp = typeof(T).GetProperty(nameof(IEntityBase.Id));
         internal static IMongoDatabase Database { get; private set; }
         internal static IMongoCollection<T> Collection { get; private set; }
         internal static string DBName { get; private set; }

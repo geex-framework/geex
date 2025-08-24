@@ -13,13 +13,7 @@ public class StringCompatibleObjectIdSerializer : SerializerBase<ObjectId>, IRep
     /// <inheritdoc />
     public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, ObjectId value)
     {
-        var writer = context.Writer;
-        if (value == null)
-        {
-            writer.WriteNull();
-            return;
-        }
-        base.Serialize(context, args, value);
+        context.Writer.WriteObjectId(value);
     }
 
     /// <inheritdoc />
@@ -29,7 +23,7 @@ public class StringCompatibleObjectIdSerializer : SerializerBase<ObjectId>, IRep
         return reader.CurrentBsonType switch
         {
             BsonType.String when ObjectId.TryParse(reader.ReadString(), out var objectId) => objectId,
-            BsonType.ObjectId => base.Deserialize(context, args),
+            BsonType.ObjectId => reader.ReadObjectId(),
             _ => throw new InvalidDataException("")
         };
     }

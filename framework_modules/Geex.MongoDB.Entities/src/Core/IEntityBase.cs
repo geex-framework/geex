@@ -8,6 +8,7 @@ using Mapster;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
@@ -21,8 +22,7 @@ namespace MongoDB.Entities
         /// The Id property for this entity type.
         /// 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
         /// </summary>
-        [BsonId, ObjectId]
-        string Id { get; set; }
+        ObjectId Id { get; set; }
         [AdaptIgnore]
         DbContext DbContext { get; set; }
         DateTimeOffset CreatedOn { get; set; }

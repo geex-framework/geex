@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using MongoDB.Bson;
+
 namespace MongoDB.Entities.Tests
 {
     [Name("Writer")]
@@ -25,7 +27,7 @@ namespace MongoDB.Entities.Tests
 
         public IQueryable<Book> Books => LazyQuery(() => Books);
 
-        public List<string> BookIds { get; set; } = new List<string>();
+        public List<ObjectId> BookIds { get; set; } = new List<ObjectId>();
 
         public DateTimeOffset ModifiedOn { get; set; }
 

@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.MongoDB.Entities.Core;
+
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
-using System.Security.Cryptography;
-using Geex.MongoDB.Entities.Core;
 
 [assembly: InternalsVisibleTo("MongoDB.Entities.Tests")]
 namespace MongoDB.Entities
@@ -53,8 +55,7 @@ namespace MongoDB.Entities
     [Name("[BINARY_CHUNKS]")]
     internal class FileChunk : EntityBase<FileChunk>
     {
-        [ObjectId]
-        public string FileId { get; set; }
+        public ObjectId FileId { get; set; }
 
         public byte[] Data { get; set; }
     }
@@ -247,7 +248,7 @@ namespace MongoDB.Entities
                     var readBytes = dataChunk[..readCount].ToArray();
                     readBytes.CopyTo(dataChunk);
                     md5Hasher?.TransformBlock(readBytes, 0, readBytes.Length, null, 0);
-                    doc.Id = doc.GenerateNewId().ToString();
+                    doc.Id = doc.GenerateNewId();
                     doc.Data = readBytes;
                     parent.ChunkCount++;
                     await (dbContext?.Session == null

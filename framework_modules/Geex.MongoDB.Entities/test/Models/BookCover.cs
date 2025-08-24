@@ -15,6 +15,6 @@ namespace MongoDB.Entities.Tests.Models
             this.ConfigLazyQuery(x => x.BookMarks, author => this.BookMarkIds.Contains(author.Id), books => author => books.SelectMany(x => x.BookMarkIds).Contains(author.Id));
         }
 
-        public List<string> BookMarkIds { get; set; }
+        public List<ObjectId> BookMarkIds { get; set; }
     }
 }

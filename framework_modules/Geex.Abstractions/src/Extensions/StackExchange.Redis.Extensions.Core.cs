@@ -43,7 +43,7 @@ namespace StackExchange.Redis.Extensions.Core
             switch (obj)
             {
                 case IEntityBase entity:
-                    return entity.Id;
+                    return entity.Id.ToString();
                 case IHasId hasId:
                     return hasId.Id;
                 case ClaimsPrincipal claimsPrincipal:

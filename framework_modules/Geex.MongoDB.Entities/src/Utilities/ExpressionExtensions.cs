@@ -4,6 +4,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
+using Geex.MongoDB.Entities.Utilities;
+
 using Microsoft.Extensions.Primitives;
 
 using MongoDB.Bson;
@@ -115,6 +117,8 @@ namespace MongoDB.Entities.Utilities
 
     internal class StringToObjectIdVisitor : ExpressionVisitor
     {
+        static MethodInfo converter = typeof(ObjectId).GetMethod(nameof(ObjectId.Parse));
+        private Dictionary<string, object> _constants;
 
         //there must be only one instance of parameter expression for each parameter
         //there is one so one passed here
@@ -142,6 +146,49 @@ namespace MongoDB.Entities.Utilities
             }
             return Expression.Constant(convertedValue);
         }
+
+        /// <inheritdoc />
+        protected override Expression VisitMember(MemberExpression node)
+        {
+            //if (node is { Member: PropertyInfo propertyInfo, Expression: not ParameterExpression } && propertyInfo.GetCustomAttribute<ObjectIdAttribute>() != default)
+            //{
+            //    var value = Evaluate(node);
+            //    if (value is ObjectId objectId)
+            //    {
+            //        return Expression.Constant(objectId);
+            //    }
+            //    var converted = Expression.Constant(ObjectId.Parse(value.ToString()));
+            //    return converted;
+            //}
+            return base.VisitMember(node);
+        }
+
+        static object Evaluate(Expression expr)
+        {
+            switch (expr)
+            {
+                case ConstantExpression c:
+                    return c.Value;
+
+                case MemberExpression m:
+                    // 先拿到成员所在的实例
+                    var target = Evaluate(m.Expression);
+
+                    return m.Member switch
+                    {
+                        FieldInfo f => f.GetValue(target),
+                        PropertyInfo p => p.GetValue(target, null),
+                        _ => throw new NotSupportedException()
+                    };
+
+                default:
+                    // 其它节点（调用、运算等）仍可 fallback 到编译
+                    var lambda = Expression.Lambda<Func<object>>(
+                                     Expression.Convert(expr, typeof(object)));
+                    return lambda.Compile()();
+            }
+        }
+
     }
 
     internal class FindStringAsObjectIdVisitor<T> : ExpressionVisitor

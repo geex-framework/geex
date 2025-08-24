@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Geex;
+using MongoDB.Bson;
 using MongoDB.Entities;
 
 // ReSharper disable once CheckNamespace
@@ -147,12 +148,12 @@ namespace System.Linq
             return source.Where<TEntityType>(expression);
         }
 
-        public static T? GetById<T>(this IQueryable<T> query, string id) where T : IEntityBase
+        public static T? GetById<T>(this IQueryable<T> query, ObjectId id) where T : IEntityBase
         {
             return query.FirstOrDefault(x => x.Id == id);
         }
 
-        public static IQueryable<T> FilterByIds<T>(this IQueryable<T> query, params string[] ids) where T : class, IHasId
+        public static IQueryable<T> FilterByIds<T>(this IQueryable<T> query, params ObjectId[] ids) where T : class, IEntityBase
         {
             return query.Where(x => ids.Contains(x.Id));
         }

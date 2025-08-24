@@ -171,7 +171,7 @@ namespace MongoDB.Entities
             var isNew = entity.Id == default;
             if (isNew)
             {
-                entity.Id = entity.GenerateNewId().ToString();
+                entity.Id = entity.GenerateNewId();
                 entity.CreatedOn = DateTimeOffset.Now;
             }
             entity.DbContext = this;
@@ -198,7 +198,7 @@ namespace MongoDB.Entities
             var now = DateTimeOffset.Now;
             if (isNew)
             {
-                entity.Id = entity.GenerateNewId().ToString();
+                entity.Id = entity.GenerateNewId();
                 entity.CreatedOn = now;
             }
 
@@ -528,7 +528,7 @@ namespace MongoDB.Entities
         /// <typeparam name="T">The type of entity</typeparam>
         /// <param name="id">The Id of the entity to delete</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<long> DeleteAsync<T>(string id, CancellationToken cancellation = default)
+        public virtual Task<long> DeleteAsync<T>(ObjectId id, CancellationToken cancellation = default)
             where T : IEntityBase
         {
             return DB.DeleteAsync<T>(id, this, cancellation);
@@ -571,7 +571,7 @@ namespace MongoDB.Entities
         /// <typeparam name="T">The type of entity</typeparam>
         /// <param name="Ids">An IEnumerable of entity Ids</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<long> DeleteAsync<T>(IEnumerable<string> Ids,
+        public virtual Task<long> DeleteAsync<T>(IEnumerable<ObjectId> Ids,
             CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.DeleteAsync<T>(Ids, this, cancellation);

@@ -30,7 +30,7 @@ namespace MongoDB.Entities
                 ).Data;
         }
 
-        internal static void ThrowIfUnsaved(this string entityID)
+        internal static void ThrowIfUnsaved(this ObjectId entityID)
         {
             if (entityID == default)
                 throw new InvalidOperationException("Please save the entity before performing this operation!");
@@ -174,7 +174,7 @@ namespace MongoDB.Entities
         public static T ToDocument<T>(this T entity) where T : IEntityBase
         {
             var res = entity.Duplicate();
-            res.Id = res.GenerateNewId().ToString();
+            res.Id = res.GenerateNewId();
             return res;
         }
 
@@ -185,7 +185,7 @@ namespace MongoDB.Entities
         {
             var res = entities.Duplicate();
             foreach (var e in res)
-                e.Id = e.GenerateNewId().ToString();
+                e.Id = e.GenerateNewId();
             return res;
         }
 
@@ -196,7 +196,7 @@ namespace MongoDB.Entities
         {
             var res = entities.Duplicate();
             foreach (var e in res)
-                e.Id = e.GenerateNewId().ToString();
+                e.Id = e.GenerateNewId();
             return res;
         }
 

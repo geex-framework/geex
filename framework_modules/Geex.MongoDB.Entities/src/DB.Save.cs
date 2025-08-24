@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -30,12 +31,15 @@ namespace MongoDB.Entities
         public static async Task<ReplaceOneResult> SaveAsync<T>(T entity, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             await PrepareForSave(entity, dbContext);
-            dbContext?.Detach(entity);
             var filter = Builders<T>.Filter.Eq(d => d.Id, entity.Id);
             var replaceOptions = new ReplaceOptions<T>() { IsUpsert = true };
-            return dbContext?.Session == null
+            var result = dbContext?.Session == null
                    ? await Collection<T>().ReplaceOneAsync(filter, entity, replaceOptions, cancellation)
                    : await Collection<T>().ReplaceOneAsync(dbContext.Session, filter, entity, replaceOptions, cancellation);
+
+            dbContext?.UpdateDbDataCache(entity);
+
+            return result;
         }
 
         /// <summary>
@@ -60,11 +64,11 @@ namespace MongoDB.Entities
                 models.Add(upsert);
             }
 
-            dbContext?.Detach(entities);
-
             var result = dbContext?.Session == null
                    ? await Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)
                    : await Collection<T>().BulkWriteAsync(dbContext.Session, models, unOrdBlkOpts, cancellation);
+
+            dbContext?.UpdateDbDataCache(entities);
 
             return result;
         }
@@ -203,7 +207,7 @@ namespace MongoDB.Entities
             {
                 if (entity.Id == default)
                 {
-                    entity.Id = entity.GenerateNewId().ToString();
+                    entity.Id = entity.GenerateNewId();
                     entity.CreatedOn = now;
                 }
             }
@@ -241,16 +245,28 @@ namespace MongoDB.Entities
             else
                 props = props.Where(p => propNames.Contains(p.Name));
 
-            return props.Select(p => Builders<T>.Update.Set(p.Name, p.GetValue(entity)));
+            var entityType = typeof(T);
+            var typeNames = DB.InheritanceTreeCache.TryGetValue(entityType, out var types) ? types.Select(x => x.Key).ToArray() : null;
+            object? t = typeNames?.Length switch
+            {
+                1 => typeNames[0],
+                null => entityType.Name,
+                _ => typeNames
+            };
+            return props.Select(p => Builders<T>.Update.Set(p.Name, p.GetValue(entity)))
+                .Concat([Builders<T>.Update.Set(nameof(IEntityBase.Id), entity.Id), Builders<T>.Update.Set("_t", t)]);
         }
 
         private static async Task<UpdateResult> SavePartial<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
         {
-            dbContext?.Detach(entity);
-            return
+            var result =
                 dbContext?.Session == null
                 ? await Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, Builders<T>.Update.Combine(await BuildUpdateDefs(entity, members, dbContext, excludeMode)), updateOptions, cancellation)
                 : await Collection<T>().UpdateOneAsync(dbContext.Session, e => e.Id == entity.Id, Builders<T>.Update.Combine(await BuildUpdateDefs(entity, members, dbContext, excludeMode)), updateOptions, cancellation);
+
+            dbContext?.UpdateDbDataCache(entity);
+
+            return result;
         }
 
         private static async Task<BulkWriteResult<T>> SavePartial<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase

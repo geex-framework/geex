@@ -1,5 +1,7 @@
 ﻿using System;
+
 using Geex.Storage;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests.Models
 {
@@ -27,7 +29,7 @@ namespace MongoDB.Entities.Tests.Models
         {
 
         }
-        public TestEntitySelectSubset(string SelectId,string SelectName, int SelectValue, TestEntityEnum SelectEnum)
+        public TestEntitySelectSubset(ObjectId SelectId,string SelectName, int SelectValue, TestEntityEnum SelectEnum)
         {
             this.SelectId = SelectId;
             this.SelectName = SelectName;
@@ -35,13 +37,13 @@ namespace MongoDB.Entities.Tests.Models
             this.SelectEnum = SelectEnum;
         }
 
-        public string SelectId { get; init;}
+        public ObjectId SelectId { get; init;}
         public string SelectName { get; init; }
         public int SelectValue { get; init; }
         public TestEntityEnum SelectEnum { get; init; }
         public DateTimeOffset? SelectDateTimeOffset { get; init; }
 
-        public void Deconstruct(out string SelectId,out string SelectName, out int SelectValue, out TestEntityEnum SelectEnum)
+        public void Deconstruct(out ObjectId SelectId,out string SelectName, out int SelectValue, out TestEntityEnum SelectEnum)
         {
             SelectId = this.SelectId;
             SelectName = this.SelectName;

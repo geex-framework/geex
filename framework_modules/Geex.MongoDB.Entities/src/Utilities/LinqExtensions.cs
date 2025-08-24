@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using JetBrains.Annotations;
+
+using MongoDB.Bson;
 using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
 
@@ -47,7 +49,7 @@ namespace System.Linq
         }
 
 
-        public static Task<T> OneAsync<T>(this IQueryable<T> query, string id, CancellationToken cancellationToken = default) where T : IEntityBase
+        public static Task<T> OneAsync<T>(this IQueryable<T> query, ObjectId id, CancellationToken cancellationToken = default) where T : IEntityBase
         {
             return Task.FromResult(query.FirstOrDefault(x => x.Id == id));
         }

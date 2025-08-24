@@ -152,7 +152,7 @@ namespace MongoDB.Entities.Tests
                 () =>
                 {
                     using var stream = File.OpenWrite("test.file");
-                    DB.File<Image>(ObjectId.GenerateNewId().ToString())
+                    DB.File<Image>(ObjectId.GenerateNewId())
                       .DownloadAsync(stream).GetAwaiter().GetResult();
                 });
         }

@@ -1,4 +1,6 @@
-﻿namespace MongoDB.Entities
+﻿using MongoDB.Bson;
+
+namespace MongoDB.Entities
 {
     public static partial class DB
     {
@@ -7,7 +9,7 @@
         /// </summary>
         /// <typeparam name="T">The file entity type</typeparam>
         /// <param name="id">The Id of the file entity</param>
-        public static DataStreamer File<T>(string id) where T : FileEntity, new()
+        public static DataStreamer File<T>(ObjectId id) where T : FileEntity, new()
         {
             return new DataStreamer(new T() { Id = id, UploadSuccessful = true });
         }

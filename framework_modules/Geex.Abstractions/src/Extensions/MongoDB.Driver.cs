@@ -53,12 +53,7 @@ namespace MongoDB.Driver
 
         public static Task<TDocument> FirstOrDefaultAsync<TDocument>(this IMongoCollection<TDocument> collection, ObjectId id) where TDocument : IEntityBase
         {
-            return collection.FirstOrDefaultAsync(id.ToString());
-        }
-        public static Task<TDocument> FirstOrDefaultAsync<TDocument>(this IMongoCollection<TDocument> collection, string id) where TDocument : IEntityBase
-        {
             Ensure.IsNotNull(collection, nameof(collection));
-            Ensure.IsNotNull(id, nameof(id));
             return collection.Find(x => x.Id == id).FirstOrDefaultAsync();
         }
     }

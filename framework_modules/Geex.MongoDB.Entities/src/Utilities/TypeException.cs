@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.IdGenerators;
 
 namespace MongoDB.Entities.Utilities
 {
     internal static class TypeException
     {
+        static BsonObjectIdGenerator _bsonObjectIdGenerator = new BsonObjectIdGenerator();
         public static List<Type> GetDirectInterfaces(this Type type)
         {
             var allInterfaces = type.GetInterfaces();

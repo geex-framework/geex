@@ -4,7 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver.Linq;
 using MongoDB.Entities.Interceptors;
 
 namespace MongoDB.Entities.Utilities
@@ -13,7 +18,7 @@ namespace MongoDB.Entities.Utilities
     {
         internal Dictionary<PropertyInfo, BatchLoadConfig> SubBatchLoadConfigs { get; } = new Dictionary<PropertyInfo, BatchLoadConfig>();
     }
-    public interface ICachedDbContextQueryProvider : IQueryProvider
+    public interface ICachedDbContextQueryProvider : IQueryProvider, IMongoQueryProvider
     {
         public DbContext DbContext { get; set; }
         public bool EntityTrackingEnabled { get; set; }
@@ -34,7 +39,7 @@ namespace MongoDB.Entities.Utilities
         internal static MethodInfo enumerableWhereMethodInfo =
             typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Where));
 
-        internal static Expression<Func<T, string>> idSelectExpression = (T x) => x.Id;
+        internal static Expression<Func<T, ObjectId>> idSelectExpression = (T x) => x.Id;
 
         internal static MethodInfo queryableFirstOrDefaultMethodInfo =
             typeof(Queryable).GetMethods().First(x => x.Name == nameof(Queryable.FirstOrDefault) && x.GetParameters().Length == 1);
@@ -262,5 +267,14 @@ namespace MongoDB.Entities.Utilities
                 }
             }
         }
+
+        /// <inheritdoc />
+        public async Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = new CancellationToken())
+        {
+            return await Task.Run(() => this.Execute<TResult>(expression), cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public BsonDocument[] LoggedStages { get; }
     }
 }

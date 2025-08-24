@@ -48,7 +48,7 @@ namespace MongoDB.Entities
         /// <param name="id">The unique id of an IEntity</param>
         /// <param name="cancellation">An optional cancellation token</param>
         /// <returns>A single entity or null if not found</returns>
-        public Task<TProjection> OneAsync(string id, CancellationToken cancellation = default)
+        public Task<TProjection> OneAsync(ObjectId id, CancellationToken cancellation = default)
         {
             Match(id);
             return ExecuteSingleAsync(cancellation);
@@ -82,7 +82,7 @@ namespace MongoDB.Entities
         /// Specify an IEntity id as the matching criteria
         /// </summary>
         /// <param name="id">A unique IEntity id</param>
-        public Find<T, TProjection> MatchId(string id)
+        public Find<T, TProjection> MatchId(ObjectId id)
         {
             return Match(f => f.Eq(t => t.Id, id));
         }
@@ -91,7 +91,7 @@ namespace MongoDB.Entities
         /// Specify an IEntity id as the matching criteria
         /// </summary>
         /// <param name="id">A unique IEntity id</param>
-        public Find<T, TProjection> Match(string id)
+        public Find<T, TProjection> Match(ObjectId id)
         {
             return Match(f => f.Eq(t => t.Id, id));
         }

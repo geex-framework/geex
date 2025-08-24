@@ -9,7 +9,9 @@ using Geex.Storage;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using MongoDB.Entities;
@@ -95,6 +97,7 @@ namespace Geex
     {
         void IBsonConfig<TEntity>.Map(BsonClassMap<TEntity> map)
         {
+            map.MapIdProperty(x => x.Id).SetSerializer(new StringSerializer(BsonType.ObjectId));
             this.Map(map, IndexConfig);
         }
 

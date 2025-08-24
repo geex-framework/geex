@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities
 {
@@ -33,7 +34,7 @@ namespace MongoDB.Entities
         /// Specify an IEntity id as the matching criteria
         /// </summary>
         /// <param name="id">A unique IEntity id</param>
-        public Update<T> MatchId(string id)
+        public Update<T> MatchId(ObjectId id)
         {
             return Match(f => f.Eq(t => t.Id, id));
         }

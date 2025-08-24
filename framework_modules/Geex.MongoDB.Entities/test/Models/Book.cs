@@ -2,10 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.IdGenerators;
+
 namespace MongoDB.Entities.Tests
 {
     public class Book : EntityBase<Book>, IModifiedOn
     {
+        static Book()
+        {
+            var registerClassMap = BsonClassMap.RegisterClassMap<Book>();
+            registerClassMap.AutoMap();
+        }
         public Date PublishedOn { get; set; }
 
         [DontPreserve] public string Title { get; set; }
@@ -32,7 +41,7 @@ namespace MongoDB.Entities.Tests
         public int DontSaveThis { get; set; }
 
         public DateTimeOffset ModifiedOn { get; set; }
-        public List<string> GoodAuthorIds { get; set; } = new List<string>();
+        public List<ObjectId> GoodAuthorIds { get; set; } = new List<ObjectId>();
 
         public Book()
         {
@@ -42,8 +51,8 @@ namespace MongoDB.Entities.Tests
             this.ConfigLazyQuery(x => x.MainAuthor, author => this.MainAuthorId == (author.Id), books => author => books.SelectList(x => x.MainAuthorId).Contains(author.Id));
         }
 
-        public List<string> BadAuthorIds { get; set; } = new List<string>();
-        public List<string> GenreIds { get; set; } = new List<string>();
-        public string MainAuthorId { get; set; }
+        public List<ObjectId> BadAuthorIds { get; set; } = new List<ObjectId>();
+        public List<ObjectId> GenreIds { get; set; } = new List<ObjectId>();
+        public ObjectId MainAuthorId { get; set; }
     }
 }

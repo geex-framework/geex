@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Linq.Expressions;
+
 using HotChocolate;
 
 using MediatX;
 
+using MongoDB.Bson;
 using MongoDB.Entities;
 
 // ReSharper disable once CheckNamespace
@@ -24,7 +26,7 @@ namespace Geex.Common.Requests
         {
             Filter = filter;
         }
-        public DeleteRequest(params string[] ids)
+        public DeleteRequest(params ObjectId[] ids)
         {
             Filter = x => ids.Contains(x.Id);
             Ids = ids;
@@ -35,7 +37,7 @@ namespace Geex.Common.Requests
         /// only works when deleting by id list
         /// </summary>
         [GraphQLIgnore]
-        public string[] Ids { get; private set; }
+        public ObjectId[] Ids { get; private set; }
         public string? _ { get; set; }
     }
 }

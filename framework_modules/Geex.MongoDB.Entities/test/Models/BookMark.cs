@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests.Models
 {
@@ -13,6 +14,6 @@ namespace MongoDB.Entities.Tests.Models
             this.ConfigLazyQuery(x => x.BookCover, bookCover => this.BookCoverId == bookCover.Id, bookMarks => bookCover => bookMarks.SelectList(x=>x.BookCoverId).Contains(bookCover.Id));
         }
 
-        public string BookCoverId { get; set; }
+        public ObjectId BookCoverId { get; set; }
     }
 }

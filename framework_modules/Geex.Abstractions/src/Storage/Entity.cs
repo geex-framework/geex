@@ -53,5 +53,8 @@ namespace Geex.Storage
                 throw new BusinessException(GeexExceptionType.ValidationFailed, null, $"{validationResult.ErrorMessage}{Environment.NewLine}{validationResult.MemberNames.JoinAsString(",")}");
             }
         }
+
+        /// <inheritdoc />
+        string IHasId.Id => this.Id.ToString();
     }
 }

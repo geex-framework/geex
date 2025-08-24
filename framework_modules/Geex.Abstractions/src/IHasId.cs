@@ -1,4 +1,6 @@
-﻿namespace Geex
+﻿using MongoDB.Bson;
+
+namespace Geex
 {
     public interface IHasId
     {

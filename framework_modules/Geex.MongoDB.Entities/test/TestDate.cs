@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MongoDB.Driver.Linq;
 
 namespace MongoDB.Entities.Tests
 {
@@ -14,7 +15,7 @@ namespace MongoDB.Entities.Tests
             var book = new Book { Title = "nsddci" };
             await book.SaveAsync();
 
-            var res = await DB.Find<Book>().OneAsync(book.Id);
+            var res = await DB.Queryable<Book>().SingleAsync(b => b.Id == book.Id);
 
             Assert.AreEqual(res.Title, book.Title);
             Assert.IsNull(res.PublishedOn);
@@ -32,7 +33,7 @@ namespace MongoDB.Entities.Tests
             };
             await book.SaveAsync();
 
-            var res = await DB.Find<Book>().OneAsync(book.Id);
+            var res = await DB.Queryable<Book>().SingleAsync(b => b.Id == book.Id);
 
             Assert.AreEqual(pubDate.Ticks, res.PublishedOn.Ticks);
             Assert.AreEqual(pubDate.ToUniversalTime(), res.PublishedOn.DateTime);
@@ -68,17 +69,14 @@ namespace MongoDB.Entities.Tests
             };
             await book.SaveAsync();
 
-            var res = (await DB.Find<Book>()
-                        .Match(b => b.Id == book.Id && b.PublishedOn.Ticks == pubDate.Ticks)
-                        .ExecuteAsync())
-                        .Single();
+            var res = (await DB
+                .Queryable<Book>()
+                .SingleAsync(b => b.Id == book.Id && b.PublishedOn.Ticks == pubDate.Ticks));
 
             Assert.AreEqual(book.Id, res.Id);
 
-            res = (await DB.Find<Book>()
-                    .Match(b => b.Id == book.Id && b.PublishedOn.Ticks < pubDate.Ticks + TimeSpan.FromSeconds(1).Ticks)
-                    .ExecuteAsync())
-                    .Single();
+            res = await DB.Queryable<Book>()
+                    .SingleAsync(b => b.Id == book.Id && b.PublishedOn.Ticks < pubDate.Ticks + TimeSpan.FromSeconds(1).Ticks);
 
             Assert.AreEqual(book.Id, res.Id);
         }
@@ -95,17 +93,13 @@ namespace MongoDB.Entities.Tests
             };
             await book.SaveAsync();
 
-            var res = (await DB.Find<Book>()
-            .Match(b => b.Id == book.Id && b.PublishedOn.DateTime == pubDate)
-            .ExecuteAsync())
-            .Single();
+            var res = await DB.Queryable<Book>()
+            .SingleAsync(b => b.Id == book.Id && b.PublishedOn.DateTime == pubDate);
 
             Assert.AreEqual(book.Id, res.Id);
 
-            res = (await DB.Find<Book>()
-                    .Match(b => b.Id == book.Id && b.PublishedOn.DateTime < pubDate.AddSeconds(1))
-                    .ExecuteAsync())
-                    .Single();
+            res = await DB.Queryable<Book>()
+                    .SingleAsync(b => b.Id == book.Id && b.PublishedOn.DateTime < pubDate.AddSeconds(1));
 
             Assert.AreEqual(book.Id, res.Id);
         }

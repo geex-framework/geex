@@ -11,6 +11,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson.Serialization.IdGenerators;
 using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
@@ -76,7 +77,6 @@ namespace MongoDB.Entities
         }
         public EntityBase()
         {
-
         }
         internal Dictionary<string, ILazyQuery> LazyQueryCache { get; } = new Dictionary<string, ILazyQuery>();
 
@@ -146,8 +146,7 @@ namespace MongoDB.Entities
         /// <summary>
         /// This property is auto managed. A new Id will be assigned for new entities upon attaching.
         /// </summary>
-        [BsonId, ObjectId]
-        public string Id { get; [Obsolete("请勿手动设置Id!")] set; }
+        public ObjectId Id { get; [Obsolete("请勿手动设置Id!")] set; }
         DbContext IEntityBase.DbContext { get; set; }
 
         protected virtual DbContext DbContext

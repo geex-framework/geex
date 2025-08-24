@@ -1,8 +1,12 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+
 using HotChocolate;
+
 using MediatX;
+
+using MongoDB.Bson;
 using MongoDB.Entities;
 
 namespace Geex.Requests
@@ -21,7 +25,7 @@ namespace Geex.Requests
         {
             Filter = filter;
         }
-        public QueryRequest(params string[] ids)
+        public QueryRequest(params ObjectId[] ids)
         {
             Filter = x => ids.Contains(x.Id);
             Ids = ids;
@@ -32,7 +36,7 @@ namespace Geex.Requests
         /// only works when query by id list
         /// </summary>
         [GraphQLIgnore]
-        public string[] Ids { get; private set; }
+        public ObjectId[] Ids { get; private set; }
         public string? _ { get; set; }
     }
 }
