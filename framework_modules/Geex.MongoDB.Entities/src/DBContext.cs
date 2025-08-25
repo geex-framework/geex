@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -18,6 +19,7 @@ using Mapster;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -598,8 +600,17 @@ namespace MongoDB.Entities
         protected static MethodInfo saveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
 
+        /// <summary>
+        /// Save changed entities to database, if an entity is not changed, it will not be saved.
+        /// </summary>
+        /// <param name="cancellation">An optional cancellation token</param>
+        /// <returns>A list of saved entity ids in format of {entityType}@{entityId}</returns>
         public virtual async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
         {
+            if (!EntityTrackingEnabled)
+            {
+                this.Logger.LogError("EntityTrackingEnabled is false, SaveChanges will not save any entities.");
+            }
             if (this.PreSaveChanges != default)
             {
                 await this.PreSaveChanges();
@@ -647,6 +658,7 @@ namespace MongoDB.Entities
                             {
                                 await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
                             }
+                            this.UpdateDbDataCache(toSavedEntities);
                             break; // 如果成功，跳出循环
                         }
                         catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))
@@ -660,14 +672,16 @@ namespace MongoDB.Entities
                 }
             }
 
-            //this.Local.TypedCacheDictionary.Clear();
-            this.DbDataCache.TypedCacheDictionary.Clear();
             if (this.PostSaveChanges != default)
             {
                 await this.PostSaveChanges();
             }
             return savedIds;
         }
+
+        [field: MaybeNull]
+        public ILogger<DbContext> Logger => field ??= (this.ServiceProvider.GetService<ILogger<DbContext>>() ?? NullLogger<DbContext>.Instance);
+
         /// <summary>
         /// 检查value是否发生变更
         /// </summary>

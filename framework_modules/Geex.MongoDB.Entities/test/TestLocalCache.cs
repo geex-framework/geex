@@ -185,7 +185,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(testEntity);
             dbContext.MemoryDataCache[typeof(TestEntity)].ShouldNotBeEmpty();
             await testEntity.SaveAsync();
-            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(TestEntity)].ShouldNotBeEmpty();
             dbContext.Dispose();
         }
 

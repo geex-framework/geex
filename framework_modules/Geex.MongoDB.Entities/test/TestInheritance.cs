@@ -160,7 +160,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(testEntity);
             dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldNotBeEmpty();
             await testEntity.SaveAsync();
-            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldBeEmpty();
+            dbContext.MemoryDataCache[typeof(InheritanceEntity)].ShouldNotBeEmpty();
             dbContext.Dispose();
         }
 

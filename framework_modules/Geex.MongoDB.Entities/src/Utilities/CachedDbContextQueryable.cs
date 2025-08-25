@@ -49,10 +49,20 @@ namespace MongoDB.Entities.Utilities
 
                 if (_selectType.IsAssignableFrom(_sourceType) || _sourceType.IsAssignableFrom(_selectType))
                 {
-                    var entities = resultQuery.OfType<T>();
+                    IQueryable<T> entities;
+
+                    // 优化：当类型相同时避免不必要的OfType转换
+                    entities = _selectType == _sourceType ? (IQueryable<T>)resultQuery : resultQuery.OfType<T>();
+
                     var attachedEntities = _dbContext.AttachNoTracking(entities).AsQueryable();
                     BatchLoadLazyQueries(attachedEntities, this.TypedProvider.BatchLoadConfig);
-                    var finalResult = attachedEntities.OfType<TSelect>();
+
+                    IQueryable<TSelect> finalResult;
+
+                    finalResult = _selectType == _sourceType
+                        ? (IQueryable<TSelect>)attachedEntities
+                        : attachedEntities.OfType<TSelect>();
+
                     finalResult = PostFilter(finalResult);
                     return finalResult.GetEnumerator();
                 }
@@ -84,7 +94,13 @@ namespace MongoDB.Entities.Utilities
                     }
                     else
                     {
-                        var finalResult = entities.Cast<TSelect>().AsQueryable();
+                        IQueryable<TSelect> finalResult;
+
+                        // 优化：当类型相同时避免不必要的Cast转换
+                        finalResult = _selectType == _sourceType
+                            ? (IQueryable<TSelect>)entities
+                            : entities.Cast<TSelect>().AsQueryable();
+
                         finalResult = PostFilter(finalResult);
                         return finalResult.GetEnumerator();
                     }
@@ -154,7 +170,12 @@ namespace MongoDB.Entities.Utilities
                 }
                 else
                 {
-                    var finalResult = entities.Cast<TSelect>().AsQueryable();
+                    IQueryable<TSelect> finalResult;
+
+                    finalResult = _selectType == _sourceType
+                        ? (IQueryable<TSelect>)entities
+                        : entities.Cast<TSelect>().AsQueryable();
+
                     finalResult = PostFilter(finalResult);
                     return finalResult.GetEnumerator();
                 }

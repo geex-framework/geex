@@ -1061,10 +1061,6 @@ namespace MongoDB.Entities.InnerQuery
         public BsonValue BuildMongoSelectExpression(Expression expression, bool specialTreatmentForConst = false)
         {
             // TODO: What about enums here?
-            var visitor = new FindStringAsObjectIdVisitor<TDocType>();
-            visitor.Visit(expression);
-            var isStringAsObjectId = visitor.IsStringAsObjectId;
-
             // c.Age
             if (expression is MemberExpression memberExpression)
             {
@@ -1220,11 +1216,6 @@ namespace MongoDB.Entities.InnerQuery
             {
                 var left = binExp.Left;
                 var right = binExp.Right;
-                if (isStringAsObjectId)
-                {
-                    left = new StringToObjectIdVisitor().Visit(left);
-                    right = new StringToObjectIdVisitor().Visit(right);
-                }
 
                 var leftValue = BuildMongoSelectExpression(left);
                 var rightValue = BuildMongoSelectExpression(right);
@@ -1508,10 +1499,6 @@ namespace MongoDB.Entities.InnerQuery
                     // array: Enumerable.Contains(c.SomeEnumerableProperty,"someConst")
                     // Case 2: new[] { 1,2,3}.Contains(c.SomeProperty)
                     searchValue = BuildMongoSelectExpression(right);
-                    if (isStringAsObjectId)
-                    {
-                        left = new StringToObjectIdVisitor().Visit(left);
-                    }
                     arrayToSearch = BuildMongoSelectExpression(left);
 
 
