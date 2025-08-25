@@ -52,6 +52,44 @@ namespace MongoDB.Entities.InnerQuery
         Any = 0x082,
     }
 
+    internal static class PipelineResultTypeExtensions
+    {
+        public static bool Has(this PipelineResultType source, PipelineResultType flag)
+        {
+            return (source & flag) != 0;
+        }
+
+        public static bool IsAggregation(this PipelineResultType source)
+        {
+            return source.Has(PipelineResultType.Aggregation);
+        }
+
+        public static bool IsGrouped(this PipelineResultType source)
+        {
+            return source.Has(PipelineResultType.Grouped);
+        }
+
+        public static bool IsOneResultFromEnumerable(this PipelineResultType source)
+        {
+            return source.Has(PipelineResultType.OneResultFromEnumerable);
+        }
+
+        public static bool IsOrDefault(this PipelineResultType source)
+        {
+            return source.Has(PipelineResultType.OrDefault);
+        }
+
+        public static bool IsFirst(this PipelineResultType source)
+        {
+            return source.Has(PipelineResultType.First);
+        }
+
+        public static bool IsSingle(this PipelineResultType source)
+        {
+            return source.Has(PipelineResultType.Single);
+        }
+    }
+
     internal class PipelineStage
     {
         public string PipelineOperator;
@@ -68,9 +106,9 @@ namespace MongoDB.Entities.InnerQuery
         internal const string PIPELINE_DOCUMENT_RESULT_NAME = "_result_";
         internal const string JOINED_DOC_PROPERTY_NAME = "__JOINED__";
 
-        private JsonWriterSettings _jsonWriterSettings = new JsonWriterSettings { OutputMode = JsonOutputMode.RelaxedExtendedJson, Indent = true, NewLineChars = "\r\n" };
+        private static readonly JsonWriterSettings _jsonWriterSettings = new JsonWriterSettings { OutputMode = JsonOutputMode.RelaxedExtendedJson, NewLineChars = "\r\n" };
 
-        private List<PipelineStage> _pipeline = [];
+        private List<PipelineStage> _pipeline = new List<PipelineStage>(8);
         private PipelineResultType _lastPipelineOperation = PipelineResultType.Enumerable;
         private IMongoCollection<TDocType> _collection;
         private readonly IClientSessionHandle _session;
@@ -2554,12 +2592,12 @@ namespace MongoDB.Entities.InnerQuery
 
         }
 
-        /// <summary>Adds a new $project stage to the pipeline for a .Any method call</summary>
+        /// <summary>Adds a new $limit stage to the pipeline for a .Any method call</summary>
         public void EmitPipelineStageForAny(LambdaExpression lambdaExp)
         {
             // Handle 2 cases:
-            //    .Count()
-            //    .Count(c => c.Age > 25)
+            //    .Any()
+            //    .Any(c => c.Age > 25)
 
             // The hard case: .Any(c => c.Age > 25)
             // Can be rewritten as .Where(c => c.Age > 25).Any()
@@ -2569,13 +2607,9 @@ namespace MongoDB.Entities.InnerQuery
             }
 
             // Handle the simple case: .Any()
-
-            // There is no explicity support for this in MongoDB, but we can
-            // limit our results to 1 and then do a count
+            // We only need to check if at least one document exists
+            // So just limit to 1 and check if we get any result back
             EmitPipelineStageForTake(1);
-            EmitPipelineStageForCount(null);
-
-            // After executing the pipeline, we then check that the count > 0
         }
 
         /// <summary>Adds a pipeline stage ($group) for the specified aggregation (Sum, Min, Max, Average)</summary>
@@ -2782,7 +2816,7 @@ namespace MongoDB.Entities.InnerQuery
             }
 
             // If the result is a grouping, then we need to also include the values (ie not just the Key) in the result
-            if ((_lastPipelineOperation & PipelineResultType.Grouped) != 0)
+            if (_lastPipelineOperation.IsGrouped())
             {
                 var groupDoc = GetLastOccurrenceOfPipelineStage("$group", false);
                 groupDoc.Add("Values", new BsonDocument("$push", "$$ROOT"));
@@ -2796,8 +2830,16 @@ namespace MongoDB.Entities.InnerQuery
 
             using (var commandResult = _session != default ? _collection.Aggregate(_session, pipelineDefinition, _aggregateOptions) : _collection.Aggregate(pipelineDefinition, _aggregateOptions))
             {
+                // Special handling for Any operation - just check if any document is returned
+                if (_lastPipelineOperation == PipelineResultType.Any)
+                {
+                    var firstDoc = commandResult.FirstOrDefault();
+                    bool any = firstDoc != null;
+                    return (TResult)(object)any;
+                }
+
                 // Handle aggregated result types
-                if ((_lastPipelineOperation & PipelineResultType.Aggregation) != 0)
+                if (_lastPipelineOperation.IsAggregation())
                 {
                     var results = commandResult.ToEnumerable().Take(2).ToArray();
 
@@ -2809,15 +2851,6 @@ namespace MongoDB.Entities.InnerQuery
 
                     // The result is in a document structured as { _result_ : value }
                     var resultDoc = results[0];
-
-                    // Special treatment for Any
-                    if (_lastPipelineOperation == PipelineResultType.Any)
-                    {
-                        bool any = ((BsonInt32)resultDoc[PIPELINE_DOCUMENT_RESULT_NAME]).Value == 1;
-
-                        // Todo: Any way to avoid the boxing (since we know TResult is bool)?
-                        return (TResult)(object)any;
-                    }
 
                     var aggregationResult = BsonSerializer.Deserialize<PipelineDocument<TResult>>(resultDoc);
                     return aggregationResult._result_;
@@ -2833,7 +2866,7 @@ namespace MongoDB.Entities.InnerQuery
                 Type enumerableOfItemType;
                 if (isGenericEnumerable)
                     enumerableOfItemType = expression.Type.GenericTypeArguments[0];
-                else if ((_lastPipelineOperation & PipelineResultType.OneResultFromEnumerable) != 0)
+                else if (_lastPipelineOperation.IsOneResultFromEnumerable())
                     enumerableOfItemType = resultType;
                 else
                     enumerableOfItemType = resultType.GenericTypeArguments[0];
@@ -2889,7 +2922,7 @@ namespace MongoDB.Entities.InnerQuery
                     object deserializedResultItem;
 
                     var bsonSerializer = BsonSerializer.LookupSerializer(realType);
-                    if (enumerableOfItemTypeIsAnonymous || ((_lastPipelineOperation & PipelineResultType.Grouped) != 0))
+                    if (enumerableOfItemTypeIsAnonymous || _lastPipelineOperation.IsGrouped())
                     {
                         // BsonSerializer can't handle anonymous types or IGrouping, so use Json.net
 
@@ -2914,10 +2947,10 @@ namespace MongoDB.Entities.InnerQuery
                     }
 
                     // Success for .First and .FirstOrDefault
-                    if ((_lastPipelineOperation & PipelineResultType.OneResultFromEnumerable) != 0)
+                    if (_lastPipelineOperation.IsOneResultFromEnumerable())
                     {
                         firstResult = (TResult)deserializedResultItem;
-                        if ((_lastPipelineOperation & PipelineResultType.First) != 0)
+                        if (_lastPipelineOperation.IsFirst())
                         {
                             return firstResult;
                         }
@@ -2935,11 +2968,11 @@ namespace MongoDB.Entities.InnerQuery
                 }
 
                 // Handle .First, .Single, .FirstOrDefault, and .SingleOrDefault
-                if ((_lastPipelineOperation & PipelineResultType.OneResultFromEnumerable) != 0)
+                if (_lastPipelineOperation.IsOneResultFromEnumerable())
                 {
                     if (numResults == 0)
                     {
-                        if ((_lastPipelineOperation & PipelineResultType.OrDefault) != 0)
+                        if (_lastPipelineOperation.IsOrDefault())
                             return default(TResult);
 
                         throw new InvalidOperationException("Sequence contains no elements");
