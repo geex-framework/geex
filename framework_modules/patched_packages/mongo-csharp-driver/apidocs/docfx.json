@@ -1,0 +1,161 @@
+{
+    "metadata": [
+        {
+            "src": [
+                {
+                    "files": [
+                        "MongoDB.Bson/*.csproj"
+                    ],
+                    "exclude": [
+                        "**/bin/**",
+                        "**/obj/**"
+                    ],
+                    "src": "../src"
+                }
+            ],
+            "dest": "api/MongoDB.Bson",
+            "includePrivateMembers": false,
+            "disableGitFeatures": false,
+            "disableDefaultFilter": false,
+            "noRestore": false,
+            "namespaceLayout": "flattened",
+            "memberLayout": "separatePages",
+            "EnumSortOrder": "declaringOrder",
+            "allowCompilationErrors": false
+        },
+        {
+            "src": [
+                {
+                    "files": [
+                        "MongoDB.Driver/*.csproj"
+                    ],
+                    "exclude": [
+                        "**/bin/**",
+                        "**/obj/**",
+                        "MongoDB.Driver/Encryption/**"
+                    ],
+                    "src": "../src"
+                }
+            ],
+            "dest": "api/MongoDB.Driver",
+            "includePrivateMembers": false,
+            "disableGitFeatures": false,
+            "disableDefaultFilter": false,
+            "noRestore": false,
+            "namespaceLayout": "flattened",
+            "memberLayout": "separatePages",
+            "EnumSortOrder": "declaringOrder",
+            "allowCompilationErrors": false
+        },
+        {
+            "src": [
+                {
+                    "files": [
+                        "MongoDB.Driver.Authentication.Aws/*.csproj"
+                    ],
+                    "exclude": [
+                        "**/bin/**",
+                        "**/obj/**"
+                    ],
+                    "src": "../src"
+                }
+            ],
+            "dest": "api/MongoDB.Driver.Authentication.Aws",
+            "includePrivateMembers": false,
+            "disableGitFeatures": false,
+            "disableDefaultFilter": false,
+            "noRestore": false,
+            "namespaceLayout": "flattened",
+            "memberLayout": "separatePages",
+            "EnumSortOrder": "declaringOrder",
+            "allowCompilationErrors": false
+        },
+        {
+            "src": [
+                {
+                    "files": [
+                        "MongoDB.Driver.Encryption/*.csproj"
+                    ],
+                    "exclude": [
+                        "**/bin/**",
+                        "**/obj/**"
+                    ],
+                    "src": "../src"
+                }
+            ],
+            "dest": "api/MongoDB.Driver.Encryption",
+            "includePrivateMembers": false,
+            "disableGitFeatures": false,
+            "disableDefaultFilter": false,
+            "noRestore": false,
+            "namespaceLayout": "flattened",
+            "memberLayout": "separatePages",
+            "EnumSortOrder": "declaringOrder",
+            "allowCompilationErrors": false
+        }
+    ],
+    "build": {
+        "content": [
+            {
+                "files": [
+                    "api/MongoDB.Bson/**.yml",
+                    "api/MongoDB.Driver/**.yml",
+                    "api/MongoDB.Driver.Authentication.Aws/**.yml",
+                    "api/MongoDB.Driver.Encryption/**.yml",
+                    "api/toc.yml",
+                    "api/index.md"
+                ]
+            },
+            {
+                "files": ["MongoDB.md"],
+                "src": "api/",
+                "dest": "api/MongoDB.Bson"
+            },
+            {
+                "files": ["MongoDB.md"],
+                "src": "api/",
+                "dest": "api/MongoDB.Driver"
+            },
+            {
+                "files": [
+                    "index.md"
+                ]
+            }
+        ],
+        "resource": [
+            {
+                "files": [
+                    "images/**"
+                ]
+            }
+        ],
+        "overwrite": [
+            {
+                "files": ["namespaces/**.md"]
+            }
+        ],
+        "globalMetadataFiles": [],
+        "fileMetadataFiles": [],
+        "template": [
+            "default",
+            "modern",
+            "mongo-apidocs"
+        ],
+        "postProcessors": [],
+        "keepFileLink": false,
+        "disableGitFeatures": false,
+        "markdownEngineName": "markdig",
+        "markdownEngineProperties": {
+            "markdigExtensions": [
+                "definitionlists"
+            ]
+        },
+        "globalMetadata": {
+            "_appTitle": "MongoDB CSharp Driver API Reference",
+            "_appFooter": "&copy; 2023 MongoDB, Inc.",
+            "_appLogoPath": "images/mongodb-logo.svg",
+            "_appFaviconPath": "images/favicon.ico",
+            "_disableContribution": "true"
+        }
+    }
+}

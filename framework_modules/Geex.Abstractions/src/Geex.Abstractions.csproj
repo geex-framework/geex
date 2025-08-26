@@ -52,17 +52,17 @@
         <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <Reference Include="KellermanSoftware.Compare-NET-Objects">
-            <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
-        </Reference>
-    </ItemGroup>
-    <PropertyGroup>
-        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
-        <RootNamespace>Geex</RootNamespace>
-    </PropertyGroup>
-    <Target Name="CompareDll">
-        <ItemGroup>
-            <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />
-        </ItemGroup>
-    </Target>
+      <Reference Include="KellermanSoftware.Compare-NET-Objects">
+          <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+      </Reference>
+  </ItemGroup>
+  <PropertyGroup>
+      <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
+      <RootNamespace>Geex</RootNamespace>
+  </PropertyGroup>
+  <Target Name="CompareDll">
+      <ItemGroup>
+          <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />
+      </ItemGroup>
+  </Target>
 </Project>

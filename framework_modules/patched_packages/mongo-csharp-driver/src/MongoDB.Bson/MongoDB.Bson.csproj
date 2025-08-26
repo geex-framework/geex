@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>..\..\MongoDBLegacy.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyTitle>MongoDB.Bson</AssemblyTitle>
+    <Product>MongoDB.Bson</Product>
+    <PackageId>MongoDB.Bson</PackageId>
+    <Description>Official MongoDB supported BSON library. See https://www.mongodb.com/docs/drivers/csharp/ for more details.</Description>
+    <PackageDescription>MongoDB's Official Bson Library.</PackageDescription>
+    <PackageTags>$(PackageTags);bson</PackageTags>
+    <IsPackable>true</IsPackable>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Deterministic>true</Deterministic>
+    <!-- Sign assembly with official key so that downstream packages expecting PublicKeyToken=94992a530f44e321 resolve correctly -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\MongoDB.Driver.snk</AssemblyOriginatorKeyFile>
+    <PublicSign>false</PublicSign>
+    <Version>3.4.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\MongoDB.Shared\DictionaryComparer.cs" Link="Shared\DictionaryComparer.cs" />
+    <Compile Include="..\MongoDB.Shared\Hasher.cs" Link="Shared\Hasher.cs" />
+    <Compile Include="..\MongoDB.Shared\SequenceComparer.cs" Link="Shared\SequenceComparer.cs" />
+  </ItemGroup>
+
+</Project>

@@ -15,7 +15,12 @@
         <PackageReference Include="LinqToAnything" Version="2.1.28" />
         <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.5" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-        <PackageReference Include="MongoDB.Driver" Version="3.4.3" />
+        <PackageReference Include="MongoDB.Bson" Version="3.4.0">
+          <ExcludeAssets>all</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="MongoDB.Driver" Version="3.4.0">
+          <ExcludeAssets>all</ExcludeAssets>
+        </PackageReference>
         <PackageReference Include="Neleus.LambdaCompare" Version="1.0.3" />
         <PackageReference Include="System.IO.Pipelines" Version="9.0.5" />
         <PackageReference Include="Volo.Abp.Core" Version="9.1.3" />
@@ -33,25 +38,44 @@
             <_Parameter1>Geex.Abstractions</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\patched_packages\mongo-csharp-driver\src\MongoDB.Driver\MongoDB.Driver.csproj"
+                          ReferenceOutputAssembly="true" />
+        <ProjectReference Include="..\..\patched_packages\mongo-csharp-driver\src\MongoDB.Bson\MongoDB.Bson.csproj"
+                          ReferenceOutputAssembly="true" />
+        <None Include="buildTransitive\Geex.targets"
+              Pack="true"
+              PackagePath="buildTransitive\Geex.targets" />
+    </ItemGroup>
+    <PropertyGroup>
+        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);PatchedDll</TargetsForTfmSpecificBuildOutput>
+        <RootNamespace>Geex;MongoDB</RootNamespace>
+    </PropertyGroup>
     <ItemGroup>
         <Reference Include="KellermanSoftware.Compare-NET-Objects">
             <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
         </Reference>
-         <Reference Include="Mapster.Core">
+        <Reference Include="Mapster.Core">
             <HintPath>..\..\patched_packages\Mapster.Core.dll</HintPath>
         </Reference>
         <Reference Include="Mapster">
             <HintPath>..\..\patched_packages\Mapster.dll</HintPath>
         </Reference>
     </ItemGroup>
-    <PropertyGroup>
-        <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);PatchedDll</TargetsForTfmSpecificBuildOutput>
-    </PropertyGroup>
     <Target Name="PatchedDll">
         <ItemGroup>
             <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />
+            <!-- <BuildOutputInPackage Include="..\..\patched_packages\MongoDB.Driver.dll" />
+            <BuildOutputInPackage Include="..\..\patched_packages\MongoDB.Bson.dll" /> -->
             <BuildOutputInPackage Include="..\..\patched_packages\Mapster.Core.dll" />
             <BuildOutputInPackage Include="..\..\patched_packages\Mapster.dll" />
         </ItemGroup>
     </Target>
+    <!-- Prevent downstream packages (e.g. OpenIddict.MongoDb) from re-adding the official MongoDB.Driver/MongoDB.Bson
+         NuGet binaries so that only the in-repo source build is used. -->
+    <ItemGroup>
+        <PackageReference Update="MongoDB.Driver" ExcludeAssets="all" />
+        <PackageReference Update="MongoDB.Bson" ExcludeAssets="all" />
+    </ItemGroup>
 </Project>

@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Update="MongoDB.Driver" ExcludeAssets="all" />
+    <PackageReference Update="MongoDB.Bson" ExcludeAssets="all" />
+  </ItemGroup>
+</Project>

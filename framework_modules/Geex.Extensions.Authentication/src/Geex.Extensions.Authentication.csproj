@@ -1,16 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="OpenIddict.AspNetCore" Version="7.0.0" />
-    <PackageReference Include="OpenIddict.MongoDb" Version="7.0.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
-    <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
-    <ProjectReference Include="..\..\Geex.Extensions.MultiTenant\src\Abstractions\Geex.Extensions.MultiTenant.Abstractions.csproj" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="MongoDB.Bson" Version="3.4.0"/>
+        <PackageReference Include="MongoDB.Driver" Version="3.4.0"/>
+        <PackageReference Include="OpenIddict.AspNetCore" Version="7.0.0" />
+        <PackageReference Include="OpenIddict.MongoDb" Version="7.0.0" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
+        <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+        <ProjectReference Include="..\..\Geex.Extensions.MultiTenant\src\Abstractions\Geex.Extensions.MultiTenant.Abstractions.csproj" />
+        <ProjectReference Include="..\..\patched_packages\mongo-csharp-driver\src\MongoDB.Driver\MongoDB.Driver.csproj" />
+        <ProjectReference Include="..\..\patched_packages\mongo-csharp-driver\src\MongoDB.Bson\MongoDB.Bson.csproj" />
+    </ItemGroup>
 </Project>

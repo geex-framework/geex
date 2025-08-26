@@ -1,0 +1,99 @@
+﻿/* Copyright 2013-present MongoDB Inc.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+using System;
+using System.IO;
+using FluentAssertions;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Serializers;
+using Xunit;
+
+namespace MongoDB.Driver.Core.WireProtocol.Messages.Encoders.BinaryEncoders
+{
+    public class BinaryMessageEncoderFactoryTests
+    {
+        [Fact]
+        public void Constructor_should_not_throw_if_stream_is_not_null()
+        {
+            using (var stream = new MemoryStream())
+            {
+                Action action = () => new BinaryMessageEncoderFactory(stream, null);
+                action.ShouldNotThrow();
+            }
+        }
+
+        [Fact]
+        public void Constructor_should_throw_if_stream_is_null()
+        {
+            Action action = () => new BinaryMessageEncoderFactory(null, null);
+            action.ShouldThrow<ArgumentNullException>();
+        }
+
+        [Fact]
+        public void GetCommandMessageEncoder_should_return_a_CommandMessageBinaryEncoder()
+        {
+            using (var stream = new MemoryStream())
+            {
+                var encoderFactory = new BinaryMessageEncoderFactory(stream, null);
+                var encoder = encoderFactory.GetCommandMessageEncoder();
+                encoder.Should().BeOfType<CommandMessageBinaryEncoder>();
+            }
+        }
+
+        [Fact]
+        public void GetCommandRequestMessageEncoder_should_return_a_CommandRequestMessageBinaryEncoder()
+        {
+            using (var stream = new MemoryStream())
+            {
+                var encoderFactory = new BinaryMessageEncoderFactory(stream, null);
+                var encoder = encoderFactory.GetCommandRequestMessageEncoder();
+                encoder.Should().BeOfType<CommandRequestMessageBinaryEncoder>();
+            }
+        }
+
+        [Fact]
+        public void GetCommandResponseMessageEncoder_should_return_a_CommandResponseMessageBinaryEncoder()
+        {
+            using (var stream = new MemoryStream())
+            {
+                var encoderFactory = new BinaryMessageEncoderFactory(stream, null);
+                var encoder = encoderFactory.GetCommandResponseMessageEncoder();
+                encoder.Should().BeOfType<CommandResponseMessageBinaryEncoder>();
+            }
+        }
+
+        [Fact]
+        public void GetQueryMessageEncoder_should_return_a_QueryMessageBinaryEncoder()
+        {
+            using (var stream = new MemoryStream())
+            {
+                var encoderFactory = new BinaryMessageEncoderFactory(stream, null);
+                var encoder = encoderFactory.GetQueryMessageEncoder();
+                encoder.Should().BeOfType<QueryMessageBinaryEncoder>();
+            }
+        }
+
+        [Fact]
+        public void GetReplyMessageEncoder_should_return_a_ReplyMessageBinaryEncoder()
+        {
+            using (var stream = new MemoryStream())
+            {
+                var encoderFactory = new BinaryMessageEncoderFactory(stream, null);
+                var encoder = encoderFactory.GetReplyMessageEncoder<BsonDocument>(BsonDocumentSerializer.Instance);
+                encoder.Should().BeOfType<ReplyMessageBinaryEncoder<BsonDocument>>();
+            }
+        }
+    }
+}

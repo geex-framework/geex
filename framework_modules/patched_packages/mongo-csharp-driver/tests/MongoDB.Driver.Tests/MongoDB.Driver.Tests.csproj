@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\BuildProps\Tests.Build.props" />
+
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>..\..\MongoDBTest.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyTitle>MongoDB.Driver.Tests</AssemblyTitle>
+    <Product>MongoDB.Driver.Tests</Product>
+    <Description>MongoDB.Driver tests.</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NoWarn>
+      1701;1702; <!--https://github.com/dotnet/roslyn/issues/19640-->
+      CA1724; <!--The type name Model conflicts in whole or in part with the namespace name. Change either name to eliminate the conflict. (https://docs.microsoft.com/visualstudio/code-quality/ca1724-type-names-should-not-match-namespaces)-->
+      xUnit1010; <!--The value is not convertible to the method parameter type (https://xunit.github.io/xunit.analyzers/rules/xUnit1010.html)-->
+      xUnit1013; <!--Public method should be marked as test (https://xunit.github.io/xunit.analyzers/rules/xUnit1013.html)-->
+      xUnit1014; <!--MemberData should use nameof operator for member name (https://xunit.github.io/xunit.analyzers/rules/xUnit1014.html)-->
+      xUnit1016; <!--MemberData must reference a public member (https://xunit.github.io/xunit.analyzers/rules/xUnit1016.html)-->
+      xUnit1024; <!--Test methods cannot have overloads (https://xunit.github.io/xunit.analyzers/rules/xUnit1024.html)-->
+      xUnit1025; <!--InlineData should be unique within the Theory it belongs to (https://xunit.github.io/xunit.analyzers/rules/xUnit1025.html)-->
+      xUnit1026; <!--Theory methods should use all of their parameters (https://xunit.github.io/xunit.analyzers/rules/xUnit1026.html)-->
+      xUnit2003; <!--Do not use equality check to test for null value (https://xunit.github.io/xunit.analyzers/rules/xUnit2003.html-->
+      xUnit2004; <!--Do not use equality check to test for boolean conditions (https://xunit.github.io/xunit.analyzers/rules/xUnit2004.html)-->
+      xUnit2013 <!--Do not use equality check to check for collection size. (https://xunit.github.io/xunit.analyzers/rules/xUnit2013.html)-->
+    </NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\MongoDB.Bson\MongoDB.Bson.csproj" />
+    <ProjectReference Include="..\..\src\MongoDB.Driver.Authentication.AWS\MongoDB.Driver.Authentication.AWS.csproj" />
+    <ProjectReference Include="..\..\src\MongoDB.Driver\MongoDB.Driver.csproj" />
+    <ProjectReference Include="..\..\src\MongoDB.Driver.Encryption\MongoDB.Driver.Encryption.csproj" />
+    <ProjectReference Include="..\MongoDB.Bson.TestHelpers\MongoDB.Bson.TestHelpers.csproj" />
+    <ProjectReference Include="..\MongoDB.Driver.TestHelpers\MongoDB.Driver.TestHelpers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource LinkBase="Specifications\" Include="..\..\specifications\**\*.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="testcert.pfx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

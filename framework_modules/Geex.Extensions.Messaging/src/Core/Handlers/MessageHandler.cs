@@ -9,6 +9,7 @@ using Geex.Extensions.Messaging.Requests;
 using HotChocolate.Subscriptions;
 
 using MediatX;
+using MongoDB.Bson;
 
 namespace Geex.Extensions.Messaging.Core.Handlers
 {
@@ -47,7 +48,7 @@ namespace Geex.Extensions.Messaging.Core.Handlers
         public async Task<IEnumerable<IMessage>> Handle(GetUnreadMessagesRequest request, CancellationToken cancellationToken)
         {
             var messageDistributions = Uow.Query<MessageDistribution>().Where(x => x.IsRead == false && x.ToUserId == CurrentUser.UserId).ToList();
-            var messageIds = messageDistributions.Select(x => x.MessageId);
+            var messageIds = messageDistributions.Select(x => x.MessageId).Cast<ObjectId>();
             var messages = Uow.Query<Message>().Where(x => messageIds.Contains(x.Id)).ToList();
             return messages;
         }
