@@ -146,7 +146,8 @@ namespace MongoDB.Entities
         /// <summary>
         /// This property is auto managed. A new Id will be assigned for new entities upon attaching.
         /// </summary>
-        public ObjectId Id { get; [Obsolete("请勿手动设置Id!")] set; }
+        [BsonId, ObjectId]
+        public string Id { get; [Obsolete("请勿手动设置Id!")] set; }
         DbContext IEntityBase.DbContext { get; set; }
 
         protected virtual DbContext DbContext

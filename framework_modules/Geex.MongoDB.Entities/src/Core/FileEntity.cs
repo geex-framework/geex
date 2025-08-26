@@ -55,7 +55,8 @@ namespace MongoDB.Entities
     [Name("[BINARY_CHUNKS]")]
     internal class FileChunk : EntityBase<FileChunk>
     {
-        public ObjectId FileId { get; set; }
+        [BsonId, ObjectId]
+        public string FileId { get; set; }
 
         public byte[] Data { get; set; }
     }

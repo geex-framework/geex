@@ -74,7 +74,7 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     /// <inheritdoc />
     Task<List<string>> SaveChanges(CancellationToken cancellation = default);
 
-    public Task<bool> DeleteAsync<T>(ObjectId id, CancellationToken cancellation = default)
+    public Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default)
             where T : IEntityBase;
 
     public Task<bool> DeleteAsync<T>(T entity, CancellationToken cancellation = default)
@@ -101,6 +101,6 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     /// <typeparam name="T">The type of entity</typeparam>
     /// <param name="ids">An IEnumerable of entity Ids</param>
     /// <param name="cancellation">An optional cancellation token</param>
-    public Task<long> DeleteAsync<T>(IEnumerable<ObjectId> ids,
+    public Task<long> DeleteAsync<T>(IEnumerable<string> ids,
         CancellationToken cancellation = default) where T : IEntityBase;
 }

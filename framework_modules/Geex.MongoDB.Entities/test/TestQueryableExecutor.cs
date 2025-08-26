@@ -739,11 +739,11 @@ namespace MongoDB.Entities.Tests
             dbContext.Dispose();
             dbContext = new DbContext();
             var id = attached.Id;
-            var idList = new[] { ObjectId.GenerateNewId(), id }.ToList();
+            var idList = new[] { ObjectId.GenerateNewId().ToString(), id }.ToList();
             dbContext.Query<TestEntity>().Where(x => idList.Contains(x.Id)).ToList().ShouldNotBeEmpty();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var array = new[] { ObjectId.GenerateNewId(), id };
+            var array = new[] { ObjectId.GenerateNewId().ToString(), id };
             dbContext.Query<TestEntity>().Where(x => array.Contains(x.Id)).ToList().ShouldNotBeEmpty();
             var list = dbContext.Query<TestEntity>().Where(x => array.Contains(x.Id)).ToList();
             list.First().Id.ShouldBe(id);

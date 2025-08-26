@@ -107,14 +107,14 @@ namespace MongoDB.Bson.Serialization.Serializers
             switch (bsonType)
             {
                 case BsonType.ObjectId:
-                    if (_representation == BsonType.ObjectId)
+                    switch (_representation)
                     {
-                        return bsonReader.ReadObjectId().ToString();
+                        case BsonType.ObjectId:
+                            return bsonReader.ReadObjectId().ToString();
+                        case BsonType.String:
+                            return bsonReader.ReadObjectId().ToString();
                     }
-                    else
-                    {
-                        goto default;
-                    }
+                    goto default;
 
                 case BsonType.String:
                     return bsonReader.ReadString();

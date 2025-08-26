@@ -119,7 +119,7 @@ namespace Geex.Storage
         }
 
         /// <inheritdoc />
-        public async Task<bool> DeleteAsync<T>(ObjectId id, CancellationToken cancellation = default) where T : IEntityBase
+        public async Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default) where T : IEntityBase
         {
             var result = await base.DeleteAsync<T>(id, cancellation);
             if (result > 0)
@@ -180,7 +180,7 @@ namespace Geex.Storage
         }
 
         /// <inheritdoc />
-        public async Task<long> DeleteAsync<T>(IEnumerable<ObjectId> ids, CancellationToken cancellation = default) where T : IEntityBase
+        public async Task<long> DeleteAsync<T>(IEnumerable<string> ids, CancellationToken cancellation = default) where T : IEntityBase
         {
             foreach (var id in ids)
             {

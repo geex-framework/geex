@@ -148,11 +148,11 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task high_volume_deletes_with_idsAsync()
         {
-            var Ids = new List<ObjectId>(100100);
+            var Ids = new List<string>(100100);
 
             for (int i = 0; i < 100100; i++)
             {
-                Ids.Add(ObjectId.GenerateNewId());
+                Ids.Add(ObjectId.GenerateNewId().ToString());
             }
 
             await DB.DeleteAsync<Blank>(Ids);

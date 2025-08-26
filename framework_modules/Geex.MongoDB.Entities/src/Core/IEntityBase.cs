@@ -22,7 +22,8 @@ namespace MongoDB.Entities
         /// The Id property for this entity type.
         /// 注意: dbcontext会根据entity是否有id值来判断当前entity是否为新增
         /// </summary>
-        ObjectId Id { get; set; }
+        [BsonId, ObjectId]
+        string Id { get; set; }
         [AdaptIgnore]
         DbContext DbContext { get; set; }
         DateTimeOffset CreatedOn { get; set; }

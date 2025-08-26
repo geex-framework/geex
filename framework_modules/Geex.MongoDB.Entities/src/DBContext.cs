@@ -530,7 +530,7 @@ namespace MongoDB.Entities
         /// <typeparam name="T">The type of entity</typeparam>
         /// <param name="id">The Id of the entity to delete</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<long> DeleteAsync<T>(ObjectId id, CancellationToken cancellation = default)
+        public virtual Task<long> DeleteAsync<T>(string id, CancellationToken cancellation = default)
             where T : IEntityBase
         {
             return DB.DeleteAsync<T>(id, this, cancellation);
@@ -573,7 +573,7 @@ namespace MongoDB.Entities
         /// <typeparam name="T">The type of entity</typeparam>
         /// <param name="Ids">An IEnumerable of entity Ids</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<long> DeleteAsync<T>(IEnumerable<ObjectId> Ids,
+        public virtual Task<long> DeleteAsync<T>(IEnumerable<string> Ids,
             CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.DeleteAsync<T>(Ids, this, cancellation);
@@ -786,7 +786,7 @@ namespace MongoDB.Entities
 
         public void UpdateDbDataCache<T>(T dbEntity) where T : IEntityBase
         {
-            var rootType = typeof(T).GetRootBsonClassMap().ClassType;
+            var rootType = dbEntity.GetType().GetRootBsonClassMap().ClassType;
             UpdateDbDataCache(dbEntity, rootType);
         }
 
@@ -796,9 +796,10 @@ namespace MongoDB.Entities
             {
                 return;
             }
-            var rootType = typeof(T).GetRootBsonClassMap().ClassType;
+            Type rootType = null;
             foreach (var dbEntity in dbEntities)
             {
+                rootType ??= dbEntity.GetType().GetRootBsonClassMap().ClassType;
                 UpdateDbDataCache(dbEntity, rootType);
             }
         }
