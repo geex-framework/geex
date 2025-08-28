@@ -5,7 +5,7 @@ using System.Linq;
 namespace MongoDB.Entities.Tests
 {
     [Name("Writer")]
-    public class Author : EntityBase<Author>, IModifiedOn
+    public class Author : EntityBase<Author>
     {
         public string Name { get; set; }
         public string Surname { get; set; }
@@ -26,8 +26,6 @@ namespace MongoDB.Entities.Tests
         public IQueryable<Book> Books => LazyQuery(() => Books);
 
         public List<string> BookIds { get; set; } = new List<string>();
-
-        public DateTimeOffset ModifiedOn { get; set; }
 
         public Author() => this.ConfigLazyQuery(x => Books, book => book.MainAuthorId == this.Id, authors => book => authors.SelectMany(x => x.BookIds).Distinct().Contains(book.Id));
     }

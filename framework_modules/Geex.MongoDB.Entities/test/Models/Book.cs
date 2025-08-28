@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace MongoDB.Entities.Tests
 {
-    public class Book : EntityBase<Book>, IModifiedOn
+    public class Book : EntityBase<Book>
     {
         public Date PublishedOn { get; set; }
 
@@ -31,7 +31,6 @@ namespace MongoDB.Entities.Tests
         [Ignore]
         public int DontSaveThis { get; set; }
 
-        public DateTimeOffset ModifiedOn { get; set; }
         public List<string> GoodAuthorIds { get; set; } = new List<string>();
 
         public Book()

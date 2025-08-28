@@ -15,14 +15,13 @@ namespace Geex.Storage
         public Task<ValidationResult> Validate(CancellationToken cancellation = default);
         internal Task ValidateOnAttach();
     }
-    public abstract class Entity<T> : EntityBase<T>, IEntity, IModifiedOn, IHasId where T : class, IEntityBase
+    public abstract class Entity<T> : EntityBase<T>, IEntity, IHasId where T : class, IEntityBase
     {
         public Entity()
         {
             CreatedOn = DateTimeOffset.MinValue;
             ModifiedOn = DateTimeOffset.MinValue;
         }
-        public DateTimeOffset ModifiedOn { get; set; }
 
         public void AddDomainEvent(params IEvent[] events)
         {

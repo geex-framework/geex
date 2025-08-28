@@ -21,6 +21,7 @@ namespace MongoDB.Entities
         [AdaptIgnore]
         DbContext DbContext { get; set; }
         DateTimeOffset CreatedOn { get; set; }
+        DateTimeOffset ModifiedOn { get; set; }
         /// <summary>
         /// Generate and return a new Id string from this method. It will be used when saving new entities that don't have their Id set.
         /// That is, if an entity has a null Id, this method will be called for getting a new Id value.

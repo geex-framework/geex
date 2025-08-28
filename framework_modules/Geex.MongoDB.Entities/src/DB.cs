@@ -305,9 +305,6 @@ namespace MongoDB.Entities
         internal static string DBName { get; private set; }
         internal static string CollectionName { get; private set; }
         internal static ConcurrentDictionary<string, Watcher<T>> Watchers { get; private set; }
-        internal static bool HasModifiedOn { get; private set; }
-        internal static string ModifiedOnPropName { get; private set; }
-
 
         private static PropertyInfo[] updatableProps;
 
@@ -334,10 +331,6 @@ namespace MongoDB.Entities
             TypeMap.AddCollectionMapping(type, CollectionName);
 
             Watchers = new ConcurrentDictionary<string, Watcher<T>>();
-
-            var interfaces = type.GetInterfaces();
-            HasModifiedOn = interfaces.Any(it => it == typeof(IModifiedOn));
-            ModifiedOnPropName = nameof(IModifiedOn.ModifiedOn);
 
             updatableProps = type.GetProperties()
                 .Where(p =>

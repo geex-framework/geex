@@ -157,6 +157,7 @@ namespace MongoDB.Entities
         }
         protected IServiceProvider ServiceProvider => ((IEntityBase)this).DbContext.ServiceProvider;
         public DateTimeOffset CreatedOn { get; set; }
+        public DateTimeOffset ModifiedOn { get; set; }
 
         /// <summary>
         /// Override this method in order to control the generation of Ids for new entities.

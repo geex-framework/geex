@@ -162,10 +162,7 @@ namespace MongoDB.Entities
 
             foreach (var p in propsToUpdate)
             {
-                if (p.Name == Cache<T>.ModifiedOnPropName)
-                    defs.Add(Builders<T>.Update.CurrentDate(Cache<T>.ModifiedOnPropName));
-                else
-                    defs.Add(Builders<T>.Update.Set(p.Name, p.GetValue(entity)));
+                defs.Add(Builders<T>.Update.Set(p.Name, p.GetValue(entity)));
             }
 
             return
@@ -196,8 +193,7 @@ namespace MongoDB.Entities
                 await intercepted.InterceptOnSave(original);
             }
 
-            if (entity is IModifiedOn modifiedOn)
-                modifiedOn.ModifiedOn = now;
+            entity.ModifiedOn = now;
         }
 
         private static IEnumerable<string> RootPropNames<T>(Expression<Func<T, object>> members) where T : IEntityBase

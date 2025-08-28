@@ -205,8 +205,6 @@ namespace MongoDB.Entities
                 entity.CreatedOn = now;
             }
 
-            if (entity is IModifiedOn modifiedOn)
-                modifiedOn.ModifiedOn = now;
             var rootType = entity.GetType().GetRootBsonClassMap().ClassType;
             if (this.MemoryDataCache[rootType].TryGetValue(entity.Id, out var existed))
             {
@@ -702,10 +700,6 @@ namespace MongoDB.Entities
             Caching = true,
             AutoClearCache = false,
             IgnoreLogicGetters = true,
-            MembersToIgnore = new List<string>()
-            {
-                nameof(IModifiedOn.ModifiedOn)
-            },
         });
 
         protected virtual void Dispose(bool disposing)
@@ -894,23 +888,28 @@ namespace MongoDB.Entities
         {
             if (this.IsInExplicitTransaction)
             {
-              const int maxRetries = 3;
-              for(int attempt = 0; attempt < maxRetries; attempt++){
-                try{
-                  await Session.CommitTransactionAsync();
-                  break;
+                const int maxRetries = 3;
+                for (int attempt = 0; attempt < maxRetries; attempt++)
+                {
+                    try
+                    {
+                        await Session.CommitTransactionAsync();
+                        break;
+                    }
+                    catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))
+                    {
+                        if (attempt == maxRetries - 1)
+                        {
+                            this.IsInExplicitTransaction = false;
+                            throw;
+                        }
+                        await Task.Delay(TimeSpan.FromSeconds(0.5 * (attempt + 1)));
+                    }
+                    finally
+                    {
+                        this.IsInExplicitTransaction = false;
+                    }
                 }
-                catch(MongoException ex) when (ex.HasErrorLabel("TransientTransactionError")){
-                  if(attempt == maxRetries - 1){
-                    this.IsInExplicitTransaction = false;
-                    throw;
-                  }
-                  await Task.Delay(TimeSpan.FromSeconds(0.5 * (attempt + 1)));
-                }
-                finally{
-                    this.IsInExplicitTransaction = false;
-                }
-              }
             }
             else
             {
