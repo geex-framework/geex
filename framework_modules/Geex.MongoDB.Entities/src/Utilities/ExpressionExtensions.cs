@@ -157,9 +157,13 @@ namespace MongoDB.Entities.Utilities
         /// <inheritdoc />
         protected override Expression VisitMember(MemberExpression node)
         {
+            // 如果已找到目标，直接返回当前节点（中止遍历）
+            if (IsStringAsObjectId) return node;
+
             if (node.Member.GetCustomAttribute<ObjectIdAttribute>() != default)
             {
-                IsStringAsObjectId = true;
+                IsStringAsObjectId = true; // 设置标志
+                return node; // 直接返回，不再继续遍历
             }
             return base.VisitMember(node);
         }

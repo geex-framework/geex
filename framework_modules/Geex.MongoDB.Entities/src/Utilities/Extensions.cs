@@ -215,27 +215,22 @@ namespace MongoDB.Entities
         /// Saves a batch of complete entities replacing existing ones or creating new ones if they do not exist.
         /// If Id value is null, a new entity is created. If Id has a value, then existing entity is replaced.
         /// </summary>
-        /// <param name="session">An optional session if using within a transaction</param>
+        /// <param name="dbContext">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<BulkWriteResult<T>> SaveAsync<T>(this List<T> entities, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        internal static Task<BulkWriteResult<T>> SaveAsync<T>(this List<T> entities, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            if (entities.Any(x => x.DbContext?.Session != entities.FirstOrDefault()?.DbContext?.Session))
-            {
-                throw new InvalidOperationException("bulksave entities should be in the same session");
-            }
-
-            return DB.SaveAsync(entities, entities.FirstOrDefault()?.DbContext, cancellation);
+            return DB.SaveAsync(entities, dbContext, cancellation);
         }
 
         /// <summary>
         /// Saves a batch of complete entities replacing existing ones or creating new ones if they do not exist.
         /// If Id value is null, a new entity is created. If Id has a value, then existing entity is replaced.
         /// </summary>
-        /// <param name="session">An optional session if using within a transaction</param>
+        /// <param name="dbContext">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        internal static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, DbContext? dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            return entities.ToList().SaveAsync(session, cancellation);
+            return entities.ToList().SaveAsync(dbContext, cancellation);
         }
 
         /// <summary>

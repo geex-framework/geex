@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Interceptors;
 
@@ -49,10 +50,10 @@ namespace MongoDB.Entities.Utilities
 
                 if (_selectType.IsAssignableFrom(_sourceType) || _sourceType.IsAssignableFrom(_selectType))
                 {
-                    var entities = resultQuery.OfType<T>();
+                    var entities = _selectType == _sourceType ? (IQueryable<T>)resultQuery : resultQuery.OfType<T>();
                     var attachedEntities = _dbContext.AttachNoTracking(entities).AsQueryable();
                     BatchLoadLazyQueries(attachedEntities, this.TypedProvider.BatchLoadConfig);
-                    var finalResult = attachedEntities.OfType<TSelect>();
+                    var finalResult = _selectType == _sourceType ? (IQueryable<TSelect>)attachedEntities : attachedEntities.OfType<TSelect>();
                     finalResult = PostFilter(finalResult);
                     return finalResult.GetEnumerator();
                 }
@@ -84,7 +85,7 @@ namespace MongoDB.Entities.Utilities
                     }
                     else
                     {
-                        var finalResult = entities.Cast<TSelect>().AsQueryable();
+                        var finalResult = _selectType == _sourceType ? (IQueryable<TSelect>)entities : entities.Cast<TSelect>().AsQueryable();
                         finalResult = PostFilter(finalResult);
                         return finalResult.GetEnumerator();
                     }
@@ -154,7 +155,7 @@ namespace MongoDB.Entities.Utilities
                 }
                 else
                 {
-                    var finalResult = entities.Cast<TSelect>().AsQueryable();
+                    var finalResult = _selectType == _sourceType ? (IQueryable<TSelect>)entities : entities.Cast<TSelect>().AsQueryable();
                     finalResult = PostFilter(finalResult);
                     return finalResult.GetEnumerator();
                 }

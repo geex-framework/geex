@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
 using JetBrains.Annotations;
+
 using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
 
@@ -14,8 +16,10 @@ namespace System.Linq
     public static class LinqExtensions
     {
         static MethodInfo _queryableOfTypeMethod = typeof(Queryable).GetMethod(nameof(Queryable.OfType));
+        static MethodInfo _queryableCastMethod = typeof(Queryable).GetMethod(nameof(Queryable.Cast));
         static MethodInfo _enumerableOfTypeMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.OfType));
-
+        static MethodInfo _enumerableCastMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.Cast));
+        static MethodInfo _enumerableToListMethod = typeof(Enumerable).GetMethod(nameof(Enumerable.ToList));
         /// <summary>
         /// 在集合查询被执行的时候进行后处理
         /// <br></br>注意, 后处理只应该在查询实际之前的末尾进行挂载, 任何的非继承树上的类型转换都会导致之前挂载的后处理失效
@@ -83,16 +87,45 @@ namespace System.Linq
             return (IQueryable)generic.Invoke(null, new[] { queryable });
         }
 
-        //public static IEnumerable<TSource> OfType<TSource>(this IEnumerable<TSource> queryable,
-        //Type runtimeType)
-        //{
-        //    if (typeof(TSource) == runtimeType)
-        //    {
-        //        return queryable;
-        //    }
-        //    var generic = _enumerableOfTypeMethod.MakeGenericMethod(new[] { runtimeType });
-        //    return (IEnumerable<TSource>)generic.Invoke(null, new[] { queryable });
-        //}
+        public static IEnumerable<TSource> OfType<TSource>(this IEnumerable<TSource> enumerable,
+        Type runtimeType)
+        {
+            if (typeof(TSource) == runtimeType)
+            {
+                return enumerable;
+            }
+            var generic = _enumerableOfTypeMethod.MakeGenericMethod(new[] { runtimeType });
+            return (IEnumerable<TSource>)generic.Invoke(null, new[] { enumerable });
+        }
+
+        public static IQueryable<TSource> Cast<TSource>(this IQueryable<TSource> queryable,
+        Type runtimeType)
+        {
+            if (typeof(TSource) == runtimeType)
+            {
+                return queryable;
+            }
+            var generic = _queryableCastMethod.MakeGenericMethod(new[] { runtimeType });
+            return (IQueryable<TSource>)generic.Invoke(null, new[] { queryable });
+        }
+
+        public static IQueryable Cast(this IQueryable queryable,
+        Type runtimeType)
+        {
+            var generic = _queryableCastMethod.MakeGenericMethod(new[] { runtimeType });
+            return (IQueryable)generic.Invoke(null, new[] { queryable });
+        }
+
+        public static IEnumerable Cast<TTarget>(this IEnumerable<TTarget> enumerable,
+        Type runtimeType)
+        {
+            var castMethdo = _enumerableCastMethod.MakeGenericMethod(new[] { runtimeType });
+            var toListMethod = _enumerableToListMethod.MakeGenericMethod(runtimeType);
+            var casted = (IEnumerable)castMethdo.Invoke(null, new[] { enumerable });
+            var list = (IEnumerable)toListMethod.Invoke(null, new[] { casted });
+            return list;
+        }
+
         public static IBatchLoadQueryable<TSource, TRelated> BatchLoad<TSource, TRelated>(this IQueryable<TSource> queryable,
             [NotNull] Expression<Func<TSource, IQueryable<TRelated>>> relatedQuery) where TRelated : IEntityBase where TSource : IEntityBase
         {

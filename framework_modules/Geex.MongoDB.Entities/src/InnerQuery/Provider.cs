@@ -39,7 +39,7 @@ namespace MongoDB.Entities.InnerQuery
         /// <summary>The Mongo collection to query against</summary>
         private IMongoCollection<TDocument> _collection;
 
-        public object Queryable { get; set; }
+        public IQueryable Queryable { get; set; }
         public Action<string> LoggingDelegate { get; set; }
 
         /// <summary>

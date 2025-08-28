@@ -23,7 +23,8 @@ public class TestApplicationFactory : WebApplicationFactory<Program>
     protected override IHost CreateHost(IHostBuilder builder)
     {
         var host = builder.Build();
-		return host;
+        host.Start();
+        return host;
     }
 
     /// <inheritdoc />

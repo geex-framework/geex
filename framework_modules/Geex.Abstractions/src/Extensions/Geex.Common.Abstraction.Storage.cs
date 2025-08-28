@@ -62,13 +62,8 @@ namespace Geex.Abstractions
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveAsync<T>(this List<T> entities, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<BulkWriteResult<T>> SaveAsync<T>(this List<T> entities, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            var dbContext = entities.FirstOrDefault()?.DbContext;
-            if (entities.Any(x => x.DbContext?.Session != dbContext?.Session))
-            {
-                throw new InvalidOperationException("bulksave entities should be in the same session");
-            }
             (dbContext)?.Detach(entities);
 
             return DB.SaveAsync(entities, dbContext, cancellation);
@@ -80,9 +75,9 @@ namespace Geex.Abstractions
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, IClientSessionHandle session = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, DbContext dbContext = null,CancellationToken cancellation = default) where T : IEntityBase
         {
-            return entities.ToList().SaveAsync(session, cancellation);
+            return entities.ToList().SaveAsync(dbContext, cancellation);
         }
 
         /// <summary>
