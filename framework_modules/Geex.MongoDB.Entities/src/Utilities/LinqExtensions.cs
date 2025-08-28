@@ -163,6 +163,10 @@ namespace System.Linq
         {
             var visitor = new QueryPartsExpressionVisitor<TEntity, TResult>();
             visitor.Visit(expression);
+            if (visitor is { HasGroupBy: true, IsGroupBySelectPattern: false })
+            {
+                throw new NotSupportedException("Group query cannot be used without projection(select).");
+            }
             return visitor;
         }
 

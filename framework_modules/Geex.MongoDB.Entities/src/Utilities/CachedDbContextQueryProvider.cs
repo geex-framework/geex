@@ -114,7 +114,19 @@ namespace MongoDB.Entities.Utilities
 
                     if (expression is MethodCallExpression methodCallExpression)
                     {
+                        TResult result;
                         var visitor = expression.ExtractQueryParts<T, TResult>();
+
+                        // 对于GroupBy查询，直接通过内部提供者执行，因为缓存数据无法简单应用到分组查询
+                        if (visitor.HasGroupBy)
+                        {
+                            result = this.InnerProvider.Execute<TResult>(expression);
+                            if (resultType.IsAssignableFrom(sourceType) || sourceType.IsAssignableFrom(resultType))
+                            {
+                                result = (TResult)(object)DbContext.AttachNoTracking((T)(object)result);
+                            }
+                            return result;
+                        }
 
                         var localEntities = this.DbContext.MemoryDataCache[sourceType].Values.OfType<T>();
 
@@ -156,7 +168,6 @@ namespace MongoDB.Entities.Utilities
 
                         BatchLoadLazyQueries(entities, this.BatchLoadConfig);
 
-                        TResult result;
                         if (visitor.PostSelectExpression != default)
                         {
                             if (!typeof(TResult).IsAssignableTo<T>())

@@ -1173,11 +1173,21 @@ namespace MongoDB.Entities.InnerQuery
                 {
                     mongoOperator = "$concat";
 
+                    // Convert non-string values to strings for MongoDB $concat
+                    if (binExp.Left.Type != typeof(string))
+                    {
+                        leftValue = new BsonDocument("$toString", leftValue);
+                    }
+                    if (binExp.Right.Type != typeof(string))
+                    {
+                        rightValue = new BsonDocument("$toString", rightValue);
+                    }
+
                     // In Mongo: $concat(null, "foo") => null.
                     // In  .Net: null + "foo" => foo
                     // So swap out null strings with empty strings to match .Net behavior
-                    leftValue = ReplaceNullStringWithEmptyString(binExp.Left.Type, leftValue);
-                    rightValue = ReplaceNullStringWithEmptyString(binExp.Right.Type, rightValue);
+                    leftValue = ReplaceNullStringWithEmptyString(binExp.Left.Type == typeof(string) ? binExp.Left.Type : typeof(string), leftValue);
+                    rightValue = ReplaceNullStringWithEmptyString(binExp.Right.Type == typeof(string) ? binExp.Right.Type : typeof(string), rightValue);
                 }
 
                 // When adding or substracting DateTime with TimeSpan, convert the TimeSpan back to milliseconds
@@ -2798,7 +2808,7 @@ namespace MongoDB.Entities.InnerQuery
                 }
 
                 Type resultType = typeof(TResult);
-                bool isGenericEnumerable = typeof(TResult) == typeof(IEnumerable);
+                bool isGenericEnumerable = resultType == typeof(IEnumerable);
 
                 // Get the type that is in our enumerable result.
                 // If we have plaine ole IEnumerable, then get it from the expression.

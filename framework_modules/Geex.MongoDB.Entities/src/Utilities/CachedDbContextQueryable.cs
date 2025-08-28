@@ -99,8 +99,12 @@ namespace MongoDB.Entities.Utilities
             }
             else
             {
+                // 对于GroupBy查询，直接通过内部提供者执行
                 var visitor = expression.ExtractQueryParts<T, TSelect>();
-
+                if (visitor.IsGroupBySelectPattern)
+                {
+                    return this.InnerProvider.CreateQuery<TSelect>(expression).GetEnumerator();
+                }
                 var localEntities = _dbContext.MemoryDataCache[_rootType].Values.OfType<T>();
                 var originLocalEntities = _dbContext.DbDataCache[_rootType].Values.OfType<T>();
 

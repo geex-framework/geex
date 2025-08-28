@@ -8,6 +8,10 @@ using MongoDB.Bson.Serialization.Serializers;
 
 namespace Geex.Bson
 {
+    /// <summary>
+    ///
+    /// </summary>
+    /// <typeparam name="TEnum"></typeparam>
     public class EnumerationSerializer<TEnum> :
         ClassSerializerBase<TEnum>,
         IRepresentationConfigurable, IEnumerationSerializer where TEnum : Enumeration<TEnum>
@@ -22,7 +26,9 @@ namespace Geex.Bson
             var method = enumerationType.GetMethod(nameof(Enumeration.FromValue), genericParameterCount: 1, types: new[] { typeof(string) });
             return method?.MakeGenericMethod(typeof(TEnum));
         });
-
+        /// <summary>
+        ///
+        /// </summary>
         public EnumerationSerializer()
         {
         }
@@ -47,7 +53,11 @@ namespace Geex.Bson
             this._representation = representation;
             this._underlyingTypeCode = Type.GetTypeCode(typeof(string));
         }
-
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="representation"></param>
+        /// <returns></returns>
         public IBsonSerializer WithRepresentation(BsonType representation)
         {
             return representation == this._representation ? this : new EnumerationSerializer<TEnum>(representation);

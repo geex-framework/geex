@@ -1050,7 +1050,7 @@ namespace MongoDB.Entities.Tests
                     ArrayAvg = x.Data.Average(),
                     ArrayCount = x.Data.Length
                 })
-                .OrderBy(x=>x.ProcessedName)
+                .OrderBy(x => x.ProcessedName)
                 .ToList();
 
             complexResult.ShouldNotBeEmpty();
@@ -1605,6 +1605,62 @@ namespace MongoDB.Entities.Tests
                 .Count(x => (x.Enum == TestEntityEnum.Value1 ? x.Value > 20 : x.Value < 20) &&
                            x.Name != null);
             ternaryConditionResult.ShouldBe(3); // active_user_1(Value1,25>20), inactive_user_2(Value2,15<20), active_admin_4(Value1,5<20)
+        }
+
+        [TestMethod]
+        public async Task grouping_should_work()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<TestEntity>();
+
+            dbContext.Attach(new List<TestEntity>()
+            {
+                new TestEntity() { Name = "group1", Value = 10 },
+                new TestEntity() { Name = "group1", Value = 20 },
+                new TestEntity() { Name = "group2", Value = 30 },
+                new TestEntity() { Name = "group2", Value = 40 }
+            });
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+
+            dbContext = new DbContext();
+
+            var result = dbContext.Query<TestEntity>().GroupBy(x => x.Name).Select(x => new { Name = x.Key, Sum = x.Sum(y => y.Value) }).OrderBy(x => x.Name).ToList();
+            result.Count.ShouldBe(2);
+            result[0].Name.ShouldBe("group1");
+            result[0].Sum.ShouldBe(30);
+            result[1].Name.ShouldBe("group2");
+            result[1].Sum.ShouldBe(70);
+        }
+
+        [TestMethod]
+        public async Task grouping_should_work_with_complex_conditions()
+        {
+            var dbContext = new DbContext();
+            await dbContext.DeleteAsync<TestEntity>();
+
+            dbContext.Attach(new List<TestEntity>()
+            {
+                new TestEntity() { Name = "group1", Value = 10 },
+                new TestEntity() { Name = "group1", Value = 20 },
+                new TestEntity() { Name = "group2", Value = 30 },
+                new TestEntity() { Name = "group2", Value = 40 }
+            });
+            await dbContext.SaveChanges();
+            dbContext.Dispose();
+
+            dbContext = new DbContext();
+
+            var result = dbContext.Query<TestEntity>().GroupBy(x => x.Name + x.Value).Select(x => new { Name = x.Key, Sum = x.Sum(y => y.Value) }).OrderBy(x => x.Name).ToList();
+            result.Count.ShouldBe(4);
+            result[0].Name.ShouldBe("group110");
+            result[0].Sum.ShouldBe(10);
+            result[1].Name.ShouldBe("group120");
+            result[1].Sum.ShouldBe(20);
+            result[2].Name.ShouldBe("group230");
+            result[2].Sum.ShouldBe(30);
+            result[3].Name.ShouldBe("group240");
+            result[3].Sum.ShouldBe(40);
         }
     }
 }

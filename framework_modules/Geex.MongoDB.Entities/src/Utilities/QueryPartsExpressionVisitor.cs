@@ -41,6 +41,8 @@ namespace MongoDB.Entities.Utilities
     }
     internal class QueryPartsExpressionVisitor<TEntity, TResult> : ExpressionVisitor
     {
+        public bool HasGroupBy { get; private set; }
+        public bool IsGroupBySelectPattern { get; private set; }
 
         #region static query methods
 
@@ -240,8 +242,14 @@ namespace MongoDB.Entities.Utilities
 
             this.ValidateStages(stages);
 
+            // 检测GroupBy模式
+            var groupByIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name == "GroupBy");
             var selectIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is Q.Select or Q.SelectMany);
             var cursorIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is Q.Skip or Q.Take);
+            
+            this.HasGroupBy = groupByIndex != -1;
+            this.IsGroupBySelectPattern = groupByIndex != -1 && selectIndex != -1 && selectIndex == groupByIndex + 1;
+            
             if (selectIndex != -1 || cursorIndex != -1)
             {
                 this.selectIndex = Math.Min(selectIndex, cursorIndex + 1);
@@ -249,7 +257,13 @@ namespace MongoDB.Entities.Utilities
 
             if (lastStage is MethodCallExpression mce1 && mce1.Method.Name is Q.Count or Q.LongCount or Q.Any or Q.Sum or Q.Min or Q.MinBy or Q.Average or Q.Max or Q.MaxBy or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault)
             {
-                if (selectIndex == -1)
+                if (this.IsGroupBySelectPattern)
+                {
+                    // 对于GroupBy().Select().Execute()模式，将GroupBy().Select()作为整体处理
+                    PreSelectExpression = stages.ElementAtOrDefault(stages.Count - 2);
+                    PostSelectExpression = null;
+                }
+                else if (selectIndex == -1)
                 {
                     PreSelectExpression = stages.ElementAtOrDefault(stages.Count - 2);
                 }
@@ -266,7 +280,13 @@ namespace MongoDB.Entities.Utilities
             }
             else
             {
-                if (selectIndex == -1)
+                if (this.IsGroupBySelectPattern)
+                {
+                    // 对于GroupBy().Select()模式（无执行方法），将整个表达式作为PreSelectExpression
+                    PreSelectExpression = lastStage;
+                    PostSelectExpression = null;
+                }
+                else if (selectIndex == -1)
                 {
                     PreSelectExpression = lastStage;
                 }
