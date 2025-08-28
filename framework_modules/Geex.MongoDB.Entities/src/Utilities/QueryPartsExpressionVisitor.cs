@@ -15,6 +15,7 @@ namespace MongoDB.Entities.Utilities
         internal const string Where = nameof(Queryable.Where);
 
         internal const string Select = nameof(Queryable.Select);
+        internal const string GroupBy = nameof(Queryable.GroupBy);
         internal const string SelectMany = nameof(Queryable.SelectMany);
 
         internal const string Count = nameof(Queryable.Count);
@@ -215,7 +216,7 @@ namespace MongoDB.Entities.Utilities
             }
 
             var lastStage = stages.LastOrDefault();
-            if (lastStage is MethodCallExpression mce2 && mce2.Method.Name is Q.Count or Q.LongCount or Q.Any or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault)
+            if (lastStage is MethodCallExpression { Method.Name: Q.Count or Q.LongCount or Q.Any or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault } mce2)
             {
                 // 将执行过滤参数转为Where过滤参数 .First(x=>true) => .Where(x=>true).First()
                 var lastStageFilter = mce2.Arguments.ElementAtOrDefault(1);
@@ -243,19 +244,19 @@ namespace MongoDB.Entities.Utilities
             this.ValidateStages(stages);
 
             // 检测GroupBy模式
-            var groupByIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name == "GroupBy");
-            var selectIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is Q.Select or Q.SelectMany);
-            var cursorIndex = stages.FindIndex(x => x is MethodCallExpression mce && mce.Method.Name is Q.Skip or Q.Take);
-            
+            var groupByIndex = stages.FindIndex(x => x is MethodCallExpression { Method.Name: Q.GroupBy });
+            var selectIndex = stages.FindIndex(x => x is MethodCallExpression { Method.Name: Q.Select or Q.SelectMany });
+            var cursorIndex = stages.FindIndex(x => x is MethodCallExpression { Method.Name: Q.Skip or Q.Take });
+
             this.HasGroupBy = groupByIndex != -1;
             this.IsGroupBySelectPattern = groupByIndex != -1 && selectIndex != -1 && selectIndex == groupByIndex + 1;
-            
+
             if (selectIndex != -1 || cursorIndex != -1)
             {
                 this.selectIndex = Math.Min(selectIndex, cursorIndex + 1);
             }
 
-            if (lastStage is MethodCallExpression mce1 && mce1.Method.Name is Q.Count or Q.LongCount or Q.Any or Q.Sum or Q.Min or Q.MinBy or Q.Average or Q.Max or Q.MaxBy or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault)
+            if (lastStage is MethodCallExpression { Method.Name: Q.Count or Q.LongCount or Q.Any or Q.Sum or Q.Min or Q.MinBy or Q.Average or Q.Max or Q.MaxBy or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault } mce1)
             {
                 if (this.IsGroupBySelectPattern)
                 {
