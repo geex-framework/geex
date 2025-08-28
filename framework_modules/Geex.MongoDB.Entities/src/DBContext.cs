@@ -214,10 +214,10 @@ namespace MongoDB.Entities
             }
             else
             {
-                if (this.MemoryDataCache[rootType].Count > 10000)
-                {
+                //if (this.MemoryDataCache[rootType].Count > 10000)
+                //{
                     //throw new NotSupportedException("Queryable Api不支持数量过多的Entity查询/写入, 请考虑使用原生Api");
-                }
+                //}
                 this.MemoryDataCache[rootType].TryAdd(entity.Id, entity);
                 entity.DbContext = this;
                 if (entity is IAttachIntercepted intercepted)

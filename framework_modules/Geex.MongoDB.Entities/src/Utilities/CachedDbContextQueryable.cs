@@ -99,26 +99,19 @@ namespace MongoDB.Entities.Utilities
             }
             else
             {
-                // 对于GroupBy查询，直接通过内部提供者执行
                 var visitor = expression.ExtractQueryParts<T, TSelect>();
+                // 对于GroupBy查询，直接执行原生查询
                 if (visitor.IsGroupBySelectPattern)
                 {
                     return this.InnerProvider.CreateQuery<TSelect>(expression).GetEnumerator();
                 }
                 var localEntities = _dbContext.MemoryDataCache[_rootType].Values.OfType<T>();
-                var originLocalEntities = _dbContext.DbDataCache[_rootType].Values.OfType<T>();
 
                 var localIds = localEntities.Select(x => x.Id).ToList();
-                var deletedEntities = Enumerable.Empty<T>();
-
-                if (localIds.Count != 0)
-                {
-                    deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
-                }
 
                 IQueryable<T> entities;
 
-                if (localEntities.Any() || deletedEntities.Any())
+                if (localEntities.Any())
                 {
                     var dbQuery = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression);
 
@@ -131,7 +124,7 @@ namespace MongoDB.Entities.Utilities
                     _dbContext.UpdateDbDataCache(dbEntities);
                     var attachedDbEntities = _dbContext.Attach(dbEntities);
 
-                    entities = localEntities.Union(attachedDbEntities).Except(deletedEntities).AsQueryable();
+                    entities = localEntities.Union(attachedDbEntities).AsQueryable();
                     var resultQueryExpression = visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
                     entities = entities.Provider.CreateQuery<T>(resultQueryExpression);
                 }
