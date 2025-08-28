@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+
 using Geex.MongoDB.Entities.InnerQuery;
 
 using MongoDB.Bson;
@@ -282,77 +283,75 @@ namespace MongoDB.Entities.InnerQuery
         /// </summary>
         private string GetMongoFieldName(Expression expression, bool isNamedProperty)
         {
-            if (expression.NodeType == ExpressionType.Convert)
+            switch (expression)
             {
-                // A field that's an enum goes through a cast to an int.
-                return GetMongoFieldName(((UnaryExpression)expression).Operand, isNamedProperty);
-            }
-
-            if (expression is MemberExpression memberExp)
-            {
+                case UnaryExpression { NodeType: ExpressionType.Convert } unaryExpression:
+                    // A field that's an enum goes through a cast to an int.
+                    return GetMongoFieldName(unaryExpression.Operand, isNamedProperty);
                 // Special case!!
                 // As of MongoDB 3.6, Mongo can treat the ObjectId as a DateTime.  We'll support this on the .Net side
                 // via access on the CreationTime operation.  We'll just eat the property access.
-                if (ExpressionIsObjectIdCreationTime(memberExp))
+                case MemberExpression memberExp when ExpressionIsObjectIdCreationTime(memberExp):
                     return GetMongoFieldName(memberExp.Expression, isNamedProperty);
-
                 // Handle referencing the Value property on a Nullable<> type
-                if (memberExp.Member.Name == "Value" && memberExp.Expression.Type.Name == "Nullable`1")
-                {
+                case MemberExpression memberExp when memberExp.Member.Name == "Value" && memberExp.Expression.Type.Name == "Nullable`1":
                     // On input of 'foo.Value', ignore the 'Value' property and run this method again on 'foo'
                     return GetMongoFieldName(memberExp.Expression, isNamedProperty);
-                }
+                case MemberExpression memberExp:
+                    {
+                        isNamedProperty = true;
 
-                isNamedProperty = true;
+                        // We might have a nested MemberExpression like c.Key.Name
+                        // So recurse to build the whole mongo field name
+                        string prefix = "";
+                        switch (memberExp.Expression)
+                        {
+                            case MemberExpression:
+                                prefix = GetMongoFieldName(memberExp.Expression, isNamedProperty) + '.';
+                                break;
+                            case ParameterExpression parameterExpression:
+                                {
+                                    var paramExpression = parameterExpression;
+                                    _subSelectParameterPrefixes.TryGetValue(paramExpression.Name, out prefix);
+                                    break;
+                                }
+                            case MethodCallExpression methodCallExpression:
+                                {
+                                    string fieldName = GetMongoFieldNameForMethodOnGrouping(methodCallExpression).AsString;
 
-                // We might have a nested MemberExpression like c.Key.Name
-                // So recurse to build the whole mongo field name
-                string prefix = "";
-                if (memberExp.Expression is MemberExpression)
-                {
-                    prefix = GetMongoFieldName(memberExp.Expression, isNamedProperty) + '.';
-                }
-                else if (memberExp.Expression is ParameterExpression)
-                {
-                    var paramExpression = (ParameterExpression)memberExp.Expression;
-                    _subSelectParameterPrefixes.TryGetValue(paramExpression.Name, out prefix);
-                }
-                else if (memberExp.Expression is MethodCallExpression)
-                {
-                    string fieldName = GetMongoFieldNameForMethodOnGrouping((MethodCallExpression)memberExp.Expression).AsString;
+                                    // Remove the '$'
+                                    prefix = (fieldName.StartsWith("$") ? fieldName.Substring(1) : fieldName) + '.';
+                                    break;
+                                }
+                        }
 
-                    // Remove the '$'
-                    prefix = (fieldName.StartsWith("$") ? fieldName.Substring(1) : fieldName) + '.';
-                }
+                        // String.Length field not support in the Mongo Query syntax.
+                        if (memberExp.Member.Name == "Length" && memberExp.Member.DeclaringType == typeof(string))
+                            throw new InvalidQueryException("Can't use String.Length in a legacy $match expression");
 
-                // String.Length field not support in the Mongo Query syntax.
-                if (memberExp.Member.Name == "Length" && memberExp.Member.DeclaringType == typeof(string))
-                    throw new InvalidQueryException("Can't use String.Length in a legacy $match expression");
+                        var finalFieldName = prefix + GetMongoFieldName(memberExp.Member);
+                        if (_currentPipelineDocumentUsesResultHack)
+                            finalFieldName = PIPELINE_DOCUMENT_RESULT_NAME + "." + finalFieldName;
+                        return finalFieldName;
+                    }
+                case ParameterExpression { NodeType: ExpressionType.Parameter } parameterExpression:
+                    {
+                        if (_subSelectParameterPrefixes.TryGetValue(parameterExpression.Name, out string prefix))
+                        {
+                            // The prefix will be something like "$foo."
+                            // Remove the trailing . in this case since we're not going to make a subsequent member access.
+                            return prefix.Substring(0, prefix.Length - 1);
+                        }
 
-                var finalFieldName = prefix + GetMongoFieldName(memberExp.Member);
-                if (_currentPipelineDocumentUsesResultHack)
-                    finalFieldName = PIPELINE_DOCUMENT_RESULT_NAME + "." + finalFieldName;
-                return finalFieldName;
-            }
+                        return isNamedProperty ? PIPELINE_DOCUMENT_RESULT_NAME : null;
+                    }
+                case MethodCallExpression { NodeType: ExpressionType.Call } methodCallExpression:
+                    {
+                        string fieldName = GetMongoFieldNameForMethodOnGrouping(methodCallExpression).AsString;
 
-            if (expression.NodeType == ExpressionType.Parameter)
-            {
-                if (_subSelectParameterPrefixes.TryGetValue(((ParameterExpression)expression).Name, out string prefix))
-                {
-                    // The prefix will be something like "$foo."
-                    // Remove the trailing . in this case since we're not going to make a subsequent member access.
-                    return prefix.Substring(0, prefix.Length - 1);
-                }
-
-                return isNamedProperty ? PIPELINE_DOCUMENT_RESULT_NAME : null;
-            }
-
-            if (expression.NodeType == ExpressionType.Call)
-            {
-                string fieldName = GetMongoFieldNameForMethodOnGrouping((MethodCallExpression)expression).AsString;
-
-                // Remove the '$'
-                return fieldName.StartsWith("$") ? fieldName.Substring(1) : fieldName;
+                        // Remove the '$'
+                        return fieldName.StartsWith("$") ? fieldName.Substring(1) : fieldName;
+                    }
             }
 
             throw new InvalidQueryException("Can't get Mongo field name for expression type " + expression.NodeType);
@@ -372,38 +371,40 @@ namespace MongoDB.Entities.InnerQuery
             //    NewExpression:       GroupBy(c => new { c.Age, Name = c.FirstName })
             //    Other expressions:   GroupBy(c => c.Age + 1)
 
-            // Handle the first case: GroupBy(c => c)
-            if (lambdaExp.Body is ParameterExpression)
+            switch (lambdaExp.Body)
             {
-                // This point was probably reached by doing something like:
-                //   .Select(c => c.FirstName).GroupBy(c => c)
-
-                // Perform the grouping on the _result_ document (which we'll assume we have)
-                var pipelineOperation = new BsonDocument { new BsonElement("_id", "$" + PIPELINE_DOCUMENT_RESULT_NAME) };
-                AddToPipeline("$group", pipelineOperation).GroupNeedsCleanup = true;
-                _currentPipelineDocumentUsesResultHack = false;
-                return;
-            }
-
-            // Handle an anonymous type: GroupBy(c => new { c.Age, Name = c.FirstName })
-            if (lambdaExp.Body is NewExpression newExp)
-            {
-                var newExpProperties = newExp.Type.GetProperties();
-
-                // Get the mongo field names for each property in the new {...}
-                var fieldNames = newExp.Arguments
-                    .Select((c, i) => new
+                // Handle the first case: GroupBy(c => c)
+                case ParameterExpression:
                     {
-                        KeyFieldName = newExpProperties[i].Name,
-                        ValueMongoExpression = BuildMongoSelectExpression(c)
-                    })
-                    .Select(c => new BsonElement(c.KeyFieldName, c.ValueMongoExpression));
+                        // This point was probably reached by doing something like:
+                        //   .Select(c => c.FirstName).GroupBy(c => c)
 
-                // Perform the grouping on the multi-part key
-                var pipelineOperation = new BsonDocument { new BsonElement("_id", new BsonDocument(fieldNames)) };
-                AddToPipeline("$group", pipelineOperation).GroupNeedsCleanup = true;
-                _currentPipelineDocumentUsesResultHack = false;
-                return;
+                        // Perform the grouping on the _result_ document (which we'll assume we have)
+                        var pipelineOperation = new BsonDocument { new BsonElement("_id", "$" + PIPELINE_DOCUMENT_RESULT_NAME) };
+                        AddToPipeline("$group", pipelineOperation).GroupNeedsCleanup = true;
+                        _currentPipelineDocumentUsesResultHack = false;
+                        return;
+                    }
+                // Handle an anonymous type: GroupBy(c => new { c.Age, Name = c.FirstName })
+                case NewExpression newExp:
+                    {
+                        var newExpProperties = newExp.Type.GetProperties();
+
+                        // Get the mongo field names for each property in the new {...}
+                        var fieldNames = newExp.Arguments
+                            .Select((c, i) => new
+                            {
+                                KeyFieldName = newExpProperties[i].Name,
+                                ValueMongoExpression = BuildMongoSelectExpression(c)
+                            })
+                            .Select(c => new BsonElement(c.KeyFieldName, c.ValueMongoExpression));
+
+                        // Perform the grouping on the multi-part key
+                        var pipelineOperation = new BsonDocument { new BsonElement("_id", new BsonDocument(fieldNames)) };
+                        AddToPipeline("$group", pipelineOperation).GroupNeedsCleanup = true;
+                        _currentPipelineDocumentUsesResultHack = false;
+                        return;
+                    }
             }
 
             // Handle all other expression types
@@ -419,42 +420,35 @@ namespace MongoDB.Entities.InnerQuery
         /// </summary>
         private BsonValue GetBsonValueFromObject(object obj)
         {
-            if (obj is int || obj is Enum)
-                return new BsonInt32((int)obj);
-
-            if (obj is long l)
-                return new BsonInt64(l);
-
-            if (obj is bool b)
-                return new BsonBoolean(b);
-
-            if (obj is double d)
-                return new BsonDouble(d);
-
-            if (obj is decimal dc)
-                return new BsonDecimal128(dc);
-
-            if (obj is DateTime date)
-                return new BsonDateTime(date);
-
-            if (obj is DateTimeOffset dateOffset)
-                return new BsonDateTime(dateOffset.DateTime);
-
-            if (obj is TimeSpan timeSpan)
-                return BsonValue.Create(timeSpan.Ticks);
-
-            if (obj == null)
-                return BsonNull.Value;
-
-            if (obj is string s)
+            switch (obj)
             {
-                return new BsonString(s);
+                case int:
+                case Enum:
+                    return new BsonInt32((int)obj);
+                case long l:
+                    return new BsonInt64(l);
+                case bool b:
+                    return new BsonBoolean(b);
+                case double d:
+                    return new BsonDouble(d);
+                case decimal dc:
+                    return new BsonDecimal128(dc);
+                case DateTime date:
+                    return new BsonDateTime(date);
+                case DateTimeOffset dateOffset:
+                    return new BsonDateTime(dateOffset.DateTime);
+                case TimeSpan timeSpan:
+                    return BsonValue.Create(timeSpan.Ticks);
+                case null:
+                    return BsonNull.Value;
+                case string s:
+                    return new BsonString(s);
+                case IStringPresentation stringObj:
+                    return new BsonString(stringObj.ToString());
+                case Guid:
+                case ObjectId:
+                    return BsonValue.Create(obj);
             }
-            if (obj is IStringPresentation stringObj)
-                return new BsonString(stringObj.ToString());
-
-            if (obj is Guid || obj is ObjectId)
-                return BsonValue.Create(obj);
 
             if (TypeSystem.FindIEnumerable(obj.GetType()) != null)
             {
@@ -608,17 +602,22 @@ namespace MongoDB.Entities.InnerQuery
                     // EQ  memberExp >= comparisonValueAsObjectIdMin && memberExp <= comparisonValueAsObjectIdMax
 
                     string mongoFieldName = GetMongoFieldNameInMatchStage(memberExp, isLambdaParamResultHack);
-                    if (comparisonType == ExpressionType.GreaterThan)
-                        return Builders<TDocType>.Filter.Gt(mongoFieldName, comparisonValueAsObjectIdMax);
-                    if (comparisonType == ExpressionType.GreaterThanOrEqual)
-                        return Builders<TDocType>.Filter.Gte(mongoFieldName, comparisonValueAsObjectIdMin);
-                    if (comparisonType == ExpressionType.LessThan)
-                        return Builders<TDocType>.Filter.Lt(mongoFieldName, comparisonValueAsObjectIdMin);
-                    if (comparisonType == ExpressionType.LessThanOrEqual)
-                        return Builders<TDocType>.Filter.Lte(mongoFieldName, comparisonValueAsObjectIdMax);
-
+                    var filter = comparisonType switch
+                    {
+                        ExpressionType.GreaterThan => Builders<TDocType>.Filter.Gt(mongoFieldName,
+                            comparisonValueAsObjectIdMax),
+                        ExpressionType.GreaterThanOrEqual => Builders<TDocType>.Filter.Gte(mongoFieldName,
+                            comparisonValueAsObjectIdMin),
+                        ExpressionType.LessThan => Builders<TDocType>.Filter.Lt(mongoFieldName,
+                            comparisonValueAsObjectIdMin),
+                        ExpressionType.LessThanOrEqual => Builders<TDocType>.Filter.Lte(mongoFieldName,
+                            comparisonValueAsObjectIdMax),
+                        _ => Builders<TDocType>.Filter.And(
+                            Builders<TDocType>.Filter.Gte(mongoFieldName, comparisonValueAsObjectIdMin),
+                            Builders<TDocType>.Filter.Lte(mongoFieldName, comparisonValueAsObjectIdMax))
+                    };
+                    return filter;
                     // EQ
-                    return Builders<TDocType>.Filter.And(Builders<TDocType>.Filter.Gte(mongoFieldName, comparisonValueAsObjectIdMin), Builders<TDocType>.Filter.Lte(mongoFieldName, comparisonValueAsObjectIdMax));
                 }
 
                 // If the LHS is an array length, then we use special operators.
@@ -703,13 +702,13 @@ namespace MongoDB.Entities.InnerQuery
             {
                 var callExp = (MethodCallExpression)expression;
 
-                // Support .Where(c => c.ArrayProp.Contains(1)) and .Where(c => new[] { 1, 2, 3}.Contains(c.Id))
-                if (callExp.Method.Name == "Contains")
+                switch (callExp.Method.Name)
                 {
+                    // Support .Where(c => c.ArrayProp.Contains(1)) and .Where(c => new[] { 1, 2, 3}.Contains(c.Id))
                     // Part 1 - Support .Where(c => someLocalEnumerable.Contains(c.Field))
                     // Extract the IEnumerable that .Contains is being called on
                     // Important to note that it can be in callExp.Object (for a List) or in callExp.Arguments[0] (for a constant, read-only array)
-                    if ((callExp.Object ?? callExp.Arguments[0]) is ConstantExpression arrayConstantExpression)
+                    case "Contains" when (callExp.Object ?? callExp.Arguments[0]) is ConstantExpression arrayConstantExpression:
                     {
                         var localEnumerable = arrayConstantExpression.Value;
                         if (TypeSystem.FindIEnumerable(localEnumerable.GetType()) == null)
@@ -728,18 +727,19 @@ namespace MongoDB.Entities.InnerQuery
 
                         return Builders<TDocType>.Filter.In(mongoFieldName, array.AsEnumerable());
                     }
-
                     // Par 2 - Support .Where(c => c.SomeArrayProperty.Contains("foo"))
-                    string searchTargetMongoFieldName = GetMongoFieldNameInMatchStage(callExp.Object, isLambdaParamResultHack);
-                    var searchItem = BsonValue.Create(((ConstantExpression)callExp.Arguments[0]).Value);
-                    return Builders<TDocType>.Filter.AnyEq(searchTargetMongoFieldName, searchItem);
-                }
-
-                // Support .Where(c => string.IsNullOrEmpty(c.Name))
-                if (callExp.Method.Name == "IsNullOrEmpty" && callExp.Object == null && callExp.Method.ReflectedType == typeof(string))
-                {
-                    var mongoFieldName = GetMongoFieldNameInMatchStage(callExp.Arguments.Single(), isLambdaParamResultHack);
-                    return Builders<TDocType>.Filter.Or(Builders<TDocType>.Filter.Eq(mongoFieldName, BsonNull.Value), Builders<TDocType>.Filter.Eq(mongoFieldName, new BsonString("")));
+                    case "Contains":
+                    {
+                        string searchTargetMongoFieldName = GetMongoFieldNameInMatchStage(callExp.Object, isLambdaParamResultHack);
+                        var searchItem = BsonValue.Create(((ConstantExpression)callExp.Arguments[0]).Value);
+                        return Builders<TDocType>.Filter.AnyEq(searchTargetMongoFieldName, searchItem);
+                    }
+                    // Support .Where(c => string.IsNullOrEmpty(c.Name))
+                    case "IsNullOrEmpty" when callExp.Object == null && callExp.Method.ReflectedType == typeof(string):
+                    {
+                        var mongoFieldName = GetMongoFieldNameInMatchStage(callExp.Arguments.Single(), isLambdaParamResultHack);
+                        return Builders<TDocType>.Filter.Or(Builders<TDocType>.Filter.Eq(mongoFieldName, BsonNull.Value), Builders<TDocType>.Filter.Eq(mongoFieldName, new BsonString("")));
+                    }
                 }
 
                 // 新增：支持正则表达式匹配
@@ -767,33 +767,6 @@ namespace MongoDB.Entities.InnerQuery
 
                             return Builders<TDocType>.Filter.Regex(input, new MongoDB.Bson.BsonRegularExpression(pattern, mongoRegexOptions));
                         }
-                    }
-                }
-
-                // 新增：支持字符串的更多比较方法
-                if (callExp.Object?.Type == typeof(string))
-                {
-                    // 新增：支持字符串长度比较
-                    if (callExp.Method.Name == "Length")
-                    {
-                        // 这种情况在MemberExpression中已经处理，这里是为了完整性
-                        throw new InvalidQueryException("String.Length should be handled as MemberExpression");
-                    }
-                }
-
-                // 新增：支持DateTime的比较方法
-                if (callExp.Method.ReflectedType == typeof(DateTime) && callExp.Object == null)
-                {
-                    if (callExp.Method.Name == "Compare" && callExp.Arguments.Count == 2)
-                    {
-                        var left = BuildMongoWhereExpressionAsBsonValue(callExp.Arguments[0], isLambdaParamResultHack);
-                        var right = BuildMongoWhereExpressionAsBsonValue(callExp.Arguments[1], isLambdaParamResultHack);
-
-                        // DateTime.Compare返回-1, 0, 或1，这里假设用于比较操作
-                        // 实际使用中可能需要根据上下文进一步处理
-                        return new BsonDocumentFilterDefinition<TDocType>(
-                            new BsonDocument("$expr",
-                                new BsonDocument("$cmp", new BsonArray([left, right]))));
                     }
                 }
 
