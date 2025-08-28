@@ -99,4 +99,8 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     /// <param name="cancellation">An optional cancellation token</param>
     public Task<long> DeleteAsync<T>(IEnumerable<string> ids,
         CancellationToken cancellation = default) where T : IEntityBase;
+
+    public void StartExplicitTransaction();
+    public bool IsInExplicitTransaction { get; }
+    public Task CommitExplicitTransaction();
 }

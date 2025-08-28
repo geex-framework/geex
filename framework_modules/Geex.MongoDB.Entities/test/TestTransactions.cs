@@ -247,5 +247,178 @@ namespace MongoDB.Entities.Tests
 
             Assert.IsTrue(triggered);
         }
+
+        [TestMethod]
+        public async Task explicit_transaction_commit_modifies_docs()
+        {
+            var guid = Guid.NewGuid().ToString();
+            var author1 = new Author { Name = "explicit_test1", Surname = guid }; 
+            await author1.SaveAsync();
+
+            using (var TN = new DbContext())
+            {
+                // Start explicit transaction
+                TN.StartExplicitTransaction();
+                Assert.IsTrue(TN.IsInExplicitTransaction);
+
+                // Modify data within explicit transaction
+                await TN.Update<Author>()
+                  .Match(a => a.Id == author1.Id)
+                  .Modify(a => a.Name, "explicit_modified")
+                  .ExecuteAsync();
+
+                // Commit explicit transaction
+                await TN.CommitExplicitTransaction();
+                Assert.IsFalse(TN.IsInExplicitTransaction);
+            }
+
+            var res = await DB.Find<Author>().OneAsync(author1.Id);
+            Assert.AreEqual("explicit_modified", res.Name);
+        }
+
+        [TestMethod]
+        public async Task explicit_transaction_rollback_on_dispose_doesnt_modify_docs()
+        {
+            var guid = Guid.NewGuid().ToString();
+            var author1 = new Author { Name = "explicit_rollback_test", Surname = guid }; 
+            await author1.SaveAsync();
+
+            using (var TN = new DbContext())
+            {
+                // Start explicit transaction
+                TN.StartExplicitTransaction();
+                Assert.IsTrue(TN.IsInExplicitTransaction);
+
+                // Modify data within explicit transaction
+                await TN.Update<Author>()
+                  .Match(a => a.Id == author1.Id)
+                  .Modify(a => a.Name, "should_not_be_saved")
+                  .ExecuteAsync();
+
+                // Don't commit - let it rollback on dispose
+            }
+
+            var res = await DB.Find<Author>().OneAsync(author1.Id);
+            Assert.AreEqual("explicit_rollback_test", res.Name);
+        }
+
+        [TestMethod]
+        public async Task explicit_transaction_property_works_correctly()
+        {
+            using (var TN = new DbContext())
+            {
+                // Initially not in explicit transaction
+                Assert.IsFalse(TN.IsInExplicitTransaction);
+
+                // Start explicit transaction
+                TN.StartExplicitTransaction();
+                Assert.IsTrue(TN.IsInExplicitTransaction);
+
+                // Commit explicit transaction
+                await TN.CommitExplicitTransaction();
+                Assert.IsFalse(TN.IsInExplicitTransaction);
+            }
+        }
+
+        [TestMethod]
+        public async Task explicit_transaction_multiple_operations_work()
+        {
+            var guid = Guid.NewGuid().ToString();
+            var author1 = new Author { Name = "multi_op_test1", Surname = guid };
+            var author2 = new Author { Name = "multi_op_test2", Surname = guid };
+            var book1 = new Book { Title = "multi_op_book1" };
+
+            using (var TN = new DbContext())
+            {
+                // Start explicit transaction
+                TN.StartExplicitTransaction();
+                Assert.IsTrue(TN.IsInExplicitTransaction);
+
+                // Multiple operations within the same transaction
+                TN.Attach(author1);
+                TN.Attach(author2);
+                TN.Attach(book1);
+                
+                await author1.SaveAsync();
+                await author2.SaveAsync();
+                await book1.SaveAsync();
+
+                // Update operations
+                await TN.Update<Author>()
+                  .Match(a => a.Id == author1.Id)
+                  .Modify(a => a.Name, "multi_op_updated1")
+                  .ExecuteAsync();
+
+                await TN.Update<Book>()
+                  .Match(b => b.Id == book1.Id)
+                  .Modify(b => b.Title, "multi_op_book_updated")
+                  .ExecuteAsync();
+
+                // Commit explicit transaction
+                await TN.CommitExplicitTransaction();
+            }
+
+            // Verify all operations were committed
+            var resAuthor1 = await DB.Find<Author>().OneAsync(author1.Id);
+            var resAuthor2 = await DB.Find<Author>().OneAsync(author2.Id);
+            var resBook1 = await DB.Find<Book>().OneAsync(book1.Id);
+
+            Assert.AreEqual("multi_op_updated1", resAuthor1.Name);
+            Assert.AreEqual("multi_op_test2", resAuthor2.Name);
+            Assert.AreEqual("multi_op_book_updated", resBook1.Title);
+        }
+
+        [TestMethod]
+        public async Task explicit_transaction_error_scenarios()
+        {
+            using (var TN = new DbContext())
+            {
+                // Test committing without starting
+                Assert.IsFalse(TN.IsInExplicitTransaction);
+                await TN.CommitExplicitTransaction(); // Should not throw, but log warning
+                Assert.IsFalse(TN.IsInExplicitTransaction);
+
+                // Test starting transaction twice (if transaction is supported)
+                if (TN.SupportTransaction)
+                {
+                    TN.StartExplicitTransaction();
+                    Assert.IsTrue(TN.IsInExplicitTransaction);
+                    
+                    // Try to start again - should log warning but not change state
+                    TN.StartExplicitTransaction();
+                    Assert.IsTrue(TN.IsInExplicitTransaction);
+
+                    await TN.CommitExplicitTransaction();
+                    Assert.IsFalse(TN.IsInExplicitTransaction);
+                }
+            }
+        }
+
+        [TestMethod]
+        public async Task explicit_transaction_prevents_auto_transaction()
+        {
+            var guid = Guid.NewGuid().ToString();
+            var author1 = new Author { Name = "prevent_auto_test", Surname = guid };
+
+            using (var TN = new DbContext())
+            {
+                // Start explicit transaction
+                TN.StartExplicitTransaction();
+                Assert.IsTrue(TN.IsInExplicitTransaction);
+
+                // Operations should not create auto-transactions
+                TN.Attach(author1);
+                await author1.SaveAsync();
+                
+                // Verify we're still in the same explicit transaction
+                Assert.IsTrue(TN.IsInExplicitTransaction);
+
+                // Don't commit - let it rollback
+            }
+
+            // Verify data was not saved due to rollback
+            var res = await DB.Find<Author>().OneAsync(author1.Id);
+            Assert.IsNull(res);
+        }
     }
 }

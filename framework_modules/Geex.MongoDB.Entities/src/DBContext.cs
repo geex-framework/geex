@@ -63,7 +63,7 @@ namespace MongoDB.Entities
         }
         public IMongoDatabase DefaultDb => DB.DefaultDb;
 
-        public ILogger<DbContext> Logger => field ??= (this.ServiceProvider.GetService<ILogger<DbContext>>() ?? NullLogger<DbContext>.Instance);
+        public ILogger<DbContext> Logger => field ??= (this.ServiceProvider?.GetService<ILogger<DbContext>>() ?? NullLogger<DbContext>.Instance);
 
         /// <summary>
         /// 过滤器集合<br/>
@@ -216,7 +216,7 @@ namespace MongoDB.Entities
             {
                 //if (this.MemoryDataCache[rootType].Count > 10000)
                 //{
-                    //throw new NotSupportedException("Queryable Api不支持数量过多的Entity查询/写入, 请考虑使用原生Api");
+                //throw new NotSupportedException("Queryable Api不支持数量过多的Entity查询/写入, 请考虑使用原生Api");
                 //}
                 this.MemoryDataCache[rootType].TryAdd(entity.Id, entity);
                 entity.DbContext = this;
@@ -634,14 +634,14 @@ namespace MongoDB.Entities
                 // 如果本地有值变更
                 if (toSavedEntities.Count != 0)
                 {
+                    savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
+                    var list = (castMethod.MakeGenericMethod(type).Invoke(null, new object[] { toSavedEntities }));
                     const int maxRetries = 3;
                     for (int attempt = 0; attempt < maxRetries; attempt++)
                     {
                         try
                         {
-                            savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
-                            var list = (castMethod.MakeGenericMethod(type).Invoke(null, new object[] { toSavedEntities }));
-                            if (!Session.IsInTransaction && this.SupportTransaction)
+                            if (!Session.IsInTransaction && this.SupportTransaction && !IsInExplicitTransaction)
                             {
                                 Session.StartTransaction();
                             }
@@ -652,7 +652,7 @@ namespace MongoDB.Entities
                                 await task.ConfigureAwait(false);
                             }
 
-                            if (Session.IsInTransaction)
+                            if (Session.IsInTransaction && !IsInExplicitTransaction)
                             {
                                 await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
                             }
@@ -716,6 +716,10 @@ namespace MongoDB.Entities
                 {
                     MemoryDataCache.TypedCacheDictionary.Clear();
                     DbDataCache.TypedCacheDictionary.Clear();
+                    if (IsInExplicitTransaction)
+                    {
+                        this.Logger.LogWarning("Explicit transaction is not committed, aborted with disposing.");
+                    }
                     if (session.IsInTransaction)
                     {
                         session.AbortTransaction();
@@ -859,6 +863,58 @@ namespace MongoDB.Entities
                 entity.DbContext = null;
                 this.MemoryDataCache[rootType].TryRemove(entity.Id, out _);
                 this.DbDataCache[rootType].TryRemove(entity.Id, out _);
+            }
+        }
+        /// <summary>
+        /// 显式开启事务
+        /// 显式开启的事务需要手动显式提交(或在Dispose的时候被回滚)
+        /// </summary>
+        public virtual void StartExplicitTransaction()
+        {
+            if (!Session.IsInTransaction && this.SupportTransaction)
+            {
+                Session.StartTransaction();
+                this.IsInExplicitTransaction = true;
+            }
+            else
+            {
+                this.Logger.LogWarning("Failed to start explicit transaction, current session is already in a transaction or transaction is not supported.");
+            }
+        }
+        /// <summary>
+        /// 是否开启显式事务
+        /// </summary>
+        public bool IsInExplicitTransaction { get; protected set; }
+
+        /// <summary>
+        /// 显式提交事务, 配合StartExplicitTransaction使用
+        /// </summary>
+        /// <returns></returns>
+        public virtual async Task CommitExplicitTransaction()
+        {
+            if (this.IsInExplicitTransaction)
+            {
+              const int maxRetries = 3;
+              for(int attempt = 0; attempt < maxRetries; attempt++){
+                try{
+                  await Session.CommitTransactionAsync();
+                  break;
+                }
+                catch(MongoException ex) when (ex.HasErrorLabel("TransientTransactionError")){
+                  if(attempt == maxRetries - 1){
+                    this.IsInExplicitTransaction = false;
+                    throw;
+                  }
+                  await Task.Delay(TimeSpan.FromSeconds(0.5 * (attempt + 1)));
+                }
+                finally{
+                    this.IsInExplicitTransaction = false;
+                }
+              }
+            }
+            else
+            {
+                this.Logger.LogWarning("Explicit transaction is not started, nothing will be committed.");
             }
         }
     }
