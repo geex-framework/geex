@@ -37,12 +37,12 @@
         <Reference Include="KellermanSoftware.Compare-NET-Objects">
             <HintPath>..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
         </Reference>
-         <Reference Include="Mapster.Core">
+         <!--<Reference Include="Mapster.Core">
             <HintPath>..\..\patched_packages\Mapster.Core.dll</HintPath>
         </Reference>
         <Reference Include="Mapster">
             <HintPath>..\..\patched_packages\Mapster.dll</HintPath>
-        </Reference>
+        </Reference>-->
     </ItemGroup>
     <PropertyGroup>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);PatchedDll</TargetsForTfmSpecificBuildOutput>
@@ -50,8 +50,8 @@
     <Target Name="PatchedDll">
         <ItemGroup>
             <BuildOutputInPackage Include="..\..\patched_packages\KellermanSoftware.Compare-NET-Objects.dll" />
-            <BuildOutputInPackage Include="..\..\patched_packages\Mapster.Core.dll" />
-            <BuildOutputInPackage Include="..\..\patched_packages\Mapster.dll" />
+            <!--<BuildOutputInPackage Include="..\..\patched_packages\Mapster.Core.dll" />
+            <BuildOutputInPackage Include="..\..\patched_packages\Mapster.dll" />-->
         </ItemGroup>
     </Target>
 </Project>

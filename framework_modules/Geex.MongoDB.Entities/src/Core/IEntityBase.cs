@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Mapster;
+
 using MongoDB.Bson;
 using MongoDB.Entities.Utilities;
 
@@ -18,10 +20,10 @@ namespace MongoDB.Entities
         /// </summary>
         [ObjectId]
         string Id { get; set; }
-        [AdaptIgnore]
-        DbContext DbContext { get; set; }
-        DateTimeOffset CreatedOn { get; set; }
-        DateTimeOffset ModifiedOn { get; set; }
+        [Ignore, IgnoreDataMember, JsonIgnore]
+        DbContext DbContext { get; internal set; }
+        DateTimeOffset CreatedOn { get; internal set; }
+        DateTimeOffset ModifiedOn { get; internal set; }
         /// <summary>
         /// Generate and return a new Id string from this method. It will be used when saving new entities that don't have their Id set.
         /// That is, if an entity has a null Id, this method will be called for getting a new Id value.

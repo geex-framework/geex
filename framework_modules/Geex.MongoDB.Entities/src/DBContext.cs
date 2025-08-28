@@ -14,8 +14,6 @@ using Force.DeepCloner;
 
 using KellermanSoftware.CompareNetObjects;
 
-using Mapster;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -44,7 +42,6 @@ namespace MongoDB.Entities
         static DbContext()
         {
             DbContext._compareLogic.Config.CustomComparers.Add(new JsonNodeComparer(RootComparerFactory.GetRootComparer()));
-            TypeAdapterConfig.GlobalSettings.Compiler = exp => exp.CompileFast();
             //TypeAdapterConfig.GlobalSettings.Default.Settings.ShouldMapMember.Add((model, side) =>
             //    model.SetterModifier.HasFlag(AccessModifier.Public | AccessModifier.Protected | AccessModifier.Internal) && !model.Type.IsValueType);
             //var assembly = Assembly.GetAssembly(typeof(DeepClonerExtensions));
