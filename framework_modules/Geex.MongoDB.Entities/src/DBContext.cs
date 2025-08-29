@@ -24,6 +24,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
 using MongoDB.Entities.Core.Comparers;
+using MongoDB.Entities.Exceptions;
 using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
 
@@ -590,8 +591,8 @@ namespace MongoDB.Entities
 
         protected static MethodInfo saveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
-        private static readonly MethodInfo EntityChangeSetMethod = typeof(DbContext).GetMethod(nameof(EntityChangeSet), BindingFlags.NonPublic | BindingFlags.Static);
-        private static readonly ConcurrentDictionary<Type, MethodInfo> EntityChangeSetMethodCache = new();
+        private static readonly MethodInfo DiffMethod = typeof(DbContext).GetMethod(nameof(Diff), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly ConcurrentDictionary<Type, MethodInfo> DiffCache = new();
 
         /// <summary>
         /// Save changed entities to database, if an entity is not changed, it will not be saved.
@@ -622,7 +623,7 @@ namespace MongoDB.Entities
                 {
                     // 如果值没有改变, 则不保存
                     var newValue = this.MemoryDataCache[type][key];
-                    if (this.DbDataCache[type].TryGetValue(key, out var originValue) && this.EntityChangeSet(newValue, originValue, type).AreEqual)
+                    if (this.DbDataCache[type].TryGetValue(key, out var originValue) && this.Diff(newValue, originValue).AreEqual)
                     {
                         continue;
                     }
@@ -648,13 +649,21 @@ namespace MongoDB.Entities
                             {
                                 await task.ConfigureAwait(false);
                             }
-
                             if (Session.IsInTransaction && !IsInExplicitTransaction)
                             {
                                 await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
                             }
                             this.UpdateDbDataCache(type, toSavedEntities);
                             break; // 如果成功，跳出循环
+                        }
+                        catch (OptimisticConcurrencyException oce)
+                        {
+                            this.Logger.LogException(oce, LogLevel.Error);
+                            if (Session.IsInTransaction)
+                            {
+                                await Session.AbortTransactionAsync(cancellation);
+                            }
+                            throw;
                         }
                         catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))
                         {
@@ -678,46 +687,39 @@ namespace MongoDB.Entities
         /// <summary>
         /// 检查value是否发生变更
         /// </summary>
+        /// <param name="baseValue"></param>
         /// <param name="newValue"></param>
-        /// <param name="originValue"></param>
         /// <param name="typeHint">实际类型提示，用于提高性能</param>
         /// <returns></returns>
-        protected virtual BsonDiffResult EntityChangeSet(IEntityBase newValue, IEntityBase originValue, Type? typeHint = null)
+        protected virtual BsonDiffResult Diff(IEntityBase baseValue, IEntityBase newValue, BsonDiffMode mode = BsonDiffMode.Fast)
         {
             // 处理null情况
-            if (newValue == null && originValue == null)
+            if (baseValue == null && newValue == null)
             {
                 return new BsonDiffResult { AreEqual = true };
             }
-            if (newValue == null || originValue == null)
+            if (baseValue == null || newValue == null)
             {
                 return new BsonDiffResult { AreEqual = false };
-            }
-
-            // 如果提供了类型提示，使用它来获得更好的性能
-            if (typeHint != null)
-            {
-                var cachedMethod = EntityChangeSetMethodCache.GetOrAdd(typeHint, type => EntityChangeSetMethod.MakeGenericMethod(type));
-                return (BsonDiffResult)cachedMethod.Invoke(null, [newValue, originValue]);
             }
 
             // 否则使用实际类型
-            var actualType = newValue.GetType();
-            if (actualType != originValue.GetType())
+            var actualType = baseValue.GetType();
+            if (actualType != newValue.GetType())
             {
                 return new BsonDiffResult { AreEqual = false };
             }
 
-            var cachedActualMethod = EntityChangeSetMethodCache.GetOrAdd(actualType, type => EntityChangeSetMethod.MakeGenericMethod(type));
-            return (BsonDiffResult)cachedActualMethod.Invoke(null, [newValue, originValue]);
+            var cachedActualMethod = DiffCache.GetOrAdd(actualType, type => DiffMethod.MakeGenericMethod(type));
+            return (BsonDiffResult)cachedActualMethod.Invoke(null, [baseValue, newValue, mode]);
         }
 
         /// <summary>
         /// 泛型版本的实体变更检查，性能更好
         /// </summary>
-        private static BsonDiffResult EntityChangeSet<T>(T newValue, T originValue) where T : IEntityBase
+        protected virtual BsonDiffResult Diff<T>(T baseValue, T newValue, BsonDiffMode mode = BsonDiffMode.Fast) where T : IEntityBase
         {
-            return BsonDataDiffer.Diff(newValue, originValue);
+            return BsonDataDiffer.Diff(baseValue, newValue, mode);
         }
 
         #region IDisposable Support
@@ -936,6 +938,149 @@ namespace MongoDB.Entities
             else
             {
                 this.Logger.LogWarning("Explicit transaction is not started, nothing will be committed.");
+            }
+        }
+
+        /// <summary>
+        /// 乐观锁并发检查
+        /// </summary>
+        /// <param name="rootType">实体根类型</param>
+        /// <param name="newDbValue">数据库中的新值</param>
+        /// <param name="existingDbValue">缓存中的数据库值</param>
+        private void CheckOptimisticConcurrency(Type rootType, IEntityBase newDbValue, IEntityBase existingDbValue)
+        {
+            // 检查ModifiedOn是否发生了变化（乐观锁冲突检测）
+            if (newDbValue.ModifiedOn <= existingDbValue.ModifiedOn)
+            {
+                // 没有冲突，数据库值没有更新
+                return;
+            }
+
+            this.Logger.LogDebug("ModifiedOn changed for {EntityType}[{EntityId}]", rootType.Name, newDbValue.Id);
+
+            // 检查本地内存中是否有该实体的修改
+            if (!this.MemoryDataCache[rootType].TryGetValue(newDbValue.Id, out var localValue))
+            {
+                // 本地没有该实体，直接更新缓存
+                this.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB but not in local cache", rootType.Name, newDbValue.Id);
+                return;
+            }
+
+            // 比较本地值是否有修改
+            var ourChanges = this.Diff(localValue, existingDbValue, BsonDiffMode.Full);
+            if (ourChanges.AreEqual)
+            {
+                // 本地值没有修改，直接更新缓存
+                this.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB, local has no changes", rootType.Name, newDbValue.Id);
+                return;
+            }
+
+            // 本地值有修改，检查字段冲突
+            var theirChanges = this.Diff(newDbValue, existingDbValue, BsonDiffMode.Full);
+            var conflictingFields = DetectConflictingFields(ourChanges, theirChanges, existingDbValue, localValue, newDbValue);
+
+            if (conflictingFields.Count > 0)
+            {
+                // 有字段冲突，抛出乐观锁异常
+                this.Logger.LogError("Optimistic concurrency conflict: {EntityType}[{EntityId}], fields: {ConflictingFields}",
+                                     rootType.Name, newDbValue.Id, string.Join(", ", conflictingFields.Select(f => f.FieldName)));
+
+                throw new OptimisticConcurrencyException(
+                    rootType,
+                    newDbValue.Id,
+                    conflictingFields,
+                    existingDbValue.ModifiedOn,
+                    newDbValue.ModifiedOn
+                    );
+            }
+            else
+            {
+                // 没有字段冲突，记录信息日志
+                this.Logger.LogInformation("Concurrent modifications without field conflicts: {EntityType}[{EntityId}]", rootType.Name, newDbValue.Id);
+            }
+        }
+
+        /// <summary>
+        /// 检测字段冲突并构建冲突信息
+        /// </summary>
+        /// <param name="ourChanges">我们的变更</param>
+        /// <param name="theirChanges">他们的变更</param>
+        /// <param name="baseValue">基础值</param>
+        /// <param name="ourValue">我们的值</param>
+        /// <param name="theirValue">他们的值</param>
+        /// <returns>冲突字段的详细信息列表</returns>
+        private static List<FieldConflictInfo> DetectConflictingFields(
+            BsonDiffResult ourChanges,
+            BsonDiffResult theirChanges,
+            IEntityBase baseValue,
+            IEntityBase ourValue,
+            IEntityBase theirValue)
+        {
+            var conflictingFields = new List<FieldConflictInfo>();
+
+            if (ourChanges.Differences == null || theirChanges.Differences == null)
+            {
+                return conflictingFields;
+            }
+
+            // 检查我们修改的字段是否与他们修改的字段有交集
+            var ourModifiedFields = ourChanges.Differences.Keys;
+            var theirModifiedFields = theirChanges.Differences.Keys;
+
+            foreach (var fieldName in ourModifiedFields)
+            {
+                if (theirModifiedFields.Contains(fieldName))
+                {
+                    var ourDiff = ourChanges.Differences[fieldName];
+                    var theirDiff = theirChanges.Differences[fieldName];
+
+                    // 构建字段冲突信息
+                    var conflictInfo = new FieldConflictInfo
+                    {
+                        FieldName = fieldName,
+                        FieldType = ourDiff.FieldType,
+                        BaseValue = GetFieldValue(baseValue, fieldName, ourDiff.FieldType),
+                        OurValue = GetFieldValue(ourValue, fieldName, ourDiff.FieldType),
+                        TheirValue = GetFieldValue(theirValue, fieldName, theirDiff.FieldType)
+                    };
+
+                    conflictingFields.Add(conflictInfo);
+                }
+            }
+
+            return conflictingFields;
+        }
+
+        /// <summary>
+        /// 通过反射获取字段值
+        /// </summary>
+        /// <param name="entity">实体对象</param>
+        /// <param name="fieldName">字段名</param>
+        /// <param name="fieldType">字段类型</param>
+        /// <returns>字段值</returns>
+        private static object GetFieldValue(IEntityBase entity, string fieldName, Type fieldType)
+        {
+            if (entity == null) return null;
+
+            try
+            {
+                var property = entity.GetType().GetProperty(fieldName);
+                if (property != null)
+                {
+                    return property.GetValue(entity);
+                }
+
+                var field = entity.GetType().GetField(fieldName);
+                if (field != null)
+                {
+                    return field.GetValue(entity);
+                }
+
+                return null;
+            }
+            catch
+            {
+                return null;
             }
         }
     }
