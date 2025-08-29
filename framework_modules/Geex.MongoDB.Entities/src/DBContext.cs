@@ -590,6 +590,8 @@ namespace MongoDB.Entities
 
         protected static MethodInfo saveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
+        private static readonly MethodInfo EntityChangeSetMethod = typeof(DbContext).GetMethod(nameof(EntityChangeSet), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly ConcurrentDictionary<Type, MethodInfo> EntityChangeSetMethodCache = new();
 
         /// <summary>
         /// Save changed entities to database, if an entity is not changed, it will not be saved.
@@ -620,7 +622,7 @@ namespace MongoDB.Entities
                 {
                     // 如果值没有改变, 则不保存
                     var newValue = this.MemoryDataCache[type][key];
-                    if (this.DbDataCache[type].TryGetValue(key, out var originValue) && this.EntityChangeSet(newValue, originValue).AreEqual)
+                    if (this.DbDataCache[type].TryGetValue(key, out var originValue) && this.EntityChangeSet(newValue, originValue, type).AreEqual)
                     {
                         continue;
                     }
@@ -678,10 +680,44 @@ namespace MongoDB.Entities
         /// </summary>
         /// <param name="newValue"></param>
         /// <param name="originValue"></param>
+        /// <param name="typeHint">实际类型提示，用于提高性能</param>
         /// <returns></returns>
-        protected virtual BsonComparisonResult EntityChangeSet(IEntityBase newValue, IEntityBase originValue)
+        protected virtual BsonDiffResult EntityChangeSet(IEntityBase newValue, IEntityBase originValue, Type? typeHint = null)
         {
-            return BsonDataComparer.Compare(newValue, originValue, BsonComparisonMode.FastMode, newValue.GetType());
+            // 处理null情况
+            if (newValue == null && originValue == null)
+            {
+                return new BsonDiffResult { AreEqual = true };
+            }
+            if (newValue == null || originValue == null)
+            {
+                return new BsonDiffResult { AreEqual = false };
+            }
+
+            // 如果提供了类型提示，使用它来获得更好的性能
+            if (typeHint != null)
+            {
+                var cachedMethod = EntityChangeSetMethodCache.GetOrAdd(typeHint, type => EntityChangeSetMethod.MakeGenericMethod(type));
+                return (BsonDiffResult)cachedMethod.Invoke(null, [newValue, originValue]);
+            }
+
+            // 否则使用实际类型
+            var actualType = newValue.GetType();
+            if (actualType != originValue.GetType())
+            {
+                return new BsonDiffResult { AreEqual = false };
+            }
+
+            var cachedActualMethod = EntityChangeSetMethodCache.GetOrAdd(actualType, type => EntityChangeSetMethod.MakeGenericMethod(type));
+            return (BsonDiffResult)cachedActualMethod.Invoke(null, [newValue, originValue]);
+        }
+
+        /// <summary>
+        /// 泛型版本的实体变更检查，性能更好
+        /// </summary>
+        private static BsonDiffResult EntityChangeSet<T>(T newValue, T originValue) where T : IEntityBase
+        {
+            return BsonDataDiffer.Diff(newValue, originValue);
         }
 
         #region IDisposable Support
