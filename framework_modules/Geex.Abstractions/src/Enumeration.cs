@@ -680,14 +680,6 @@ namespace Geex
         }
     }
 
-
-    public interface IEnumeration : IStringPresentation
-    {
-        public static Dictionary<string, IEnumeration> ValueCacheDictionary = new Dictionary<string, IEnumeration>();
-        public string Name { get; }
-        public string Value { get; }
-    }
-
     public static class EnumerationExtensions
     {
         public static IEnumerable<Type> GetClassEnumBases(this Type classEnumType)

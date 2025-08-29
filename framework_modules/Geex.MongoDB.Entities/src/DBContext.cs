@@ -12,7 +12,7 @@ using FastExpressionCompiler;
 
 using Force.DeepCloner;
 
-using KellermanSoftware.CompareNetObjects;
+
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,7 +41,7 @@ namespace MongoDB.Entities
     {
         static DbContext()
         {
-            DbContext._compareLogic.Config.CustomComparers.Add(new JsonNodeComparer(RootComparerFactory.GetRootComparer()));
+            // Initialize static resources if needed
             //TypeAdapterConfig.GlobalSettings.Default.Settings.ShouldMapMember.Add((model, side) =>
             //    model.SetterModifier.HasFlag(AccessModifier.Public | AccessModifier.Protected | AccessModifier.Internal) && !model.Type.IsValueType);
             //var assembly = Assembly.GetAssembly(typeof(DeepClonerExtensions));
@@ -679,25 +679,14 @@ namespace MongoDB.Entities
         /// <param name="newValue"></param>
         /// <param name="originValue"></param>
         /// <returns></returns>
-        protected virtual ComparisonResult EntityChangeSet(IEntityBase newValue, IEntityBase originValue)
+        protected virtual BsonComparisonResult EntityChangeSet(IEntityBase newValue, IEntityBase originValue)
         {
-            return _compareLogic.Compare(newValue, originValue);
+            return BsonDataComparer.Compare(newValue, originValue, BsonComparisonMode.FastMode, newValue.GetType());
         }
 
         #region IDisposable Support
 
         private bool disposedValue;
-        protected static CompareLogic _compareLogic = new CompareLogic(new ComparisonConfig()
-        {
-            CompareFields = false,
-            CompareReadOnly = false,
-            CompareStaticFields = false,
-            CompareStaticProperties = false,
-            MaxStructDepth = 5,
-            Caching = true,
-            AutoClearCache = false,
-            IgnoreLogicGetters = true,
-        });
 
         protected virtual void Dispose(bool disposing)
         {

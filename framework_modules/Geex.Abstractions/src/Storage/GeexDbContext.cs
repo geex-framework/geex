@@ -28,8 +28,8 @@ namespace Geex.Storage
     {
         static GeexDbContext()
         {
-            DbContext._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
-            DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
+            //DbContext._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
+            //DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
             DbContext.saveMethod = typeof(GeexCommonAbstractionStorageExtensions).GetMethods().First(x => x.Name == nameof(GeexCommonAbstractionStorageExtensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         }
 
