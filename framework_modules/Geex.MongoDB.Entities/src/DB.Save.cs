@@ -573,7 +573,7 @@ namespace MongoDB.Entities
         /// </summary>
         private static object GetMemberValue(object obj, BsonMemberMap memberMap)
         {
-            return MemberAccessorCache.GetValue(obj, memberMap);
+            return MemberReflectionCache.GetValue(obj, memberMap);
         }
 
         /// <summary>
@@ -581,7 +581,7 @@ namespace MongoDB.Entities
         /// </summary>
         private static void SetMemberValue(object obj, BsonMemberMap memberMap, object value)
         {
-            MemberAccessorCache.SetValue(obj, memberMap, value);
+            MemberReflectionCache.SetValue(obj, memberMap, value);
         }
     }
 }

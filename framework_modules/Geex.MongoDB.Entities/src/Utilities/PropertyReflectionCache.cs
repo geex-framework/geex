@@ -8,33 +8,96 @@ using MongoDB.Entities.Interceptors;
 namespace MongoDB.Entities.Utilities
 {
     /// <summary>
-    /// 泛型属性访问器，用于高性能的泛型类型属性访问
+    /// 高性能属性键结构体，避免元组GC压力
+    /// </summary>
+    internal readonly struct PropertyKey : IEquatable<PropertyKey>
+    {
+        public readonly Type GenericType;
+        public readonly Type TypeArgument;
+        public readonly string PropertyName;
+        public readonly int HashCode;
+
+        public PropertyKey(Type genericType, Type typeArgument, string propertyName)
+        {
+            GenericType = genericType;
+            TypeArgument = typeArgument;
+            PropertyName = propertyName;
+            HashCode = System.HashCode.Combine(genericType, typeArgument, propertyName);
+        }
+
+        public bool Equals(PropertyKey other) =>
+            GenericType == other.GenericType &&
+            TypeArgument == other.TypeArgument &&
+            PropertyName == other.PropertyName;
+
+        public override bool Equals(object obj) => obj is PropertyKey key && Equals(key);
+        public override int GetHashCode() => HashCode;
+    }
+
+    /// <summary>
+    /// 双类型键结构体
+    /// </summary>
+    internal readonly struct TypePairKey : IEquatable<TypePairKey>
+    {
+        public readonly Type Type1;
+        public readonly Type Type2;
+        public readonly int HashCode;
+
+        public TypePairKey(Type type1, Type type2)
+        {
+            Type1 = type1;
+            Type2 = type2;
+            HashCode = System.HashCode.Combine(type1, type2);
+        }
+
+        public bool Equals(TypePairKey other) => Type1 == other.Type1 && Type2 == other.Type2;
+        public override bool Equals(object obj) => obj is TypePairKey key && Equals(key);
+        public override int GetHashCode() => HashCode;
+    }
+
+    /// <summary>
+    /// 类型字符串键结构体
+    /// </summary>
+    internal readonly struct TypeStringKey : IEquatable<TypeStringKey>
+    {
+        public readonly Type Type;
+        public readonly string Text;
+        public readonly int HashCode;
+
+        public TypeStringKey(Type type, string text)
+        {
+            Type = type;
+            Text = text;
+            HashCode = System.HashCode.Combine(type, text);
+        }
+
+        public bool Equals(TypeStringKey other) => Type == other.Type && Text == other.Text;
+        public override bool Equals(object obj) => obj is TypeStringKey key && Equals(key);
+        public override int GetHashCode() => HashCode;
+    }
+
+    /// <summary>
+    /// 属性反射缓存，用于高性能的泛型类型属性访问
     /// </summary>
     public static class PropertyReflectionCache
     {
         /// <summary>
-        /// 泛型类型属性访问器缓存
-        /// Key: (泛型定义类型, 泛型参数类型, 属性名)
-        /// Value: 编译的属性访问委托
+        /// 泛型类型属性访问器缓存 - 使用高性能键结构体
         /// </summary>
-        private static readonly ConcurrentDictionary<(Type, Type, string), Func<object, object>>
-            _propertyAccessorCache = new ConcurrentDictionary<(Type, Type, string), Func<object, object>>();
+        private static readonly ConcurrentDictionary<PropertyKey, Func<object, object>>
+            _propertyAccessorCache = new ConcurrentDictionary<PropertyKey, Func<object, object>>();
 
         /// <summary>
-        /// 泛型类型信息缓存
-        /// Key: (泛型定义类型, 泛型参数类型)
-        /// Value: 构造的泛型类型
+        /// 泛型类型信息缓存 - 使用高性能键结构体
         /// </summary>
-        private static readonly ConcurrentDictionary<(Type, Type), Type>
-            _genericTypeCache = new ConcurrentDictionary<(Type, Type), Type>();
+        private static readonly ConcurrentDictionary<TypePairKey, Type>
+            _genericTypeCache = new ConcurrentDictionary<TypePairKey, Type>();
 
         /// <summary>
-        /// 属性信息缓存
-        /// Key: (类型, 属性名)
-        /// Value: PropertyInfo
+        /// 属性信息缓存 - 使用高性能键结构体
         /// </summary>
-        private static readonly ConcurrentDictionary<(Type, string), PropertyInfo>
-            _propertyInfoCache = new ConcurrentDictionary<(Type, string), PropertyInfo>();
+        private static readonly ConcurrentDictionary<TypeStringKey, PropertyInfo>
+            _propertyInfoCache = new ConcurrentDictionary<TypeStringKey, PropertyInfo>();
 
         /// <summary>
         /// 高性能获取泛型类型的属性值
@@ -47,7 +110,7 @@ namespace MongoDB.Entities.Utilities
         public static object GetGenericPropertyValue(Type genericTypeDefinition, Type typeArgument,
             string propertyName, object instance)
         {
-            var key = (genericTypeDefinition, typeArgument, propertyName);
+            var key = new PropertyKey(genericTypeDefinition, typeArgument, propertyName);
             var accessor = _propertyAccessorCache.GetOrAdd(key, CreatePropertyAccessor);
             return accessor(instance);
         }
@@ -67,8 +130,8 @@ namespace MongoDB.Entities.Utilities
         /// </summary>
         public static Type GetGenericType(Type genericTypeDefinition, Type typeArgument)
         {
-            var key = (genericTypeDefinition, typeArgument);
-            return _genericTypeCache.GetOrAdd(key, k => k.Item1.MakeGenericType(k.Item2));
+            var key = new TypePairKey(genericTypeDefinition, typeArgument);
+            return _genericTypeCache.GetOrAdd(key, k => k.Type1.MakeGenericType(k.Type2));
         }
 
         /// <summary>
@@ -76,22 +139,20 @@ namespace MongoDB.Entities.Utilities
         /// </summary>
         public static PropertyInfo GetPropertyInfo(Type type, string propertyName)
         {
-            var key = (type, propertyName);
-            return _propertyInfoCache.GetOrAdd(key, k => k.Item1.GetProperty(k.Item2));
+            var key = new TypeStringKey(type, propertyName);
+            return _propertyInfoCache.GetOrAdd(key, k => k.Type.GetProperty(k.Text));
         }
 
         /// <summary>
         /// 创建编译的属性访问器
         /// </summary>
-        private static Func<object, object> CreatePropertyAccessor((Type, Type, string) key)
+        private static Func<object, object> CreatePropertyAccessor(PropertyKey key)
         {
-            var (genericTypeDefinition, typeArgument, propertyName) = key;
-
             try
             {
                 // 获取具体的泛型类型
-                var concreteType = GetGenericType(genericTypeDefinition, typeArgument);
-                var propertyInfo = GetPropertyInfo(concreteType, propertyName);
+                var concreteType = GetGenericType(key.GenericType, key.TypeArgument);
+                var propertyInfo = GetPropertyInfo(concreteType, key.PropertyName);
 
                 if (propertyInfo == null)
                 {
@@ -117,16 +178,14 @@ namespace MongoDB.Entities.Utilities
         /// <summary>
         /// 创建基于反射的属性访问器（回退方案）
         /// </summary>
-        private static Func<object, object> CreateReflectionBasedAccessor((Type, Type, string) key)
+        private static Func<object, object> CreateReflectionBasedAccessor(PropertyKey key)
         {
-            var (genericTypeDefinition, typeArgument, propertyName) = key;
-
             return instance =>
             {
                 try
                 {
-                    var concreteType = GetGenericType(genericTypeDefinition, typeArgument);
-                    var propertyInfo = GetPropertyInfo(concreteType, propertyName);
+                    var concreteType = GetGenericType(key.GenericType, key.TypeArgument);
+                    var propertyInfo = GetPropertyInfo(concreteType, key.PropertyName);
                     return propertyInfo?.GetValue(instance);
                 }
                 catch

@@ -10,14 +10,14 @@ using MongoDB.Bson.Serialization;
 namespace MongoDB.Entities.Utilities
 {
     /// <summary>
-    /// 基于表达式编译的成员访问器实现
+    /// 基于表达式编译的成员反射访问器
     /// </summary>
-    public class MemberAccessor
+    public class MemberReflectionAccessor
     {
         private readonly Func<object, object> _getter;
         private readonly Action<object, object> _setter;
 
-        public MemberAccessor(MemberInfo memberInfo)
+        public MemberReflectionAccessor(MemberInfo memberInfo)
         {
             _getter = CreateGetter(memberInfo);
             _setter = CreateSetter(memberInfo);
@@ -77,25 +77,25 @@ namespace MongoDB.Entities.Utilities
     }
 
     /// <summary>
-    /// 成员访问器缓存，提供高性能的成员访问
+    /// 成员反射缓存，提供高性能的成员访问
     /// </summary>
-    public static class MemberAccessorCache
+    public static class MemberReflectionCache
     {
-        private static readonly ConcurrentDictionary<MemberInfo, MemberAccessor> _accessorCache
-            = new ConcurrentDictionary<MemberInfo, MemberAccessor>();
+        private static readonly ConcurrentDictionary<MemberInfo, MemberReflectionAccessor> _accessorCache
+            = new ConcurrentDictionary<MemberInfo, MemberReflectionAccessor>();
 
         /// <summary>
         /// 获取或创建成员访问器
         /// </summary>
-        public static MemberAccessor GetAccessor(MemberInfo memberInfo)
+        public static MemberReflectionAccessor GetAccessor(MemberInfo memberInfo)
         {
-            return _accessorCache.GetOrAdd(memberInfo, info => new MemberAccessor(info));
+            return _accessorCache.GetOrAdd(memberInfo, info => new MemberReflectionAccessor(info));
         }
 
         /// <summary>
         /// 获取或创建成员访问器（通过BsonMemberMap）
         /// </summary>
-        public static MemberAccessor GetAccessor(BsonMemberMap memberMap)
+        public static MemberReflectionAccessor GetAccessor(BsonMemberMap memberMap)
         {
             return GetAccessor(memberMap.MemberInfo);
         }

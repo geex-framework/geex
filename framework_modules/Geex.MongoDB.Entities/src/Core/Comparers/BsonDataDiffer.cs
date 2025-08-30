@@ -341,6 +341,17 @@ namespace MongoDB.Entities.Core.Comparers
         private static readonly ConcurrentDictionary<Type, bool> _isSimpleTypeCache = new();
         private static readonly ConcurrentDictionary<Type, Func<object, object, bool>> _equalityComparerCache = new();
         private static readonly ConcurrentDictionary<Type, MethodInfo> _diffMethodCache = new();
+        
+        // 预编译常用类型的比较委托，减少反射调用
+        private static readonly ConcurrentDictionary<Type, Func<object, object, bool>> _fastComparerCache = new();
+        
+        // 常用类型的预编译比较器
+        private static readonly Func<object, object, bool> StringComparer = (a, b) => string.Equals((string)a, (string)b);
+        private static readonly Func<object, object, bool> IntComparer = (a, b) => (int)a == (int)b;
+        private static readonly Func<object, object, bool> LongComparer = (a, b) => (long)a == (long)b;
+        private static readonly Func<object, object, bool> BoolComparer = (a, b) => (bool)a == (bool)b;
+        private static readonly Func<object, object, bool> DateTimeComparer = (a, b) => (DateTime)a == (DateTime)b;
+        private static readonly Func<object, object, bool> DateTimeOffsetComparer = (a, b) => (DateTimeOffset)a == (DateTimeOffset)b;
 
         /// <summary>
         /// 清理缓存
@@ -350,6 +361,7 @@ namespace MongoDB.Entities.Core.Comparers
             _isSimpleTypeCache.Clear();
             _equalityComparerCache.Clear();
             _diffMethodCache.Clear();
+            _fastComparerCache.Clear();
         }
 
         /// <summary>
@@ -515,8 +527,8 @@ namespace MongoDB.Entities.Core.Comparers
 
                 try
                 {
-                    var baseValue = MemberAccessorCache.GetValue(baseObj, memberMap);
-                    var newValue = MemberAccessorCache.GetValue(newObj, memberMap);
+                    var baseValue = MemberReflectionCache.GetValue(baseObj, memberMap);
+                    var newValue = MemberReflectionCache.GetValue(newObj, memberMap);
 
                     // 使用高效的相等性比较
                     if (!AreValuesEqual(baseValue, newValue, memberMap.MemberType))
@@ -554,9 +566,36 @@ namespace MongoDB.Entities.Core.Comparers
                 return basicCheckResult.Value;
             }
 
+            // 首先尝试使用快速比较器
+            var fastComparer = GetFastComparer(type);
+            if (fastComparer != null)
+            {
+                return fastComparer(baseObj, newObj);
+            }
+
             // 获取或创建高效的比较器
             var comparer = _equalityComparerCache.GetOrAdd(type, CreateEqualityComparer);
             return comparer(baseObj, newObj);
+        }
+
+        /// <summary>
+        /// 获取预编译的快速比较器
+        /// </summary>
+        private static Func<object, object, bool> GetFastComparer(Type type)
+        {
+            return _fastComparerCache.GetOrAdd(type, t =>
+            {
+                return t switch
+                {
+                    Type when t == typeof(string) => StringComparer,
+                    Type when t == typeof(int) => IntComparer,
+                    Type when t == typeof(long) => LongComparer,
+                    Type when t == typeof(bool) => BoolComparer,
+                    Type when t == typeof(DateTime) => DateTimeComparer,
+                    Type when t == typeof(DateTimeOffset) => DateTimeOffsetComparer,
+                    _ => null
+                };
+            });
         }
 
         /// <summary>
