@@ -629,7 +629,7 @@ namespace MongoDB.Entities
                             {
                                 Session.StartTransaction();
                             }
-                            var saveTask = GenericMethodCache.InvokeStaticGenericMethod(
+                            var saveTask = MethodReflectionCache.InvokeStaticGenericMethod(
                                 saveMethod, type, list, this, cancellation);
                             if (saveTask is Task task)
                             {
@@ -696,7 +696,7 @@ namespace MongoDB.Entities
                 return new BsonDiffResult { AreEqual = false };
             }
 
-            return (BsonDiffResult)GenericMethodCache.InvokeGenericMethod(
+            return (BsonDiffResult)MethodReflectionCache.InvokeGenericMethod(
                 DiffMethod, actualType, this, baseValue, newValue, mode);
         }
 

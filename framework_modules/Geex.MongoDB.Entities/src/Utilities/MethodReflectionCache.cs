@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -10,9 +11,9 @@ namespace MongoDB.Entities.Utilities
     /// <summary>
     /// 泛型方法调用缓存，用于优化高频的泛型方法调用
     /// </summary>
-    public static class GenericMethodCache
+    public static class MethodReflectionCache
     {
-        private static readonly ConcurrentDictionary<(MethodInfo, Type), MethodInfo> _methodCache = 
+        private static readonly ConcurrentDictionary<(MethodInfo, Type), MethodInfo> _methodCache =
             new ConcurrentDictionary<(MethodInfo, Type), MethodInfo>();
 
         private static readonly ConcurrentDictionary<(MethodInfo, Type), Func<object, object[], object>> _compiledInvokerCache =
@@ -26,6 +27,24 @@ namespace MongoDB.Entities.Utilities
             var key = (genericMethodDefinition, typeArgument);
             return _methodCache.GetOrAdd(key, k => k.Item1.MakeGenericMethod(k.Item2));
         }
+
+        /// <summary>
+        /// 获取多个泛型参数的泛型方法（缓存版本）
+        /// </summary>
+        public static MethodInfo GetGenericMethod(MethodInfo genericMethodDefinition, params Type[] typeArguments)
+        {
+            if (typeArguments.Length == 1)
+            {
+                return GetGenericMethod(genericMethodDefinition, typeArguments[0]);
+            }
+
+            // 为多个泛型参数创建复合键
+            var key = (genericMethodDefinition, string.Join(",", typeArguments.Select(t => t.FullName)));
+            return _multiParamMethodCache.GetOrAdd(key, k => k.Item1.MakeGenericMethod(typeArguments));
+        }
+
+        private static readonly ConcurrentDictionary<(MethodInfo, string), MethodInfo> _multiParamMethodCache =
+            new ConcurrentDictionary<(MethodInfo, string), MethodInfo>();
 
         /// <summary>
         /// 获取编译的方法调用器
@@ -79,8 +98,8 @@ namespace MongoDB.Entities.Utilities
                 }
 
                 var lambda = Expression.Lambda<Func<object, object[], object>>(
-                    resultExpression, 
-                    targetParam, 
+                    resultExpression,
+                    targetParam,
                     argsParam);
 
                 return lambda.CompileFast();
@@ -115,6 +134,7 @@ namespace MongoDB.Entities.Utilities
         public static void ClearCache()
         {
             _methodCache.Clear();
+            _multiParamMethodCache.Clear();
             _compiledInvokerCache.Clear();
         }
     }
@@ -139,8 +159,8 @@ namespace MongoDB.Entities.Utilities
         private static TDelegate CreateDelegate((MethodInfo, Type) key)
         {
             var (genericMethodDefinition, typeArgument) = key;
-            var method = GenericMethodCache.GetGenericMethod(genericMethodDefinition, typeArgument);
-            
+            var method = MethodReflectionCache.GetGenericMethod(genericMethodDefinition, typeArgument);
+
             try
             {
                 return (TDelegate)Delegate.CreateDelegate(typeof(TDelegate), method);

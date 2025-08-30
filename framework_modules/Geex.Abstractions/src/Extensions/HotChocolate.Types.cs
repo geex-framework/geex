@@ -9,6 +9,7 @@ using Geex.Gql;
 using Geex.Gql.Types;
 using Geex.Gql.Types.Scalars;
 using Geex.Storage;
+using Geex.Utilities;
 using HotChocolate.Data.Filters;
 using HotChocolate.Execution.Configuration;
 using HotChocolate.Types.Descriptors;
@@ -34,8 +35,8 @@ namespace HotChocolate.Types
         {
             if (descriptor == null)
                 throw new ArgumentNullException(nameof(descriptor));
-            // specialname过滤属性
-            foreach (var method in typeof(T).GetMethods().Where(x => !x.IsSpecialName))
+            // specialname过滤属性 - 使用缓存的方法获取
+            foreach (var method in HotChocolateReflectionCache.GetNonSpecialMethods(typeof(T)))
             {
                 if (method.ReturnType != typeof(void))
                 {
@@ -57,8 +58,8 @@ namespace HotChocolate.Types
         {
             if (descriptor == null)
                 throw new ArgumentNullException(nameof(descriptor));
-            // specialname过滤属性
-            foreach (var method in typeof(T).GetMethods().Where(x => !x.IsSpecialName))
+            // specialname过滤属性 - 使用缓存的方法获取
+            foreach (var method in HotChocolateReflectionCache.GetNonSpecialMethods(typeof(T)))
             {
                 descriptor.Field(method).Ignore();
             }
@@ -101,10 +102,9 @@ namespace HotChocolate.Types
         //    return prefix;
         //}
 
-        private static MethodInfo GetFieldsMethodInfo = typeof(ObjectTypeDescriptor).GetProperty("Fields", BindingFlags.NonPublic | BindingFlags.Instance).GetMethod;
         public static ICollection<ObjectFieldDescriptor> GetFields<T>(this IObjectTypeDescriptor<T> descriptor)
         {
-            return GetFieldsMethodInfo.Invoke(descriptor, new object?[] { }) as ICollection<ObjectFieldDescriptor>;
+            return HotChocolateReflectionCache.GetFields(descriptor);
         }
 
         /// <summary>
@@ -113,11 +113,12 @@ namespace HotChocolate.Types
         internal static void IgnoreExtensionFields<T>(this IObjectTypeDescriptor<T> descriptor)
         {
             var type = typeof(T);
-            descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.Kind))).Ignore();
-            descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.Scope))).Ignore();
-            descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.Name))).Ignore();
-            descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.Description))).Ignore();
-            descriptor.Field(type.GetProperty(nameof(ObjectTypeExtension.ContextData))).Ignore();
+            var extensionProperties = HotChocolateReflectionCache.GetExtensionProperties(type);
+            
+            foreach (var property in extensionProperties.Values)
+            {
+                descriptor.Field(property).Ignore();
+            }
         }
 
         /// <summary>

@@ -164,7 +164,8 @@ namespace MongoDB.Entities.Utilities
                 var rootType = typeof(TEntity).GetRootBsonClassMap().ClassType;
                 if (rootType != typeof(TEntity))
                 {
-                    root = Expression.Call(QueryableOfTypeMethod.MakeGenericMethod(typeof(TEntity)), root);
+                    var ofTypeMethod = MethodReflectionCache.GetGenericMethod(QueryableOfTypeMethod, typeof(TEntity));
+                    root = Expression.Call(ofTypeMethod, root);
                 }
                 this.ItemType = root.Type.GenericTypeArguments[0];
                 stages.Add(root);
@@ -175,27 +176,23 @@ namespace MongoDB.Entities.Utilities
                     // 统一每一个stage的参数类型到具体类, 接口转换实现类
                     if (stages[i] is MethodCallExpression mce)
                     {
-                        var genericArgs = mce.Method.GetGenericArguments();
+                        var mceMethod = mce.Method;
+                        var genericArgs = mceMethod.GetGenericArguments();
                         if (genericArgs.Any(x => x.IsAssignableFrom(ItemType)))
                         {
-                            MethodInfo method;
-                            if (mce.Method.IsGenericMethod)
-                                method = mce.Method.GetGenericMethodDefinition().MakeGenericMethod(mce.Method
-                                    .GetGenericArguments().Select(x =>
-                                    {
-                                        if (x.IsAssignableFrom(ItemType))
-                                            return ItemType;
-                                        else
-                                            return x;
-                                    })
-                                    .ToArray());
+                            MethodInfo actualMethod;
+                            if (mceMethod.IsGenericMethod)
+                            {
+                                genericArgs = genericArgs.Select(x => x.IsAssignableFrom(ItemType) ? ItemType : x).ToArray();
+                                actualMethod = MethodReflectionCache.GetGenericMethod(mceMethod.GetGenericMethodDefinition(), genericArgs);
+                            }
                             else
-                                method = mce.Method;
+                                actualMethod = mceMethod;
                             var source = stages[i - 1];
                             var expression = mce.Arguments.ElementAtOrDefault(1);
                             if (expression == null)
                             {
-                                stages[i] = Expression.Call(method, source);
+                                stages[i] = Expression.Call(actualMethod, source);
 
                             }
                             else
@@ -204,7 +201,7 @@ namespace MongoDB.Entities.Utilities
                                 {
                                     expression = Expression.MakeUnary(unary.NodeType, lambda.CastParamType(this.ItemType), unary.Type);
                                 }
-                                stages[i] = Expression.Call(method, source, expression);
+                                stages[i] = Expression.Call(actualMethod, source, expression);
                             }
                         }
                     }
@@ -223,21 +220,25 @@ namespace MongoDB.Entities.Utilities
                 if (lastStageFilter is UnaryExpression unary && unary?.Operand is LambdaExpression lambda &&
                     lambda.Parameters.Any(x => x.Type.IsAssignableFrom(ItemType)))
                 {
-                    lastStageFilter = Expression.Call(QueryableWhereMethod.MakeGenericMethod(ItemType),
-                        mce2.Arguments[0], lambda.CastParamType(this.ItemType));
+                    var whereMethod = MethodReflectionCache.GetGenericMethod(QueryableWhereMethod, ItemType);
+                    var mce2Argument = mce2.Arguments[0];
+                    lastStageFilter = Expression.Call(whereMethod,
+                        mce2Argument, lambda.CastParamType(this.ItemType));
+
                     mce2 = mce2.Method.Name switch
                     {
-                        Q.First => Expression.Call(QueryableFirstMethod.MakeGenericMethod(ItemType),
-                            mce2.Arguments[0]),
+                        Q.First => Expression.Call(MethodReflectionCache.GetGenericMethod(QueryableFirstMethod, ItemType),
+                            mce2Argument),
                         Q.FirstOrDefault => Expression.Call(
-                            QueryableFirstOrDefaultMethod.MakeGenericMethod(ItemType), mce2.Arguments[0]),
-                        Q.Single => Expression.Call(QueryableSingleMethod.MakeGenericMethod(ItemType),
-                            mce2.Arguments[0]),
+                            MethodReflectionCache.GetGenericMethod(QueryableFirstOrDefaultMethod, ItemType), mce2Argument),
+                        Q.Single => Expression.Call(MethodReflectionCache.GetGenericMethod(QueryableSingleMethod, ItemType),
+                            mce2Argument),
                         Q.SingleOrDefault => Expression.Call(
-                            QueryableSingleOrDefaultMethod.MakeGenericMethod(ItemType), mce2.Arguments[0]),
+                            MethodReflectionCache.GetGenericMethod(QueryableSingleOrDefaultMethod, ItemType), mce2Argument),
                         _ => throw new ArgumentOutOfRangeException()
                     };
-                    stages = stages.SkipLast(1).Concat(new[] { lastStageFilter, mce2 }).ToList();
+                    stages.RemoveAt(stages.Count - 1);
+                    stages.AddRange(lastStageFilter, mce2);
                 }
             }
 
@@ -258,25 +259,26 @@ namespace MongoDB.Entities.Utilities
 
             if (lastStage is MethodCallExpression { Method.Name: Q.Count or Q.LongCount or Q.Any or Q.Sum or Q.Min or Q.MinBy or Q.Average or Q.Max or Q.MaxBy or Q.First or Q.FirstOrDefault or Q.Single or Q.SingleOrDefault } mce1)
             {
+                var selectStage = stages.ElementAtOrDefault(stages.Count - 2);
                 if (this.IsGroupBySelectPattern)
                 {
                     // 对于GroupBy().Select().Execute()模式，将GroupBy().Select()作为整体处理
-                    PreSelectExpression = stages.ElementAtOrDefault(stages.Count - 2);
+                    PreSelectExpression = selectStage;
                     PostSelectExpression = null;
                 }
                 else if (selectIndex == -1)
                 {
-                    PreSelectExpression = stages.ElementAtOrDefault(stages.Count - 2);
+                    PreSelectExpression = selectStage;
                 }
                 else
                 {
                     PreSelectExpression = stages[selectIndex - 1];
                     if (stages.Count - 1 > selectIndex)
                     {
-                        PostSelectExpression = stages.ElementAtOrDefault(stages.Count - 2);
+                        PostSelectExpression = selectStage;
                     }
                 }
-                PreExecuteExpression = stages.ElementAtOrDefault(stages.Count - 2);
+                PreExecuteExpression = selectStage;
                 ExecuteExpression = mce1;
             }
             else

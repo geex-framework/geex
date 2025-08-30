@@ -10,23 +10,14 @@ using MongoDB.Bson.Serialization;
 namespace MongoDB.Entities.Utilities
 {
     /// <summary>
-    /// 成员访问器接口，用于高性能的成员访问
-    /// </summary>
-    public interface IMemberAccessor
-    {
-        object GetValue(object obj);
-        void SetValue(object obj, object value);
-    }
-
-    /// <summary>
     /// 基于表达式编译的成员访问器实现
     /// </summary>
-    public class CompiledMemberAccessor : IMemberAccessor
+    public class MemberAccessor
     {
         private readonly Func<object, object> _getter;
         private readonly Action<object, object> _setter;
 
-        public CompiledMemberAccessor(MemberInfo memberInfo)
+        public MemberAccessor(MemberInfo memberInfo)
         {
             _getter = CreateGetter(memberInfo);
             _setter = CreateSetter(memberInfo);
@@ -49,7 +40,7 @@ namespace MongoDB.Entities.Utilities
 
             var resultCast = Expression.Convert(memberAccess, typeof(object));
             var lambda = Expression.Lambda<Func<object, object>>(resultCast, objParam);
-            
+
             return lambda.CompileFast();
         }
 
@@ -80,7 +71,7 @@ namespace MongoDB.Entities.Utilities
 
             var assignment = Expression.Assign(memberAccess, valueCast);
             var lambda = Expression.Lambda<Action<object, object>>(assignment, objParam, valueParam);
-            
+
             return lambda.CompileFast();
         }
     }
@@ -90,21 +81,21 @@ namespace MongoDB.Entities.Utilities
     /// </summary>
     public static class MemberAccessorCache
     {
-        private static readonly ConcurrentDictionary<MemberInfo, IMemberAccessor> _accessorCache 
-            = new ConcurrentDictionary<MemberInfo, IMemberAccessor>();
+        private static readonly ConcurrentDictionary<MemberInfo, MemberAccessor> _accessorCache
+            = new ConcurrentDictionary<MemberInfo, MemberAccessor>();
 
         /// <summary>
         /// 获取或创建成员访问器
         /// </summary>
-        public static IMemberAccessor GetAccessor(MemberInfo memberInfo)
+        public static MemberAccessor GetAccessor(MemberInfo memberInfo)
         {
-            return _accessorCache.GetOrAdd(memberInfo, info => new CompiledMemberAccessor(info));
+            return _accessorCache.GetOrAdd(memberInfo, info => new MemberAccessor(info));
         }
 
         /// <summary>
         /// 获取或创建成员访问器（通过BsonMemberMap）
         /// </summary>
-        public static IMemberAccessor GetAccessor(BsonMemberMap memberMap)
+        public static MemberAccessor GetAccessor(BsonMemberMap memberMap)
         {
             return GetAccessor(memberMap.MemberInfo);
         }

@@ -76,15 +76,15 @@ namespace System.Linq
             {
                 return queryable;
             }
-            var generic = _queryableOfTypeMethod.MakeGenericMethod(new[] { runtimeType });
-            return (IQueryable<TSource>)generic.Invoke(null, new[] { queryable });
+            return (IQueryable<TSource>)MethodReflectionCache.InvokeStaticGenericMethod(
+                _queryableOfTypeMethod, runtimeType, queryable);
         }
 
         public static IQueryable OfType(this IQueryable queryable,
         Type runtimeType)
         {
-            var generic = _queryableOfTypeMethod.MakeGenericMethod(new[] { runtimeType });
-            return (IQueryable)generic.Invoke(null, new[] { queryable });
+            return (IQueryable)MethodReflectionCache.InvokeStaticGenericMethod(
+                _queryableOfTypeMethod, runtimeType, queryable);
         }
 
         public static IEnumerable<TSource> OfType<TSource>(this IEnumerable<TSource> enumerable,
@@ -94,8 +94,8 @@ namespace System.Linq
             {
                 return enumerable;
             }
-            var generic = _enumerableOfTypeMethod.MakeGenericMethod(new[] { runtimeType });
-            return (IEnumerable<TSource>)generic.Invoke(null, new[] { enumerable });
+            return (IEnumerable<TSource>)MethodReflectionCache.InvokeStaticGenericMethod(
+                _enumerableOfTypeMethod, runtimeType, enumerable);
         }
 
         public static IQueryable<TSource> Cast<TSource>(this IQueryable<TSource> queryable,
@@ -105,24 +105,24 @@ namespace System.Linq
             {
                 return queryable;
             }
-            var generic = _queryableCastMethod.MakeGenericMethod(new[] { runtimeType });
-            return (IQueryable<TSource>)generic.Invoke(null, new[] { queryable });
+            return (IQueryable<TSource>)MethodReflectionCache.InvokeStaticGenericMethod(
+                _queryableCastMethod, runtimeType, queryable);
         }
 
         public static IQueryable Cast(this IQueryable queryable,
         Type runtimeType)
         {
-            var generic = _queryableCastMethod.MakeGenericMethod(new[] { runtimeType });
-            return (IQueryable)generic.Invoke(null, new[] { queryable });
+            return (IQueryable)MethodReflectionCache.InvokeStaticGenericMethod(
+                _queryableCastMethod, runtimeType, queryable);
         }
 
         public static IEnumerable Cast<TTarget>(this IEnumerable<TTarget> enumerable,
         Type runtimeType)
         {
-            var castMethdo = _enumerableCastMethod.MakeGenericMethod(new[] { runtimeType });
-            var toListMethod = _enumerableToListMethod.MakeGenericMethod(runtimeType);
-            var casted = (IEnumerable)castMethdo.Invoke(null, new[] { enumerable });
-            var list = (IEnumerable)toListMethod.Invoke(null, new[] { casted });
+            var casted = (IEnumerable)MethodReflectionCache.InvokeStaticGenericMethod(
+                _enumerableCastMethod, runtimeType, enumerable);
+            var list = (IEnumerable)MethodReflectionCache.InvokeStaticGenericMethod(
+                _enumerableToListMethod, runtimeType, casted);
             return list;
         }
 

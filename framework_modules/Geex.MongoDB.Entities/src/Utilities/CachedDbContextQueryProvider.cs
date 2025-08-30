@@ -56,10 +56,12 @@ namespace MongoDB.Entities.Utilities
                     {
                         if (targetType.IsAssignableFrom(typeof(T)))
                         {
-                            if (typeof(ExpressionDataFilter<>).MakeGenericType(targetType).GetProperty(nameof(ExpressionDataFilter<T>.PreFilterExpression))?.GetValue(value) is LambdaExpression originExpression)
+                            var originExpression = ExpressionDataFilterAccessor.GetPreFilterExpression(targetType, value);
+                            if (originExpression != null)
                             {
                                 var lambda = originExpression.CastParamType<T>();
-                                expression = Expression.Call(null, queryableWhereMethodInfo.MakeGenericMethod(typeof(T)), expression, lambda);
+                                var whereMethod = MethodReflectionCache.GetGenericMethod(queryableWhereMethodInfo, typeof(T));
+                                expression = Expression.Call(null, whereMethod, expression, lambda);
                             }
                         }
                     }
@@ -238,7 +240,7 @@ namespace MongoDB.Entities.Utilities
 
                         filterExpression = filterExpression.CastParamType(subQueryEntityType);
 
-                        var filteredQuery = (IQueryable)GenericMethodCache.InvokeStaticGenericMethod(
+                        var filteredQuery = (IQueryable)MethodReflectionCache.InvokeStaticGenericMethod(
                             queryableWhereMethodInfo, subQueryEntityType, allQuery, filterExpression);
 
                         var list = (IList)Activator.CreateInstance(listType, filteredQuery);

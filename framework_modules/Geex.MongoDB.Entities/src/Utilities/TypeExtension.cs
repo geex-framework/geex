@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using FastExpressionCompiler;
 
 namespace MongoDB.Entities.Utilities
@@ -62,13 +63,15 @@ namespace MongoDB.Entities.Utilities
                 return CacheFunc(key)(type, arg0, arg1, arg2);
         }
 
+        private static readonly MethodInfo CreateInstanceMethod = typeof(InstanceFactory)
+            .GetMethods()
+            .Where(m => m.Name == "CreateInstance")
+            .Where(m => m.GetParameters().Count() == 4).Single();
+
         private static CreateDelegate CacheFunc(Tuple<Type, Type, Type, Type> key)
         {
             var types = new Type[] { key.Item1, key.Item2, key.Item3, key.Item4 };
-            var method = typeof(InstanceFactory).GetMethods()
-                                                .Where(m => m.Name == "CreateInstance")
-                                                .Where(m => m.GetParameters().Count() == 4).Single();
-            var generic = method.MakeGenericMethod(new Type[] { key.Item2, key.Item3, key.Item4 });
+            var generic = MethodReflectionCache.GetGenericMethod(CreateInstanceMethod, key.Item2, key.Item3, key.Item4);
 
             var paramExpr = new List<ParameterExpression>();
             paramExpr.Add(Expression.Parameter(typeof(Type)));

@@ -167,9 +167,8 @@ namespace MongoDB.Entities.Utilities
                 {
                     if (targetType.IsAssignableFrom(_sourceType))
                     {
-                        if (typeof(ExpressionDataFilter<>).MakeGenericType(targetType)
-                                .GetProperty(nameof(ExpressionDataFilter<T>.PostFilterExpression))
-                                ?.GetValue(value) is LambdaExpression originExpression)
+                        var originExpression = ExpressionDataFilterAccessor.GetPostFilterExpression(targetType, value);
+                        if (originExpression != null)
                         {
                             var lambda = originExpression.CastParamType<TSelect>();
                             result = result.Where((Expression<Func<TSelect, bool>>)lambda);

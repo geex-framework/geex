@@ -5,6 +5,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
+using Geex.Utilities;
 
 namespace Geex.Bson
 {
@@ -19,13 +20,7 @@ namespace Geex.Bson
         private readonly BsonType _representation = BsonType.String;
         private readonly TypeCode _underlyingTypeCode;
 
-        // 缓存反射方法，避免重复反射调用
-        private static readonly Lazy<MethodInfo> _fromValueMethod = new Lazy<MethodInfo>(() =>
-        {
-            var enumerationType = typeof(Enumeration<>).MakeGenericType(typeof(TEnum));
-            var method = enumerationType.GetMethod(nameof(Enumeration.FromValue), genericParameterCount: 1, types: new[] { typeof(string) });
-            return method?.MakeGenericMethod(typeof(TEnum));
-        });
+
         /// <summary>
         ///
         /// </summary>
@@ -99,8 +94,8 @@ namespace Geex.Bson
                     throw this.CreateCannotDeserializeFromBsonTypeException(currentBsonType);
             }
 
-            // 使用缓存的反射方法
-            var result = _fromValueMethod.Value?.Invoke(null, new[] { data }) as TEnum;
+            // 使用优化的枚举创建方法
+            var result = EnumerationReflectionCache.FromValue<TEnum>(data?.ToString());
             return result;
         }
 
