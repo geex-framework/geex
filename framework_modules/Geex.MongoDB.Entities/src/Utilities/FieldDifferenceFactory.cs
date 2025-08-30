@@ -21,7 +21,7 @@ namespace MongoDB.Entities.Utilities
         // 常用表达式缓存，减少重复创建
         private static readonly ConcurrentDictionary<Type, ParameterExpression> _parameterCache = new();
         private static readonly ConcurrentDictionary<Type, NewExpression> _constructorCache = new();
-        
+
         // 预编译常用类型的工厂方法
         private static readonly ReadOnlyCollection<Expression> _emptyExpressions = new List<Expression>().AsReadOnly();
 
@@ -49,10 +49,10 @@ namespace MongoDB.Entities.Utilities
             var hasNewValueProp = differenceType.GetProperty(nameof(BsonFieldDifference<object>.HasNewValue));
 
             // 使用缓存的参数表达式，减少重复创建
-            var fieldNameParam = GetCachedParameter(typeof(string), "fieldName");
-            var baseValueParam = GetCachedParameter(typeof(object), "baseValue");
-            var newValueParam = GetCachedParameter(typeof(object), "newValue");
-            var memberMapParam = GetCachedParameter(typeof(BsonMemberMap), "memberMap");
+            var fieldNameParam = Expression.Parameter(typeof(string), "fieldName");
+            var baseValueParam = Expression.Parameter(typeof(object), "baseValue");
+            var newValueParam = Expression.Parameter(typeof(object), "newValue");
+            var memberMapParam = Expression.Parameter(typeof(BsonMemberMap), "memberMap");
 
             // 创建实例
             var newInstance = Expression.New(constructor);
@@ -118,21 +118,6 @@ namespace MongoDB.Entities.Utilities
 
                 return difference;
             };
-        }
-
-        /// <summary>
-        /// 获取缓存的参数表达式，减少重复创建
-        /// </summary>
-        private static ParameterExpression GetCachedParameter(Type type, string name)
-        {
-            // 对于常用的参数类型，使用缓存
-            if (type == typeof(string) || type == typeof(object) || type == typeof(BsonMemberMap))
-            {
-                return _parameterCache.GetOrAdd(type, t => Expression.Parameter(t, name));
-            }
-            
-            // 对于不常用的类型，直接创建
-            return Expression.Parameter(type, name);
         }
 
         /// <summary>

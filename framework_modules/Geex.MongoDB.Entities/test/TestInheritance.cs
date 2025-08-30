@@ -28,7 +28,7 @@ namespace MongoDB.Entities.Tests
         public async Task inheritance_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -71,7 +71,7 @@ namespace MongoDB.Entities.Tests
         public async Task cache_should_exist_after_queryable()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -188,7 +188,7 @@ namespace MongoDB.Entities.Tests
         public async Task batch_delete_should_remove_cache()
         {
             var dbContext = new DbContext();
-            await dbContext.Query<InheritanceEntity>().ToList().DeleteAsync();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             var testEntities = new List<InheritanceEntity>()
             {
                 new InheritanceEntity()
@@ -221,7 +221,7 @@ namespace MongoDB.Entities.Tests
         public async Task deleted_entity_should_be_filtered()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new InheritanceEntityChild()
@@ -247,7 +247,7 @@ namespace MongoDB.Entities.Tests
         public async Task commit_time_save_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             var testEntity = new InheritanceEntityChild()
             {
                 Name = "test"
@@ -279,7 +279,7 @@ namespace MongoDB.Entities.Tests
         public async Task commit_time_save_should_work1()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             var testEntity = new InheritanceEntityChild()
             {
                 Name = "test"
@@ -311,7 +311,7 @@ namespace MongoDB.Entities.Tests
         public async Task query_result_should_merge_local_cache_when_add()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -364,7 +364,7 @@ namespace MongoDB.Entities.Tests
         public async Task nested_query_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<NestedClass>();
+            await dbContext.DeleteTypedAsync<NestedClass>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -398,7 +398,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             {
-                await dbContext.DeleteAsync<InheritanceEntity>();
+                await dbContext.DeleteTypedAsync<InheritanceEntity>();
                 await dbContext.SaveChanges();
                 dbContext.Dispose();
                 dbContext = new DbContext();
@@ -452,7 +452,7 @@ namespace MongoDB.Entities.Tests
             var dbContext = new DbContext();
             //prepare
             {
-                await dbContext.DeleteAsync<InheritanceEntity>();
+                await dbContext.DeleteTypedAsync<InheritanceEntity>();
                 await dbContext.SaveChanges();
                 dbContext.Dispose();
                 dbContext = new DbContext();
@@ -497,7 +497,7 @@ namespace MongoDB.Entities.Tests
         public async Task query_result_should_merge_local_cache_when_delete()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -539,7 +539,7 @@ namespace MongoDB.Entities.Tests
         public async Task both_subTypeQuery_and_ofType_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -577,7 +577,7 @@ namespace MongoDB.Entities.Tests
         public async Task cache_performance_test()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -623,7 +623,7 @@ namespace MongoDB.Entities.Tests
         public async Task type_cast_in_detach_status_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -651,7 +651,7 @@ namespace MongoDB.Entities.Tests
         public async Task type_cast_in_attach_status_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -680,7 +680,7 @@ namespace MongoDB.Entities.Tests
         public async Task type_cast_in_saved_status_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -730,7 +730,7 @@ namespace MongoDB.Entities.Tests
         public async Task batch_type_cast_in_detach_status_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -765,7 +765,7 @@ namespace MongoDB.Entities.Tests
         public async Task batch_type_cast_in_attach_status_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -801,7 +801,7 @@ namespace MongoDB.Entities.Tests
         public async Task batch_type_cast_in_saved_status_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InheritanceEntity>();
+            await dbContext.DeleteTypedAsync<InheritanceEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();

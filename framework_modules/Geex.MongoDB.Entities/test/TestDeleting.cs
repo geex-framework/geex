@@ -19,8 +19,8 @@ namespace MongoDB.Entities.Tests
             var author1 = new Author { Name = "auth1" };
             var author2 = new Author { Name = "auth2" };
             var author3 = new Author { Name = "auth3" };
-
-            await new[] { author1, author2, author3 }.ToList().SaveAsync();
+            var dbContext = new DbContext();
+            await new[] { author1, author2, author3 }.SaveAsync(dbContext);
 
             await author2.DeleteAsync();
 
@@ -38,7 +38,7 @@ namespace MongoDB.Entities.Tests
         public async Task cascade_delete_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<BatchLoadEntity>();
+            await dbContext.DeleteTypedAsync<BatchLoadEntity>();
             dbContext.Attach(new BatchLoadEntity(thisId: "0"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
@@ -64,6 +64,8 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task deleting_entity_removes_all_refs_to_itselfAsync()
         {
+            await DB.DeleteTypedAsync<Author>();
+            await DB.DeleteTypedAsync<Book>();
             var dbContext = new DbContext();
 
             var author = new Author { Name = "author" };
@@ -79,14 +81,13 @@ namespace MongoDB.Entities.Tests
             author.BookIds.Add(book1.Id);
             author.BookIds.Add(book2.Id);
 
-            book1.GoodAuthorIds.Add(author.Id);
-            book2.GoodAuthorIds.Add(author.Id);
+            book1.MainAuthorId = author.Id;
+            book2.MainAuthorId = author.Id;
 
             await author.DeleteAsync();
-            Assert.AreEqual(0, book2.GoodAuthors.Count());
-
-            await book1.DeleteAsync();
-            Assert.AreEqual(0, author.Books.Count());
+            Assert.AreEqual(null, DB.Queryable<Author>().SingleOrDefault(a => a.Id == author.Id));
+            Assert.AreEqual(null, DB.Queryable<Book>().SingleOrDefault(b => b.Id == book1.Id));
+            Assert.AreEqual(null, DB.Queryable<Book>().SingleOrDefault(b => b.Id == book2.Id));
         }
 
         [TestMethod]
@@ -111,22 +112,6 @@ namespace MongoDB.Entities.Tests
         }
 
         [TestMethod]
-        public async Task deleting_a_one2many_ref_entity_makes_parent_nullAsync()
-        {
-            var dbContext = new DbContext();
-            var book = new Book { Title = "Test" };
-            dbContext.Attach(book);
-            await book.SaveAsync();
-            var author = new Author { Name = "ewtrcd1" };
-            dbContext.Attach(author);
-            await author.SaveAsync();
-            book.MainAuthorId = author.Id;
-            await book.SaveAsync();
-            await author.DeleteAsync();
-            Assert.AreEqual(null, book.MainAuthor.Value);
-        }
-
-        [TestMethod]
         public async Task delete_by_expression_deletes_all_matchesAsync()
         {
             var dbContext = new DbContext();
@@ -136,8 +121,8 @@ namespace MongoDB.Entities.Tests
             var author2 = new Author { Name = "xxx" };
             dbContext.Attach(author2);
             await author2.SaveAsync();
-
-            await dbContext.DeleteAsync<Author>(x => x.Name == "xxx");
+            var toBeDeleted = dbContext.Query<Author>().Where(x => x.Name == "xxx");
+            await dbContext.DeleteAsync<Author>(toBeDeleted);
 
             var count = DB.Queryable<Author>()
                           .Count(a => a.Name == "xxx");

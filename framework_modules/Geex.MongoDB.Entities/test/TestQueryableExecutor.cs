@@ -22,7 +22,7 @@ namespace MongoDB.Entities.Tests
         {
             var dbContext = new DbContext();
             //prepare
-            dbContext.DeleteAsync<TestEntity>().Wait();
+            dbContext.DeleteTypedAsync<TestEntity>().Wait();
             var a1 = new TestEntity()
             {
                 Name = "a1",
@@ -426,7 +426,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task orderBy_should_work()
         {
-            await DB.DeleteAsync<TestEntity>();
+            await DB.DeleteTypedAsync<TestEntity>();
             var dbContext = new DbContext();
             dbContext.Attach(new List<TestEntity>()
                 {
@@ -512,7 +512,7 @@ namespace MongoDB.Entities.Tests
         public async Task filter_by_date_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
             dbContext.Attach(new List<TestEntity>()
             {
                 new TestEntity()
@@ -538,7 +538,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task skip_and_take_should_work()
         {
-            await DB.DeleteAsync<TestEntity>();
+            await DB.DeleteTypedAsync<TestEntity>();
             var dbContext = new DbContext();
             dbContext.Attach(new List<TestEntity>()
                 {
@@ -579,7 +579,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task skip_and_take_should_work_when_combine_with_sort()
         {
-            await DB.DeleteAsync<TestEntity>();
+            await DB.DeleteTypedAsync<TestEntity>();
             var dbContext = new DbContext();
             dbContext.Attach(new List<TestEntity>()
                 {
@@ -647,7 +647,7 @@ namespace MongoDB.Entities.Tests
         public async Task contains_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
             var attached = dbContext.Attach(new TestEntity()
             {
                 Name = "local1",
@@ -668,7 +668,7 @@ namespace MongoDB.Entities.Tests
         public async Task contains_of_object_id_cast_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
             var attached = dbContext.Attach(new TestEntity()
             {
                 Name = "local1",
@@ -694,7 +694,7 @@ namespace MongoDB.Entities.Tests
         public async Task array_intersection_query_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
             dbContext.Attach(new TestEntity()
             {
                 Name = "local1",
@@ -730,7 +730,7 @@ namespace MongoDB.Entities.Tests
         private static async Task<DbContext> GetDbContext()
         {
             var dbContext = new DbContext(TestFixture.ServiceProvider);
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -741,7 +741,7 @@ namespace MongoDB.Entities.Tests
         public async Task math_functions_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -799,7 +799,7 @@ namespace MongoDB.Entities.Tests
         public async Task string_operations_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -860,7 +860,7 @@ namespace MongoDB.Entities.Tests
         public async Task array_operations_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -912,7 +912,7 @@ namespace MongoDB.Entities.Tests
         public async Task date_operations_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             var testDate = new DateTime(2023, 6, 15, 14, 30, 45);
             dbContext.Attach(new List<TestEntity>()
@@ -974,7 +974,7 @@ namespace MongoDB.Entities.Tests
         public async Task complex_expressions_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -1030,7 +1030,7 @@ namespace MongoDB.Entities.Tests
         public async Task conditional_expressions_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -1067,7 +1067,7 @@ namespace MongoDB.Entities.Tests
         public async Task string_search_operations_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -1110,7 +1110,7 @@ namespace MongoDB.Entities.Tests
         public async Task null_handling_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -1150,7 +1150,7 @@ namespace MongoDB.Entities.Tests
         public async Task where_math_expressions_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -1206,7 +1206,7 @@ namespace MongoDB.Entities.Tests
         public async Task where_string_pattern_matching_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -1265,7 +1265,7 @@ namespace MongoDB.Entities.Tests
         public async Task where_complex_boolean_logic_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -1318,7 +1318,7 @@ namespace MongoDB.Entities.Tests
         public async Task where_array_filtering_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {
@@ -1399,7 +1399,7 @@ namespace MongoDB.Entities.Tests
         public async Task where_date_filtering_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             var baseDate = new DateTime(2023, 6, 15, 14, 30, 45);
             dbContext.Attach(new List<TestEntity>()
@@ -1487,7 +1487,7 @@ namespace MongoDB.Entities.Tests
         public async Task where_combined_conditions_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
 
             dbContext.Attach(new List<TestEntity>()
             {

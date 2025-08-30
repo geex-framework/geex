@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using MongoDB.Bson.Serialization;
+using MongoDB.Entities.Utilities;
 
 #pragma warning disable 618
 
@@ -19,7 +20,7 @@ namespace MongoDB.Entities
         private static MethodInfo DeleteCascadingAsyncMethod = typeof(DB).GetMethod(nameof(DeleteCascadingAsync), BindingFlags.Static | BindingFlags.NonPublic);
 
 
-        private static async Task<long> DeleteCascadingAsync<T>(IEnumerable<string> Ids,
+        private static async Task<long> DeleteCascadingAsync<T>(IEnumerable<string> ids,
             DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             // note: cancellation should not be enabled outside of transactions because multiple collections are involved
@@ -27,22 +28,17 @@ namespace MongoDB.Entities
             //       i.e. don't pass the cancellation token to delete methods below that don't take a session.
             //       also make consumers call ThrowIfCancellationNotSupported() before calling this method.
 
-            var db = Database<T>();
             //var options = new ListCollectionNamesOptions
             //{
             //    Filter = "{$and:[{name:/~/},{name:/" + CollectionName<T>() + "/}]}"
             //};
 
-            var tasks = new HashSet<Task>();
-            foreach (var id in Ids)
-            {
-                dbContext?.MemoryDataCache[typeof(T)].Remove(id, out _);
-                dbContext?.DbDataCache[typeof(T)].Remove(id, out _);
-            }
+            var filter = Filter<T>().In(x => x.Id, ids);
+            var tasks = new List<Task>(2);
             var delResTask =
                     dbContext?.Session == null
-                    ? Collection<T>().DeleteManyAsync(x => Ids.Contains(x.Id))
-                    : Collection<T>().DeleteManyAsync(dbContext?.Session, x => Ids.Contains(x.Id), null, cancellation);
+                    ? Collection<T>().DeleteManyAsync(x => ids.Contains(x.Id), cancellationToken: cancellation)
+                    : Collection<T>().DeleteManyAsync(dbContext?.Session, x => ids.Contains(x.Id), null, cancellation);
 
             tasks.Add(delResTask);
 
@@ -50,13 +46,13 @@ namespace MongoDB.Entities
             {
                 tasks.Add(
                     dbContext?.Session == null
-                    ? db.GetCollection<FileChunk>(CollectionName<FileChunk>()).DeleteManyAsync(x => Ids.Contains(x.FileId))
-                    : db.GetCollection<FileChunk>(CollectionName<FileChunk>()).DeleteManyAsync(dbContext?.Session, x => Ids.Contains(x.FileId), null, cancellation));
+                    ? Collection<FileChunk>().DeleteManyAsync(x => ids.Contains(x.FileId), cancellationToken: cancellation)
+                    : Collection<FileChunk>().DeleteManyAsync(dbContext?.Session, x => ids.Contains(x.FileId), null, cancellation));
             }
-            Task.WhenAll(tasks).Wait();
+            await Task.WhenAll(tasks);
             //await Task.WhenAll(tasks).ConfigureAwait(false);
 
-            var delRes = await delResTask.ConfigureAwait(false);
+            var delRes = await delResTask;
             return delRes.DeletedCount;
         }
 
@@ -72,7 +68,7 @@ namespace MongoDB.Entities
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
             var rootType = typeof(T).GetRootBsonClassMap().ClassType;
-            return await (DeleteCascadingAsyncMethod.MakeGenericMethod(rootType)
+            return await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, rootType)
                 .Invoke(null, new object[] { new[] { id }, dbContext, cancellation }) as Task<long>);
             //return DeleteCascadingAsync<T>();
         }
@@ -92,7 +88,7 @@ namespace MongoDB.Entities
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
             var rootType = type.GetRootBsonClassMap().ClassType;
-            return await (DeleteCascadingAsyncMethod.MakeGenericMethod(rootType)
+            return await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, rootType)
                 .Invoke(null, new object[] { new[] { id }, dbContext, cancellation }) as Task<long>);
             //return DeleteCascadingAsync<T>();
         }
@@ -126,8 +122,7 @@ namespace MongoDB.Entities
                     if (cursor.Current.Any())
                     {
                         var toDeletes = cursor.Current;
-                        deletedCount += await (DeleteCascadingAsyncMethod
-                            .MakeGenericMethod(typeof(T).GetRootBsonClassMap().ClassType)
+                        deletedCount += await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, typeof(T).GetRootBsonClassMap().ClassType)
                             .Invoke(null, new object[] { toDeletes, dbContext, cancellation }) as Task<long>);
                     }
                 }
@@ -136,7 +131,7 @@ namespace MongoDB.Entities
             return deletedCount;
         }
 
-        public static async Task<long> DeleteAsync<T>(DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<long> DeleteTypedAsync<T>(DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
 
@@ -155,8 +150,7 @@ namespace MongoDB.Entities
                     if (cursor.Current.Any())
                     {
                         var toDeletes = cursor.Current;
-                        deletedCount += await (DeleteCascadingAsyncMethod
-                            .MakeGenericMethod(typeof(T).GetRootBsonClassMap().ClassType)
+                        deletedCount += await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, typeof(T).GetRootBsonClassMap().ClassType)
                             .Invoke(null, new object[] { toDeletes, dbContext, cancellation }) as Task<long>);
                     }
                 }
@@ -171,23 +165,22 @@ namespace MongoDB.Entities
         /// <para>HINT: If these entities are referenced by one-to-many/many-to-many relationships, those references are also deleted.</para>
         /// </summary>
         /// <typeparam name="T">Any class that implements IEntity</typeparam>
-        /// <param name="Ids">An IEnumerable of entity Ids</param>
+        /// <param name="ids">An IEnumerable of entity Ids</param>
         /// <param name = "session" > An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static async Task<long> DeleteAsync<T>(IEnumerable<string> Ids, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static async Task<long> DeleteAsync<T>(IEnumerable<string> ids, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
 
-            if (Ids.Count() <= deleteBatchSize)
-                return await DeleteCascadingAsync<T>(Ids, dbContext, cancellation).ConfigureAwait(false);
+            if (ids.Count() <= deleteBatchSize)
+                return await DeleteCascadingAsync<T>(ids, dbContext, cancellation).ConfigureAwait(false);
 
             long deletedCount = 0;
 
-            foreach (var batch in Ids.ToBatches(deleteBatchSize))
+            foreach (var batch in ids.ToBatches(deleteBatchSize))
             {
-                deletedCount += (await ((DeleteCascadingAsyncMethod
-                            .MakeGenericMethod(typeof(T).GetRootBsonClassMap().ClassType)
-                            .Invoke(null, new object[] { batch, dbContext, cancellation }) as Task<long>)).ConfigureAwait(false));
+                deletedCount += (await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, typeof(T).GetRootBsonClassMap().ClassType)
+                    .Invoke(null, new object[] { batch, dbContext, cancellation }) as Task<long>).ConfigureAwait(false));
             }
 
             return deletedCount;

@@ -27,9 +27,9 @@ namespace Geex.Tests.SchemaTests
         public ValidateTestEntity ValidateTestQueryField(
             [Validate(nameof(ValidateRule.Email), "Invalid email format")] string email,
             [Validate(nameof(ValidateRule.LengthMin), [3], "Name must be at least 3 characters")] string name) => new ValidateTestEntity()
-        {
-            Id = ObjectId.GenerateNewId().ToString(),
-        };
+            {
+                Id = ObjectId.GenerateNewId().ToString(),
+            };
 
         public ValidateTestEntity ValidateTestQueryFieldWithInput(ValidateTestInput input) => new ValidateTestEntity()
         {
@@ -824,7 +824,7 @@ namespace Geex.Tests.SchemaTests
         }
 
         [Fact]
-        public void ValidateRuleThreadSafetyShouldWork()
+        public async Task ValidateRuleThreadSafetyShouldWork()
         {
             // Test that rule caching is thread-safe
             var tasks = new List<Task<ValidateRule<string>>>();
@@ -837,10 +837,10 @@ namespace Geex.Tests.SchemaTests
             Task.WaitAll(tasks.ToArray());
 
             // All tasks should return the same cached instance
-            var firstRule = tasks[0].Result;
+            var firstRule = await tasks[0];
             foreach (var task in tasks)
             {
-                ReferenceEquals(firstRule, task.Result).ShouldBeTrue();
+                ReferenceEquals(firstRule, await task).ShouldBeTrue();
             }
 
             // Test with parameterized rules
@@ -853,10 +853,10 @@ namespace Geex.Tests.SchemaTests
 
             Task.WaitAll(paramTasks.ToArray());
 
-            var firstParamRule = paramTasks[0].Result;
+            var firstParamRule = await paramTasks[0];
             foreach (var task in paramTasks)
             {
-                ReferenceEquals(firstParamRule, task.Result).ShouldBeTrue();
+                ReferenceEquals(firstParamRule, await task).ShouldBeTrue();
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MongoDB.Entities.Tests.Models;
@@ -30,9 +31,9 @@ public class BatchLoadEntity : EntityBase<BatchLoadEntity>
     public string ParentId { get; set; }
 
     /// <inheritdoc />
-    public override async Task<long> DeleteAsync()
+    public override async Task<long> DeleteAsync(CancellationToken cancellation = default)
     {
-        return await this.Children.DeleteAsync() + await base.DeleteAsync();
+        return await this.Children.DeleteAsync(cancellation) + await base.DeleteAsync(cancellation);
     }
 }
 

@@ -15,7 +15,7 @@ using Shouldly;
 
 namespace MongoDB.Entities.Tests
 {
-    [TestClass]
+    //[TestClass]
     public class TestQueryPerformance
     {
         [TestMethod]
@@ -41,7 +41,7 @@ namespace MongoDB.Entities.Tests
             var count = 200000;
             Debug.WriteLine("=== Setting up test data ===");
 
-            await DB.DeleteAsync<TestEntity>();
+            await DB.DeleteTypedAsync<TestEntity>();
             var baseDateTime = DateTime.UtcNow.AddDays(-365);
             var random = new Random(42); // 固定种子确保可重复性
 

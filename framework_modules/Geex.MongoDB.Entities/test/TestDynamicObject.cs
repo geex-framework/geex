@@ -32,7 +32,7 @@ namespace MongoDB.Entities.Tests
         public async Task create_json_object_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TableData>();
+            await dbContext.DeleteTypedAsync<TableData>();
             dbContext.Dispose();
             dbContext = new DbContext();
             var tempName = Guid.NewGuid().ToString();
@@ -83,7 +83,7 @@ namespace MongoDB.Entities.Tests
         public async Task json_object_should_response_in_correct_format()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TableData>();
+            await dbContext.DeleteTypedAsync<TableData>();
             dbContext.Dispose();
             dbContext = new DbContext();
             var tempName = Guid.NewGuid().ToString();
@@ -111,7 +111,7 @@ namespace MongoDB.Entities.Tests
         public async Task query_dynamic_object_should_work()
         {
             //var dbContext = new DbContext();
-            //await dbContext.DeleteAsync<TableData>();
+            //await dbContext.DeleteTypedAsync<TableData>();
             //var data = new TableData()
             //{
             //    DataType = "object",

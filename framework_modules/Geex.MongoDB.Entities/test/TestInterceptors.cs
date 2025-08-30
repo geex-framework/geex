@@ -13,7 +13,7 @@ namespace MongoDB.Entities.Tests
         public async Task save_interceptors_should_work()
         {
              var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InterceptedAndFiltered>();
+            await dbContext.DeleteTypedAsync<InterceptedAndFiltered>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();
@@ -35,7 +35,7 @@ namespace MongoDB.Entities.Tests
         public async Task attach_interceptors_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<InterceptedAndFiltered>();
+            await dbContext.DeleteTypedAsync<InterceptedAndFiltered>();
             await dbContext.SaveChanges();
             dbContext.Dispose();
             dbContext = new DbContext();

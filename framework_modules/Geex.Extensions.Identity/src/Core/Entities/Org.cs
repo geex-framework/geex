@@ -96,10 +96,11 @@ public partial class Org : Entity<Org>, ITenantFilteredEntity, IOrg
         foreach (var subOrg in subOrgs) subOrg.SetCode(subOrg.Code.Replace(originCode, newOrgCode));
     }
 
+    /// <param name="cancellation"></param>
     /// <inheritdoc />
-    public override Task<long> DeleteAsync()
+    public override Task<long> DeleteAsync(CancellationToken cancellation = default)
     {
-        return base.DeleteAsync();
+        return base.DeleteAsync(cancellation);
     }
 
     public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)

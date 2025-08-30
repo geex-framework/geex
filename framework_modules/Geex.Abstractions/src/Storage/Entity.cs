@@ -2,8 +2,12 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+
+using Geex.Notifications;
 using Geex.Validation;
+
 using MediatX;
+
 using MongoDB.Entities;
 
 namespace Geex.Storage
@@ -41,6 +45,13 @@ namespace Geex.Storage
         public virtual Task<ValidationResult> Validate(CancellationToken cancellation = default)
         {
             return Task.FromResult(ValidationResult.Success);
+        }
+
+        /// <inheritdoc />
+        public override async Task<long> DeleteAsync(CancellationToken cancellation = default)
+        {
+            (this as IEntity)?.AddDomainEvent(new EntityDeletedEvent<T>(this.Id));
+            return await base.DeleteAsync(cancellation);
         }
 
         /// <inheritdoc />

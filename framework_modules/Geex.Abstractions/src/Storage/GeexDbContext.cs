@@ -30,7 +30,7 @@ namespace Geex.Storage
         {
             //DbContext._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
             //DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
-            DbContext.saveMethod = typeof(GeexCommonAbstractionStorageExtensions).GetMethods().First(x => x.Name == nameof(GeexCommonAbstractionStorageExtensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
+            DbContext.SaveMethod = typeof(GeexCommonAbstractionStorageExtensions).GetMethods().First(x => x.Name == nameof(GeexCommonAbstractionStorageExtensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         }
 
         /// <inheritdoc />
@@ -117,27 +117,27 @@ namespace Geex.Storage
         }
 
         /// <inheritdoc />
-        public async Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default) where T : IEntityBase
+        public override async Task<long> DeleteAsync<T>(string id, CancellationToken cancellation = default)
         {
             var result = await base.DeleteAsync<T>(id, cancellation);
             if (result > 0)
             {
                 this.DomainEvents.Enqueue(new EntityDeletedEvent<T>(id));
-                return true;
+                return result;
             }
-            return false;
+            return result;
         }
 
         /// <inheritdoc />
-        public async Task<bool> DeleteAsync<T>(T entity, CancellationToken cancellation = default) where T : IEntityBase
+        public override  async Task<long> DeleteAsync<T>(T entity, CancellationToken cancellation = default)
         {
             var result = await base.DeleteAsync<T>(entity, cancellation);
             if (result > 0)
             {
                 this.DomainEvents.Enqueue(new EntityDeletedEvent<T>(entity.Id));
-                return true;
+                return result;
             }
-            return false;
+            return result;
         }
 
         /// <inheritdoc />
@@ -171,14 +171,14 @@ namespace Geex.Storage
         }
 
         /// <inheritdoc />
-        public async Task<long> DeleteAsync<T>(CancellationToken cancellation = default) where T : IEntityBase
+        public override  async Task<long> DeleteTypedAsync<T>(CancellationToken cancellation = default)
         {
-            var result = await base.DeleteAsync<T>(cancellation);
+            var result = await base.DeleteTypedAsync<T>(cancellation);
             return result;
         }
 
         /// <inheritdoc />
-        public async Task<long> DeleteAsync<T>(IEnumerable<string> ids, CancellationToken cancellation = default) where T : IEntityBase
+        public override  async Task<long> DeleteAsync<T>(IEnumerable<string> ids, CancellationToken cancellation = default)
         {
             foreach (var id in ids)
             {
@@ -193,27 +193,6 @@ namespace Geex.Storage
         {
             return base.Query<T>();
         }
-
-        //protected internal virtual async Task MigrateAsync(DbMigration migration)
-        //{
-        //    var sw = new Stopwatch();
-        //    // 默认的Session超时太短, 给Migration更多的超时时间
-        //    var migrationName = migration.GetType().Name;
-        //    var mig = new Migration
-        //    {
-        //        Number = migration.Number,
-        //        Name = migrationName,
-        //        TimeTakenSeconds = sw.Elapsed.TotalSeconds
-        //    };
-        //    sw.Start();
-        //    this.session.StartTransaction(DefaultSessionOptions.DefaultTransactionOptions);
-        //    await migration.UpgradeAsync(this).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext);
-        //    this.Attach(mig);
-        //    await SaveChanges();
-        //    await this.session.CommitTransactionAsync();
-        //    sw.Stop();
-        //    sw.Reset();
-        //}
 
         protected internal virtual async Task MigrateAsync(DbMigration migration)
         {

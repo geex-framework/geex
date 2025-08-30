@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MongoDB.Entities.Tests
 {
@@ -25,5 +27,11 @@ namespace MongoDB.Entities.Tests
         public List<string> BookIds { get; set; } = new List<string>();
 
         public Author() => this.ConfigLazyQuery(x => Books, book => book.MainAuthorId == this.Id, authors => book => authors.SelectMany(x => x.BookIds).Distinct().Contains(book.Id));
+
+        /// <inheritdoc />
+        public override async Task<long> DeleteAsync(CancellationToken cancellation = default)
+        {
+            return await this.Books.ToArray().DeleteAsync(cancellation) + await base.DeleteAsync(cancellation);
+        }
     }
 }

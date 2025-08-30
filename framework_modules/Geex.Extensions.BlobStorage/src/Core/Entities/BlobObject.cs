@@ -276,13 +276,14 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         /// <summary>
         /// Overrides the base DeleteAsync method to handle storage cleanup
         /// </summary>
-        public override async Task<long> DeleteAsync()
+        /// <param name="cancellation"></param>
+        public override async Task<long> DeleteAsync(CancellationToken cancellation = default)
         {
             // 先执行存储清理
-            await this.TryDeleteStorageData();
+            await this.TryDeleteStorageData(cancellation);
 
             // 然后调用基类方法删除实体
-            return await base.DeleteAsync();
+            return await base.DeleteAsync(cancellation);
         }
 
         /// <summary>

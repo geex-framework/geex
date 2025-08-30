@@ -37,7 +37,7 @@ namespace MongoDB.Entities.Tests
             var dbContext = new DbContext();
             Expression<Func<InterceptedAndFiltered, bool>> exp = (x => x.Value == 1);
             DbContext.StaticDataFilters.TryAdd(typeof(InterceptedAndFiltered), (sp) => new ExpressionDataFilter<InterceptedAndFiltered>(exp, null));
-            await dbContext.DeleteAsync<InterceptedAndFiltered>();
+            await dbContext.DeleteTypedAsync<InterceptedAndFiltered>();
             var testEntity = new InterceptedAndFiltered()
             {
                 Value = 0

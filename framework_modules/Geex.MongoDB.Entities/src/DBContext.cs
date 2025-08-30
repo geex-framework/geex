@@ -512,36 +512,43 @@ namespace MongoDB.Entities
         public virtual Task<long> DeleteAsync<T>(string id, CancellationToken cancellation = default)
             where T : IEntityBase
         {
+            this.Detach(typeof(T), id);
             return DB.DeleteAsync<T>(id, this, cancellation);
         }
 
         public virtual Task<long> DeleteAsync<T>(T entity, CancellationToken cancellation = default)
             where T : IEntityBase
         {
-            return DB.DeleteAsync(entity.GetType(), entity.Id, this, cancellation);
+            this.Detach(entity);
+            return DB.DeleteAsync<T>(entity.Id, this, cancellation);
         }
 
-        /// <summary>
-        /// Bulk delete entities without any tracking
-        /// </summary>
-        /// <typeparam name="T">The type of entity</typeparam>
-        /// <param name="expression">A lambda expression for matching entities to delete.</param>
-        /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<long> DeleteAsync<T>(Expression<Func<T, bool>> expression,
-            CancellationToken cancellation = default) where T : IEntityBase
-        {
-            return DB.DeleteAsync(expression, this, cancellation);
-        }
         /// <summary>
         /// Bulk delete entities without any tracking
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="cancellation"></param>
         /// <returns></returns>
-        public virtual Task<long> DeleteAsync<T>(
+        public virtual Task<long> DeleteTypedAsync<T>(
             CancellationToken cancellation = default) where T : IEntityBase
         {
-            return DB.DeleteAsync<T>(this, cancellation);
+            return DB.DeleteTypedAsync<T>(this, cancellation);
+        }
+
+        /// <summary>
+        /// Deletes multiple entities from MongoDB in the transaction scope
+        /// <para>HINT: If these entities are referenced by one-to-many/many-to-many relationships, those references are also deleted.</para>
+        /// <para>TIP: Try to keep the number of entities to delete under 100 in a single call</para>
+        /// </summary>
+        /// <typeparam name="T">The type of entity</typeparam>
+        /// <param name="entities">An IEnumerable of entities to delete</param>
+        /// <param name="cancellation">An optional cancellation token</param>
+        public virtual Task<long> DeleteAsync<T>(IEnumerable<T> entities,
+            CancellationToken cancellation = default) where T : IEntityBase
+        {
+            var entityIds = entities.Select(e => e.Id).ToList();
+            this.Detach(typeof(T), entityIds);
+            return DB.DeleteAsync<T>(entityIds, this, cancellation);
         }
 
         /// <summary>
@@ -550,12 +557,13 @@ namespace MongoDB.Entities
         /// <para>TIP: Try to keep the number of entities to delete under 100 in a single call</para>
         /// </summary>
         /// <typeparam name="T">The type of entity</typeparam>
-        /// <param name="Ids">An IEnumerable of entity Ids</param>
+        /// <param name="ids">An IEnumerable of entity Ids</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<long> DeleteAsync<T>(IEnumerable<string> Ids,
+        public virtual Task<long> DeleteAsync<T>(IEnumerable<string> ids,
             CancellationToken cancellation = default) where T : IEntityBase
         {
-            return DB.DeleteAsync<T>(Ids, this, cancellation);
+            this.Detach(typeof(T), ids);
+            return DB.DeleteAsync<T>(ids, this, cancellation);
         }
 
         /// <summary>
@@ -576,8 +584,8 @@ namespace MongoDB.Entities
                 session);
         }
 
-        protected static MethodInfo saveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
-        private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
+        protected static MethodInfo SaveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
+        private static MethodInfo CastMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
         private static readonly MethodInfo DiffMethod = typeof(DbContext).GetMethod(nameof(Diff), BindingFlags.Public | BindingFlags.Instance);
 
         /// <summary>
@@ -619,7 +627,7 @@ namespace MongoDB.Entities
                 if (toSavedEntities.Count != 0)
                 {
                     savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
-                    var list = MethodReflectionCache.InvokeStaticGenericMethod(castMethod, type, toSavedEntities);
+                    var list = MethodReflectionCache.InvokeStaticGenericMethod(CastMethod, type, toSavedEntities);
                     const int maxRetries = 3;
                     for (int attempt = 0; attempt < maxRetries; attempt++)
                     {
@@ -630,7 +638,7 @@ namespace MongoDB.Entities
                                 Session.StartTransaction();
                             }
                             var saveTask = MethodReflectionCache.InvokeStaticGenericMethod(
-                                saveMethod, type, list, this, cancellation);
+                                SaveMethod, type, list, this, cancellation);
                             if (saveTask is Task task)
                             {
                                 await task.ConfigureAwait(false);
@@ -837,14 +845,25 @@ namespace MongoDB.Entities
         {
             ArgumentNullException.ThrowIfNull(entity);
             var entityType = entity.GetType();
-            if (entity.DbContext != this)
-            {
-                ServiceProvider.GetService<ILogger<DbContext>>()?.LogWarning("Detaching {EntityType} with Id {Id} from an ambiguous DbContext: entity.DbContext={entity.DbContext} but current={currentDbContext}", entityType.Name, entity.Id, entity.DbContext?.GetHashCode(), this?.GetHashCode());
-            }
             entity.DbContext = null;
+            var entityId = entity.Id;
+            this.Detach(entityType, entityId);
+        }
+
+        /// <summary>
+        /// 取消特定对象的对象跟踪,
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        public void Detach(Type entityType, params IEnumerable<string> ids)
+        {
+            ArgumentNullException.ThrowIfNull(ids);
             var rootType = entityType.GetRootBsonClassMap().ClassType;
-            this.MemoryDataCache[rootType].TryRemove(entity.Id, out _);
-            this.DbDataCache[rootType].TryRemove(entity.Id, out _);
+            foreach (var id in ids)
+            {
+                this.MemoryDataCache[rootType].TryRemove(id, out _);
+                this.DbDataCache[rootType].TryRemove(id, out _);
+            }
         }
 
         /// <summary>
@@ -852,7 +871,7 @@ namespace MongoDB.Entities
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entities"></param>
-        public void Detach<T>(IEnumerable<T> entities) where T : IEntityBase
+        public void Detach<T>(params IEnumerable<T> entities) where T : IEntityBase
         {
             ArgumentNullException.ThrowIfNull(entities);
             var array = entities.ToArray();

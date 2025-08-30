@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.Notifications;
 using Geex.Storage;
 
@@ -17,31 +18,43 @@ namespace Geex.Abstractions
     public static class GeexCommonAbstractionStorageExtensions
     {
         /// <summary>
-        /// Deletes a single entity from MongoDB.
-        /// <para>HINT: If this entity is referenced by one-to-many/many-to-many relationships, those references are also deleted.</para>
+        /// Deletes multiple entities from MongoDB using batch operation for optimal performance.
+        /// <para>HINT: If these entities are referenced by one-to-many/many-to-many relationships, those references are also deleted.</para>
+        /// <para>遵循Entity=>DbContext=>DB的调用顺序，统一Detach时机以保证批量操作性能</para>
         /// </summary>
-        public static async Task<long> DeleteAsync<T>(this T entity) where T : IEntityBase
-        {
-            (entity as IEntity)?.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
-            (entity.DbContext)?.Detach(entity);
-            return await entity.DeleteAsync();
-        }
-
         public static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities) where T : IEntityBase
         {
             var enumerable = entities.ToList();
+            if (!enumerable.Any()) return 0;
+
+            // 为每个实体添加领域事件
             foreach (var entity in enumerable)
             {
                 (entity as IEntity)?.AddDomainEvent(new EntityDeletedEvent<T>(entity.Id));
             }
-            var deletes = enumerable.Select(async x =>
+
+            // 获取第一个实体的DbContext作为批量操作的上下文
+            var dbContext = enumerable.FirstOrDefault()?.DbContext;
+
+            if (dbContext != null)
             {
-                (x.DbContext)?.Detach(x);
-                return await x.DeleteAsync();
-            });
-            // todo: possible deadlock for duplicate delete in parallel
-            var result = await Task.WhenAll(deletes);
-            return result.Sum();
+                // 遵循Entity=>DbContext=>DB的顺序，先统一Detach所有实体
+                dbContext.Detach(enumerable);
+
+                // 调用DbContext的批量删除方法，实现完整的Entity=>DbContext=>DB调用链
+                return await dbContext.DeleteAsync(enumerable);
+            }
+            else
+            {
+                // 没有DbContext时，直接使用DB层批量删除
+                var entityIds = enumerable.Select(e => e.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+                if (entityIds.Any())
+                {
+                    return await DB.DeleteAsync<T>(entityIds);
+                }
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -62,22 +75,10 @@ namespace Geex.Abstractions
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveAsync<T>(this List<T> entities, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             (dbContext)?.Detach(entities);
-
             return DB.SaveAsync(entities, dbContext, cancellation);
-        }
-
-        /// <summary>
-        /// Saves a batch of complete entities replacing existing ones or creating new ones if they do not exist.
-        /// If Id value is null, a new entity is created. If Id has a value, then existing entity is replaced.
-        /// </summary>
-        /// <param name="session">An optional session if using within a transaction</param>
-        /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, DbContext dbContext = null,CancellationToken cancellation = default) where T : IEntityBase
-        {
-            return entities.ToList().SaveAsync(dbContext, cancellation);
         }
 
         /// <summary>

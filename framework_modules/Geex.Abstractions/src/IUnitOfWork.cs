@@ -70,10 +70,10 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     /// <inheritdoc />
     Task<List<string>> SaveChanges(CancellationToken cancellation = default);
 
-    public Task<bool> DeleteAsync<T>(string id, CancellationToken cancellation = default)
+    public Task<long> DeleteAsync<T>(string id, CancellationToken cancellation = default)
             where T : IEntityBase;
 
-    public Task<bool> DeleteAsync<T>(T entity, CancellationToken cancellation = default)
+    public Task<long> DeleteAsync<T>(T entity, CancellationToken cancellation = default)
         where T : IEntityBase;
 
     /// <summary>
@@ -87,7 +87,7 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     public Task<long> DeleteAsync<T>(Expression<Func<T, bool>> expression,
         CancellationToken cancellation = default) where T : IEntityBase;
 
-    public Task<long> DeleteAsync<T>(CancellationToken cancellation = default) where T : IEntityBase;
+    public Task<long> DeleteTypedAsync<T>(CancellationToken cancellation = default) where T : IEntityBase;
 
     /// <summary>
     /// Deletes matching entities from MongoDB in the transaction scope

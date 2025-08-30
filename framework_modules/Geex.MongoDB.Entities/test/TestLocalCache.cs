@@ -60,7 +60,7 @@ namespace MongoDB.Entities.Tests
         {
             await DB.DeleteAsync<TestEntity>(x => true);
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TestEntity>();
+            await dbContext.DeleteTypedAsync<TestEntity>();
             dbContext.Dispose();
             dbContext = new DbContext();
             var testEntity = new TestEntity()

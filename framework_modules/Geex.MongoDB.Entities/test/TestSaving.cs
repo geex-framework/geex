@@ -418,7 +418,7 @@ namespace MongoDB.Entities.Tests
         public async Task json_property_should_be_saved()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<TableData>();
+            await dbContext.DeleteTypedAsync<TableData>();
             dbContext.Dispose();
             dbContext = new DbContext();
             var tempName = Guid.NewGuid().ToString();

@@ -15,7 +15,7 @@ namespace MongoDB.Entities.Tests
         public async Task query_batch_load_should_work()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<BatchLoadEntity>();
+            await dbContext.DeleteTypedAsync<BatchLoadEntity>();
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1.1", parentId: "1.1"));
@@ -40,7 +40,7 @@ namespace MongoDB.Entities.Tests
         public async Task query_batch_load_should_work_with_single_item()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<BatchLoadEntity>();
+            await dbContext.DeleteTypedAsync<BatchLoadEntity>();
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "2"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
@@ -63,7 +63,7 @@ namespace MongoDB.Entities.Tests
         public async Task query_batch_load_should_work_with_no_prefetch()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<BatchLoadEntity>();
+            await dbContext.DeleteTypedAsync<BatchLoadEntity>();
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "2"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
@@ -86,10 +86,10 @@ namespace MongoDB.Entities.Tests
         public async Task query_batch_load_should_work_with_nested_batch_load()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<RootEntity>();
-            await dbContext.DeleteAsync<RootEntity.C1Entity>();
-            await dbContext.DeleteAsync<RootEntity.C2Entity>();
-            await dbContext.DeleteAsync<RootEntity>();
+            await dbContext.DeleteTypedAsync<RootEntity>();
+            await dbContext.DeleteTypedAsync<RootEntity.C1Entity>();
+            await dbContext.DeleteTypedAsync<RootEntity.C2Entity>();
+            await dbContext.DeleteTypedAsync<RootEntity>();
             dbContext.Attach(new RootEntity(thisId: "1"));
             dbContext.Attach(new RootEntity.C1Entity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new RootEntity.C2Entity(thisId: "1.1.1", parentId: "1.1"));
@@ -124,7 +124,7 @@ namespace MongoDB.Entities.Tests
         public async Task query_batch_load_should_work_with_nested_batch_load_for_single_item()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<BatchLoadEntity>();
+            await dbContext.DeleteTypedAsync<BatchLoadEntity>();
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1.1", parentId: "1.1"));
@@ -157,7 +157,7 @@ namespace MongoDB.Entities.Tests
         public async Task query_batch_load_should_work_with_nested_multiple_batch_load()
         {
             var dbContext = new DbContext();
-            await dbContext.DeleteAsync<BatchLoadEntity>();
+            await dbContext.DeleteTypedAsync<BatchLoadEntity>();
             dbContext.Attach(new BatchLoadEntity(thisId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "1.1.1", parentId: "1.1"));

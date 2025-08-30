@@ -16,13 +16,14 @@ namespace MongoDB.Entities
 {
     public abstract class EntityBase<T> : IEntityBase where T : class, IEntityBase
     {
+        static string UnattachedErrorMessage = $"Cannot perform lazy query for a detached entity: {typeof(T).Name}";
         protected LazyMultiQuery<TEntity, TRelated> ConfigLazyQuery<TEntity, TRelated>(
             Expression<Func<TEntity, IQueryable<TRelated>>> propToLoad, Expression<Func<TRelated, bool>> loadCondition,
             Expression<Func<IQueryable<TEntity>, Expression<Func<TRelated, bool>>>> batchLoadRule,
-            Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase where TEntity : T
+            Func<IQueryable<TRelated>>? sourceProvider = default) where TRelated : IEntityBase where TEntity : T
         {
             var lazyObj = new LazyMultiQuery<TEntity, TRelated>(loadCondition, batchLoadRule, sourceProvider ??
-                                                                           (() => DbContext.Query<TRelated>()));
+                                                                           (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
             var propertyMember = propToLoad.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;
@@ -36,10 +37,10 @@ namespace MongoDB.Entities
             // 导航属性的批量加载实现
             Expression<Func<IQueryable<TEntity>, Expression<Func<TRelated, bool>>>> batchQuery,
             // 批量加载时的数据源, 默认从DbContext查, 可替换成任意第三方Service返回的IQueryable
-            Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase where TEntity : T
+            Func<IQueryable<TRelated>>? sourceProvider = default) where TRelated : IEntityBase where TEntity : T
         {
             var lazyObj = new LazySingleQuery<TEntity, TRelated>(lazyQuery, batchQuery, sourceProvider ??
-                                                                          (() => DbContext.Query<TRelated>()));
+                                                                          (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;
@@ -48,10 +49,10 @@ namespace MongoDB.Entities
         protected LazyMultiQuery<T, TRelated> ConfigLazyQuery<TRelated>(
             Expression<Func<T, IQueryable<TRelated>>> propToLoad, Expression<Func<TRelated, bool>> loadCondition,
             Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batchLoadRule,
-            Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase
+            Func<IQueryable<TRelated>>? sourceProvider = default) where TRelated : IEntityBase
         {
             var lazyObj = new LazyMultiQuery<T, TRelated>(loadCondition, batchLoadRule, sourceProvider ??
-                                                                           (() => DbContext.Query<TRelated>()));
+                                                                           (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
             var propertyMember = propToLoad.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;
@@ -65,10 +66,10 @@ namespace MongoDB.Entities
             // 导航属性的批量加载实现
             Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batchQuery,
             // 批量加载时的数据源, 默认从DbContext查, 可替换成任意第三方Service返回的IQueryable
-            Func<IQueryable<TRelated>> sourceProvider = default) where TRelated : IEntityBase
+            Func<IQueryable<TRelated>>? sourceProvider = default) where TRelated : IEntityBase
         {
             var lazyObj = new LazySingleQuery<T, TRelated>(lazyQuery, batchQuery, sourceProvider ??
-                                                                          (() => DbContext.Query<TRelated>()));
+                                                                          (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;
@@ -117,23 +118,6 @@ namespace MongoDB.Entities
             }
         }
 
-        ///// <inheritdoc />
-        //ILazyQuery IEntity.ConfigLazyQueryable(Expression lazyQuery, Expression batchQuery, Func<IQueryable> sourceProvider)
-        //{
-        //    if (lazyQuery is object)
-        //    {
-
-        //    }
-        //    //var lazyObj = new LazyMultiQuery<T, TRelated>(lazyQuery, batchQuery, sourceProvider ??
-        //    //                                                               (() => DbContext.Queryable<TRelated>()));
-        //    //var lazyObj = new LazySingleQuery<T, TRelated>(lazyQuery, batchQuery, sourceProvider ??
-        //    //                                                             (() => DbContext.Queryable<TRelated>()));
-        //    //var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
-        //    //LazyQueryCache[propertyMember.Name] = lazyObj;
-        //    //return lazyObj;
-        //    return default;
-        //}
-
         protected T LazyQuery<T>(Expression<Func<T>> func, [CallerMemberName] string name = default) where T : class
         {
             var lazyQuery = LazyQueryCache[name];
@@ -166,23 +150,11 @@ namespace MongoDB.Entities
             => ObjectId.GenerateNewId();
 
         /// <inheritdoc />
-        public virtual async Task<long> DeleteAsync()
+        public virtual async Task<long> DeleteAsync(CancellationToken cancellation = default)
         {
-            if (DbContext != default)
-            {
-                return await this.DbContext.DeleteAsync(this);
-            }
-            return await DB.DeleteAsync(this.GetType(), this.Id);
-        }
-
-        /// <inheritdoc />
-        public virtual async Task<long> DeleteAsync(CancellationToken cancellationToken = default)
-        {
-            if (DbContext != default)
-            {
-                return await this.DbContext.DeleteAsync(this, cancellationToken);
-            }
-            return await DB.DeleteAsync(this.GetType(), this.Id, cancellation: cancellationToken);
+            return DbContext != null
+                ? await DbContext.DeleteAsync(this as T, cancellation)
+                : await DB.DeleteAsync(this.GetType(), this.Id, cancellation: cancellation);
         }
 
         /// <inheritdoc />

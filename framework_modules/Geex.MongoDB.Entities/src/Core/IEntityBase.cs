@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MongoDB.Bson;
@@ -30,13 +31,12 @@ namespace MongoDB.Entities
         /// If you're not doing custom Id generation, simply do <c>return ObjectId.GenerateNewId().ToString()</c>
         /// </summary>
         ObjectId GenerateNewId();
+
         /// <summary>
         /// Deletes a single entity from MongoDB.
         /// </summary>
-        virtual async Task<long> DeleteAsync()
-        {
-            return await DB.DeleteAsync(this.GetType(), this.Id, this.DbContext);
-        }
+        /// <param name="cancellation"></param>
+        Task<long>DeleteAsync(CancellationToken cancellation = default);
         internal Dictionary<string, ILazyQuery> LazyQueryCache { get; }
         //protected internal ILazyQuery ConfigLazyQueryable(
         //   Expression lazyQuery,
