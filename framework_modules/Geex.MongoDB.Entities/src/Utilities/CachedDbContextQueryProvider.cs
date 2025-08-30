@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Interceptors;
+using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities.Utilities
 {
@@ -25,25 +26,9 @@ namespace MongoDB.Entities.Utilities
         public BatchLoadConfig BatchLoadConfig { get; } = new BatchLoadConfig();
         public DbContext DbContext { get; set; }
         public IQueryProvider InnerProvider { get; }
-        internal static MethodInfo queryableSelectMethodInfo =
-            typeof(Queryable).GetMethods().First(x => x.Name == nameof(Queryable.Select));
 
         internal static MethodInfo queryableWhereMethodInfo =
             typeof(Queryable).GetMethods().First(x => x.Name == nameof(Queryable.Where));
-
-        internal static MethodInfo enumerableWhereMethodInfo =
-            typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Where));
-
-        internal static Expression<Func<T, string>> idSelectExpression = (T x) => x.Id;
-
-        internal static MethodInfo queryableFirstOrDefaultMethodInfo =
-            typeof(Queryable).GetMethods().First(x => x.Name == nameof(Queryable.FirstOrDefault) && x.GetParameters().Length == 1);
-        internal static MethodInfo queryableFirstMethodInfo =
-            typeof(Queryable).GetMethods().First(x => x.Name == nameof(Queryable.First) && x.GetParameters().Length == 1);
-        internal static MethodInfo queryableSingleOrDefaultMethodInfo =
-            typeof(Queryable).GetMethods().First(x => x.Name == nameof(Queryable.SingleOrDefault) && x.GetParameters().Length == 1);
-        internal static MethodInfo queryableSingleMethodInfo =
-            typeof(Queryable).GetMethods().First(x => x.Name == nameof(Queryable.Single) && x.GetParameters().Length == 1);
 
         public bool PreFiltered { get; private set; }
 
@@ -253,8 +238,8 @@ namespace MongoDB.Entities.Utilities
 
                         filterExpression = filterExpression.CastParamType(subQueryEntityType);
 
-                        var filteredQuery = (IQueryable)queryableWhereMethodInfo.MakeGenericMethod(subQueryEntityType)
-                            .Invoke(null, [allQuery, filterExpression]);
+                        var filteredQuery = (IQueryable)GenericMethodCache.InvokeStaticGenericMethod(
+                            queryableWhereMethodInfo, subQueryEntityType, allQuery, filterExpression);
 
                         var list = (IList)Activator.CreateInstance(listType, filteredQuery);
                         batchLoadResult = list

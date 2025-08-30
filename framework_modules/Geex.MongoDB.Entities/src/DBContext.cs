@@ -579,7 +579,6 @@ namespace MongoDB.Entities
         protected static MethodInfo saveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
         private static readonly MethodInfo DiffMethod = typeof(DbContext).GetMethod(nameof(Diff), BindingFlags.Public | BindingFlags.Instance);
-        private static readonly ConcurrentDictionary<Type, MethodInfo> DiffCache = new();
 
         /// <summary>
         /// Save changed entities to database, if an entity is not changed, it will not be saved.
@@ -630,8 +629,8 @@ namespace MongoDB.Entities
                             {
                                 Session.StartTransaction();
                             }
-                            var saveTask = saveMethod.MakeGenericMethod(type)
-                                .Invoke(null, new object[] { list, this, cancellation });
+                            var saveTask = GenericMethodCache.InvokeStaticGenericMethod(
+                                saveMethod, type, list, this, cancellation);
                             if (saveTask is Task task)
                             {
                                 await task.ConfigureAwait(false);
@@ -697,8 +696,8 @@ namespace MongoDB.Entities
                 return new BsonDiffResult { AreEqual = false };
             }
 
-            var cachedActualMethod = DiffCache.GetOrAdd(actualType, type => DiffMethod.MakeGenericMethod(type));
-            return (BsonDiffResult)cachedActualMethod.Invoke(this, [baseValue, newValue, mode]);
+            return (BsonDiffResult)GenericMethodCache.InvokeGenericMethod(
+                DiffMethod, actualType, this, baseValue, newValue, mode);
         }
 
         /// <summary>

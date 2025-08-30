@@ -13,6 +13,7 @@ using Geex.MongoDB.Entities.Utilities;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Entities.Utilities;
 
 using static FastExpressionCompiler.ExpressionCompiler;
 
@@ -514,14 +515,14 @@ namespace MongoDB.Entities.Core.Comparers
 
                 try
                 {
-                    var baseValue = GetMemberValue(baseObj, memberMap);
-                    var newValue = GetMemberValue(newObj, memberMap);
+                    var baseValue = MemberAccessorCache.GetValue(baseObj, memberMap);
+                    var newValue = MemberAccessorCache.GetValue(newObj, memberMap);
 
                     // 使用高效的相等性比较
                     if (!AreValuesEqual(baseValue, newValue, memberMap.MemberType))
                     {
-                        // 创建泛型差异对象，避免装拆箱
-                        var difference = CreateFieldDifference(memberMap.ElementName, baseValue, newValue, memberMap);
+                        // 创建泛型差异对象，避免装拆箱（使用优化的工厂）
+                        var difference = FieldDifferenceFactory.CreateFieldDifference(memberMap.ElementName, baseValue, newValue, memberMap);
                         context.Result.AddDifference(difference);
                     }
                 }
@@ -540,30 +541,7 @@ namespace MongoDB.Entities.Core.Comparers
             }
         }
 
-        /// <summary>
-        /// 创建类型安全的字段差异对象
-        /// </summary>
-        private static IBsonFieldDifference CreateFieldDifference(string fieldName, object baseValue, object newValue, BsonMemberMap memberMap)
-        {
-            var fieldType = memberMap.MemberType;
 
-            // 使用反射创建正确类型的BsonFieldDifference<T>
-            var differenceType = typeof(BsonFieldDifference<>).MakeGenericType(fieldType);
-            var difference = (IBsonFieldDifference)Activator.CreateInstance(differenceType);
-
-            // 设置属性值
-            var fieldNameProperty = differenceType.GetProperty(nameof(BsonFieldDifference<object>.FieldName));
-            var baseValueProperty = differenceType.GetProperty(nameof(BsonFieldDifference<object>.BaseValue));
-            var newValueProperty = differenceType.GetProperty(nameof(BsonFieldDifference<object>.NewValue));
-            var memberMapProperty = differenceType.GetProperty(nameof(BsonFieldDifference<object>.MemberMap));
-
-            fieldNameProperty?.SetValue(difference, fieldName);
-            baseValueProperty?.SetValue(difference, baseValue);
-            newValueProperty?.SetValue(difference, newValue);
-            memberMapProperty?.SetValue(difference, memberMap);
-
-            return difference;
-        }
 
         /// <summary>
         /// 高效的值相等性比较，支持各种特殊类型
@@ -761,18 +739,7 @@ namespace MongoDB.Entities.Core.Comparers
             }
         }
 
-        private static object GetMemberValue(object obj, BsonMemberMap memberMap)
-        {
-            if (memberMap.MemberInfo is PropertyInfo property)
-            {
-                return property.GetValue(obj);
-            }
-            else if (memberMap.MemberInfo is FieldInfo field)
-            {
-                return field.GetValue(obj);
-            }
-            return null;
-        }
+
 
         private static bool IsSimpleType(Type type)
         {

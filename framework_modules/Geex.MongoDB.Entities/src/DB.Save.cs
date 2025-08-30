@@ -15,6 +15,7 @@ using MongoDB.Driver;
 using MongoDB.Entities.Core.Comparers;
 using MongoDB.Entities.Exceptions;
 using MongoDB.Entities.Interceptors;
+using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
 {
@@ -282,35 +283,6 @@ namespace MongoDB.Entities
             return (members?.Body as NewExpression)?.Arguments
                 .Select(a => a.ToString().Split('.')[1]);
         }
-
-        //private static async Task<IEnumerable<UpdateDefinition<T>>> BuildUpdateDefs<T>(T entity,
-        //    Expression<Func<T, object>> members, DbContext dbContext, bool excludeMode = false) where T : IEntityBase
-        //{
-        //    var propNames = RootPropNames(members);
-
-        //    if (!propNames.Any())
-        //        throw new ArgumentException("Unable to get any properties from the members expression!");
-
-        //    // 为部分保存准备实体（不使用完整的PrepareForSave，避免创建完整的UpdateOneModel）
-        //    var writeModel = await PrepareEntityForPartialSave(entity, dbContext, members, excludeMode);
-        //    var entityType = entity.GetType();
-        //    var typeCache = DB.GetCacheInfo(entityType);
-        //    var memberMaps = typeCache.MemberMaps.AsEnumerable();
-
-        //    // 根据成员名称过滤
-        //    if (excludeMode)
-        //        memberMaps = memberMaps.Where(m => !propNames.Contains(m.MemberName));
-        //    else
-        //        memberMaps = memberMaps.Where(m => propNames.Contains(m.MemberName));
-
-        //    var updateDefs = memberMaps.Select(m => Builders<T>.Update.Set(m.ElementName, GetMemberValue(entity, m))).ToList();
-
-        //    var discriminators = typeCache.Discriminators;
-        //    var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
-        //    updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
-
-        //    return updateDefs;
-        //}
 
         private static async Task<WriteModel<T>> PrepareEntityForPartialSave<T>(T entity, DbContext dbContext,
             Expression<Func<T, object>> members,
@@ -597,34 +569,19 @@ namespace MongoDB.Entities
         }
 
         /// <summary>
-        /// Gets member value from entity using BsonMemberMap
+        /// Gets member value from entity using BsonMemberMap (optimized with expression compilation)
         /// </summary>
         private static object GetMemberValue(object obj, BsonMemberMap memberMap)
         {
-            return memberMap.MemberInfo switch
-            {
-                PropertyInfo property => property.GetValue(obj),
-                FieldInfo field => field.GetValue(obj),
-                _ => null
-            };
+            return MemberAccessorCache.GetValue(obj, memberMap);
         }
 
         /// <summary>
-        /// Set member value for entity using BsonMemberMap
+        /// Set member value for entity using BsonMemberMap (optimized with expression compilation)
         /// </summary>
         private static void SetMemberValue(object obj, BsonMemberMap memberMap, object value)
         {
-            switch (memberMap.MemberInfo)
-            {
-                case PropertyInfo property:
-                    property.SetValue(obj, value);
-                    break;
-                case FieldInfo field:
-                    field.SetValue(obj, value);
-                    break;
-                default:
-                    throw new InvalidOperationException("Invalid member type");
-            }
+            MemberAccessorCache.SetValue(obj, memberMap, value);
         }
     }
 }
