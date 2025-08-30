@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using MongoDB.Entities.Tests.Models;
 using Shouldly;
@@ -29,6 +30,26 @@ namespace MongoDB.Entities.Tests
             childCache[0].MemberName.ShouldBe(nameof(InheritanceEntityChild.Id));
             childCache[1].MemberName.ShouldBe(nameof(InheritanceEntityChild.CreatedOn));
             childCache[2].MemberName.ShouldBe(nameof(InheritanceEntityChild.Name));
+        }
+
+        [TestMethod]
+        public void MeasureGetTypePerformance()
+        {
+            List<object> items = new List<object>(10000);
+            // 填充数据
+            for (int i = 0; i < 100000; i++)
+            {
+                items.Add(i % 2 == 0 ? "string" : 123);
+            }
+
+            Stopwatch sw = Stopwatch.StartNew();
+            foreach (var item in items)
+            {
+                Type t = item.GetType();
+            }
+            sw.Stop();
+
+            Debug.WriteLine($"调用100000次GetType()耗时: {sw.ElapsedMilliseconds}毫秒");
         }
     }
 }

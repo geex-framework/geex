@@ -619,7 +619,7 @@ namespace MongoDB.Entities
                 if (toSavedEntities.Count != 0)
                 {
                     savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
-                    var list = (castMethod.MakeGenericMethod(type).Invoke(null, new object[] { toSavedEntities }));
+                    var list = MethodReflectionCache.InvokeStaticGenericMethod(castMethod, type, toSavedEntities);
                     const int maxRetries = 3;
                     for (int attempt = 0; attempt < maxRetries; attempt++)
                     {

@@ -267,12 +267,111 @@ namespace MongoDB.Entities
 
         private static async Task<IEnumerable<WriteModel<T>>> PrepareForSaveBatch<T>(IEnumerable<T> entities, DbContext dbContext) where T : IEntityBase
         {
+            var entitiesArray = entities as T[] ?? entities.ToArray();
+            if (entitiesArray.Length == 0)
+                return Array.Empty<WriteModel<T>>();
+
+            // 按实际类型分组，以减少重复的类型信息获取
+            var entitiesByType = entitiesArray.GroupBy(e => e.GetType()).ToArray();
             var models = new List<WriteModel<T>>();
+
+            foreach (var typeGroup in entitiesByType)
+            {
+                var entityType = typeGroup.Key;
+                var entitiesOfSameType = typeGroup.ToArray();
+
+                // 对相同类型的实体批量处理
+                var typeModels = await PrepareForSaveBatchActualType<T>(entitiesOfSameType, entityType, dbContext);
+                models.AddRange(typeModels);
+            }
+
+            return models;
+        }
+
+        /// <summary>
+        /// 批量处理相同类型的实体，避免重复的类型信息获取和反射操作
+        /// </summary>
+        /// <typeparam name="T">基础实体类型</typeparam>
+        /// <param name="entities">相同类型的实体数组</param>
+        /// <param name="entityType">实体的实际类型</param>
+        /// <param name="dbContext">数据库上下文</param>
+        /// <returns>写入模型集合</returns>
+        private static async Task<IEnumerable<WriteModel<T>>> PrepareForSaveBatchActualType<T>(T[] entities, Type entityType, DbContext dbContext) where T : IEntityBase
+        {
+            var models = new List<WriteModel<T>>();
+            var now = DateTimeOffset.Now;
+
+            // 只获取一次类型配置信息
+            var typeCache = DB.GetCacheInfo(entityType);
+            var discriminators = entityType.GetBsonDiscriminators();
+            var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
 
             foreach (var entity in entities)
             {
-                var model = await PrepareForSave(entity, dbContext);
-                models.Add(model);
+                var isNewEntity = false;
+
+                if (dbContext != default && entity.DbContext == default)
+                {
+                    dbContext.Attach(entity);
+                }
+                else
+                {
+                    if (entity.Id == default)
+                    {
+                        entity.Id = entity.GenerateNewId().ToString();
+                        entity.CreatedOn = now;
+                        isNewEntity = true;
+                    }
+                }
+
+                if (entity is ISaveIntercepted intercepted)
+                {
+                    var original = dbContext?.DbDataCache[entityType].GetOrDefault(entity.Id);
+                    await intercepted.InterceptOnSave(original);
+                }
+
+                // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）
+                if (!isNewEntity)
+                {
+                    await CheckOptimisticConcurrency(dbContext, entity);
+                }
+
+                entity.ModifiedOn = now;
+
+                if (!isNewEntity)
+                {
+                    // 构建更新定义 - 重用类型配置信息
+                    var updateDefs = new List<UpdateDefinition<T>>();
+                    var memberMaps = typeCache.MemberMaps.Where(map => map.MemberName != nameof(IEntityBase.Id));
+
+                    foreach (var memberMap in memberMaps)
+                    {
+                        var value = GetMemberValue(entity, memberMap);
+                        updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
+                    }
+
+                    updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
+
+                    var updateOneModel = new UpdateOneModel<T>(
+                        filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
+                        update: Builders<T>.Update.Combine(updateDefs))
+                    {
+                        IsUpsert = true,
+                    };
+
+                    models.Add(updateOneModel);
+                }
+                else
+                {
+                    var replaceOneModel = new ReplaceOneModel<T>(
+                        filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
+                        replacement: entity)
+                    {
+                        IsUpsert = true,
+                    };
+
+                    models.Add(replaceOneModel);
+                }
             }
 
             return models;
@@ -377,24 +476,145 @@ namespace MongoDB.Entities
             var writeModel = await PrepareEntityForPartialSave(entity, dbContext, members, excludeMode);
             if (writeModel is UpdateOneModel<T> updateOneModel)
             {
-                return await Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, updateOneModel.Update, updateOneModel.IsUpsert ? updateOptions : null, cancellation);
+                return await Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, updateOneModel.Update, updateOptions, cancellation);
             }
             else if (writeModel is ReplaceOneModel<T> replaceOneModel)
             {
-                return await Collection<T>().ReplaceOneAsync(e => e.Id == entity.Id, replaceOneModel.Replacement, replaceOneModel.IsUpsert ? replaceOptions : null, cancellation);
+                return await Collection<T>().ReplaceOneAsync(e => e.Id == entity.Id, replaceOneModel.Replacement, replaceOptions, cancellation);
             }
 
             throw new InvalidOperationException("Invalid write model type");
         }
 
+        /// <summary>
+        /// 批量处理相同类型的实体的部分保存，避免重复的类型信息获取和反射操作
+        /// </summary>
+        /// <typeparam name="T">基础实体类型</typeparam>
+        /// <param name="entities">相同类型的实体数组</param>
+        /// <param name="entityType">实体的实际类型</param>
+        /// <param name="members">要保存/排除的成员表达式</param>
+        /// <param name="dbContext">数据库上下文</param>
+        /// <param name="excludeMode">是否为排除模式</param>
+        /// <returns>写入模型集合</returns>
+        private static async Task<IEnumerable<WriteModel<T>>> PrepareForPartialSaveBatchActualType<T>(T[] entities, Type entityType, Expression<Func<T, object>> members, DbContext dbContext, bool excludeMode) where T : IEntityBase
+        {
+            var propNames = RootPropNames(members);
+            if (!propNames.Any())
+                throw new ArgumentException("Unable to get any properties from the members expression!");
+
+            var models = new List<WriteModel<T>>();
+            var now = DateTimeOffset.Now;
+
+            // 只获取一次类型配置信息
+            var typeCache = DB.GetCacheInfo(entityType);
+            var discriminators = entityType.GetBsonDiscriminators();
+            var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
+
+            // 预先计算要处理的成员映射
+            var memberMaps = typeCache.MemberMaps.Where(map => map.MemberName != nameof(IEntityBase.Id));
+            if (excludeMode)
+                memberMaps = memberMaps.Where(m => !propNames.Contains(m.MemberName));
+            else
+                memberMaps = memberMaps.Where(m => propNames.Contains(m.MemberName));
+
+            var memberMapsArray = memberMaps.ToArray();
+
+            foreach (var entity in entities)
+            {
+                var isNewEntity = false;
+
+                if (dbContext != default && entity.DbContext == default)
+                {
+                    dbContext.Attach(entity);
+                }
+                else
+                {
+                    if (entity.Id == default)
+                    {
+                        entity.Id = entity.GenerateNewId().ToString();
+                        entity.CreatedOn = now;
+                        isNewEntity = true;
+                    }
+                }
+
+                if (entity is ISaveIntercepted intercepted)
+                {
+                    var original = dbContext?.DbDataCache[entityType].GetOrDefault(entity.Id);
+                    await intercepted.InterceptOnSave(original);
+                }
+
+                // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）
+                if (!isNewEntity)
+                {
+                    await CheckOptimisticConcurrency(dbContext, entity);
+                }
+
+                entity.ModifiedOn = now;
+
+                if (!isNewEntity)
+                {
+                    // 构建更新定义 - 重用类型配置信息和成员映射
+                    var updateDefs = new List<UpdateDefinition<T>>();
+
+                    foreach (var memberMap in memberMapsArray)
+                    {
+                        var value = GetMemberValue(entity, memberMap);
+                        updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
+                    }
+
+                    updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
+
+                    var updateOneModel = new UpdateOneModel<T>(
+                        filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
+                        update: Builders<T>.Update.Combine(updateDefs))
+                    {
+                        IsUpsert = true,
+                    };
+
+                    models.Add(updateOneModel);
+                }
+                else
+                {
+                    var patchObj = Activator.CreateInstance<T>();
+                    patchObj.Id = entity.Id;
+                    foreach (var memberMap in memberMapsArray)
+                    {
+                        var value = GetMemberValue(entity, memberMap);
+                        SetMemberValue(patchObj, memberMap, value);
+                    }
+
+                    var replaceOneModel = new ReplaceOneModel<T>(
+                        filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
+                        replacement: patchObj as dynamic)
+                    {
+                        IsUpsert = true,
+                    };
+
+                    models.Add(replaceOneModel);
+                }
+            }
+
+            return models;
+        }
+
         private static async Task<BulkWriteResult<T>> SavePartial<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
         {
+            var entitiesArray = entities as T[] ?? entities.ToArray();
+            if (entitiesArray.Length == 0)
+                return new BulkWriteResult<T>.Acknowledged(0, 0, 0, 0, null, [], []);
+
+            // 按实际类型分组，以减少重复的类型信息获取
+            var entitiesByType = entitiesArray.GroupBy(e => e.GetType()).ToArray();
             var models = new List<WriteModel<T>>();
 
-            foreach (var ent in entities)
+            foreach (var typeGroup in entitiesByType)
             {
-                var updateDefs = await PrepareEntityForPartialSave(ent, dbContext, members, excludeMode);
-                models.Add(updateDefs);
+                var entityType = typeGroup.Key;
+                var entitiesOfSameType = typeGroup.ToArray();
+
+                // 对相同类型的实体批量处理
+                var typeModels = await PrepareForPartialSaveBatchActualType<T>(entitiesOfSameType, entityType, members, dbContext, excludeMode);
+                models.AddRange(typeModels);
             }
 
             return dbContext?.Session == null
