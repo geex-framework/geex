@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+
 using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
 
@@ -49,6 +51,50 @@ namespace MongoDB.Bson.Serialization
                     return classMap;
                 }
             }
+        }
+
+        /// <summary>
+        /// 获取完整的继承链判别器数组，从根类型到当前类型
+        /// </summary>
+        /// <param name="entityType">实体类型</param>
+        /// <returns>继承链的判别器数组</returns>
+        public static BsonArray GetBsonDiscriminators(this Type entityType)
+        {
+            var discriminators = new List<BsonValue>();
+            var currentType = entityType;
+
+            // 从当前类型向上遍历到根类型
+            while (currentType != null && typeof(IEntityBase).IsAssignableFrom(currentType))
+            {
+                try
+                {
+                    var classMap = BsonClassMap.LookupClassMap(currentType);
+                    if (classMap?.Discriminator != null)
+                    {
+                        discriminators.Add(classMap.Discriminator);
+                    }
+                }
+                catch
+                {
+                    // 如果无法获取ClassMap，使用类型名称作为判别器
+                    discriminators.Add(currentType.Name);
+                }
+
+                // 获取父类型
+                currentType = currentType.BaseType;
+
+                // 如果到达了基本的Entity类型或object类型，停止遍历
+                if (currentType == typeof(object) ||
+                    currentType?.Name.StartsWith("Entity`") == true ||
+                    currentType?.Name.StartsWith("EntityBase`") == true)
+                {
+                    break;
+                }
+            }
+
+            // 反转数组，使其从根类型到当前类型的顺序
+            discriminators.Reverse();
+            return new BsonArray(discriminators);
         }
 
         public static void Inherit<T>(this BsonClassMap bsonClassMap)

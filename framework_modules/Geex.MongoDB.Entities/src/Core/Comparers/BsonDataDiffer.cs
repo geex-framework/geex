@@ -337,7 +337,6 @@ namespace MongoDB.Entities.Core.Comparers
     /// </summary>
     public static class BsonDataDiffer
     {
-        private static readonly ConcurrentDictionary<Type, BsonMemberMap[]> _memberMapCache = new();
         private static readonly ConcurrentDictionary<Type, bool> _isSimpleTypeCache = new();
         private static readonly ConcurrentDictionary<Type, Func<object, object, bool>> _equalityComparerCache = new();
         private static readonly ConcurrentDictionary<Type, MethodInfo> _diffMethodCache = new();
@@ -347,7 +346,6 @@ namespace MongoDB.Entities.Core.Comparers
         /// </summary>
         public static void ClearCache()
         {
-            _memberMapCache.Clear();
             _isSimpleTypeCache.Clear();
             _equalityComparerCache.Clear();
             _diffMethodCache.Clear();
@@ -495,7 +493,20 @@ namespace MongoDB.Entities.Core.Comparers
         private static void DiffTopLevelFields<T>(T baseObj, T newObj, DiffContext<T> context)
         {
             var type = typeof(T);
-            var memberMaps = GetBsonMemberMaps(type);
+            BsonMemberMap[] memberMaps;
+            
+            // 如果T是IEntityBase，使用Cache<T>的方法
+            if (typeof(IEntityBase).IsAssignableFrom(type))
+            {
+                // 使用反射获取Cache<T>的GetBsonMemberMaps方法
+                var cacheType = typeof(Cache<>).MakeGenericType(type);
+                var getBsonMemberMapsMethod = cacheType.GetMethod("GetBsonMemberMaps", BindingFlags.Public | BindingFlags.Static);
+                memberMaps = (BsonMemberMap[])getBsonMemberMapsMethod.Invoke(null, null);
+            }
+            else
+            {
+                memberMaps = GetBsonMemberMapsForType(type);
+            }
 
             foreach (var memberMap in memberMaps)
             {
@@ -731,23 +742,23 @@ namespace MongoDB.Entities.Core.Comparers
 
 
 
-        private static BsonMemberMap[] GetBsonMemberMaps(Type type)
+        /// <summary>
+        /// Gets BsonMemberMaps for non-entity types
+        /// </summary>
+        private static BsonMemberMap[] GetBsonMemberMapsForType(Type type)
         {
-            return _memberMapCache.GetOrAdd(type, t =>
+            try
             {
-                try
-                {
-                    var classMap = BsonClassMap.LookupClassMap(t);
-                    return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
-                }
-                catch
-                {
-                    var classMap = new BsonClassMap(t);
-                    BsonClassMap.RegisterClassMap(classMap);
-                    classMap.AutoMap();
-                    return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
-                }
-            });
+                var classMap = BsonClassMap.LookupClassMap(type);
+                return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
+            }
+            catch
+            {
+                var classMap = new BsonClassMap(type);
+                BsonClassMap.RegisterClassMap(classMap);
+                classMap.AutoMap();
+                return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
+            }
         }
 
         private static object GetMemberValue(object obj, BsonMemberMap memberMap)

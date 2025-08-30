@@ -448,7 +448,7 @@ namespace MongoDB.Entities
         /// <param name="entity">The entity to save</param>
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<UpdateResult> SaveOnlyAsync<T>(T entity, Expression<Func<T, object>> members,
+        public virtual Task<WriteResult> SaveOnlyAsync<T>(T entity, Expression<Func<T, object>> members,
             CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveOnlyAsync(entity, members, this, cancellation);
@@ -480,7 +480,7 @@ namespace MongoDB.Entities
         /// <param name="entity">The entity to save</param>
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<UpdateResult> SaveExceptAsync<T>(T entity, Expression<Func<T, object>> members,
+        public virtual Task<WriteResult> SaveExceptAsync<T>(T entity, Expression<Func<T, object>> members,
             CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveExceptAsync(entity, members, this, cancellation);
@@ -500,19 +500,6 @@ namespace MongoDB.Entities
             Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveExceptAsync(entities, members, this, cancellation);
-        }
-
-        /// <summary>
-        /// Saves an entity partially while excluding some properties in the transaction scope.
-        /// The properties to be excluded can be specified using the [Preserve] or [DontPreserve] attributes.
-        /// </summary>
-        /// <typeparam name="T">The type of entity</typeparam>
-        /// <param name="entity">The entity to save</param>
-        /// <param name="cancellation">An optional cancellation token</param>
-        public virtual Task<UpdateResult> SavePreservingAsync<T>(T entity, CancellationToken cancellation = default)
-            where T : IEntityBase
-        {
-            return DB.SavePreservingAsync(entity, session, cancellation);
         }
 
         /// <summary>
@@ -591,7 +578,7 @@ namespace MongoDB.Entities
 
         protected static MethodInfo saveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo castMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
-        private static readonly MethodInfo DiffMethod = typeof(DbContext).GetMethod(nameof(Diff), BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly MethodInfo DiffMethod = typeof(DbContext).GetMethod(nameof(Diff), BindingFlags.Public | BindingFlags.Instance);
         private static readonly ConcurrentDictionary<Type, MethodInfo> DiffCache = new();
 
         /// <summary>
@@ -711,13 +698,13 @@ namespace MongoDB.Entities
             }
 
             var cachedActualMethod = DiffCache.GetOrAdd(actualType, type => DiffMethod.MakeGenericMethod(type));
-            return (BsonDiffResult)cachedActualMethod.Invoke(null, [baseValue, newValue, mode]);
+            return (BsonDiffResult)cachedActualMethod.Invoke(this, [baseValue, newValue, mode]);
         }
 
         /// <summary>
         /// 泛型版本的实体变更检查，性能更好
         /// </summary>
-        protected virtual BsonDiffResult Diff<T>(T baseValue, T newValue, BsonDiffMode mode = BsonDiffMode.Fast) where T : IEntityBase
+        public virtual BsonDiffResult Diff<T>(T baseValue, T newValue, BsonDiffMode mode = BsonDiffMode.Fast) where T : IEntityBase
         {
             return BsonDataDiffer.Diff(baseValue, newValue, mode);
         }
@@ -938,149 +925,6 @@ namespace MongoDB.Entities
             else
             {
                 this.Logger.LogWarning("Explicit transaction is not started, nothing will be committed.");
-            }
-        }
-
-        /// <summary>
-        /// 乐观锁并发检查
-        /// </summary>
-        /// <param name="rootType">实体根类型</param>
-        /// <param name="newDbValue">数据库中的新值</param>
-        /// <param name="existingDbValue">缓存中的数据库值</param>
-        private void CheckOptimisticConcurrency(Type rootType, IEntityBase newDbValue, IEntityBase existingDbValue)
-        {
-            // 检查ModifiedOn是否发生了变化（乐观锁冲突检测）
-            if (newDbValue.ModifiedOn <= existingDbValue.ModifiedOn)
-            {
-                // 没有冲突，数据库值没有更新
-                return;
-            }
-
-            this.Logger.LogDebug("ModifiedOn changed for {EntityType}[{EntityId}]", rootType.Name, newDbValue.Id);
-
-            // 检查本地内存中是否有该实体的修改
-            if (!this.MemoryDataCache[rootType].TryGetValue(newDbValue.Id, out var localValue))
-            {
-                // 本地没有该实体，直接更新缓存
-                this.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB but not in local cache", rootType.Name, newDbValue.Id);
-                return;
-            }
-
-            // 比较本地值是否有修改
-            var ourChanges = this.Diff(localValue, existingDbValue, BsonDiffMode.Full);
-            if (ourChanges.AreEqual)
-            {
-                // 本地值没有修改，直接更新缓存
-                this.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB, local has no changes", rootType.Name, newDbValue.Id);
-                return;
-            }
-
-            // 本地值有修改，检查字段冲突
-            var theirChanges = this.Diff(newDbValue, existingDbValue, BsonDiffMode.Full);
-            var conflictingFields = DetectConflictingFields(ourChanges, theirChanges, existingDbValue, localValue, newDbValue);
-
-            if (conflictingFields.Count > 0)
-            {
-                // 有字段冲突，抛出乐观锁异常
-                this.Logger.LogError("Optimistic concurrency conflict: {EntityType}[{EntityId}], fields: {ConflictingFields}",
-                                     rootType.Name, newDbValue.Id, string.Join(", ", conflictingFields.Select(f => f.FieldName)));
-
-                throw new OptimisticConcurrencyException(
-                    rootType,
-                    newDbValue.Id,
-                    conflictingFields,
-                    existingDbValue.ModifiedOn,
-                    newDbValue.ModifiedOn
-                    );
-            }
-            else
-            {
-                // 没有字段冲突，记录信息日志
-                this.Logger.LogInformation("Concurrent modifications without field conflicts: {EntityType}[{EntityId}]", rootType.Name, newDbValue.Id);
-            }
-        }
-
-        /// <summary>
-        /// 检测字段冲突并构建冲突信息
-        /// </summary>
-        /// <param name="ourChanges">我们的变更</param>
-        /// <param name="theirChanges">他们的变更</param>
-        /// <param name="baseValue">基础值</param>
-        /// <param name="ourValue">我们的值</param>
-        /// <param name="theirValue">他们的值</param>
-        /// <returns>冲突字段的详细信息列表</returns>
-        private static List<FieldConflictInfo> DetectConflictingFields(
-            BsonDiffResult ourChanges,
-            BsonDiffResult theirChanges,
-            IEntityBase baseValue,
-            IEntityBase ourValue,
-            IEntityBase theirValue)
-        {
-            var conflictingFields = new List<FieldConflictInfo>();
-
-            if (ourChanges.Differences == null || theirChanges.Differences == null)
-            {
-                return conflictingFields;
-            }
-
-            // 检查我们修改的字段是否与他们修改的字段有交集
-            var ourModifiedFields = ourChanges.Differences.Keys;
-            var theirModifiedFields = theirChanges.Differences.Keys;
-
-            foreach (var fieldName in ourModifiedFields)
-            {
-                if (theirModifiedFields.Contains(fieldName))
-                {
-                    var ourDiff = ourChanges.Differences[fieldName];
-                    var theirDiff = theirChanges.Differences[fieldName];
-
-                    // 构建字段冲突信息
-                    var conflictInfo = new FieldConflictInfo
-                    {
-                        FieldName = fieldName,
-                        FieldType = ourDiff.FieldType,
-                        BaseValue = GetFieldValue(baseValue, fieldName, ourDiff.FieldType),
-                        OurValue = GetFieldValue(ourValue, fieldName, ourDiff.FieldType),
-                        TheirValue = GetFieldValue(theirValue, fieldName, theirDiff.FieldType)
-                    };
-
-                    conflictingFields.Add(conflictInfo);
-                }
-            }
-
-            return conflictingFields;
-        }
-
-        /// <summary>
-        /// 通过反射获取字段值
-        /// </summary>
-        /// <param name="entity">实体对象</param>
-        /// <param name="fieldName">字段名</param>
-        /// <param name="fieldType">字段类型</param>
-        /// <returns>字段值</returns>
-        private static object GetFieldValue(IEntityBase entity, string fieldName, Type fieldType)
-        {
-            if (entity == null) return null;
-
-            try
-            {
-                var property = entity.GetType().GetProperty(fieldName);
-                if (property != null)
-                {
-                    return property.GetValue(entity);
-                }
-
-                var field = entity.GetType().GetField(fieldName);
-                if (field != null)
-                {
-                    return field.GetValue(entity);
-                }
-
-                return null;
-            }
-            catch
-            {
-                return null;
             }
         }
     }

@@ -206,7 +206,7 @@ namespace MongoDB.Entities
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<ReplaceOneResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
+        internal static Task<WriteResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveAsync(entity, entity.DbContext, cancellation);
         }
@@ -244,7 +244,7 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<UpdateResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
+        internal static Task<WriteResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveOnlyAsync(entity, members, entity.DbContext, cancellation);
         }
@@ -277,7 +277,7 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<UpdateResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
+        internal static Task<WriteResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveExceptAsync(entity, members, entity.DbContext, cancellation);
         }
@@ -297,18 +297,6 @@ namespace MongoDB.Entities
         {
             var enumerable = entities.ToList();
             return DB.SaveExceptAsync(enumerable, members, enumerable.FirstOrDefault()?.DbContext, cancellation);
-        }
-
-        /// <summary>
-        /// Saves an entity partially while excluding some properties.
-        /// The properties to be excluded can be specified using the [Preserve] attribute.
-        /// </summary>
-        /// <typeparam name="T">Any class that implements IEntity</typeparam>
-        /// <param name="entity">The entity to save</param>
-        /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<UpdateResult> SavePreservingAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
-        {
-            return DB.SavePreservingAsync(entity, entity.DbContext?.Session, cancellation);
         }
 
         /// <summary>

@@ -50,7 +50,7 @@ namespace Geex.Abstractions
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<ReplaceOneResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<WriteResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
         {
             (entity.DbContext)?.Detach<T>(entity);
             return DB.SaveAsync(entity, cancellation: cancellation);
@@ -91,7 +91,7 @@ namespace Geex.Abstractions
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<UpdateResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<WriteResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             (entity.DbContext)?.Detach(entity);
             return DB.SaveOnlyAsync(entity, members, entity.DbContext, cancellation);
@@ -127,7 +127,7 @@ namespace Geex.Abstractions
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        public static Task<UpdateResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<WriteResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             (entity.DbContext)?.Detach(entity);
             return DB.SaveExceptAsync(entity, members, entity.DbContext, cancellation);

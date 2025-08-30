@@ -13,14 +13,11 @@ namespace MongoDB.Entities.Tests
         [Bson.Serialization.Attributes.BsonIgnoreIfNull]
         public string FullName { get; set; }
 
-        [Preserve]
         public Date Birthday { get; set; }
 
-        [Preserve]
         public int Age { get; set; }
 
         [Bson.Serialization.Attributes.BsonIgnoreIfDefault]
-        [Preserve]
         public int Age2 { get; set; }
 
         public IQueryable<Book> Books => LazyQuery(() => Books);

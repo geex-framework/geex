@@ -1,22 +1,47 @@
-﻿using MongoDB.Bson;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
-
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 using MongoDB.Driver.Linq;
 using MongoDB.Entities.Core;
 using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
 {
+    /// <summary>
+    /// Contains cache information for an entity type
+    /// </summary>
+    public class CacheInfo
+    {
+        public Type EntityType { get; set; }
+        public IMongoDatabase Database { get; set; }
+        public string DBName { get; set; }
+        public string CollectionName { get; set; }
+        public BsonClassMap ClassMap { get; set; }
+        public BsonMemberMap[] MemberMaps { get; set; }
+        public BsonArray Discriminators { get; set; }
+    }
+
+    /// <summary>
+    /// Contains cache information for a specific entity type
+    /// </summary>
+    /// <typeparam name="T">The entity type</typeparam>
+    public class CacheInfo<T> : CacheInfo where T : IEntityBase
+    {
+        public IMongoCollection<T> Collection { get; set; }
+        public ConcurrentDictionary<string, Watcher<T>> Watchers { get; set; }
+    }
+
     /// <summary>
     /// The main entrypoint for all data access methods of the library
     /// </summary>
@@ -177,6 +202,7 @@ namespace MongoDB.Entities
             DefaultDb = Database(name);
 
             TypeMap.Clear();
+            CacheInfoStorage.Clear();
 
             DefaultDbChanged?.Invoke();
         }
@@ -266,6 +292,74 @@ namespace MongoDB.Entities
         {
             return DB.DefaultDb.GetCollection<ProfilerLog>("system.profile");
         }
+
+        private static ConcurrentDictionary<Type, CacheInfo> CacheInfoStorage = new ConcurrentDictionary<Type, CacheInfo>();
+
+        /// <summary>
+        /// Gets cache information for a given entity type, initializing it if necessary
+        /// </summary>
+        /// <param name="entityType">The entity type</param>
+        /// <returns>Cache information including database, collection name, etc.</returns>
+        public static CacheInfo GetCacheInfo(Type entityType)
+        {
+            if (!typeof(IEntityBase).IsAssignableFrom(entityType))
+                throw new ArgumentException($"Type {entityType.Name} must implement IEntityBase");
+
+            // 尝试从缓存获取
+            if (CacheInfoStorage.TryGetValue(entityType, out CacheInfo cachedInfo))
+                return cachedInfo;
+
+            // 初始化缓存
+            var cacheType = typeof(Cache<>).MakeGenericType(entityType);
+            RuntimeHelpers.RunClassConstructor(cacheType.TypeHandle);
+
+            // 使用反射获取Cache<T>的静态属性
+            var databaseProperty = cacheType.GetProperty(nameof(Cache<>.Database), BindingFlags.NonPublic | BindingFlags.Static);
+            var dbNameProperty = cacheType.GetProperty(nameof(Cache<>.DBName), BindingFlags.NonPublic | BindingFlags.Static);
+            var collectionNameProperty = cacheType.GetProperty(nameof(Cache<>.CollectionName), BindingFlags.NonPublic | BindingFlags.Static);
+            var classMapProperty = cacheType.GetProperty(nameof(Cache<>.ClassMap), BindingFlags.Public | BindingFlags.Static);
+            var memberMapsProperty = cacheType.GetProperty(nameof(Cache<>.MemberMaps), BindingFlags.Public | BindingFlags.Static);
+            var bsonDiscriminatorsProperty = cacheType.GetProperty(nameof(Cache<>.Discriminators), BindingFlags.Public | BindingFlags.Static);
+
+            var cacheInfo = new CacheInfo
+            {
+                EntityType = entityType,
+                Database = (IMongoDatabase)databaseProperty?.GetValue(null),
+                DBName = (string)dbNameProperty?.GetValue(null),
+                CollectionName = (string)collectionNameProperty?.GetValue(null),
+                ClassMap = (BsonClassMap)classMapProperty?.GetValue(null),
+                MemberMaps = (BsonMemberMap[])memberMapsProperty?.GetValue(null),
+                Discriminators = (BsonArray)bsonDiscriminatorsProperty?.GetValue(null)
+            };
+
+            // 缓存结果
+            CacheInfoStorage.TryAdd(entityType, cacheInfo);
+            return cacheInfo;
+        }
+
+        /// <summary>
+        /// Gets cache information for a given entity type
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <returns>Cache information</returns>
+        public static CacheInfo<T> GetCacheInfo<T>() where T : IEntityBase
+        {
+            // 确保基础缓存信息已初始化
+            var baseCacheInfo = GetCacheInfo(typeof(T));
+
+            return new CacheInfo<T>
+            {
+                EntityType = baseCacheInfo.EntityType,
+                Database = baseCacheInfo.Database,
+                DBName = baseCacheInfo.DBName,
+                CollectionName = baseCacheInfo.CollectionName,
+                ClassMap = baseCacheInfo.ClassMap,
+                MemberMaps = baseCacheInfo.MemberMaps,
+                Collection = Cache<T>.Collection,
+                Watchers = Cache<T>.Watchers,
+                Discriminators = baseCacheInfo.Discriminators
+            };
+        }
     }
 
     internal static class TypeMap
@@ -306,7 +400,9 @@ namespace MongoDB.Entities
         internal static string CollectionName { get; private set; }
         internal static ConcurrentDictionary<string, Watcher<T>> Watchers { get; private set; }
 
-        private static PropertyInfo[] updatableProps;
+        public static BsonClassMap ClassMap { get; private set; }
+        public static BsonMemberMap[] MemberMaps { get; private set; }
+        public static BsonArray Discriminators { get; private set; }
 
         static Cache()
         {
@@ -317,7 +413,8 @@ namespace MongoDB.Entities
         private static void Initialize()
         {
             var type = typeof(T);
-            BsonClassMap.LookupClassMap(type).MapInheritance();
+            ClassMap = BsonClassMap.LookupClassMap(type);
+            ClassMap.MapInheritance();
             Database = TypeMap.GetDatabase(type);
             DBName = Database.DatabaseNamespace.DatabaseName;
 
@@ -332,19 +429,45 @@ namespace MongoDB.Entities
 
             Watchers = new ConcurrentDictionary<string, Watcher<T>>();
 
-            updatableProps = type.GetProperties()
-                .Where(p =>
-                      !p.IsDefined(typeof(BsonIdAttribute), false) &&
-                      !p.IsDefined(typeof(BsonIgnoreAttribute), false))
-                .ToArray();
+            // Initialize BsonMemberMaps
+            MemberMaps = GetBsonMemberMaps();
+            Discriminators = type.GetBsonDiscriminators();
         }
 
-        public static IEnumerable<PropertyInfo> UpdatableProps(T entity)
+
+        /// <summary>
+        /// Gets BsonMemberMaps for the current entity type
+        /// </summary>
+        public static BsonMemberMap[] GetBsonMemberMaps()
         {
-            return updatableProps.Where(p =>
-                p.CanWrite &&
-                !(p.IsDefined(typeof(BsonIgnoreIfDefaultAttribute), false) && p.GetValue(entity) == default) &&
-                !(p.IsDefined(typeof(BsonIgnoreIfNullAttribute), false) && p.GetValue(entity) == null));
+            try
+            {
+                var classMap = BsonClassMap.LookupClassMap(typeof(T));
+                return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
+            }
+            catch
+            {
+                var classMap = new BsonClassMap(typeof(T));
+                classMap.SetDiscriminatorIsRequired(true);
+                classMap.AutoMap();
+                return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Gets member value from entity using BsonMemberMap
+        /// </summary>
+        private static object GetMemberValue(object obj, BsonMemberMap memberMap)
+        {
+            if (memberMap.MemberInfo is PropertyInfo property)
+            {
+                return property.GetValue(obj);
+            }
+            else if (memberMap.MemberInfo is FieldInfo field)
+            {
+                return field.GetValue(obj);
+            }
+            return null;
         }
     }
 
@@ -353,6 +476,7 @@ namespace MongoDB.Entities
         /// <inheritdoc />
         public void Apply(BsonClassMap classMap)
         {
+            classMap.SetDiscriminatorIsRequired(true);
             classMap.MapInheritance();
         }
     }

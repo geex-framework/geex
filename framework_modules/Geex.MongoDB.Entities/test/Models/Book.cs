@@ -8,8 +8,8 @@ namespace MongoDB.Entities.Tests
     {
         public Date PublishedOn { get; set; }
 
-        [DontPreserve] public string Title { get; set; }
-        [DontPreserve] public decimal Price { get; set; }
+        public string Title { get; set; }
+        public decimal Price { get; set; }
 
         public int PriceInt { get; set; }
         public long PriceLong { get; set; }
