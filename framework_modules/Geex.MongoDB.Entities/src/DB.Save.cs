@@ -298,7 +298,7 @@ namespace MongoDB.Entities
         /// <returns>写入模型集合</returns>
         private static async Task<IEnumerable<WriteModel<T>>> PrepareForSaveBatchActualType<T>(T[] entities, Type entityType, DbContext dbContext) where T : IEntityBase
         {
-            var changeSet = new Dictionary<string, (DateTimeOffset, T)>(entities.Length);
+            var changeSet = new Dictionary<string, DateTimeOffset>(entities.Length);
             var models = new List<WriteModel<T>>(entities.Length);
             var now = DateTimeOffset.Now;
 
@@ -334,7 +334,7 @@ namespace MongoDB.Entities
                 // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
                 if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
                 {
-                    changeSet.Add(entity.Id, (entity.ModifiedOn, entity));
+                    changeSet.Add(entity.Id, entity.ModifiedOn);
                 }
 
                 entity.ModifiedOn = now;
@@ -374,7 +374,7 @@ namespace MongoDB.Entities
                     models.Add(replaceOneModel);
                 }
             }
-            await BulkCheckOptimisticConcurrency(dbContext, changeSet);
+            await BulkCheckOptimisticConcurrency<T>(dbContext, changeSet);
             return models;
         }
 
@@ -503,7 +503,7 @@ namespace MongoDB.Entities
             if (!propNames.Any())
                 throw new ArgumentException("Unable to get any properties from the members expression!");
 
-            var changeSet = new Dictionary<string, (DateTimeOffset, T)>(entities.Length);
+            var changeSet = new Dictionary<string, DateTimeOffset>(entities.Length);
             var models = new List<WriteModel<T>>(entities.Length);
             var now = DateTimeOffset.Now;
 
@@ -548,7 +548,7 @@ namespace MongoDB.Entities
                 // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
                 if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
                 {
-                    await CheckOptimisticConcurrency(dbContext, entity);
+                    changeSet.Add(entity.Id, entity.ModifiedOn);
                 }
 
                 entity.ModifiedOn = now;
@@ -595,7 +595,7 @@ namespace MongoDB.Entities
                     models.Add(replaceOneModel);
                 }
             }
-            await BulkCheckOptimisticConcurrency(dbContext, changeSet);
+            await BulkCheckOptimisticConcurrency<T>(dbContext, changeSet);
             return models;
         }
 
@@ -628,7 +628,7 @@ namespace MongoDB.Entities
         /// 乐观锁并发检查
         /// </summary>
         /// <param name="dbContext">数据库上下文</param>
-        private static async Task BulkCheckOptimisticConcurrency<T>(DbContext dbContext, Dictionary<string, (DateTimeOffset, T)> changeSet) where T : IEntityBase
+        private static async Task BulkCheckOptimisticConcurrency<T>(DbContext dbContext, Dictionary<string, DateTimeOffset> changeSet) where T : IEntityBase
         {
             if (dbContext == null)
             {
@@ -668,9 +668,9 @@ namespace MongoDB.Entities
                 }
 
                 // 检查ModifiedOn是否发生了变化（乐观锁冲突检测）
-                var changedItem = changeSet[dbRecent.Id];
+                var changedItemDate = changeSet[dbRecent.Id];
                 var existingDbValue = dbContext.DbDataCache[rootType][dbRecent.Id];
-                if (dbRecent.ModifiedOn <= changedItem.Item1)
+                if (dbRecent.ModifiedOn <= changedItemDate)
                 {
                     // 没有冲突，数据库值没有更新
                     return;
