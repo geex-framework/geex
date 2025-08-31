@@ -68,8 +68,7 @@ namespace MongoDB.Entities
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
             var rootType = typeof(T).GetRootBsonClassMap().ClassType;
-            return await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, rootType)
-                .Invoke(null, new object[] { new[] { id }, dbContext, cancellation }) as Task<long>);
+            return await (DeleteCascadingAsyncMethod.MakeGenericMethodFast(rootType).Invoke(null, [new[] { id }, dbContext, cancellation]) as Task<long>);
             //return DeleteCascadingAsync<T>();
         }
 
@@ -88,8 +87,7 @@ namespace MongoDB.Entities
         {
             dbContext?.ThrowIfCancellationNotSupported(cancellation);
             var rootType = type.GetRootBsonClassMap().ClassType;
-            return await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, rootType)
-                .Invoke(null, new object[] { new[] { id }, dbContext, cancellation }) as Task<long>);
+            return await (DeleteCascadingAsyncMethod.MakeGenericMethodFast(rootType).Invoke(null, [new[] { id }, dbContext, cancellation]) as Task<long>);
             //return DeleteCascadingAsync<T>();
         }
 
@@ -122,8 +120,7 @@ namespace MongoDB.Entities
                     if (cursor.Current.Any())
                     {
                         var toDeletes = cursor.Current;
-                        deletedCount += await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, typeof(T).GetRootBsonClassMap().ClassType)
-                            .Invoke(null, new object[] { toDeletes, dbContext, cancellation }) as Task<long>);
+                        deletedCount += await (DeleteCascadingAsyncMethod.MakeGenericMethodFast(typeof(T).GetRootBsonClassMap().ClassType).Invoke(null, [toDeletes, dbContext, cancellation]) as Task<long>);
                     }
                 }
             }
@@ -150,8 +147,7 @@ namespace MongoDB.Entities
                     if (cursor.Current.Any())
                     {
                         var toDeletes = cursor.Current;
-                        deletedCount += await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, typeof(T).GetRootBsonClassMap().ClassType)
-                            .Invoke(null, new object[] { toDeletes, dbContext, cancellation }) as Task<long>);
+                        deletedCount += await (DeleteCascadingAsyncMethod.MakeGenericMethodFast(typeof(T).GetRootBsonClassMap().ClassType).Invoke(null, [toDeletes, dbContext, cancellation]) as Task<long>);
                     }
                 }
             }
@@ -179,8 +175,7 @@ namespace MongoDB.Entities
 
             foreach (var batch in ids.ToBatches(deleteBatchSize))
             {
-                deletedCount += (await (MethodReflectionCache.GetGenericMethod(DeleteCascadingAsyncMethod, typeof(T).GetRootBsonClassMap().ClassType)
-                    .Invoke(null, new object[] { batch, dbContext, cancellation }) as Task<long>).ConfigureAwait(false));
+                deletedCount += (await (DeleteCascadingAsyncMethod.MakeGenericMethodFast(typeof(T).GetRootBsonClassMap().ClassType).Invoke(null, [batch, dbContext, cancellation]) as Task<long>).ConfigureAwait(false));
             }
 
             return deletedCount;

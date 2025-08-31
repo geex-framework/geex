@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -139,7 +138,7 @@ namespace MediatX.RabbitMQ
                     var handleMethod = handler.GetMethod(nameof(IEventHandler<IEvent>.Handle), new Type[] { eventType, typeof(CancellationToken) });
                     this._handlersMap.TryAdd(routeKey, (eventType, async (@event) =>
                     {
-                        handleMethod.Invoke(_provider.CreateScope().ServiceProvider.GetRequiredService(typeof(IEventHandler<>).MakeGenericType(eventType)), new object[] { @event, CancellationToken.None });
+                        handleMethod.InvokeFast(_provider.CreateScope().ServiceProvider.GetRequiredService(typeof(IEventHandler<>).MakeGenericType(eventType)), @event, CancellationToken.None);
                     }
                     ));
                 }

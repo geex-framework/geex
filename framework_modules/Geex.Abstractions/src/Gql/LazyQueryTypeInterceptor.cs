@@ -22,13 +22,13 @@ namespace Geex.Gql
         {
             if (LazyGetterCache.TryGetValue(valueType, out var method))
             {
-                return method.Invoke(lazy, Array.Empty<object>());
+                return method.Invoke(lazy, []);
             }
 
             var lazyType = lazy.GetType();
             method = lazyType.GetProperty(nameof(Lazy<object>.Value))!.GetMethod!;
             LazyGetterCache.Add(valueType, method);
-            return method.Invoke(lazy, Array.Empty<object>());
+            return method.Invoke(lazy, []);
         }
 
         /// <inheritdoc />
@@ -53,7 +53,7 @@ namespace Geex.Gql
                         field.Resolver = async context =>
                         {
                             var parent = context.Parent<object>();
-                            var lazyValue = getter.GetMethod!.Invoke(parent, Array.Empty<object>());
+                            var lazyValue = getter.GetValue(parent);
                             return lazyValue != null ? GetLazyValue(lazyValue, valueType) : null;
                         };
                     }
@@ -73,7 +73,7 @@ namespace Geex.Gql
                         field.Resolver = async context =>
                         {
                             var parent = context.Parent<object>();
-                            return getter.GetMethod!.Invoke(parent, Array.Empty<object>());
+                            return getter.GetValue(parent);
                         };
                     }
                 }

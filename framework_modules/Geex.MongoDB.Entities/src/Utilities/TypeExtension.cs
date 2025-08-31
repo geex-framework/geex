@@ -71,7 +71,7 @@ namespace MongoDB.Entities.Utilities
         private static CreateDelegate CacheFunc(Tuple<Type, Type, Type, Type> key)
         {
             var types = new Type[] { key.Item1, key.Item2, key.Item3, key.Item4 };
-            var generic = MethodReflectionCache.GetGenericMethod(CreateInstanceMethod, key.Item2, key.Item3, key.Item4);
+            var generic = MethodReflectionCache.MakeGenericMethodFast(CreateInstanceMethod, key.Item2, key.Item3, key.Item4);
 
             var paramExpr = new List<ParameterExpression>();
             paramExpr.Add(Expression.Parameter(typeof(Type)));

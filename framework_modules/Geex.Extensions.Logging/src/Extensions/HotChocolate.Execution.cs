@@ -1,4 +1,7 @@
 ﻿using System.Reflection;
+
+using Geex.Extensions;
+
 using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Execution.Processing;
@@ -53,14 +56,14 @@ namespace Geex.Extensions.Logging.Extensions
 
         public static void EnsureCapacity(this ObjectResult context, int capacity)
         {
-            EnsureCapacityMethodInfo.Invoke(context, new object[] { capacity });
+            EnsureCapacityMethodInfo.Invoke(context, [capacity]);
         }
 
         private static MethodInfo SetValueUnsafeMethodInfo = typeof(ObjectResult).GetMethod(nameof(SetValueUnsafe), BindingFlags.NonPublic|BindingFlags.Instance, types: new[] { typeof(int), typeof(string), typeof(object), typeof(bool) });
 
         public static void SetValueUnsafe(this ObjectResult context, int index, string name, object? value, bool isNullable = true)
         {
-            SetValueUnsafeMethodInfo.Invoke(context, new object[] { index, name, value, isNullable });
+            SetValueUnsafeMethodInfo.Invoke(context, [index, name, value, isNullable]);
         }
     }
 }

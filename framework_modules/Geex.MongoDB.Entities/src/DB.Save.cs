@@ -232,7 +232,7 @@ namespace MongoDB.Entities
 
             foreach (var memberMap in memberMaps)
             {
-                var value = GetMemberValue(entity, memberMap);
+                var value = memberMap.Getter(entity);
                 updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
             }
 
@@ -346,7 +346,7 @@ namespace MongoDB.Entities
 
                     foreach (var memberMap in memberMaps)
                     {
-                        var value = GetMemberValue(entity, memberMap);
+                        var value = memberMap.Getter(entity);
                         updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
                     }
 
@@ -424,7 +424,7 @@ namespace MongoDB.Entities
             var entityType = entity.GetType();
             var typeCache = DB.GetCacheInfo(entityType);
             // 构建更新定义
-            var updateDefs = new List<UpdateDefinition<T>>();
+            var updateDefs = new List<UpdateDefinition<T>>(50);
             var memberMaps = typeCache.MemberMaps.WhereIf(!isNewEntity, map => map.MemberName != nameof(IEntityBase.Id));
 
             // 根据成员名称过滤
@@ -433,12 +433,12 @@ namespace MongoDB.Entities
             else
                 memberMaps = memberMaps.Where(m => propNames.Contains(m.MemberName));
 
-            var patchObj = Activator.CreateInstance<T>();
+            var patchObj = (T)typeof(T).CreateInstanceFast();
             patchObj.Id = entity.Id;
             foreach (var memberMap in memberMaps)
             {
-                var value = GetMemberValue(entity, memberMap);
-                SetMemberValue(patchObj, memberMap, value);
+                var value = memberMap.Getter(entity);
+                memberMap.Setter(patchObj, value);
                 updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
             }
 
@@ -554,11 +554,11 @@ namespace MongoDB.Entities
                 if (!isNewEntity)
                 {
                     // 构建更新定义 - 重用类型配置信息和成员映射
-                    var updateDefs = new List<UpdateDefinition<T>>();
+                    var updateDefs = new List<UpdateDefinition<T>>(50);
 
                     foreach (var memberMap in memberMapsArray)
                     {
-                        var value = GetMemberValue(entity, memberMap);
+                        var value = memberMap.Getter(entity);
                         updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
                     }
 
@@ -575,12 +575,12 @@ namespace MongoDB.Entities
                 }
                 else
                 {
-                    var patchObj = Activator.CreateInstance<T>();
+                    var patchObj = (T)typeof(T).CreateInstanceFast();
                     patchObj.Id = entity.Id;
                     foreach (var memberMap in memberMapsArray)
                     {
-                        var value = GetMemberValue(entity, memberMap);
-                        SetMemberValue(patchObj, memberMap, value);
+                        var value = memberMap.Getter(entity);
+                        memberMap.Setter(patchObj, value);
                     }
 
                     var replaceOneModel = new ReplaceOneModel<T>(
@@ -786,22 +786,6 @@ namespace MongoDB.Entities
             {
                 return null;
             }
-        }
-
-        /// <summary>
-        /// Gets member value from entity using BsonMemberMap (optimized with expression compilation)
-        /// </summary>
-        private static object GetMemberValue(object obj, BsonMemberMap memberMap)
-        {
-            return MemberReflectionCache.GetValue(obj, memberMap);
-        }
-
-        /// <summary>
-        /// Set member value for entity using BsonMemberMap (optimized with expression compilation)
-        /// </summary>
-        private static void SetMemberValue(object obj, BsonMemberMap memberMap, object value)
-        {
-            MemberReflectionCache.SetValue(obj, memberMap, value);
         }
     }
 }

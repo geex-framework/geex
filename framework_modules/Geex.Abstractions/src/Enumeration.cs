@@ -2,8 +2,11 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
+using FastExpressionCompiler;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -46,7 +49,6 @@ namespace Geex
         static readonly ConcurrentDictionary<string, TEnum> _fromNameIgnoreCase = new ConcurrentDictionary<string, TEnum>();
 
         static readonly ConcurrentDictionary<string, TEnum> _fromValue = new ConcurrentDictionary<string, TEnum>();
-
 
         private static IEnumerable<TEnum> GetAllOptions()
         {
@@ -596,12 +598,11 @@ namespace Geex
                 return existed;
             }
 
-            // Try to create an instance of the concrete enumeration type
+            // Try to create an instance of the concrete enumeration type using high-performance cache
             var concreteType = typeof(TEnum);
             try
             {
-
-                var instance = (TEnum)Activator.CreateInstance(concreteType);
+                var instance = (TEnum)concreteType.CreateInstanceFast();
                 (instance as Enumeration<TEnum>).SetEnum(name, value);
                 // Cache the new instance
                 _fromName.TryAdd(name, instance);
@@ -657,11 +658,11 @@ namespace Geex
                 }
             }
 
-            // Try to create an instance of the concrete enumeration type
+            // Try to create an instance of the concrete enumeration type using high-performance cache
             var concreteType = typeof(TChildEnum);
             try
             {
-                var instance = (TChildEnum)Activator.CreateInstance(concreteType);
+                var instance = (TChildEnum)concreteType.CreateInstanceFast();
                 (instance as Enumeration<TEnum>).SetEnum(name, value);
                 // Cache the new instance
                 _fromName.TryAdd(name, instance);

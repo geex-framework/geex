@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
@@ -56,12 +57,11 @@ namespace MongoDB.Entities.Utilities
                     {
                         if (targetType.IsAssignableFrom(typeof(T)))
                         {
-                            var originExpression = ExpressionDataFilterAccessor.GetPreFilterExpression(targetType, value);
-                            if (originExpression != null)
+                            if (typeof(ExpressionDataFilter<>).MakeGenericTypeFast(targetType).GetProperty(nameof(ExpressionDataFilter<>.PreFilterExpression))?.GetValue(value) is LambdaExpression originExpression)
                             {
                                 var lambda = originExpression.CastParamType<T>();
-                                var whereMethod = MethodReflectionCache.GetGenericMethod(queryableWhereMethodInfo, typeof(T));
-                                expression = Expression.Call(null, whereMethod, expression, lambda);
+                                var methodInfo = queryableWhereMethodInfo.MakeGenericMethodFast(typeof(T));
+                                expression = Expression.Call(null, methodInfo, expression, lambda);
                             }
                         }
                     }
@@ -224,7 +224,7 @@ namespace MongoDB.Entities.Utilities
                     subQueryEntityType = subQueryType.GetRootBsonClassMap().ClassType;
                 }
 
-                var listType = ListType.MakeGenericType(subQueryEntityType);
+                var listType = ListType.MakeGenericTypeFast(subQueryEntityType);
                 IQueryable batchLoadResult = default;
                 foreach (var entity in entities)
                 {
@@ -240,8 +240,7 @@ namespace MongoDB.Entities.Utilities
 
                         filterExpression = filterExpression.CastParamType(subQueryEntityType);
 
-                        var filteredQuery = (IQueryable)MethodReflectionCache.InvokeStaticGenericMethod(
-                            queryableWhereMethodInfo, subQueryEntityType, allQuery, filterExpression);
+                        var filteredQuery = (IQueryable)queryableWhereMethodInfo.MakeGenericMethodFast(subQueryEntityType).Invoke(null, [allQuery, filterExpression]);
 
                         var list = (IList)Activator.CreateInstance(listType, filteredQuery);
                         batchLoadResult = list

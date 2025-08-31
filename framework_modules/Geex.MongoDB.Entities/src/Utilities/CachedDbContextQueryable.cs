@@ -167,8 +167,9 @@ namespace MongoDB.Entities.Utilities
                 {
                     if (targetType.IsAssignableFrom(_sourceType))
                     {
-                        var originExpression = ExpressionDataFilterAccessor.GetPostFilterExpression(targetType, value);
-                        if (originExpression != null)
+                        if (typeof(ExpressionDataFilter<>).MakeGenericTypeFast(targetType)
+                                .GetProperty(nameof(ExpressionDataFilter<T>.PostFilterExpression))
+                                ?.GetValue(value) is LambdaExpression originExpression)
                         {
                             var lambda = originExpression.CastParamType<TSelect>();
                             result = result.Where((Expression<Func<TSelect, bool>>)lambda);
@@ -185,7 +186,7 @@ namespace MongoDB.Entities.Utilities
             foreach (var (propertyInfo, subBatchLoadConfig) in batchLoadConfig.SubBatchLoadConfigs)
             {
                 var subQueryEntityType = propertyInfo.PropertyType.GenericTypeArguments.First().GetRootBsonClassMap().ClassType;
-                var listType = ListType.MakeGenericType(subQueryEntityType);
+                var listType = ListType.MakeGenericTypeFast(subQueryEntityType);
 
                 var lazyQueries = new List<ILazyQuery>();
 
@@ -205,7 +206,7 @@ namespace MongoDB.Entities.Utilities
                 var filterExpression = first.BatchQuery.DynamicInvoke(entities) as LambdaExpression;
                 filterExpression = filterExpression.CastParamType(subQueryEntityType);
 
-                var whereMethod = QueryableWhereMethodInfo.MakeGenericMethod(subQueryEntityType);
+                var whereMethod = QueryableWhereMethodInfo.MakeGenericMethodFast(subQueryEntityType);
                 var filteredQuery = (IQueryable)whereMethod.Invoke(null, [allQuery, filterExpression]);
 
                 var list = (IList)Activator.CreateInstance(listType, filteredQuery);

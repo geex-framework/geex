@@ -164,7 +164,7 @@ namespace MongoDB.Entities.Utilities
                 var rootType = typeof(TEntity).GetRootBsonClassMap().ClassType;
                 if (rootType != typeof(TEntity))
                 {
-                    var ofTypeMethod = MethodReflectionCache.GetGenericMethod(QueryableOfTypeMethod, typeof(TEntity));
+                    var ofTypeMethod = QueryableOfTypeMethod.MakeGenericMethodFast(typeof(TEntity));
                     root = Expression.Call(ofTypeMethod, root);
                 }
                 this.ItemType = root.Type.GenericTypeArguments[0];
@@ -184,7 +184,7 @@ namespace MongoDB.Entities.Utilities
                             if (mceMethod.IsGenericMethod)
                             {
                                 genericArgs = genericArgs.Select(x => x.IsAssignableFrom(ItemType) ? ItemType : x).ToArray();
-                                actualMethod = MethodReflectionCache.GetGenericMethod(mceMethod.GetGenericMethodDefinition(), genericArgs);
+                                actualMethod = mceMethod.GetGenericMethodDefinition().MakeGenericMethodFast(genericArgs);
                             }
                             else
                                 actualMethod = mceMethod;
@@ -220,21 +220,21 @@ namespace MongoDB.Entities.Utilities
                 if (lastStageFilter is UnaryExpression unary && unary?.Operand is LambdaExpression lambda &&
                     lambda.Parameters.Any(x => x.Type.IsAssignableFrom(ItemType)))
                 {
-                    var whereMethod = MethodReflectionCache.GetGenericMethod(QueryableWhereMethod, ItemType);
+                    var whereMethod = QueryableWhereMethod.MakeGenericMethodFast(ItemType);
                     var mce2Argument = mce2.Arguments[0];
                     lastStageFilter = Expression.Call(whereMethod,
                         mce2Argument, lambda.CastParamType(this.ItemType));
 
                     mce2 = mce2.Method.Name switch
                     {
-                        Q.First => Expression.Call(MethodReflectionCache.GetGenericMethod(QueryableFirstMethod, ItemType),
+                        Q.First => Expression.Call(QueryableFirstMethod.MakeGenericMethodFast(ItemType),
                             mce2Argument),
                         Q.FirstOrDefault => Expression.Call(
-                            MethodReflectionCache.GetGenericMethod(QueryableFirstOrDefaultMethod, ItemType), mce2Argument),
-                        Q.Single => Expression.Call(MethodReflectionCache.GetGenericMethod(QueryableSingleMethod, ItemType),
+                            QueryableFirstOrDefaultMethod.MakeGenericMethodFast(ItemType), mce2Argument),
+                        Q.Single => Expression.Call(QueryableSingleMethod.MakeGenericMethodFast(ItemType),
                             mce2Argument),
                         Q.SingleOrDefault => Expression.Call(
-                            MethodReflectionCache.GetGenericMethod(QueryableSingleOrDefaultMethod, ItemType), mce2Argument),
+                            QueryableSingleOrDefaultMethod.MakeGenericMethodFast(ItemType), mce2Argument),
                         _ => throw new ArgumentOutOfRangeException()
                     };
                     stages.RemoveAt(stages.Count - 1);

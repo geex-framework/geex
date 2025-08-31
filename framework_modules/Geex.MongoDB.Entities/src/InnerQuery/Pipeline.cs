@@ -2827,8 +2827,8 @@ namespace MongoDB.Entities.InnerQuery
                 {
                     enumerableOfItemType = enumerableOfItemType.GetRootBsonClassMap().ClassType;
                 }
-                Type listType = ListType.MakeGenericType(enumerableOfItemType);
-                object list = Activator.CreateInstance(listType);
+                Type listType = ListType.MakeGenericTypeFast(enumerableOfItemType);
+                object list = listType.CreateInstanceFast();
                 var listAddMethod = listType.GetMethod("Add");
                 object[] listAddMethodParameters = new object[1];
 
@@ -2866,7 +2866,7 @@ namespace MongoDB.Entities.InnerQuery
                     {
                         // We can't deserialize a BsonValue if it's not a document.
                         // So we need to deserialize using out simple result doc type.
-                        simplePipelineDocType = pipelineDocumentType.MakeGenericType(realType);
+                        simplePipelineDocType = pipelineDocumentType.MakeGenericTypeFast(realType);
                         simplePipelineDocTypeResultProperty = simplePipelineDocType.GetProperty(PIPELINE_DOCUMENT_RESULT_NAME);
                     }
 

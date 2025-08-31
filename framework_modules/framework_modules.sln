@@ -53,6 +53,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Analyzer.Tests", "Geex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Analyzer.TestCode", "Geex.Analyzer.TestCode\Geex.Analyzer.TestCode.csproj", "{D9792CC6-6C82-539F-E661-CD20BCFC72D5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Tests.Benchmarks", "Geex.Tests.Benchmarks\Geex.Tests.Benchmarks.csproj", "{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -155,6 +157,10 @@ Global
 		{D9792CC6-6C82-539F-E661-CD20BCFC72D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9792CC6-6C82-539F-E661-CD20BCFC72D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9792CC6-6C82-539F-E661-CD20BCFC72D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

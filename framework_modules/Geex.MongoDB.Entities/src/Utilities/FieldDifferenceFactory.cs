@@ -8,7 +8,8 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Core.Comparers;
 using System.Collections.ObjectModel;
 
-namespace MongoDB.Entities.Utilities
+// ReSharper disable once CheckNamespace
+namespace MongoDB.Bson
 {
     /// <summary>
     /// 字段差异工厂，用于高性能创建字段差异对象
@@ -22,13 +23,10 @@ namespace MongoDB.Entities.Utilities
         private static readonly ConcurrentDictionary<Type, ParameterExpression> _parameterCache = new();
         private static readonly ConcurrentDictionary<Type, NewExpression> _constructorCache = new();
 
-        // 预编译常用类型的工厂方法
-        private static readonly ReadOnlyCollection<Expression> _emptyExpressions = new List<Expression>().AsReadOnly();
-
         /// <summary>
         /// 创建字段差异对象（使用编译的表达式）
         /// </summary>
-        public static IBsonFieldDifference CreateFieldDifference(string fieldName, object baseValue, object newValue, BsonMemberMap memberMap)
+        public static IBsonFieldDifference CreateFieldDifference(this BsonMemberMap memberMap, string fieldName, object baseValue, object newValue)
         {
             var fieldType = memberMap.MemberType;
             var factory = _factoryCache.GetOrAdd(fieldType, CreateFactory);
@@ -38,7 +36,7 @@ namespace MongoDB.Entities.Utilities
         private static Func<string, object, object, BsonMemberMap, IBsonFieldDifference> CreateFactory(Type fieldType)
         {
             // 创建编译的构造函数和属性设置器
-            var differenceType = typeof(BsonFieldDifference<>).MakeGenericType(fieldType);
+            var differenceType = typeof(BsonFieldDifference<>).MakeGenericTypeFast(fieldType);
 
             var constructor = differenceType.GetConstructor(Type.EmptyTypes);
             var fieldNameProp = differenceType.GetProperty(nameof(BsonFieldDifference<object>.FieldName));
@@ -88,36 +86,7 @@ namespace MongoDB.Entities.Utilities
                 block,
                 fieldNameParam, baseValueParam, newValueParam, memberMapParam);
 
-            try
-            {
-                return lambda.CompileFast();
-            }
-            catch (Exception)
-            {
-                // 如果编译失败，回退到反射方式
-                return CreateReflectionBasedFactory(fieldType);
-            }
-        }
-
-        private static Func<string, object, object, BsonMemberMap, IBsonFieldDifference> CreateReflectionBasedFactory(Type fieldType)
-        {
-            return (fieldName, baseValue, newValue, memberMap) =>
-            {
-                var differenceType = typeof(BsonFieldDifference<>).MakeGenericType(fieldType);
-                var difference = (IBsonFieldDifference)Activator.CreateInstance(differenceType);
-
-                var fieldNameProperty = differenceType.GetProperty(nameof(BsonFieldDifference<object>.FieldName));
-                var baseValueProperty = differenceType.GetProperty(nameof(BsonFieldDifference<object>.BaseValue));
-                var newValueProperty = differenceType.GetProperty(nameof(BsonFieldDifference<object>.NewValue));
-                var memberMapProperty = differenceType.GetProperty(nameof(BsonFieldDifference<object>.MemberMap));
-
-                fieldNameProperty?.SetValue(difference, fieldName);
-                baseValueProperty?.SetValue(difference, baseValue);
-                newValueProperty?.SetValue(difference, newValue);
-                memberMapProperty?.SetValue(difference, memberMap);
-
-                return difference;
-            };
+            return lambda.CompileFast();
         }
 
         /// <summary>

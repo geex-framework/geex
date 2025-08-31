@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+
 using FastExpressionCompiler;
+
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 
@@ -43,7 +45,7 @@ namespace Geex.Utilities
         /// <returns>方法信息数组</returns>
         public static MethodInfo[] GetNonSpecialMethods(Type type)
         {
-            return _typeMethodsCache.GetOrAdd(type, t => 
+            return _typeMethodsCache.GetOrAdd(type, t =>
                 t.GetMethods().Where(x => !x.IsSpecialName).ToArray());
         }
 
@@ -76,52 +78,17 @@ namespace Geex.Utilities
         /// </summary>
         private static Func<object, object> CreateGetFieldsAccessor()
         {
-            try
-            {
-                // 获取ObjectTypeDescriptor类型和Fields属性
-                var descriptorType = typeof(ObjectTypeDescriptor);
-                var fieldsProperty = descriptorType.GetProperty("Fields", BindingFlags.NonPublic | BindingFlags.Instance);
-                
-                if (fieldsProperty != null)
-                {
-                    // 创建表达式：(object descriptor) => ((ObjectTypeDescriptor)descriptor).Fields
-                    var descriptorParam = Expression.Parameter(typeof(object), "descriptor");
-                    var typedDescriptor = Expression.Convert(descriptorParam, descriptorType);
-                    var propertyAccess = Expression.Property(typedDescriptor, fieldsProperty);
-                    var boxedResult = Expression.Convert(propertyAccess, typeof(object));
-                    
-                    var lambda = Expression.Lambda<Func<object, object>>(boxedResult, descriptorParam);
-                    return lambda.CompileFast();
-                }
-            }
-            catch (Exception)
-            {
-                // 编译失败，回退到反射方式
-            }
-
-            // 回退到反射访问
-            return CreateReflectionBasedFieldsAccessor();
-        }
-
-        /// <summary>
-        /// 创建基于反射的Fields属性访问器（回退方案）
-        /// </summary>
-        private static Func<object, object> CreateReflectionBasedFieldsAccessor()
-        {
+            // 获取ObjectTypeDescriptor类型和Fields属性
             var descriptorType = typeof(ObjectTypeDescriptor);
             var fieldsProperty = descriptorType.GetProperty("Fields", BindingFlags.NonPublic | BindingFlags.Instance);
-            
-            return descriptor =>
-            {
-                try
-                {
-                    return fieldsProperty?.GetValue(descriptor);
-                }
-                catch
-                {
-                    return null;
-                }
-            };
+            // 创建表达式：(object descriptor) => ((ObjectTypeDescriptor)descriptor).Fields
+            var descriptorParam = Expression.Parameter(typeof(object), "descriptor");
+            var typedDescriptor = Expression.Convert(descriptorParam, descriptorType);
+            var propertyAccess = Expression.Property(typedDescriptor, fieldsProperty);
+            var boxedResult = Expression.Convert(propertyAccess, typeof(object));
+
+            var lambda = Expression.Lambda<Func<object, object>>(boxedResult, descriptorParam);
+            return lambda.CompileFast();
         }
 
         /// <summary>
@@ -131,10 +98,10 @@ namespace Geex.Utilities
         /// <returns>常用扩展属性的PropertyInfo字典</returns>
         public static Dictionary<string, PropertyInfo> GetExtensionProperties(Type type)
         {
-            var propertyNames = new[] 
+            var propertyNames = new[]
             {
                 nameof(ObjectTypeExtension.Kind),
-                nameof(ObjectTypeExtension.Scope), 
+                nameof(ObjectTypeExtension.Scope),
                 nameof(ObjectTypeExtension.Name),
                 nameof(ObjectTypeExtension.Description),
                 nameof(ObjectTypeExtension.ContextData)
@@ -149,7 +116,7 @@ namespace Geex.Utilities
                     properties[propertyName] = property;
                 }
             }
-            
+
             return properties;
         }
 

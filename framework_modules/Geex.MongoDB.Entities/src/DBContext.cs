@@ -8,18 +8,11 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-using FastExpressionCompiler;
-
-using Force.DeepCloner;
-
-
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using MongoDB.Bson;
-using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
@@ -335,6 +328,7 @@ namespace MongoDB.Entities
             return (IQueryable<T>)query;
         }
 
+        static MethodInfo DbQueryableMethod = typeof(DB).GetMethod(nameof(DB.Queryable));
         /// <summary>
         /// Exposes the MongoDB collection for the given entity type as IQueryable in order to facilitate LINQ queries in the transaction scope.
         /// </summary>
@@ -345,7 +339,8 @@ namespace MongoDB.Entities
             {
                 return this.Query(entityType.GetRootBsonClassMap().ClassType);
             }
-            return typeof(DB).GetMethod(nameof(DB.Queryable)).MakeGenericMethod(entityType).Invoke(null, new object[] { options, this }).As<IQueryable>();
+
+            return DbQueryableMethod.MakeGenericMethodFast(entityType).Invoke(null, [options, this]).As<IQueryable>();
         }
 
         public virtual IMongoCollection<T> Collection<T>() where T : IEntityBase
@@ -627,7 +622,7 @@ namespace MongoDB.Entities
                 if (toSavedEntities.Count != 0)
                 {
                     savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
-                    var list = MethodReflectionCache.InvokeStaticGenericMethod(CastMethod, type, toSavedEntities);
+                    var list = CastMethod.MakeGenericMethodFast(type).Invoke(null, [toSavedEntities]);
                     const int maxRetries = 3;
                     for (int attempt = 0; attempt < maxRetries; attempt++)
                     {
@@ -637,8 +632,7 @@ namespace MongoDB.Entities
                             {
                                 Session.StartTransaction();
                             }
-                            var saveTask = MethodReflectionCache.InvokeStaticGenericMethod(
-                                SaveMethod, type, list, this, cancellation);
+                            var saveTask = SaveMethod.MakeGenericMethodFast(type).Invoke(null, [list, this, cancellation]);
                             if (saveTask is Task task)
                             {
                                 await task.ConfigureAwait(false);
@@ -704,8 +698,7 @@ namespace MongoDB.Entities
                 return new BsonDiffResult { AreEqual = false };
             }
 
-            return (BsonDiffResult)MethodReflectionCache.InvokeGenericMethod(
-                DiffMethod, actualType, this, baseValue, newValue, mode);
+            return (BsonDiffResult)DiffMethod.MakeGenericMethodFast(actualType).Invoke(this, [baseValue, newValue, mode]);
         }
 
         /// <summary>

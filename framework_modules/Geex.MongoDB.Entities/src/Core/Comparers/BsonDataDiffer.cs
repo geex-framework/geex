@@ -341,10 +341,10 @@ namespace MongoDB.Entities.Core.Comparers
         private static readonly ConcurrentDictionary<Type, bool> _isSimpleTypeCache = new();
         private static readonly ConcurrentDictionary<Type, Func<object, object, bool>> _equalityComparerCache = new();
         private static readonly ConcurrentDictionary<Type, MethodInfo> _diffMethodCache = new();
-        
+
         // 预编译常用类型的比较委托，减少反射调用
         private static readonly ConcurrentDictionary<Type, Func<object, object, bool>> _fastComparerCache = new();
-        
+
         // 常用类型的预编译比较器
         private static readonly Func<object, object, bool> StringComparer = (a, b) => string.Equals((string)a, (string)b);
         private static readonly Func<object, object, bool> IntComparer = (a, b) => (int)a == (int)b;
@@ -448,7 +448,7 @@ namespace MongoDB.Entities.Core.Comparers
                 }
 
                 // 使用实际类型进行比较（使用缓存提高性能）
-                var cachedMethod = _diffMethodCache.GetOrAdd(baseType, type => DiffMethod.MakeGenericMethod(type));
+                var cachedMethod = _diffMethodCache.GetOrAdd(baseType, type => DiffMethod.MakeGenericMethodFast(type));
                 var actualResult = cachedMethod.Invoke(null, [baseObj, newObj, mode]);
 
                 // 创建正确的泛型结果类型
@@ -507,7 +507,7 @@ namespace MongoDB.Entities.Core.Comparers
         {
             var type = typeof(T);
             BsonMemberMap[] memberMaps;
-            
+
             // 如果T是IEntityBase，使用Cache<T>的方法
             if (typeof(IEntityBase).IsAssignableFrom(type))
             {
@@ -527,14 +527,14 @@ namespace MongoDB.Entities.Core.Comparers
 
                 try
                 {
-                    var baseValue = MemberReflectionCache.GetValue(baseObj, memberMap);
-                    var newValue = MemberReflectionCache.GetValue(newObj, memberMap);
+                    var baseValue = memberMap.Getter(baseObj);
+                    var newValue = memberMap.Getter(newObj);
 
                     // 使用高效的相等性比较
                     if (!AreValuesEqual(baseValue, newValue, memberMap.MemberType))
                     {
                         // 创建泛型差异对象，避免装拆箱（使用优化的工厂）
-                        var difference = FieldDifferenceFactory.CreateFieldDifference(memberMap.ElementName, baseValue, newValue, memberMap);
+                        var difference = memberMap.CreateFieldDifference(memberMap.ElementName, baseValue, newValue);
                         context.Result.AddDifference(difference);
                     }
                 }

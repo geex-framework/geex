@@ -49,7 +49,7 @@ namespace MongoDB.Entities.Utilities
             //visiting body of original expression that gives us body of the new expression
             ;
             var body =
-                (Activator.CreateInstance(typeof(CastParamTypeVisitor<>).MakeGenericType(targetType), args: param) as
+                (Activator.CreateInstance(typeof(CastParamTypeVisitor<>).MakeGenericTypeFast(targetType), args: param) as
                     ExpressionVisitor).Visit((originExpression.Body));
             //generating lambda expression form body and parameter
             //notice that this is what you need to invoke the Method_2
