@@ -217,8 +217,8 @@ namespace MongoDB.Entities
                 await intercepted.InterceptOnSave(original);
             }
 
-            // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）
-            if (!isNewEntity)
+            // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
+            if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
             {
                 await CheckOptimisticConcurrency(dbContext, entity);
             }
@@ -228,7 +228,7 @@ namespace MongoDB.Entities
             var typeCache = DB.GetCacheInfo(entityType);
             // 构建更新定义
             var updateDefs = new List<UpdateDefinition<T>>();
-            var memberMaps = typeCache.MemberMaps.WhereIf(!isNewEntity, map => map.MemberName != nameof(IEntityBase.Id));
+            var memberMaps = typeCache.MemberMapsWithoutId;
 
             foreach (var memberMap in memberMaps)
             {
@@ -237,7 +237,7 @@ namespace MongoDB.Entities
             }
 
             // 使用完整的继承链判别器数组，如果只有一个判别器则保持向后兼容性
-            var discriminators = entityType.GetBsonDiscriminators();
+            var discriminators = typeCache.Discriminators;
             var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
             updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
 
@@ -298,12 +298,13 @@ namespace MongoDB.Entities
         /// <returns>写入模型集合</returns>
         private static async Task<IEnumerable<WriteModel<T>>> PrepareForSaveBatchActualType<T>(T[] entities, Type entityType, DbContext dbContext) where T : IEntityBase
         {
-            var models = new List<WriteModel<T>>();
+            var changeSet = new Dictionary<string, (DateTimeOffset, T)>(entities.Length);
+            var models = new List<WriteModel<T>>(entities.Length);
             var now = DateTimeOffset.Now;
 
             // 只获取一次类型配置信息
             var typeCache = DB.GetCacheInfo(entityType);
-            var discriminators = entityType.GetBsonDiscriminators();
+            var discriminators = typeCache.Discriminators;
             var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
 
             foreach (var entity in entities)
@@ -330,10 +331,10 @@ namespace MongoDB.Entities
                     await intercepted.InterceptOnSave(original);
                 }
 
-                // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）
-                if (!isNewEntity)
+                // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
+                if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
                 {
-                    await CheckOptimisticConcurrency(dbContext, entity);
+                    changeSet.Add(entity.Id, (entity.ModifiedOn, entity));
                 }
 
                 entity.ModifiedOn = now;
@@ -342,7 +343,7 @@ namespace MongoDB.Entities
                 {
                     // 构建更新定义 - 重用类型配置信息
                     var updateDefs = new List<UpdateDefinition<T>>();
-                    var memberMaps = typeCache.MemberMaps.Where(map => map.MemberName != nameof(IEntityBase.Id));
+                    var memberMaps = typeCache.MemberMapsWithoutId;
 
                     foreach (var memberMap in memberMaps)
                     {
@@ -373,7 +374,7 @@ namespace MongoDB.Entities
                     models.Add(replaceOneModel);
                 }
             }
-
+            await BulkCheckOptimisticConcurrency(dbContext, changeSet);
             return models;
         }
 
@@ -414,8 +415,8 @@ namespace MongoDB.Entities
                 await intercepted.InterceptOnSave(original);
             }
 
-            // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）
-            if (!isNewEntity)
+            // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
+            if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
             {
                 await CheckOptimisticConcurrency(dbContext, entity);
             }
@@ -425,7 +426,7 @@ namespace MongoDB.Entities
             var typeCache = DB.GetCacheInfo(entityType);
             // 构建更新定义
             var updateDefs = new List<UpdateDefinition<T>>(50);
-            var memberMaps = typeCache.MemberMaps.WhereIf(!isNewEntity, map => map.MemberName != nameof(IEntityBase.Id));
+            var memberMaps = typeCache.MemberMapsWithoutId.AsEnumerable();
 
             // 根据成员名称过滤
             if (excludeMode)
@@ -443,7 +444,7 @@ namespace MongoDB.Entities
             }
 
             // 使用完整的继承链判别器数组，如果只有一个判别器则保持向后兼容性
-            var discriminators = entityType.GetBsonDiscriminators();
+            var discriminators = typeCache.Discriminators;
             var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
             updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
 
@@ -502,22 +503,23 @@ namespace MongoDB.Entities
             if (!propNames.Any())
                 throw new ArgumentException("Unable to get any properties from the members expression!");
 
-            var models = new List<WriteModel<T>>();
+            var changeSet = new Dictionary<string, (DateTimeOffset, T)>(entities.Length);
+            var models = new List<WriteModel<T>>(entities.Length);
             var now = DateTimeOffset.Now;
 
             // 只获取一次类型配置信息
             var typeCache = DB.GetCacheInfo(entityType);
-            var discriminators = entityType.GetBsonDiscriminators();
+            var discriminators = typeCache.Discriminators;
             var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
 
             // 预先计算要处理的成员映射
-            var memberMaps = typeCache.MemberMaps.Where(map => map.MemberName != nameof(IEntityBase.Id));
+            var memberMaps = typeCache.MemberMapsWithoutId.AsEnumerable();
             if (excludeMode)
                 memberMaps = memberMaps.Where(m => !propNames.Contains(m.MemberName));
             else
                 memberMaps = memberMaps.Where(m => propNames.Contains(m.MemberName));
 
-            var memberMapsArray = memberMaps.ToArray();
+            var memberMapsArray = memberMaps;
 
             foreach (var entity in entities)
             {
@@ -543,8 +545,8 @@ namespace MongoDB.Entities
                     await intercepted.InterceptOnSave(original);
                 }
 
-                // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）
-                if (!isNewEntity)
+                // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
+                if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
                 {
                     await CheckOptimisticConcurrency(dbContext, entity);
                 }
@@ -575,7 +577,7 @@ namespace MongoDB.Entities
                 }
                 else
                 {
-                    var patchObj = (T)typeof(T).CreateInstanceFast();
+                    var patchObj = (T)typeCache.ClassMap.CreateInstance();
                     patchObj.Id = entity.Id;
                     foreach (var memberMap in memberMapsArray)
                     {
@@ -593,7 +595,7 @@ namespace MongoDB.Entities
                     models.Add(replaceOneModel);
                 }
             }
-
+            await BulkCheckOptimisticConcurrency(dbContext, changeSet);
             return models;
         }
 
@@ -626,7 +628,112 @@ namespace MongoDB.Entities
         /// 乐观锁并发检查
         /// </summary>
         /// <param name="dbContext">数据库上下文</param>
+        private static async Task BulkCheckOptimisticConcurrency<T>(DbContext dbContext, Dictionary<string, (DateTimeOffset, T)> changeSet) where T : IEntityBase
+        {
+            if (dbContext == null)
+            {
+                return;
+            }
+
+            if (!changeSet.Any())
+            {
+                return;
+            }
+
+            var rootType = DB.GetCacheInfo(typeof(T)).RootEntityType;
+            var ids = dbContext.DbDataCache[rootType].Keys.Except(changeSet.Keys).ToArray();
+            if (!ids.Any())
+            {
+                return;
+            }
+            var dbRecents = await Collection<T>().FindSync(Builders<T>.Filter.In(x => x.Id, ids)).ToListAsync();
+            for (var i = 0; i < dbRecents.Count; i++)
+            {
+                var dbRecent = dbRecents[i];
+                // 查询数据库获取最新值来检查是否有并发修改
+                if (dbRecent == null)
+                {
+                    // 有字段冲突，抛出乐观锁异常
+                    dbContext.Logger.LogError(
+                        "Optimistic concurrency conflict, entity removed: {EntityType}[{EntityId}]",
+                        rootType.Name, ids[i]);
+
+                    throw new OptimisticConcurrencyException(
+                        rootType,
+                        dbRecent.Id,
+                        [],
+                        default,
+                        default
+                    );
+                }
+
+                // 检查ModifiedOn是否发生了变化（乐观锁冲突检测）
+                var changedItem = changeSet[dbRecent.Id];
+                var existingDbValue = dbContext.DbDataCache[rootType][dbRecent.Id];
+                if (dbRecent.ModifiedOn <= changedItem.Item1)
+                {
+                    // 没有冲突，数据库值没有更新
+                    return;
+                }
+
+                dbContext.Logger.LogDebug("ModifiedOn changed for {EntityType}[{EntityId}]", rootType.Name,
+                    dbRecent.Id);
+
+                // 检查本地内存中是否有该实体的修改
+                if (!dbContext.MemoryDataCache[rootType].TryGetValue(dbRecent.Id, out var localValue))
+                {
+                    // 本地没有该实体，更新缓存并继续
+                    dbContext.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB but not in local cache",
+                        rootType.Name, dbRecent.Id);
+                    return;
+                }
+
+                // 比较本地值是否有修改
+                var ourChanges = dbContext.Diff(localValue, existingDbValue, BsonDiffMode.Full);
+                if (ourChanges.AreEqual)
+                {
+                    // 本地值没有修改，直接更新缓存
+                    dbContext.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB, local has no changes",
+                        rootType.Name, dbRecent.Id);
+                    return;
+                }
+
+                // 本地值有修改，检查字段冲突
+                var theirChanges = dbContext.Diff(dbRecent, existingDbValue, BsonDiffMode.Full);
+                var conflictingFields =
+                    DetectConflictingFields(ourChanges, theirChanges, existingDbValue, localValue, dbRecent);
+
+                if (conflictingFields.Count > 0)
+                {
+                    // 有字段冲突，抛出乐观锁异常
+                    dbContext.Logger.LogError(
+                        "Optimistic concurrency conflict: {EntityType}[{EntityId}], fields: {ConflictingFields}",
+                        rootType.Name, dbRecent.Id, string.Join(", ", conflictingFields.Select(f => f.FieldName)));
+
+                    throw new OptimisticConcurrencyException(
+                        rootType,
+                        dbRecent.Id,
+                        conflictingFields,
+                        existingDbValue.ModifiedOn,
+                        dbRecent.ModifiedOn
+                    );
+                }
+                else
+                {
+                    // 没有字段冲突，记录信息日志
+                    dbContext.Logger.LogInformation(
+                        "Concurrent modifications without field conflicts: {EntityType}[{EntityId}]", rootType.Name,
+                        dbRecent.Id);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 乐观锁并发检查
+        /// </summary>
+        /// <param name="dbContext">数据库上下文</param>
         /// <param name="entity">当前实体</param>
+        /// <param name="entityModifiedOn"></param>
         private static async Task CheckOptimisticConcurrency<T>(DbContext dbContext, T entity) where T : IEntityBase
         {
             // 如果没有DbContext或者实体ID为空，跳过乐观锁检查
@@ -635,7 +742,7 @@ namespace MongoDB.Entities
                 return;
             }
 
-            var rootType = typeof(T);
+            var rootType = DB.GetCacheInfo(typeof(T)).RootEntityType;
 
             // 获取缓存中的数据库值
             var existingDbValue = dbContext.DbDataCache[rootType].GetOrDefault(entity.Id);
@@ -644,9 +751,8 @@ namespace MongoDB.Entities
                 // 数据库中没有此实体，跳过检查
                 return;
             }
-
             // 查询数据库获取最新值来检查是否有并发修改
-            var currentDbValue = await Collection<T>().Find(x => x.Id == entity.Id).FirstOrDefaultAsync();
+            var currentDbValue = Collection<T>().FindSync(Builders<T>.Filter.Eq(x => x.Id, entity.Id)).FirstOrDefault();
             if (currentDbValue == null)
             {
                 // 实体已被删除

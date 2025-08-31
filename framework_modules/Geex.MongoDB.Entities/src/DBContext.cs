@@ -178,11 +178,6 @@ namespace MongoDB.Entities
 
         public virtual T Attach<T>(T entity) where T : IEntityBase
         {
-            if (entity == null)
-            {
-                return default(T);
-            }
-
             if (!this.EntityTrackingEnabled)
             {
                 return this.AttachNoTracking(entity);
@@ -641,7 +636,7 @@ namespace MongoDB.Entities
                             {
                                 await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
                             }
-                            this.UpdateDbDataCache(type, toSavedEntities);
+                            this.UpdateDbDataCache(toSavedEntities, type);
                             break; // 如果成功，跳出循环
                         }
                         catch (OptimisticConcurrencyException oce)
@@ -789,43 +784,33 @@ namespace MongoDB.Entities
                 throw new NotSupportedException("Cancellation is only supported within transactions for delete operations!");
         }
 
-        public void UpdateDbDataCache<T>(T dbEntity) where T : IEntityBase
-        {
-            var entityType = dbEntity.GetType();
-            var rootType = entityType.GetRootBsonClassMap().ClassType;
-            UpdateDbDataCache(rootType, dbEntity);
-        }
-
-        public void UpdateDbDataCache<T>(IEnumerable<T> dbEntities) where T : IEntityBase
-        {
-            if (!dbEntities.Any())
-            {
-                return;
-            }
-            var rootType = typeof(T).GetRootBsonClassMap().ClassType;
-            foreach (var dbEntity in dbEntities)
-            {
-                UpdateDbDataCache(rootType, dbEntity);
-            }
-        }
-
-        private void UpdateDbDataCache(Type rootType, IEntityBase dbEntity)
+        private void UpdateDbDataCacheItem(IEntityBase dbEntity, Type rootType)
         {
             var bson = dbEntity.ToBson(rootType);
             var deserializedEntity = (IEntityBase)BsonSerializer.Deserialize(bson, rootType);
             this.DbDataCache[rootType].AddOrUpdate(deserializedEntity.Id, deserializedEntity, (_, _) => deserializedEntity);
         }
 
-        private void UpdateDbDataCache(Type rootType, IEnumerable<IEntityBase> dbEntities)
+        public void UpdateDbDataCache<T>(T dbEntity) where T : IEntityBase
         {
-            if (dbEntities == null)
-            {
-                return;
-            }
+            var cache = DB.GetCacheInfo(typeof(T));
+            UpdateDbDataCacheItem(dbEntity, cache.RootEntityType);
+        }
 
+        public void UpdateDbDataCache<T>(IEnumerable<T> dbEntities) where T : IEntityBase
+        {
+            var cache = DB.GetCacheInfo(typeof(T));
             foreach (var dbEntity in dbEntities)
             {
-                UpdateDbDataCache(rootType, dbEntity);
+                UpdateDbDataCacheItem(dbEntity, cache.RootEntityType);
+            }
+        }
+
+        private void UpdateDbDataCache(IEnumerable<IEntityBase> dbEntities, Type rootType)
+        {
+            foreach (var dbEntity in dbEntities)
+            {
+                UpdateDbDataCacheItem(dbEntity, rootType);
             }
         }
 

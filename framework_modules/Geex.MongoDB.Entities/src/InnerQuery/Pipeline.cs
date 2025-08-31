@@ -2172,12 +2172,22 @@ namespace MongoDB.Entities.InnerQuery
                     _currentPipelineDocumentUsesResultHack = false;
                     return;
                 }
-                // Handle the hard case: Select(c => new ProjectClass{ c.Age, Name = c.FirstName,  })
+                // Handle the complex case: Select(c => new ProjectClass(c.Id, c.Name, c.Value))
                 else
                 {
                     var newExp = (NewExpression)lambdaExp.Body;
-                    // Get the mongo field names for each property in the new {...}
-                    var fieldNames = BuildFieldProjections(newExp);
+                    List<BsonElement> fieldNames;
+
+                    // Check if this is a constructor with parameters
+                    if (newExp.Constructor != null && newExp.Arguments.Count > 0)
+                    {
+                        fieldNames = BuildFieldProjectionsForConstructor(newExp);
+                    }
+                    else
+                    {
+                        // Fallback to the original method for parameterless constructors
+                        fieldNames = BuildFieldProjections(newExp);
+                    }
 
                     // Remove the unnecessary _id field
                     if (fieldNames.All(c => c.Name != "_id" && c.Name != "Id"))
@@ -2194,7 +2204,21 @@ namespace MongoDB.Entities.InnerQuery
             // Handle typed hard case: Select(c => new Foo(c.Code) { Bar = c.FirstName })
             if (lambdaExp.Body is MemberInitExpression memberInitExp)
             {
-                var fieldNames = BuildFieldProjections(memberInitExp.NewExpression);
+                List<BsonElement> fieldNames;
+
+                // Check if the constructor has parameters
+                if (memberInitExp.NewExpression.Constructor != null && memberInitExp.NewExpression.Arguments.Count > 0)
+                {
+                    // Use the enhanced constructor projection method
+                    fieldNames = BuildFieldProjectionsForConstructor(memberInitExp.NewExpression);
+                }
+                else
+                {
+                    // Use the original method for parameterless constructors
+                    fieldNames = BuildFieldProjections(memberInitExp.NewExpression);
+                }
+
+                // Add member assignments (property initializers)
                 var assignments = memberInitExp.Bindings.Cast<MemberAssignment>().Select(x => new
                 {
                     FieldName = GetMongoFieldName(x.Member),
@@ -2202,9 +2226,11 @@ namespace MongoDB.Entities.InnerQuery
                 })
                     .Select(c => new BsonElement(c.FieldName, c.ExpressionValue));
                 fieldNames.AddRange(assignments);
+
                 // Remove the unnecessary _id field
                 if (fieldNames.All(c => c.Name != "_id"))
                     fieldNames.Add(new BsonElement("_id", new BsonInt32(0)));
+                
                 // Perform the projection on multiple fields
                 AddToPipeline("$project", new BsonDocument(fieldNames));
 
@@ -2220,12 +2246,71 @@ namespace MongoDB.Entities.InnerQuery
             });
             _currentPipelineDocumentUsesResultHack = true;
 
-            void CheckPureSetter(string memberName)
+
+
+            /// <summary>
+            /// Builds field projections for constructor with parameters.
+            /// Supports complex constructor calls like: new TestEntity(x.Id, x.Name, x.Value + 10)
+            /// </summary>
+            List<BsonElement> BuildFieldProjectionsForConstructor(NewExpression newExpression)
             {
-                if (lambdaExp.Body.Type.GetProperty(memberName)?.SetMethod?.IsSpecialName != true)
+                var fieldNames = new List<BsonElement>();
+                var constructor = newExpression.Constructor;
+                var parameters = constructor.GetParameters();
+                var arguments = newExpression.Arguments;
+
+                if (parameters.Length != arguments.Count)
                 {
-                    throw new NotSupportedException($"Project fields must be pure property and should be same-name-assigned if in constructor, incorrect field: [{lambdaExp.Body.Type.FullName}.{memberName}]");
+                    throw new NotSupportedException($"Constructor parameter count ({parameters.Length}) doesn't match argument count ({arguments.Count}) for type: {newExpression.Type.FullName}");
                 }
+
+                // Map constructor parameters to properties
+                var properties = newExpression.Type.GetProperties();
+                var propertyMap = new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase);
+                foreach (var prop in properties)
+                {
+                    propertyMap[prop.Name] = prop;
+                }
+
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    var parameter = parameters[i];
+                    var argument = arguments[i];
+                    var parameterName = parameter.Name;
+
+                    // Try to find a matching property by name
+                    PropertyInfo matchingProperty = null;
+                    
+                    // First try exact match
+                    if (propertyMap.TryGetValue(parameterName, out matchingProperty))
+                    {
+                        // Found exact match
+                    }
+                    // Then try case-insensitive match
+                    else
+                    {
+                        matchingProperty = properties.FirstOrDefault(p => 
+                            string.Equals(p.Name, parameterName, StringComparison.OrdinalIgnoreCase));
+                    }
+
+                    string fieldName;
+                    if (matchingProperty != null)
+                    {
+                        // Use the property name as field name
+                        fieldName = GetMongoFieldName(matchingProperty);
+                    }
+                    else
+                    {
+                        // If no matching property found, use parameter name
+                        fieldName = parameterName;
+                    }
+
+                    // Build the MongoDB expression for this argument
+                    var expressionValue = BuildMongoSelectExpression(argument, true);
+                    fieldNames.Add(new BsonElement(fieldName, expressionValue));
+                }
+
+                return fieldNames;
             }
 
             List<BsonElement> BuildFieldProjections(NewExpression newExpression)
@@ -2243,7 +2328,6 @@ namespace MongoDB.Entities.InnerQuery
                                     }
                                 } memberExp)
                             {
-                                CheckPureSetter(memberExp.Member.Name);
                                 return new
                                 {
                                     FieldName = GetMongoFieldName(memberExp.Member),
@@ -2259,7 +2343,6 @@ namespace MongoDB.Entities.InnerQuery
                                     } nestedMemberExp
                                 })
                             {
-                                CheckPureSetter(nestedMemberExp.Member.Name);
                                 return new
                                 {
                                     FieldName = GetMongoFieldName(nestedMemberExp.Member),

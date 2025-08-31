@@ -30,6 +30,11 @@ namespace MongoDB.Entities
         public BsonClassMap ClassMap { get; set; }
         public BsonMemberMap[] MemberMaps { get; set; }
         public BsonArray Discriminators { get; set; }
+        public Type RootEntityType { get; set; }
+        public BsonClassMap RootClassMap { get; set; }
+        public BsonMemberMap[] MemberMapsWithoutId { get; set; }
+        public BsonMemberMap[] MemberMapsWithoutModifiedOn { get; set; }
+        public BsonMemberMap[] MemberMapsWithoutSpecial { get; set; }
     }
 
     /// <summary>
@@ -302,12 +307,12 @@ namespace MongoDB.Entities
         /// <returns>Cache information including database, collection name, etc.</returns>
         public static CacheInfo GetCacheInfo(Type entityType)
         {
-            if (!typeof(IEntityBase).IsAssignableFrom(entityType))
-                throw new ArgumentException($"Type {entityType.Name} must implement IEntityBase");
-
             // 尝试从缓存获取
             if (CacheInfoStorage.TryGetValue(entityType, out CacheInfo cachedInfo))
                 return cachedInfo;
+
+            if (!typeof(IEntityBase).IsAssignableFrom(entityType))
+                throw new ArgumentException($"Type {entityType.Name} must implement IEntityBase");
 
             // 初始化缓存
             var cacheType = typeof(Cache<>).MakeGenericType(entityType);
@@ -320,6 +325,11 @@ namespace MongoDB.Entities
             var classMapProperty = cacheType.GetProperty(nameof(Cache<>.ClassMap), BindingFlags.Public | BindingFlags.Static);
             var memberMapsProperty = cacheType.GetProperty(nameof(Cache<>.MemberMaps), BindingFlags.Public | BindingFlags.Static);
             var bsonDiscriminatorsProperty = cacheType.GetProperty(nameof(Cache<>.Discriminators), BindingFlags.Public | BindingFlags.Static);
+            var rootEntityTypeProperty = cacheType.GetProperty(nameof(Cache<>.RootEntityType), BindingFlags.Public | BindingFlags.Static);
+            var rootClassMapProperty = cacheType.GetProperty(nameof(Cache<>.RootClassMap), BindingFlags.Public | BindingFlags.Static);
+            var memberMapsWithoutIdProperty = cacheType.GetProperty(nameof(Cache<>.MemberMapsWithoutId), BindingFlags.Public | BindingFlags.Static);
+            var memberMapsWithoutModifiedOnProperty = cacheType.GetProperty(nameof(Cache<>.MemberMapsWithoutModifiedOn), BindingFlags.Public | BindingFlags.Static);
+            var memberMapsWithoutSpecialProperty = cacheType.GetProperty(nameof(Cache<>.MemberMapsWithoutSpecial), BindingFlags.Public | BindingFlags.Static);
 
             var cacheInfo = new CacheInfo
             {
@@ -329,36 +339,17 @@ namespace MongoDB.Entities
                 CollectionName = (string)collectionNameProperty?.GetValue(null),
                 ClassMap = (BsonClassMap)classMapProperty?.GetValue(null),
                 MemberMaps = (BsonMemberMap[])memberMapsProperty?.GetValue(null),
-                Discriminators = (BsonArray)bsonDiscriminatorsProperty?.GetValue(null)
+                Discriminators = (BsonArray)bsonDiscriminatorsProperty?.GetValue(null),
+                RootEntityType = (Type)rootEntityTypeProperty?.GetValue(null),
+                RootClassMap = (BsonClassMap)rootClassMapProperty?.GetValue(null),
+                MemberMapsWithoutId = (BsonMemberMap[])memberMapsWithoutIdProperty?.GetValue(null),
+                MemberMapsWithoutModifiedOn = (BsonMemberMap[])memberMapsWithoutModifiedOnProperty?.GetValue(null),
+                MemberMapsWithoutSpecial = (BsonMemberMap[])memberMapsWithoutSpecialProperty?.GetValue(null)
             };
 
             // 缓存结果
             CacheInfoStorage.TryAdd(entityType, cacheInfo);
             return cacheInfo;
-        }
-
-        /// <summary>
-        /// Gets cache information for a given entity type
-        /// </summary>
-        /// <typeparam name="T">The entity type</typeparam>
-        /// <returns>Cache information</returns>
-        public static CacheInfo<T> GetCacheInfo<T>() where T : IEntityBase
-        {
-            // 确保基础缓存信息已初始化
-            var baseCacheInfo = GetCacheInfo(typeof(T));
-
-            return new CacheInfo<T>
-            {
-                EntityType = baseCacheInfo.EntityType,
-                Database = baseCacheInfo.Database,
-                DBName = baseCacheInfo.DBName,
-                CollectionName = baseCacheInfo.CollectionName,
-                ClassMap = baseCacheInfo.ClassMap,
-                MemberMaps = baseCacheInfo.MemberMaps,
-                Collection = Cache<T>.Collection,
-                Watchers = Cache<T>.Watchers,
-                Discriminators = baseCacheInfo.Discriminators
-            };
         }
     }
 
@@ -403,6 +394,11 @@ namespace MongoDB.Entities
         public static BsonClassMap ClassMap { get; private set; }
         public static BsonMemberMap[] MemberMaps { get; private set; }
         public static BsonArray Discriminators { get; private set; }
+        public static Type RootEntityType { get; private set; }
+        public static BsonClassMap RootClassMap { get; private set; }
+        public static BsonMemberMap[] MemberMapsWithoutId { get; private set; }
+        public static BsonMemberMap[] MemberMapsWithoutModifiedOn { get; private set; }
+        public static BsonMemberMap[] MemberMapsWithoutSpecial { get; private set; }
 
         static Cache()
         {
@@ -415,11 +411,13 @@ namespace MongoDB.Entities
             var type = typeof(T);
             ClassMap = BsonClassMap.LookupClassMap(type);
             ClassMap.MapInheritance();
+            RootClassMap = type.GetRootBsonClassMap();
+            RootEntityType = RootClassMap.ClassType;
             Database = TypeMap.GetDatabase(type);
             DBName = Database.DatabaseNamespace.DatabaseName;
 
             var collAttrb = type.GetCustomAttribute<NameAttribute>(false);
-            CollectionName = collAttrb != null ? collAttrb.Name : type.GetRootBsonClassMap().ClassType.Name;
+            CollectionName = collAttrb != null ? collAttrb.Name : RootEntityType.Name;
 
             if (string.IsNullOrWhiteSpace(CollectionName) || CollectionName.Contains("~"))
                 throw new ArgumentException($"{CollectionName} is an illegal name for a collection!");
@@ -431,9 +429,11 @@ namespace MongoDB.Entities
 
             // Initialize BsonMemberMaps
             MemberMaps = GetBsonMemberMaps();
+            MemberMapsWithoutId = MemberMaps.Where(x => x.MemberName != nameof(IEntityBase.Id)).ToArray();
+            MemberMapsWithoutSpecial = MemberMaps.Where(x => x.MemberName != nameof(IEntityBase.Id) && x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
+            MemberMapsWithoutModifiedOn = MemberMaps.Where(x => x.MemberName != nameof(IEntityBase.Id)).ToArray();
             Discriminators = type.GetBsonDiscriminators();
         }
-
 
         /// <summary>
         /// Gets BsonMemberMaps for the current entity type

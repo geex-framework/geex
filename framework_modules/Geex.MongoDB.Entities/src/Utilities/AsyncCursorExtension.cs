@@ -215,37 +215,6 @@ namespace MongoDB.Entities.Utilities
             return documentList;
         }
 
-        /// <summary>
-        /// Returns a list containing all the documents returned by a cursor.
-        /// </summary>
-        /// <typeparam name="TDocument">The type of the document.</typeparam>
-        /// <param name="source">The source.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A Task whose value is the list of documents.</returns>
-        public static async Task<List<TDocument>> ToListAsync<TDocument>(
-          this IAsyncCursor<TDocument> source,
-          CancellationToken cancellationToken = default(CancellationToken))
-        {
-            Ensure.IsNotNull<IAsyncCursor<TDocument>>(source, nameof(source));
-            List<TDocument> list = new List<TDocument>();
-            using (source)
-            {
-                while (true)
-                {
-                    if (await source.MoveNextAsync(cancellationToken).ConfigureAwait(false))
-                    {
-                        list.AddRange(source.Current);
-                        cancellationToken.ThrowIfCancellationRequested();
-                    }
-                    else
-                        break;
-                }
-            }
-            List<TDocument> documentList = list;
-            list = (List<TDocument>)null;
-            return documentList;
-        }
-
         private static IEnumerable<TDocument> GetFirstBatch<TDocument>(
       IAsyncCursor<TDocument> cursor,
       CancellationToken cancellationToken)

@@ -345,14 +345,6 @@ namespace MongoDB.Entities.Core.Comparers
         // 预编译常用类型的比较委托，减少反射调用
         private static readonly ConcurrentDictionary<Type, Func<object, object, bool>> _fastComparerCache = new();
 
-        // 常用类型的预编译比较器
-        private static readonly Func<object, object, bool> StringComparer = (a, b) => string.Equals((string)a, (string)b);
-        private static readonly Func<object, object, bool> IntComparer = (a, b) => (int)a == (int)b;
-        private static readonly Func<object, object, bool> LongComparer = (a, b) => (long)a == (long)b;
-        private static readonly Func<object, object, bool> BoolComparer = (a, b) => (bool)a == (bool)b;
-        private static readonly Func<object, object, bool> DateTimeComparer = (a, b) => (DateTime)a == (DateTime)b;
-        private static readonly Func<object, object, bool> DateTimeOffsetComparer = (a, b) => (DateTimeOffset)a == (DateTimeOffset)b;
-
         /// <summary>
         /// 清理缓存
         /// </summary>
@@ -499,27 +491,15 @@ namespace MongoDB.Entities.Core.Comparers
             {
             }
         }
-        private static readonly MethodInfo DiffTopLevelFieldsMethod = typeof(BsonDataDiffer).GetMethod(nameof(DiffTopLevelFields), BindingFlags.NonPublic | BindingFlags.Static);
         /// <summary>
         /// 比较顶层字段，不深入嵌套对象
         /// </summary>
         private static void DiffTopLevelFields<T>(T baseObj, T newObj, DiffContext<T> context)
         {
-            var type = typeof(T);
+            var baseType = baseObj.GetType();
             BsonMemberMap[] memberMaps;
 
-            // 如果T是IEntityBase，使用Cache<T>的方法
-            if (typeof(IEntityBase).IsAssignableFrom(type))
-            {
-                // 使用反射获取Cache<T>的GetBsonMemberMaps方法
-                var cacheType = typeof(Cache<>).MakeGenericType(type);
-                var getBsonMemberMapsMethod = cacheType.GetMethod("GetBsonMemberMaps", BindingFlags.Public | BindingFlags.Static);
-                memberMaps = (BsonMemberMap[])getBsonMemberMapsMethod.Invoke(null, null);
-            }
-            else
-            {
-                memberMaps = GetBsonMemberMapsForType(type);
-            }
+            memberMaps = DB.GetCacheInfo(baseType).MemberMaps;
 
             foreach (var memberMap in memberMaps)
             {
@@ -531,7 +511,7 @@ namespace MongoDB.Entities.Core.Comparers
                     var newValue = memberMap.Getter(newObj);
 
                     // 使用高效的相等性比较
-                    if (!AreValuesEqual(baseValue, newValue, memberMap.MemberType))
+                    if (!AreValuesEqual(baseValue, newValue, baseType, newObj.GetType()))
                     {
                         // 创建泛型差异对象，避免装拆箱（使用优化的工厂）
                         var difference = memberMap.CreateFieldDifference(memberMap.ElementName, baseValue, newValue);
@@ -554,112 +534,77 @@ namespace MongoDB.Entities.Core.Comparers
         }
 
 
-
-        /// <summary>
-        /// 高效的值相等性比较，支持各种特殊类型
-        /// </summary>
-        private static bool AreValuesEqual(object baseObj, object newObj, Type type)
+        private static readonly Dictionary<Type, Func<object, object, bool>> TypeComparers = new Dictionary<Type, Func<object, object, bool>>
         {
+            [typeof(byte[])] = (a, b) => CompareByteArrays((byte[])a, (byte[])b),
+            [typeof(JsonNode)] = (a, b) => CompareJsonNodes((JsonNode)a, (JsonNode)b),
+            [typeof(JsonObject)] = (a, b) => CompareJsonNodes((JsonNode)a, (JsonNode)b),
+            [typeof(JsonArray)] = (a, b) => CompareJsonNodes((JsonNode)a, (JsonNode)b),
+            [typeof(JsonValue)] = (a, b) => CompareJsonNodes((JsonNode)a, (JsonNode)b),
+            [typeof(DateTimeOffset)] = (a, b) => ((DateTimeOffset)a == (DateTimeOffset)b),
+        };
+
+        private static bool AreValuesEqual(object baseObj, object newObj, Type baseType, Type newType)
+        {
+            // 快速基础检查
             var basicCheckResult = BasicCompare(baseObj, newObj);
             if (basicCheckResult.HasValue)
-            {
                 return basicCheckResult.Value;
-            }
 
-            // 首先尝试使用快速比较器
-            var fastComparer = GetFastComparer(type);
-            if (fastComparer != null)
-            {
-                return fastComparer(baseObj, newObj);
-            }
+            // 对于复杂类型的特殊处理
+            if (Type.GetTypeCode(baseType) == TypeCode.Object)
+                return HandleComplexTypes(baseObj, newObj, baseType, newType);
 
-            // 获取或创建高效的比较器
-            var comparer = _equalityComparerCache.GetOrAdd(type, CreateEqualityComparer);
-            return comparer(baseObj, newObj);
+            // 所有基础类型直接使用 Equals
+            return baseObj.Equals(newObj);
         }
 
-        /// <summary>
-        /// 获取预编译的快速比较器
-        /// </summary>
-        private static Func<object, object, bool> GetFastComparer(Type type)
+        private static bool HandleComplexTypes(object baseObj, object newObj, Type baseType, Type newType)
         {
-            return _fastComparerCache.GetOrAdd(type, t =>
+            // O(1) 字典查找特殊类型
+            if (TypeComparers.TryGetValue(baseType, out var comparer))
             {
-                return t switch
-                {
-                    Type when t == typeof(string) => StringComparer,
-                    Type when t == typeof(int) => IntComparer,
-                    Type when t == typeof(long) => LongComparer,
-                    Type when t == typeof(bool) => BoolComparer,
-                    Type when t == typeof(DateTime) => DateTimeComparer,
-                    Type when t == typeof(DateTimeOffset) => DateTimeOffsetComparer,
-                    _ => null
-                };
-            });
+                return comparer(baseObj, newObj);
+            }
+
+            // 缓存接口检查结果以避免重复反射
+            if (IsIEnumerationType(baseType))
+            {
+                return baseObj.ToString() == newObj.ToString();
+            }
+
+            if (IsIEnumerableType(baseType))
+            {
+                return CompareEnumerables((IEnumerable)baseObj, (IEnumerable)newObj);
+            }
+
+            if (IsIComparableType(baseType))
+            {
+                return (baseObj as IComparable).CompareTo(newObj as IComparable) == 0;
+            }
+
+            return baseObj.Equals(newObj);
         }
 
-        /// <summary>
-        /// 为指定类型创建优化的相等性比较器
-        /// </summary>
-        private static Func<object, object, bool> CreateEqualityComparer(Type type)
+        // 缓存接口检查结果避免重复反射
+        private static readonly ConcurrentDictionary<Type, bool> _isIEnumerationCache = new();
+        private static readonly ConcurrentDictionary<Type, bool> _isIEnumerableCache = new();
+        private static readonly ConcurrentDictionary<Type, bool> _isIComparableCache = new();
+
+        private static bool IsIEnumerationType(Type type)
         {
-            // 字节数组特殊处理
-            if (type == typeof(byte[]))
-            {
-                return (baseObj, newObj) => CompareByteArrays((byte[])baseObj, (byte[])newObj);
-            }
+            return _isIEnumerationCache.GetOrAdd(type, t => typeof(IEnumeration).IsAssignableFrom(t));
+        }
 
-            // JsonNode特殊处理
-            if (typeof(JsonNode).IsAssignableFrom(type))
-            {
-                return (baseObj, newObj) => CompareJsonNodes((JsonNode)baseObj, (JsonNode)newObj);
-            }
+        private static bool IsIEnumerableType(Type type)
+        {
+            return _isIEnumerableCache.GetOrAdd(type, t =>
+                typeof(IEnumerable).IsAssignableFrom(t) && t != typeof(string));
+        }
 
-            // IEnumeration特殊处理
-            if (typeof(IEnumeration).IsAssignableFrom(type))
-            {
-                return (baseObj, newObj) =>
-                {
-                    if (baseObj is IEnumeration baseEnum && newObj is IEnumeration enum2)
-                        return CompareEnumerations(baseEnum, enum2);
-                    if (baseObj is IEnumeration baseEnumOnly)
-                        return CompareEnumerationWithObject(baseEnumOnly, newObj);
-                    if (newObj is IEnumeration newEnumOnly)
-                        return CompareEnumerationWithObject(newEnumOnly, baseObj);
-                    return false;
-                };
-            }
-
-            // 集合类型处理
-            if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string))
-            {
-                return (baseObj, newObj) => CompareEnumerables((IEnumerable)baseObj, (IEnumerable)newObj);
-            }
-
-            // IComparable处理
-            if (typeof(IComparable).IsAssignableFrom(type))
-            {
-                return (baseObj, newObj) =>
-                {
-                    try
-                    {
-                        return ((IComparable)baseObj).CompareTo(newObj) == 0;
-                    }
-                    catch
-                    {
-                        return baseObj.Equals(newObj);
-                    }
-                };
-            }
-
-            // 其他复杂对象使用深层比较
-            if (!IsSimpleType(type))
-            {
-                return (baseObj, newObj) => Diff(baseObj, newObj);
-            }
-
-            // 默认使用Equals
-            return (baseObj, newObj) => baseObj.Equals(newObj);
+        private static bool IsIComparableType(Type type)
+        {
+            return _isIComparableCache.GetOrAdd(type, t => typeof(IComparable).IsAssignableFrom(t));
         }
 
         /// <summary>
@@ -733,70 +678,5 @@ namespace MongoDB.Entities.Core.Comparers
                 return baseJson.ToString() == newJson.ToString();
             }
         }
-
-        private static bool CompareEnumerations(IEnumeration baseEnum, IEnumeration newEnum)
-        {
-            if (ReferenceEquals(baseEnum, newEnum)) return true;
-            if (baseEnum == null || newEnum == null) return false;
-
-            return baseEnum.Value == newEnum.Value;
-        }
-
-        private static bool CompareEnumerationWithObject(IEnumeration enumeration, object other)
-        {
-            if (enumeration == null && other == null) return true;
-            if (enumeration == null || other == null) return false;
-
-            // 如果另一个对象也是 IEnumeration，使用专门的方法
-            if (other is IEnumeration otherEnum)
-            {
-                return CompareEnumerations(enumeration, otherEnum);
-            }
-
-            // 比较枚举值和对象的字符串表示
-            return enumeration.Value == other.ToString();
-        }
-
-
-
-        /// <summary>
-        /// Gets BsonMemberMaps for non-entity types
-        /// </summary>
-        private static BsonMemberMap[] GetBsonMemberMapsForType(Type type)
-        {
-            try
-            {
-                var classMap = BsonClassMap.LookupClassMap(type);
-                return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
-            }
-            catch
-            {
-                var classMap = new BsonClassMap(type);
-                BsonClassMap.RegisterClassMap(classMap);
-                classMap.AutoMap();
-                return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
-            }
-        }
-
-
-
-        private static bool IsSimpleType(Type type)
-        {
-            return _isSimpleTypeCache.GetOrAdd(type, t => t.IsPrimitive ||
-                                                          type == typeof(string) ||
-                                                          type == typeof(decimal) ||
-                                                          type == typeof(DateTime) ||
-                                                          type == typeof(DateTimeOffset) ||
-                                                          type == typeof(TimeSpan) ||
-                                                          type == typeof(Guid) ||
-                                                          type == typeof(byte[]) ||
-                                                          type.IsAssignableTo<JsonNode>() ||
-                                                          type.IsAssignableTo<IEnumeration>() ||
-                                                          (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>) && IsSimpleType(type.GetGenericArguments()[0])) ||
-                                                          type.IsEnum);
-
-        }
-
-
     }
 }

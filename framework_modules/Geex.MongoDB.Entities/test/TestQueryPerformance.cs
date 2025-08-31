@@ -15,7 +15,7 @@ using Shouldly;
 
 namespace MongoDB.Entities.Tests
 {
-    //[TestClass]
+    [TestClass]
     public class TestQueryPerformance
     {
         [TestMethod]
@@ -272,8 +272,6 @@ namespace MongoDB.Entities.Tests
                 var customProjection = dbContext.Query<TestEntity>()
                     .AsNoTracking()
                     .Where(x => x.Value >= 50000 && x.Value <= 60000)
-                    .Select(x => new { x.Id, x.Name, x.Value, x.Enum })
-                    .ToList()
                     .Select(x => new TestEntitySelectSubset(x.Id, x.Name, x.Value, x.Enum))
                     .ToList();
                 sw.Stop();
