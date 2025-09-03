@@ -30,7 +30,6 @@ namespace Geex.Storage
         {
             //DbContext._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
             //DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
-            DbContext.SaveMethod = typeof(GeexCommonAbstractionStorageExtensions).GetMethods().First(x => x.Name == nameof(GeexCommonAbstractionStorageExtensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         }
 
         /// <inheritdoc />
@@ -80,7 +79,7 @@ namespace Geex.Storage
         public Queue<IEvent> DomainEvents { get; } = new Queue<IEvent>();
 
         /// <inheritdoc />
-        public override async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
+        public override async Task<MergedBulkWriteResult> SaveChanges(CancellationToken cancellation = default)
         {
             var logger = ServiceProvider.GetService<ILogger<GeexDbContext>>();
 

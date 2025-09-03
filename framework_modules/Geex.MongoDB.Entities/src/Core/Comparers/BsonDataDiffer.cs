@@ -37,226 +37,86 @@ namespace MongoDB.Entities.Core.Comparers
     /// <summary>
     /// 字段差异接口，支持类型安全的字段访问
     /// </summary>
-    public interface IBsonFieldDifference
+    public interface IBsonMemberDifference
     {
         string FieldName { get; }
         Type FieldType { get; }
         BsonMemberMap MemberMap { get; }
-        bool HasBaseValue { get; }
-        bool HasNewValue { get; }
-
         /// <summary>
         /// 将字段值应用到目标对象
         /// </summary>
-        void ApplyBaseValueToTarget(object target);
-        void ApplyNewValueToTarget(object target);
-
-        /// <summary>
-        /// 获取字段值（避免装拆箱的访问器）
-        /// </summary>
-        T GetBaseValue<T>();
-        T GetNewValue<T>();
+        void ApplyBaseValue(object target);
+        void ApplyNewValue(object target);
+        object BaseValue { get; }
+        object NewValue { get; }
     }
 
+    public class BsonMemberDifference : IBsonMemberDifference
+    {
+        /// <inheritdoc />
+        public string FieldName { get; internal set; }
+
+        /// <inheritdoc />
+        public Type FieldType { get; internal set; }
+
+        /// <inheritdoc />
+        public BsonMemberMap MemberMap { get; internal set; }
+
+        /// <inheritdoc />
+        public void ApplyBaseValue(object target)
+        {
+            MemberMap.Setter(target, BaseValue);
+        }
+
+        /// <inheritdoc />
+        public void ApplyNewValue(object target)
+        {
+            MemberMap.Setter(target, NewValue);
+        }
+
+        /// <inheritdoc />
+        public object BaseValue { get; internal set; }
+
+        /// <inheritdoc />
+        public object NewValue { get; internal set; }
+    }
     /// <summary>
     /// 泛型字段差异信息，避免装拆箱操作
     /// </summary>
-    public class BsonFieldDifference<TField> : IBsonFieldDifference
+    public class BsonMemberDifference<TField> : IBsonMemberDifference
     {
+        object IBsonMemberDifference.NewValue => NewValue;
+        object IBsonMemberDifference.BaseValue => BaseValue;
         public string FieldName { get; set; }
         public TField BaseValue { get; set; }
         public TField NewValue { get; set; }
         public BsonMemberMap MemberMap { get; set; }
-        public bool HasBaseValue { get; set; } = true;
-        public bool HasNewValue { get; set; } = true;
 
         public Type FieldType => typeof(TField);
 
-        public void ApplyBaseValueToTarget(object target)
+        public void ApplyBaseValue(object target)
         {
-            if (HasBaseValue && MemberMap != null)
-                SetMemberValue(target, MemberMap, BaseValue);
+            MemberMap.Setter(target, BaseValue);
         }
 
-        public void ApplyNewValueToTarget(object target)
+        public void ApplyNewValue(object target)
         {
-            if (HasNewValue && MemberMap != null)
-                SetMemberValue(target, MemberMap, NewValue);
-        }
-
-        public T GetBaseValue<T>()
-        {
-            if (typeof(T) == typeof(TField))
-                return (T)(object)BaseValue;
-
-            if (BaseValue is T value)
-                return value;
-
-            throw new InvalidCastException($"Cannot cast {typeof(TField)} to {typeof(T)}");
-        }
-
-        public T GetNewValue<T>()
-        {
-            if (typeof(T) == typeof(TField))
-                return (T)(object)NewValue;
-
-            if (NewValue is T value)
-                return value;
-
-            throw new InvalidCastException($"Cannot cast {typeof(TField)} to {typeof(T)}");
-        }
-
-        private static void SetMemberValue(object obj, BsonMemberMap memberMap, object value)
-        {
-            if (memberMap.MemberInfo is PropertyInfo property)
-                property.SetValue(obj, value);
-            else if (memberMap.MemberInfo is FieldInfo field)
-                field.SetValue(obj, value);
+            MemberMap.Setter(target, NewValue);
         }
     }
 
     /// <summary>
-    /// 泛型比较结果，提供类型安全的字段访问
-    /// </summary>
-    public class BsonDiffResult<TEntity> : BsonDiffResult
-    {
-        /// <summary>
-        /// 获取指定类型的字段差异
-        /// </summary>
-        public IEnumerable<BsonFieldDifference<TField>> GetFieldDifferences<TField>()
-        {
-            return Differences.Values.OfType<BsonFieldDifference<TField>>();
-        }
-
-        /// <summary>
-        /// 获取指定字段名和类型的差异
-        /// </summary>
-        public BsonFieldDifference<TField> GetFieldDifference<TField>(string fieldName)
-        {
-            return GetFieldDifference(fieldName) as BsonFieldDifference<TField>;
-        }
-
-        /// <summary>
-        /// 根据表达式获取字段名的差异
-        /// </summary>
-        public IBsonFieldDifference GetFieldDifference<TField>(Expression<Func<TEntity, TField>> expression)
-        {
-            var fieldName = GetFieldNameFromExpression(expression);
-            return GetFieldDifference(fieldName);
-        }
-
-        /// <summary>
-        /// 根据表达式获取强类型字段差异
-        /// </summary>
-        public BsonFieldDifference<TField> GetTypedFieldDifference<TField>(Expression<Func<TEntity, TField>> expression)
-        {
-            var fieldName = GetFieldNameFromExpression(expression);
-            return GetFieldDifference<TField>(fieldName);
-        }
-
-        /// <summary>
-        /// 将所有差异中的BaseValue应用到目标对象
-        /// </summary>
-        public void ApplyBaseValueToTarget(TEntity target)
-        {
-            foreach (var diff in Differences.Values)
-                diff.ApplyBaseValueToTarget(target);
-        }
-
-        /// <summary>
-        /// 将所有差异中的NewValue应用到目标对象
-        /// </summary>
-        public void ApplyNewValueToTarget(TEntity target)
-        {
-            foreach (var diff in Differences.Values)
-                diff.ApplyNewValueToTarget(target);
-        }
-
-        /// <summary>
-        /// 应用指定字段的BaseValue到目标对象
-        /// </summary>
-        public void ApplyFieldBaseValueToTarget(TEntity target, string fieldName)
-        {
-            if (Differences.TryGetValue(fieldName, out var difference))
-                difference.ApplyBaseValueToTarget(target);
-        }
-
-        /// <summary>
-        /// 应用指定字段的NewValue到目标对象
-        /// </summary>
-        public void ApplyFieldNewValueToTarget(TEntity target, string fieldName)
-        {
-            if (Differences.TryGetValue(fieldName, out var difference))
-                difference.ApplyNewValueToTarget(target);
-        }
-
-        /// <summary>
-        /// 根据表达式应用指定字段的BaseValue到目标对象
-        /// </summary>
-        public void ApplyFieldBaseValueToTarget<TField>(TEntity target, Expression<Func<TEntity, TField>> expression)
-        {
-            var fieldName = GetFieldNameFromExpression(expression);
-            ApplyFieldBaseValueToTarget(target, fieldName);
-        }
-
-        /// <summary>
-        /// 根据表达式应用指定字段的NewValue到目标对象
-        /// </summary>
-        public void ApplyFieldNewValueToTarget<TField>(TEntity target, Expression<Func<TEntity, TField>> expression)
-        {
-            var fieldName = GetFieldNameFromExpression(expression);
-            ApplyFieldNewValueToTarget(target, fieldName);
-        }
-
-        /// <summary>
-        /// 批量应用指定字段的BaseValue到目标对象
-        /// </summary>
-        public void ApplyFieldsBaseValueToTarget(TEntity target, params string[] fieldNames)
-        {
-            foreach (var fieldName in fieldNames)
-            {
-                ApplyFieldBaseValueToTarget(target, fieldName);
-            }
-        }
-
-        /// <summary>
-        /// 批量应用指定字段的NewValue到目标对象
-        /// </summary>
-        public void ApplyFieldsNewValueToTarget(TEntity target, params string[] fieldNames)
-        {
-            foreach (var fieldName in fieldNames)
-            {
-                ApplyFieldNewValueToTarget(target, fieldName);
-            }
-        }
-
-        /// <summary>
-        /// 从表达式中提取字段名
-        /// </summary>
-        private static string GetFieldNameFromExpression<TField>(Expression<Func<TEntity, TField>> expression)
-        {
-            if (expression.Body is MemberExpression memberExpression)
-            {
-                return memberExpression.Member.Name;
-            }
-            throw new ArgumentException("Expression must be a member access expression", nameof(expression));
-        }
-
-        public static implicit operator bool(BsonDiffResult<TEntity> result) => result.AreEqual;
-    }
-
-    /// <summary>
-    /// 向后兼容的非泛型比较结果
+    /// 比较结果
     /// </summary>
     public class BsonDiffResult
     {
         public bool AreEqual { get; set; }
-        public Dictionary<string, IBsonFieldDifference> Differences { get; set; } = new Dictionary<string, IBsonFieldDifference>();
+        public Dictionary<string, IBsonMemberDifference> Differences { get; set; } = new Dictionary<string, IBsonMemberDifference>();
 
         /// <summary>
         /// 获取指定字段名的差异
         /// </summary>
-        public IBsonFieldDifference GetFieldDifference(string fieldName)
+        public IBsonMemberDifference GetFieldDifference(string fieldName)
         {
             return Differences.TryGetValue(fieldName, out var difference) ? difference : null;
         }
@@ -270,9 +130,9 @@ namespace MongoDB.Entities.Core.Comparers
         }
 
         /// <summary>
-        /// 获取所有差异的集合（向后兼容）
+        /// 获取所有差异的集合
         /// </summary>
-        public ICollection<IBsonFieldDifference> GetAllDifferences()
+        public ICollection<IBsonMemberDifference> GetAllDifferences()
         {
             return Differences.Values;
         }
@@ -280,24 +140,13 @@ namespace MongoDB.Entities.Core.Comparers
         /// <summary>
         /// 添加差异
         /// </summary>
-        internal void AddDifference(IBsonFieldDifference difference)
+        internal void AddDifference(IBsonMemberDifference difference)
         {
             Differences[difference.FieldName] = difference;
         }
 
         public static implicit operator bool(BsonDiffResult result) => result.AreEqual;
-
-        /// <summary>
-        /// 从泛型结果创建非泛型结果
-        /// </summary>
-        public static BsonDiffResult FromGeneric<T>(BsonDiffResult<T> genericResult)
-        {
-            return new BsonDiffResult
-            {
-                AreEqual = genericResult.AreEqual,
-                Differences = genericResult.Differences
-            };
-        }
+        public static BsonDiffResult Equal = new BsonDiffResult() { AreEqual = true };
     }
 
     /// <summary>Implements methods to support the comparison of objects for equality, in a customizable fashion.</summary>
@@ -356,42 +205,6 @@ namespace MongoDB.Entities.Core.Comparers
             _fastComparerCache.Clear();
         }
 
-        /// <summary>
-        /// 获取差异字典（现在直接返回内部字典的副本）
-        /// </summary>
-        /// <param name="result">比较结果</param>
-        /// <returns>差异字典，键为字段名，值为差异信息</returns>
-        public static Dictionary<string, IBsonFieldDifference> CreateDifferenceDictionary<TEntity>(BsonDiffResult<TEntity> result)
-        {
-            return new Dictionary<string, IBsonFieldDifference>(result.Differences);
-        }
-
-        /// <summary>
-        /// 向后兼容的差异字典创建方法
-        /// </summary>
-        public static Dictionary<string, IBsonFieldDifference> CreateDifferenceDictionary(BsonDiffResult result)
-        {
-            return new Dictionary<string, IBsonFieldDifference>(result.Differences);
-        }
-
-        /// <summary>
-        /// 获取差异字典的只读视图（高性能，无复制）
-        /// </summary>
-        /// <param name="result">比较结果</param>
-        /// <returns>差异字典的只读视图</returns>
-        public static IReadOnlyDictionary<string, IBsonFieldDifference> GetDifferenceDictionary<TEntity>(BsonDiffResult<TEntity> result)
-        {
-            return result.Differences;
-        }
-
-        /// <summary>
-        /// 向后兼容的差异字典只读视图获取方法
-        /// </summary>
-        public static IReadOnlyDictionary<string, IBsonFieldDifference> GetDifferenceDictionary(BsonDiffResult result)
-        {
-            return result.Differences;
-        }
-
         private static bool? BasicCompare<T>(T baseObj, T newObj)
         {
             // Handle nulls
@@ -409,65 +222,70 @@ namespace MongoDB.Entities.Core.Comparers
 
             return null;
         }
-        private static readonly MethodInfo DiffMethod = typeof(BsonDataDiffer).GetMethod(nameof(Diff), BindingFlags.Public | BindingFlags.Static);
-
 
         /// <summary>
         /// 比较两个对象
         /// </summary>
-        public static BsonDiffResult<T> Diff<T>(T baseObj, T newObj, BsonDiffMode mode = BsonDiffMode.Fast)
+        public static BsonDiffResult DiffEntity(CacheInfo typeCache, IEntityBase baseObj, IEntityBase newObj,
+            BsonDiffMode mode = BsonDiffMode.Fast, IEnumerable<BsonMemberMap>? memberMapsToCompare = null)
         {
-            // 当泛型类型是IEntityBase时，需要使用实际类型进行比较以获得正确的BsonClassMap
-            if (typeof(T) == typeof(IEntityBase))
+            var baseType = baseObj?.GetType() ?? typeCache.EntityType;
+            var newType = newObj?.GetType() ?? typeCache.EntityType;
+            var context = new DiffContext(mode, new BsonDiffResult() { AreEqual = false });
+            var typeEqual = baseType == newType;
+            if (!typeEqual && mode == BsonDiffMode.Fast)
             {
-                // 处理null情况
-                if (baseObj == null && newObj == null)
-                {
-                    return new BsonDiffResult<T> { AreEqual = true };
-                }
-                if (baseObj == null || newObj == null)
-                {
-                    return new BsonDiffResult<T> { AreEqual = false };
-                }
-
-                var baseType = baseObj.GetType();
-                var newType = newObj.GetType();
-
-                // 如果两个对象的实际类型不同，直接返回不相等
-                if (baseType != newType)
-                {
-                    return new BsonDiffResult<T> { AreEqual = false };
-                }
-
-                // 使用实际类型进行比较（使用缓存提高性能）
-                var cachedMethod = _diffMethodCache.GetOrAdd(baseType, type => DiffMethod.MakeGenericMethodFast(type));
-                var actualResult = cachedMethod.Invoke(null, [baseObj, newObj, mode]);
-
-                // 创建正确的泛型结果类型
-                var genericResult = new BsonDiffResult<T>
-                {
-                    AreEqual = ((BsonDiffResult)actualResult).AreEqual,
-                    Differences = ((BsonDiffResult)actualResult).Differences
-                };
-
-                return genericResult;
+                return context.Result;
             }
 
-            var result = new BsonDiffResult<T>();
+            memberMapsToCompare ??= DB.GetCacheInfo(baseType).MemberMapsWithoutModifiedOn.AsEnumerable();
 
-            var basicCheckResult = BasicCompare(baseObj, newObj);
-
-            if (basicCheckResult.HasValue)
-            {
-                result.AreEqual = basicCheckResult.Value;
-                return result;
+            if (baseObj == null){
+              context.Result.AreEqual = false;
+              context.Result.Differences = memberMapsToCompare.Select(x => new BsonMemberDifference
+              {
+                FieldName = x.ElementName,
+                FieldType = x.MemberType,
+                BaseValue = null,
+                NewValue = x.Getter(newObj),
+                MemberMap = x
+              }).ToDictionary(x => x.FieldName, x => (IBsonMemberDifference)x);
+              return context.Result;
             }
 
-            var context = new DiffContext<T>(mode, result);
-            DiffTopLevelFields(baseObj, newObj, context);
-            result.AreEqual = result.Differences.Count == 0;
+            foreach (var memberMap in memberMapsToCompare)
+            {
+                if (!context.ShouldContinue) break;
 
-            return result;
+                try
+                {
+
+                    var baseValue = memberMap.Getter(baseObj);
+                    var newValue = memberMap.Getter(newObj);
+
+                    // 使用高效的相等性比较
+                    if (!AreValuesEqual(baseValue, newValue, baseType, newType))
+                    {
+                        // 创建泛型差异对象，避免装拆箱（使用优化的工厂）
+                        var difference = memberMap.CreateFieldDifference(memberMap.ElementName, baseValue, newValue);
+                        context.Result.AddDifference(difference);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 记录获取成员值时的异常
+                    var errorDifference = new BsonMemberDifference<string>
+                    {
+                        FieldName = memberMap.ElementName,
+                        BaseValue = $"Error: {ex.Message}",
+                        NewValue = $"Error: {ex.Message}",
+                        MemberMap = memberMap
+                    };
+                    context.Result.AddDifference(errorDifference);
+                }
+            }
+            context.Result.AreEqual = typeEqual && context.Result.Differences.Count == 0;
+            return context.Result;
         }
 
         private class DiffContext
@@ -482,57 +300,6 @@ namespace MongoDB.Entities.Core.Comparers
                 Result = result;
             }
         }
-        private class DiffContext<T> : DiffContext
-        {
-            public override BsonDiffResult<T> Result => (BsonDiffResult<T>)base.Result;
-
-            /// <inheritdoc />
-            public DiffContext(BsonDiffMode mode, BsonDiffResult result) : base(mode, result)
-            {
-            }
-        }
-        /// <summary>
-        /// 比较顶层字段，不深入嵌套对象
-        /// </summary>
-        private static void DiffTopLevelFields<T>(T baseObj, T newObj, DiffContext<T> context)
-        {
-            var baseType = baseObj.GetType();
-            BsonMemberMap[] memberMaps;
-
-            memberMaps = DB.GetCacheInfo(baseType).MemberMaps;
-
-            foreach (var memberMap in memberMaps)
-            {
-                if (!context.ShouldContinue) break;
-
-                try
-                {
-                    var baseValue = memberMap.Getter(baseObj);
-                    var newValue = memberMap.Getter(newObj);
-
-                    // 使用高效的相等性比较
-                    if (!AreValuesEqual(baseValue, newValue, baseType, newObj.GetType()))
-                    {
-                        // 创建泛型差异对象，避免装拆箱（使用优化的工厂）
-                        var difference = memberMap.CreateFieldDifference(memberMap.ElementName, baseValue, newValue);
-                        context.Result.AddDifference(difference);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // 记录获取成员值时的异常
-                    var errorDifference = new BsonFieldDifference<string>
-                    {
-                        FieldName = memberMap.ElementName,
-                        BaseValue = $"Error: {ex.Message}",
-                        NewValue = $"Error: {ex.Message}",
-                        MemberMap = memberMap
-                    };
-                    context.Result.AddDifference(errorDifference);
-                }
-            }
-        }
-
 
         private static readonly Dictionary<Type, Func<object, object, bool>> TypeComparers = new Dictionary<Type, Func<object, object, bool>>
         {
@@ -544,7 +311,7 @@ namespace MongoDB.Entities.Core.Comparers
             [typeof(DateTimeOffset)] = (a, b) => ((DateTimeOffset)a == (DateTimeOffset)b),
         };
 
-        private static bool AreValuesEqual(object baseObj, object newObj, Type baseType, Type newType)
+        public static bool AreValuesEqual(object baseObj, object newObj, Type baseType, Type newType)
         {
             // 快速基础检查
             var basicCheckResult = BasicCompare(baseObj, newObj);

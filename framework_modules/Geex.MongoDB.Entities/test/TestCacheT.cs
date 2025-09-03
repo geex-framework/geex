@@ -22,14 +22,16 @@ namespace MongoDB.Entities.Tests
             childClassMap.Discriminator.ShouldBe(nameof(InheritanceEntityChild));
             parentClassMap.DiscriminatorIsRequired.ShouldBe(true);
             childClassMap.DiscriminatorIsRequired.ShouldBe(true);
-            parentCache.Length.ShouldBe(3);
-            childCache.Length.ShouldBe(3);
+            parentCache.Length.ShouldBe(4);
+            childCache.Length.ShouldBe(4);
             parentCache[0].MemberName.ShouldBe(nameof(InheritanceEntity.Id));
             parentCache[1].MemberName.ShouldBe(nameof(InheritanceEntity.CreatedOn));
-            parentCache[2].MemberName.ShouldBe(nameof(InheritanceEntity.Name));
+            parentCache[2].MemberName.ShouldBe(nameof(InheritanceEntity.ModifiedOn));
+            parentCache[3].MemberName.ShouldBe(nameof(InheritanceEntity.Name));
             childCache[0].MemberName.ShouldBe(nameof(InheritanceEntityChild.Id));
             childCache[1].MemberName.ShouldBe(nameof(InheritanceEntityChild.CreatedOn));
-            childCache[2].MemberName.ShouldBe(nameof(InheritanceEntityChild.Name));
+            childCache[2].MemberName.ShouldBe(nameof(InheritanceEntityChild.ModifiedOn));
+            childCache[3].MemberName.ShouldBe(nameof(InheritanceEntityChild.Name));
         }
 
         [TestMethod]

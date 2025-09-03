@@ -16,8 +16,8 @@ namespace MongoDB.Bson
     /// </summary>
     public static class FieldDifferenceFactory
     {
-        private static readonly ConcurrentDictionary<Type, Func<string, object, object, BsonMemberMap, IBsonFieldDifference>>
-            _factoryCache = new ConcurrentDictionary<Type, Func<string, object, object, BsonMemberMap, IBsonFieldDifference>>();
+        private static readonly ConcurrentDictionary<Type, Func<string, object, object, BsonMemberMap, IBsonMemberDifference>>
+            _factoryCache = new ConcurrentDictionary<Type, Func<string, object, object, BsonMemberMap, IBsonMemberDifference>>();
 
         // 常用表达式缓存，减少重复创建
         private static readonly ConcurrentDictionary<Type, ParameterExpression> _parameterCache = new();
@@ -26,25 +26,23 @@ namespace MongoDB.Bson
         /// <summary>
         /// 创建字段差异对象（使用编译的表达式）
         /// </summary>
-        public static IBsonFieldDifference CreateFieldDifference(this BsonMemberMap memberMap, string fieldName, object baseValue, object newValue)
+        public static IBsonMemberDifference CreateFieldDifference(this BsonMemberMap memberMap, string fieldName, object baseValue, object newValue)
         {
             var fieldType = memberMap.MemberType;
             var factory = _factoryCache.GetOrAdd(fieldType, CreateFactory);
             return factory(fieldName, baseValue, newValue, memberMap);
         }
 
-        private static Func<string, object, object, BsonMemberMap, IBsonFieldDifference> CreateFactory(Type fieldType)
+        private static Func<string, object, object, BsonMemberMap, IBsonMemberDifference> CreateFactory(Type fieldType)
         {
             // 创建编译的构造函数和属性设置器
-            var differenceType = typeof(BsonFieldDifference<>).MakeGenericTypeFast(fieldType);
+            var differenceType = typeof(BsonMemberDifference<>).MakeGenericTypeFast(fieldType);
 
             var constructor = differenceType.GetConstructor(Type.EmptyTypes);
-            var fieldNameProp = differenceType.GetProperty(nameof(BsonFieldDifference<object>.FieldName));
-            var baseValueProp = differenceType.GetProperty(nameof(BsonFieldDifference<object>.BaseValue));
-            var newValueProp = differenceType.GetProperty(nameof(BsonFieldDifference<object>.NewValue));
-            var memberMapProp = differenceType.GetProperty(nameof(BsonFieldDifference<object>.MemberMap));
-            var hasBaseValueProp = differenceType.GetProperty(nameof(BsonFieldDifference<object>.HasBaseValue));
-            var hasNewValueProp = differenceType.GetProperty(nameof(BsonFieldDifference<object>.HasNewValue));
+            var fieldNameProp = differenceType.GetProperty(nameof(BsonMemberDifference<object>.FieldName));
+            var baseValueProp = differenceType.GetProperty(nameof(BsonMemberDifference<object>.BaseValue));
+            var newValueProp = differenceType.GetProperty(nameof(BsonMemberDifference<object>.NewValue));
+            var memberMapProp = differenceType.GetProperty(nameof(BsonMemberDifference<object>.MemberMap));
 
             // 使用缓存的参数表达式，减少重复创建
             var fieldNameParam = Expression.Parameter(typeof(string), "fieldName");
@@ -55,7 +53,7 @@ namespace MongoDB.Bson
             // 创建实例
             var newInstance = Expression.New(constructor);
             var instanceVar = Expression.Variable(differenceType, "instance");
-            var resultVar = Expression.Variable(typeof(IBsonFieldDifference), "result");
+            var resultVar = Expression.Variable(typeof(IBsonMemberDifference), "result");
 
             // 创建赋值表达式
             var expressions = new List<Expression>
@@ -71,9 +69,7 @@ namespace MongoDB.Bson
                         ? Expression.Convert(newValueParam, fieldType)
                         : Expression.Convert(newValueParam, fieldType)),
                 Expression.Call(instanceVar, memberMapProp.SetMethod, memberMapParam),
-                Expression.Call(instanceVar, hasBaseValueProp.SetMethod, Expression.Constant(true)),
-                Expression.Call(instanceVar, hasNewValueProp.SetMethod, Expression.Constant(true)),
-                Expression.Assign(resultVar, Expression.Convert(instanceVar, typeof(IBsonFieldDifference))),
+                Expression.Assign(resultVar, Expression.Convert(instanceVar, typeof(IBsonMemberDifference))),
                 resultVar
             };
 
@@ -82,7 +78,7 @@ namespace MongoDB.Bson
                 expressions
             );
 
-            var lambda = Expression.Lambda<Func<string, object, object, BsonMemberMap, IBsonFieldDifference>>(
+            var lambda = Expression.Lambda<Func<string, object, object, BsonMemberMap, IBsonMemberDifference>>(
                 block,
                 fieldNameParam, baseValueParam, newValueParam, memberMapParam);
 

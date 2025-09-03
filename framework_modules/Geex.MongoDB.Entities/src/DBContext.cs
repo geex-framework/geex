@@ -574,89 +574,81 @@ namespace MongoDB.Entities
                 session);
         }
 
-        protected static MethodInfo SaveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.NonPublic).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
+        private static MethodInfo SaveMethod = typeof(Extensions).GetMethods(BindingFlags.Static | BindingFlags.Public).First(x => x.Name == nameof(Extensions.SaveAsync) && x.GetParameters().First().ParameterType.Name.Contains("IEnumerable"));
         private static MethodInfo CastMethod = typeof(Enumerable).GetMethods().First(x => x.Name == nameof(Enumerable.Cast) && x.GetParameters().First().ParameterType == typeof(IEnumerable));
-        private static readonly MethodInfo DiffMethod = typeof(DbContext).GetMethod(nameof(Diff), BindingFlags.Public | BindingFlags.Instance);
 
         /// <summary>
         /// Save changed entities to database, if an entity is not changed, it will not be saved.
         /// </summary>
         /// <param name="cancellation">An optional cancellation token</param>
         /// <returns>A list of saved entity ids in format of {entityType}@{entityId}</returns>
-        public virtual async Task<List<string>> SaveChanges(CancellationToken cancellation = default)
+        public virtual async Task<MergedBulkWriteResult> SaveChanges(CancellationToken cancellation = default)
         {
             if (!EntityTrackingEnabled)
             {
                 this.Logger.LogError("EntityTrackingEnabled is false, SaveChanges will not save any entities.");
-                return [];
+                return default;
             }
 
             if (this.PreSaveChanges != default)
             {
                 await this.PreSaveChanges();
             }
-            var savedIds = new List<string>();
-            foreach (var (type, keyedEntities) in this.MemoryDataCache.TypedCacheDictionary)
+            var result = new MergedBulkWriteResult();
+            if (!Session.IsInTransaction && this.SupportTransaction && !IsInExplicitTransaction)
             {
-                if (!keyedEntities.Any())
-                {
-                    continue;
-                }
-                var toSavedEntities = new List<IEntityBase>();
-                foreach (var (key, value) in keyedEntities)
-                {
-                    // 如果值没有改变, 则不保存
-                    var newValue = this.MemoryDataCache[type][key];
-                    if (this.DbDataCache[type].TryGetValue(key, out var originValue) && this.Diff(newValue, originValue).AreEqual)
-                    {
-                        continue;
-                    }
-                    toSavedEntities.Add(newValue);
-                }
-                // 如果本地有值变更
-                if (toSavedEntities.Count != 0)
-                {
-                    savedIds.AddRange(toSavedEntities.Select(x => $"{type.Name}@{x.Id}"));
-                    var list = CastMethod.MakeGenericMethodFast(type).Invoke(null, [toSavedEntities]);
-                    const int maxRetries = 3;
-                    for (int attempt = 0; attempt < maxRetries; attempt++)
-                    {
-                        try
-                        {
-                            if (!Session.IsInTransaction && this.SupportTransaction && !IsInExplicitTransaction)
-                            {
-                                Session.StartTransaction();
-                            }
-                            var saveTask = SaveMethod.MakeGenericMethodFast(type).Invoke(null, [list, this, cancellation]);
-                            if (saveTask is Task task)
-                            {
-                                await task.ConfigureAwait(false);
-                            }
-                            if (Session.IsInTransaction && !IsInExplicitTransaction)
-                            {
-                                await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
-                            }
-                            this.UpdateDbDataCache(toSavedEntities, type);
-                            break; // 如果成功，跳出循环
-                        }
-                        catch (OptimisticConcurrencyException oce)
-                        {
-                            this.Logger.LogException(oce, LogLevel.Error);
-                            if (Session.IsInTransaction)
-                            {
-                                await Session.AbortTransactionAsync(cancellation);
-                            }
-                            throw;
-                        }
-                        catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))
-                        {
-                            if (attempt == maxRetries - 1)
-                                throw; // 如果是最后一次尝试，则抛出异常
+                Session.StartTransaction();
+            }
 
-                            await Task.Delay(TimeSpan.FromSeconds(0.5 * (attempt + 1)), cancellation); // 指数退避
+            try
+            {
+                foreach (var (rootType, keyedEntities) in this.MemoryDataCache.TypedCacheDictionary)
+                {
+                    var toSavedEntities = keyedEntities.Values;
+                    // 如果本地有值变更
+                    if (toSavedEntities.Count != 0)
+                    {
+                        var list = CastMethod.MakeGenericMethodFast(rootType).Invoke(null, [toSavedEntities]);
+                        const int maxRetries = 3;
+                        for (int attempt = 0; attempt < maxRetries; attempt++)
+                        {
+                            try
+                            {
+                                var saveTask = SaveMethod.MakeGenericMethodFast(rootType).Invoke(null, [list, this, cancellation]);
+                                if (saveTask is Task task)
+                                {
+                                    await task.ConfigureAwait(false);
+                                    var taskResult = task.GetType().GetProperty(nameof(Task<>.Result)).GetValue(task);
+                                    result += taskResult;
+                                }
+                                break; // 如果成功，跳出循环
+                            }
+                            catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))
+                            {
+                                if (attempt == maxRetries - 1)
+                                    throw; // 如果是最后一次尝试，则抛出异常
+
+                                await Task.Delay(TimeSpan.FromSeconds(0.5 * (attempt + 1)), cancellation); // 指数退避
+                            }
                         }
                     }
+
                 }
+            }
+            catch (OptimisticConcurrencyException oce)
+            {
+                Logger.LogError("Optimistic concurrency conflict: {EntityType}[{EntityId}], fields: {ConflictingFields}",
+                    oce.EntityType.Name, oce.EntityId, string.Join(", ", oce.ConflictingFields?.Select(f => f.FieldName) ?? []));
+                if (Session.IsInTransaction)
+                {
+                    await Session.AbortTransactionAsync(cancellation);
+                }
+                throw;
+            }
+
+            if (Session.IsInTransaction && !IsInExplicitTransaction)
+            {
+                await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
             }
 
             //this.Local.TypedCacheDictionary.Clear();
@@ -665,43 +657,7 @@ namespace MongoDB.Entities
             {
                 await this.PostSaveChanges();
             }
-            return savedIds;
-        }
-        /// <summary>
-        /// 检查value是否发生变更
-        /// </summary>
-        /// <param name="baseValue"></param>
-        /// <param name="newValue"></param>
-        /// <param name="typeHint">实际类型提示，用于提高性能</param>
-        /// <returns></returns>
-        protected virtual BsonDiffResult Diff(IEntityBase baseValue, IEntityBase newValue, BsonDiffMode mode = BsonDiffMode.Fast)
-        {
-            // 处理null情况
-            if (baseValue == null && newValue == null)
-            {
-                return new BsonDiffResult { AreEqual = true };
-            }
-            if (baseValue == null || newValue == null)
-            {
-                return new BsonDiffResult { AreEqual = false };
-            }
-
-            // 否则使用实际类型
-            var actualType = baseValue.GetType();
-            if (actualType != newValue.GetType())
-            {
-                return new BsonDiffResult { AreEqual = false };
-            }
-
-            return (BsonDiffResult)DiffMethod.MakeGenericMethodFast(actualType).Invoke(this, [baseValue, newValue, mode]);
-        }
-
-        /// <summary>
-        /// 泛型版本的实体变更检查，性能更好
-        /// </summary>
-        public virtual BsonDiffResult Diff<T>(T baseValue, T newValue, BsonDiffMode mode = BsonDiffMode.Fast) where T : IEntityBase
-        {
-            return BsonDataDiffer.Diff(baseValue, newValue, mode);
+            return result;
         }
 
         #region IDisposable Support

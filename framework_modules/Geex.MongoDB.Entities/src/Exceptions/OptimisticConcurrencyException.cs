@@ -38,7 +38,7 @@ namespace MongoDB.Entities.Exceptions
 
         public override string ToString()
         {
-            return $"Field: {FieldName}, Base: {BaseValue}, Our: {OurValue.ToBsonDocument()}, Their: {TheirValue.ToBsonDocument()}";
+            return $"Field: {FieldName} ({FieldType.Name}), Base: {BaseValue}, Our: {OurValue}, Their: {TheirValue}";
         }
     }
 
@@ -65,23 +65,20 @@ namespace MongoDB.Entities.Exceptions
         /// <summary>
         /// 我们的ModifiedOn时间
         /// </summary>
-        public DateTimeOffset BaseModifiedOn { get; }
+        public DateTimeOffset? BaseModifiedOn { get; }
 
         /// <summary>
         /// 他们的ModifiedOn时间
         /// </summary>
-        public DateTimeOffset TheirModifiedOn { get; }
+        public DateTimeOffset? TheirModifiedOn { get; }
 
         public OptimisticConcurrencyException(
             Type entityType,
             string entityId,
             IReadOnlyList<FieldConflictInfo> conflictingFields,
-            DateTimeOffset baseModifiedOn,
-            DateTimeOffset theirModifiedOn)
-            : base($"Optimistic concurrency conflict detected for entity {entityType.Name} with ID {entityId}. " +
-                   $"Conflicting fields: {string.Join(", ", conflictingFields.Select(f => f.FieldName))}. " +
-                   $"Base ModifiedOn: {baseModifiedOn:yyyy-MM-dd HH:mm:ss.fff}, " +
-                   $"Their ModifiedOn: {theirModifiedOn:yyyy-MM-dd HH:mm:ss.fff}")
+            DateTimeOffset? baseModifiedOn,
+            DateTimeOffset? theirModifiedOn)
+            : base(FormatExceptionMessage(entityType, entityId, conflictingFields, baseModifiedOn, theirModifiedOn))
         {
             EntityType = entityType ?? throw new ArgumentNullException(nameof(entityType));
             EntityId = entityId ?? throw new ArgumentNullException(nameof(entityId));
@@ -96,6 +93,36 @@ namespace MongoDB.Entities.Exceptions
 
         public OptimisticConcurrencyException(string message, Exception innerException) : base(message, innerException)
         {
+        }
+
+        private static string FormatExceptionMessage(
+            Type entityType,
+            string entityId,
+            IReadOnlyList<FieldConflictInfo> conflictingFields,
+            DateTimeOffset? baseModifiedOn,
+            DateTimeOffset? theirModifiedOn)
+        {
+            var message = $"Optimistic concurrency conflict detected for entity {entityType.Name} with ID '{entityId}'.";
+
+            if (theirModifiedOn == default)
+            {
+                message += " The entity was deleted by another process.";
+            }
+            else
+            {
+                message += $" Base ModifiedOn: {baseModifiedOn:yyyy-MM-dd HH:mm:ss.fff}, Their ModifiedOn: {theirModifiedOn:yyyy-MM-dd HH:mm:ss.fff}.";
+
+                if (conflictingFields.Count > 0)
+                {
+                    message += $"\n\nConflicting Fields ({conflictingFields.Count}):";
+                    foreach (var field in conflictingFields)
+                    {
+                        message += $"\n  - {field.FieldName} ({field.FieldType.Name}): Base='{field.BaseValue}', Our='{field.OurValue}', Their='{field.TheirValue}'";
+                    }
+                }
+            }
+
+            return message;
         }
     }
 }

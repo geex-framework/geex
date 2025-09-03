@@ -115,9 +115,9 @@ namespace MongoDB.Entities.Utilities
                             return result;
                         }
 
-                        var localEntities = this.DbContext.MemoryDataCache[sourceType].Values.OfType<T>();
+                        var localEntities = this.DbContext.MemoryDataCache[rootType].Values.OfType<T>();
 
-                        var originLocalEntities = this.DbContext.DbDataCache[sourceType].Values.OfType<T>();
+                        var originLocalEntities = this.DbContext.DbDataCache[rootType].Values.OfType<T>();
 
                         var localIds = localEntities.Select(x => x.Id).ToList();
                         var deletedEntities = Enumerable.Empty<T>();

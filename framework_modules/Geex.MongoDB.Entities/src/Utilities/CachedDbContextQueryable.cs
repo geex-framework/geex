@@ -131,6 +131,7 @@ namespace MongoDB.Entities.Utilities
                 else
                 {
                     var dbEntities = this.InnerProvider.CreateQuery<T>(visitor.PreSelectExpression).ToList();
+                    _dbContext.UpdateDbDataCache(dbEntities);
                     entities = _dbContext.Attach(dbEntities).AsQueryable();
                 }
 

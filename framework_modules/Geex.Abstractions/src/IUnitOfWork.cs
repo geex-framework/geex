@@ -68,7 +68,7 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     IEnumerable<T> Attach<T>(IEnumerable<T> entities) where T : IEntityBase;
 
     /// <inheritdoc />
-    Task<List<string>> SaveChanges(CancellationToken cancellation = default);
+    Task<MergedBulkWriteResult> SaveChanges(CancellationToken cancellation = default);
 
     public Task<long> DeleteAsync<T>(string id, CancellationToken cancellation = default)
             where T : IEntityBase;

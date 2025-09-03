@@ -58,7 +58,7 @@ namespace MongoDB.Bson.Serialization
         /// </summary>
         /// <param name="entityType">实体类型</param>
         /// <returns>继承链的判别器数组</returns>
-        public static BsonArray GetBsonDiscriminators(this Type entityType)
+        public static BsonValue GetBsonDiscriminators(this Type entityType)
         {
             var discriminators = new List<BsonValue>();
             var currentType = entityType;
@@ -94,7 +94,9 @@ namespace MongoDB.Bson.Serialization
 
             // 反转数组，使其从根类型到当前类型的顺序
             discriminators.Reverse();
-            return new BsonArray(discriminators);
+            var bsonArray = new BsonArray(discriminators);
+            var result = bsonArray.Count == 1 ? bsonArray[0] : (BsonValue)bsonArray;
+            return result;
         }
 
         public static void Inherit<T>(this BsonClassMap bsonClassMap)

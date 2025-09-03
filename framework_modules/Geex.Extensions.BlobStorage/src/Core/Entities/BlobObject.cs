@@ -19,6 +19,7 @@ using MimeKit;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Entities;
 
 namespace Geex.Extensions.BlobStorage.Core.Entities
 {

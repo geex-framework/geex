@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -19,6 +20,121 @@ using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
 {
+    public class NoOp<T> : BulkWriteResult<T>.Acknowledged
+    {
+        public static NoOp<T> Instance = new NoOp<T>();
+        /// <inheritdoc />
+        private NoOp() : base(0, 0, 0, 0, 0, [], [])
+        {
+        }
+    }
+
+    public interface IGeexBulkWriteResult
+    {
+        bool IsAcknowledged { get; }
+        long MatchedCount { get; }
+        IReadOnlyList<BulkWriteUpsert> Upserts { get; }
+        long DeletedCount { get; }
+        long InsertedCount { get; }
+        long ModifiedCount { get; }
+        public static IGeexBulkWriteResult FromBulkWriteResult<T>(BulkWriteResult bulkWriteResult) where T : IEntityBase
+        {
+            if (bulkWriteResult.IsAcknowledged)
+            {
+                return new GeexBulkWriteResult<T>(bulkWriteResult as BulkWriteResult<T>.Acknowledged);
+            }
+            return new GeexBulkWriteResult<T>(bulkWriteResult as BulkWriteResult<T>.Unacknowledged);
+        }
+    }
+
+    public struct GeexBulkWriteResult<T> : IGeexBulkWriteResult where T : IEntityBase
+    {
+        public GeexBulkWriteResult(BulkWriteResult<T>.Acknowledged baseResult)
+        {
+            IsAcknowledged = baseResult.IsAcknowledged;
+            MatchedCount = baseResult.MatchedCount;
+            Upserts = baseResult.Upserts;
+            DeletedCount = baseResult.DeletedCount;
+            InsertedCount = baseResult.InsertedCount;
+            ModifiedCount = baseResult.ModifiedCount;
+        }
+
+        public GeexBulkWriteResult(BulkWriteResult<T>.Unacknowledged baseResult)
+        {
+            IsAcknowledged = false;
+            MatchedCount = 0;
+            Upserts = [];
+            DeletedCount = 0;
+            InsertedCount = 0;
+            ModifiedCount = 0;
+            IsModifiedCountAvailable = false;
+        }
+        public bool IsModifiedCountAvailable { get; private set; }
+
+        public bool IsAcknowledged { get; private set; }
+
+        public long MatchedCount { get; private set; }
+
+        public IReadOnlyList<BulkWriteUpsert> Upserts { get; private set; }
+
+        public long DeletedCount { get; private set; }
+
+        public long InsertedCount { get; private set; }
+
+        public long ModifiedCount { get; private set; }
+    }
+
+    public struct MergedBulkWriteResult()
+    {
+        public MergedBulkWriteResult(params IGeexBulkWriteResult[] baseResults) : this()
+        {
+            foreach (var baseResult in baseResults)
+            {
+                Results[baseResult.GetType().GenericTypeArguments[0]] = baseResult;
+            }
+            MatchedCount = baseResults.Sum(x => x.MatchedCount);
+            DeletedCount = baseResults.Sum(x => x.DeletedCount);
+            InsertedAndUpsertedCount = baseResults.Sum(x => x.InsertedCount);
+            ModifiedCount = baseResults.Sum(x => x.ModifiedCount);
+        }
+
+        public Dictionary<Type, IGeexBulkWriteResult> Results { get; private set; } = new();
+
+        public long MatchedCount { get; private set; }
+
+        public long DeletedCount { get; private set; }
+
+        public long InsertedAndUpsertedCount { get; private set; }
+
+        public long ModifiedCount { get; private set; }
+
+        public static MergedBulkWriteResult operator +(MergedBulkWriteResult current, IGeexBulkWriteResult newResult)
+        {
+            current.Results[newResult.GetType().GenericTypeArguments[0]] = newResult;
+            current.MatchedCount += newResult.MatchedCount;
+            current.DeletedCount += newResult.DeletedCount;
+            current.InsertedAndUpsertedCount += newResult.InsertedCount;
+            current.ModifiedCount += newResult.ModifiedCount;
+            return current;
+        }
+        private static MethodInfo FromBulkWriteResultMethod = typeof(IGeexBulkWriteResult).GetMethod(nameof(IGeexBulkWriteResult.FromBulkWriteResult));
+        public static MergedBulkWriteResult operator +(MergedBulkWriteResult current, object newResult)
+        {
+            var entityRootType = newResult.GetType().GenericTypeArguments[0];
+            if (newResult is BulkWriteResult bulkWriteResult)
+            {
+                current.Results[entityRootType] = FromBulkWriteResultMethod.MakeGenericMethodFast(entityRootType).Invoke(null, [bulkWriteResult]) as IGeexBulkWriteResult;
+                current.MatchedCount += bulkWriteResult.MatchedCount;
+                current.DeletedCount += bulkWriteResult.DeletedCount;
+                current.InsertedAndUpsertedCount += bulkWriteResult.InsertedCount + bulkWriteResult.Upserts.Count;
+                current.ModifiedCount += bulkWriteResult.IsModifiedCountAvailable ? bulkWriteResult.ModifiedCount : 0;
+                return current;
+            }
+            throw new InvalidOperationException();
+
+        }
+    }
+
     public struct WriteResult
     {
         public static implicit operator WriteResult(UpdateResult result)
@@ -94,20 +210,18 @@ namespace MongoDB.Entities
         public static async Task<WriteResult> SaveAsync<T>(T entity, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             var writeModel = await PrepareForSave(entity, dbContext);
-
-            switch (writeModel)
+            WriteResult result = writeModel switch
             {
-                case UpdateOneModel<T> updateModel:
-                    return dbContext?.Session == null
-                        ? await Collection<T>().UpdateOneAsync(updateModel.Filter, updateModel.Update, updateOptions, cancellation)
-                        : await Collection<T>().UpdateOneAsync(dbContext.Session, updateModel.Filter, updateModel.Update, updateOptions, cancellation);
-                case ReplaceOneModel<T> replaceModel:
-                    return dbContext?.Session == null
-                        ? await Collection<T>().ReplaceOneAsync(replaceModel.Filter, replaceModel.Replacement, replaceOptions, cancellation)
-                        : await Collection<T>().ReplaceOneAsync(dbContext.Session, replaceModel.Filter, replaceModel.Replacement, replaceOptions, cancellation);
-                default:
-                    throw new NotSupportedException("Unsupported write model type: " + writeModel.GetType().Name);
-            }
+                UpdateOneModel<T> updateModel => dbContext?.Session == null
+                    ? await Collection<T>().UpdateOneAsync(updateModel.Filter, updateModel.Update, updateOptions, cancellation)
+                    : await Collection<T>().UpdateOneAsync(dbContext.Session, updateModel.Filter, updateModel.Update, updateOptions, cancellation),
+                ReplaceOneModel<T> replaceModel => dbContext?.Session == null
+                    ? await Collection<T>().ReplaceOneAsync(replaceModel.Filter, replaceModel.Replacement, replaceOptions, cancellation)
+                    : await Collection<T>().ReplaceOneAsync(dbContext.Session, replaceModel.Filter, replaceModel.Replacement, replaceOptions, cancellation),
+                _ => throw new NotSupportedException("Unsupported write model type: " + writeModel.GetType().Name)
+            };
+            dbContext?.UpdateDbDataCache(entity);
+            return result;
         }
 
         /// <summary>
@@ -120,12 +234,30 @@ namespace MongoDB.Entities
         /// <param name="cancellation">And optional cancellation token</param>
         public static async Task<BulkWriteResult<T>> SaveAsync<T>(IEnumerable<T> entities, DbContext dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
-            var updateModels = await PrepareForSaveBatch(entities, dbContext);
-            var models = updateModels.ToList();
+            // 按实际类型分组，以减少重复的类型信息获取
+            var models = entities is ICollection<T> collection ? new List<WriteModel<T>>(collection.Count) : new List<WriteModel<T>>(64);
+            var entitiesByType = entities.GroupBy(e => e.GetType());
 
-            return dbContext?.Session == null
+            foreach (var typeGroup in entitiesByType)
+            {
+                var entityType = typeGroup.Key;
+                var entitiesOfSameType = typeGroup;
+
+                // 对相同类型的实体批量处理
+                var typeModels = await PrepareForSaveBatchActualType<T>(entitiesOfSameType, entityType, dbContext);
+                models.AddRange(typeModels);
+            }
+
+            if (models.Count == 0)
+            {
+                return NoOp<T>.Instance;
+            }
+
+            var result = dbContext?.Session == null
                    ? await Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)
                    : await Collection<T>().BulkWriteAsync(dbContext.Session, models, unOrdBlkOpts, cancellation);
+            dbContext?.UpdateDbDataCache(entities);
+            return result;
         }
 
         /// <summary>
@@ -194,98 +326,67 @@ namespace MongoDB.Entities
 
         private static async Task<WriteModel<T>> PrepareForSave<T>(T entity, DbContext dbContext) where T : IEntityBase
         {
-            var now = DateTimeOffset.Now;
-            var isNewEntity = false;
+            var isNewEntity = entity.ModifiedOn == default;
 
             if (dbContext != default && entity.DbContext == default)
             {
-                entity = dbContext.Attach(entity);
+                dbContext.Attach(entity);
             }
-            else
+            if (entity.Id == null)
             {
-                if (entity.Id == default)
-                {
-                    entity.Id = entity.GenerateNewId().ToString();
-                    entity.CreatedOn = now;
-                    isNewEntity = true;
-                }
+                entity.Id = entity.GenerateNewId().ToString();
+                entity.CreatedOn = DateTimeOffset.Now;
             }
 
+            var entityType = entity.GetType();
+            var typeCache = DB.GetCacheInfo(entityType).ToTyped<T>();
+
+            var snapshot = dbContext?.DbDataCache[typeCache.RootEntityType].GetOrDefault(entity.Id);
             if (entity is ISaveIntercepted intercepted)
             {
-                var original = dbContext?.DbDataCache[typeof(T)].GetOrDefault(entity.Id);
-                await intercepted.InterceptOnSave(original);
+                await intercepted.InterceptOnSave(snapshot);
             }
 
-            // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
-            if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
-            {
-                await CheckOptimisticConcurrency(dbContext, entity);
-            }
-
-            entity.ModifiedOn = now;
-            var entityType = entity.GetType();
-            var typeCache = DB.GetCacheInfo(entityType);
-            // 构建更新定义
-            var updateDefs = new List<UpdateDefinition<T>>();
-            var memberMaps = typeCache.MemberMapsWithoutId;
-
-            foreach (var memberMap in memberMaps)
-            {
-                var value = memberMap.Getter(entity);
-                updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
-            }
-
-            // 使用完整的继承链判别器数组，如果只有一个判别器则保持向后兼容性
-            var discriminators = typeCache.Discriminators;
-            var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
-            updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
 
             if (!isNewEntity)
             {
-                var updateOneModel = new UpdateOneModel<T>(
+                var bsonDiffResult = await CheckChanges<T>(typeCache, dbContext, snapshot, entity, typeCache.MemberMapsWithoutSpecial);
+
+                if (bsonDiffResult.AreEqual)
+                {
+                    return null;
+                }
+
+                // 构建更新定义
+                var differences = bsonDiffResult.Differences;
+                var updateDefs = new List<UpdateDefinition<T>>(differences.Count);
+
+                foreach (var (propName, fieldDiff) in differences)
+                {
+                    var value = fieldDiff.NewValue;
+                    updateDefs.Add(Builders<T>.Update.Set(propName, value));
+                }
+
+                var discriminators = typeCache.Discriminators;
+                updateDefs.Add(Builders<T>.Update.Set("_t", discriminators));
+                updateDefs.Add(Builders<T>.Update.Set(nameof(IEntityBase.ModifiedOn), DateTimeOffset.Now));
+                return new UpdateOneModel<T>(
                     filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
                     update: Builders<T>.Update.Combine(updateDefs))
                 {
                     IsUpsert = true,
                 };
-
-                return updateOneModel;
             }
             else
             {
-                var replaceOneModel = new ReplaceOneModel<T>(
+                entity.ModifiedOn = DateTimeOffset.Now;
+                return new ReplaceOneModel<T>(
                     filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
                     replacement: entity)
                 {
                     IsUpsert = true,
                 };
-
-                return replaceOneModel;
             }
-        }
-
-        private static async Task<IEnumerable<WriteModel<T>>> PrepareForSaveBatch<T>(IEnumerable<T> entities, DbContext dbContext) where T : IEntityBase
-        {
-            var entitiesArray = entities as T[] ?? entities.ToArray();
-            if (entitiesArray.Length == 0)
-                return Array.Empty<WriteModel<T>>();
-
-            // 按实际类型分组，以减少重复的类型信息获取
-            var entitiesByType = entitiesArray.GroupBy(e => e.GetType()).ToArray();
-            var models = new List<WriteModel<T>>();
-
-            foreach (var typeGroup in entitiesByType)
-            {
-                var entityType = typeGroup.Key;
-                var entitiesOfSameType = typeGroup.ToArray();
-
-                // 对相同类型的实体批量处理
-                var typeModels = await PrepareForSaveBatchActualType<T>(entitiesOfSameType, entityType, dbContext);
-                models.AddRange(typeModels);
-            }
-
-            return models;
         }
 
         /// <summary>
@@ -296,63 +397,57 @@ namespace MongoDB.Entities
         /// <param name="entityType">实体的实际类型</param>
         /// <param name="dbContext">数据库上下文</param>
         /// <returns>写入模型集合</returns>
-        private static async Task<IEnumerable<WriteModel<T>>> PrepareForSaveBatchActualType<T>(T[] entities, Type entityType, DbContext dbContext) where T : IEntityBase
+        private static async Task<IEnumerable<WriteModel<T>>> PrepareForSaveBatchActualType<T>(IEnumerable<T> entities, Type entityType, DbContext dbContext) where T : IEntityBase
         {
-            var changeSet = new Dictionary<string, DateTimeOffset>(entities.Length);
-            var models = new List<WriteModel<T>>(entities.Length);
-            var now = DateTimeOffset.Now;
+            var models = entities is ICollection<T> collection ? new List<WriteModel<T>>(collection.Count) : new List<WriteModel<T>>(64);
 
             // 只获取一次类型配置信息
-            var typeCache = DB.GetCacheInfo(entityType);
-            var discriminators = typeCache.Discriminators;
-            var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
+            var typeCache = DB.GetCacheInfo(entityType).ToTyped<T>();
+            var rootType = typeCache.RootEntityType;
 
             foreach (var entity in entities)
             {
-                var isNewEntity = false;
+                var isNewEntity = entity.ModifiedOn == default;
 
                 if (dbContext != default && entity.DbContext == default)
                 {
                     dbContext.Attach(entity);
                 }
-                else
+                if (entity.Id == null)
                 {
-                    if (entity.Id == default)
-                    {
-                        entity.Id = entity.GenerateNewId().ToString();
-                        entity.CreatedOn = now;
-                        isNewEntity = true;
-                    }
+                    entity.Id = entity.GenerateNewId().ToString();
+                    entity.CreatedOn = DateTimeOffset.Now;
                 }
 
+                var snapshot = dbContext?.DbDataCache[rootType].GetOrDefault(entity.Id);
                 if (entity is ISaveIntercepted intercepted)
                 {
-                    var original = dbContext?.DbDataCache[entityType].GetOrDefault(entity.Id);
-                    await intercepted.InterceptOnSave(original);
+                    await intercepted.InterceptOnSave(snapshot);
                 }
 
-                // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
-                if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
-                {
-                    changeSet.Add(entity.Id, entity.ModifiedOn);
-                }
-
-                entity.ModifiedOn = now;
-
+                // 设置ModifiedOn时间
                 if (!isNewEntity)
                 {
-                    // 构建更新定义 - 重用类型配置信息
-                    var updateDefs = new List<UpdateDefinition<T>>();
-                    var memberMaps = typeCache.MemberMapsWithoutId;
+                    var bsonDiffResult = await CheckChanges<T>(typeCache, dbContext, snapshot, entity, typeCache.MemberMapsWithoutSpecial);
 
-                    foreach (var memberMap in memberMaps)
+                    if (bsonDiffResult.AreEqual)
                     {
-                        var value = memberMap.Getter(entity);
-                        updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
+                        continue;
                     }
 
-                    updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
+                    // 构建更新定义
+                    var differences = bsonDiffResult.Differences;
+                    var updateDefs = new List<UpdateDefinition<T>>(differences.Count);
 
+                    foreach (var (propName, fieldDiff) in differences)
+                    {
+                        var value = fieldDiff.NewValue;
+                        updateDefs.Add(Builders<T>.Update.Set(propName, value));
+                    }
+
+                    var discriminators = typeCache.Discriminators;
+                    updateDefs.Add(Builders<T>.Update.Set("_t", discriminators));
+                    updateDefs.Add(Builders<T>.Update.Set(nameof(IEntityBase.ModifiedOn), DateTimeOffset.Now));
                     var updateOneModel = new UpdateOneModel<T>(
                         filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
                         update: Builders<T>.Update.Combine(updateDefs))
@@ -364,9 +459,10 @@ namespace MongoDB.Entities
                 }
                 else
                 {
+                    entity.ModifiedOn = DateTimeOffset.Now;
                     var replaceOneModel = new ReplaceOneModel<T>(
-                        filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
-                        replacement: entity)
+                    filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
+                    replacement: entity)
                     {
                         IsUpsert = true,
                     };
@@ -374,7 +470,7 @@ namespace MongoDB.Entities
                     models.Add(replaceOneModel);
                 }
             }
-            await BulkCheckOptimisticConcurrency<T>(dbContext, changeSet);
+
             return models;
         }
 
@@ -392,99 +488,95 @@ namespace MongoDB.Entities
             if (!propNames.Any())
                 throw new ArgumentException("Unable to get any properties from the members expression!");
 
-            var now = DateTimeOffset.Now;
-            var isNewEntity = false;
+            var isNewEntity = entity.ModifiedOn == default;
 
             if (dbContext != default && entity.DbContext == default)
             {
-                entity = dbContext.Attach(entity);
+                dbContext.Attach(entity);
             }
-            else
+            if (entity.Id == null)
             {
-                if (entity.Id == default)
-                {
-                    entity.Id = entity.GenerateNewId().ToString();
-                    entity.CreatedOn = now;
-                    isNewEntity = true;
-                }
+                entity.Id = entity.GenerateNewId().ToString();
+                entity.CreatedOn = DateTimeOffset.Now;
             }
 
+            var typeCache = DB.GetCacheInfo(typeof(T)).ToTyped<T>();
+            var rootType = typeCache.RootEntityType;
+            var snapshot = dbContext?.DbDataCache[rootType].GetOrDefault(entity.Id);
             if (entity is ISaveIntercepted intercepted)
             {
-                var original = dbContext?.DbDataCache[typeof(T)].GetOrDefault(entity.Id);
-                await intercepted.InterceptOnSave(original);
+                await intercepted.InterceptOnSave(snapshot);
             }
-
-            // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
-            if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
-            {
-                await CheckOptimisticConcurrency(dbContext, entity);
-            }
-
-            entity.ModifiedOn = now;
-            var entityType = entity.GetType();
-            var typeCache = DB.GetCacheInfo(entityType);
-            // 构建更新定义
-            var updateDefs = new List<UpdateDefinition<T>>(50);
-            var memberMaps = typeCache.MemberMapsWithoutId.AsEnumerable();
-
+            var memberMaps = typeCache.MemberMapsWithoutSpecial.AsEnumerable();
             // 根据成员名称过滤
             if (excludeMode)
                 memberMaps = memberMaps.Where(m => !propNames.Contains(m.MemberName));
             else
                 memberMaps = memberMaps.Where(m => propNames.Contains(m.MemberName));
 
-            var patchObj = (T)typeof(T).CreateInstanceFast();
-            patchObj.Id = entity.Id;
-            foreach (var memberMap in memberMaps)
-            {
-                var value = memberMap.Getter(entity);
-                memberMap.Setter(patchObj, value);
-                updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
-            }
-
-            // 使用完整的继承链判别器数组，如果只有一个判别器则保持向后兼容性
-            var discriminators = typeCache.Discriminators;
-            var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
-            updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
-
             if (!isNewEntity)
             {
-                var updateOneModel = new UpdateOneModel<T>(
+                var bsonDiffResult = await CheckChanges<T>(typeCache, dbContext, snapshot, entity, memberMaps);
+
+                if (bsonDiffResult.AreEqual)
+                {
+                    return null;
+                }
+
+                // 构建更新定义
+                var differences = bsonDiffResult.Differences;
+                var updateDefs = new List<UpdateDefinition<T>>(differences.Count);
+
+                foreach (var (propName, fieldDiff) in differences)
+                {
+                    var value = fieldDiff.NewValue;
+                    updateDefs.Add(Builders<T>.Update.Set(propName, value));
+                }
+
+                var discriminators = typeCache.Discriminators;
+                updateDefs.Add(Builders<T>.Update.Set("_t", discriminators));
+                updateDefs.Add(Builders<T>.Update.Set(nameof(IEntityBase.ModifiedOn), DateTimeOffset.Now));
+                return new UpdateOneModel<T>(
                     filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
                     update: Builders<T>.Update.Combine(updateDefs))
                 {
                     IsUpsert = true,
                 };
-
-                return updateOneModel;
             }
             else
             {
-                var replaceOneModel = new ReplaceOneModel<T>(
+                var patchObj = (T)typeCache.ClassMap.CreateInstance();
+                patchObj.Id = entity.Id;
+                patchObj.ModifiedOn = DateTimeOffset.Now;
+                foreach (var memberMap in memberMaps)
+                {
+                    var value = memberMap.Getter(entity);
+                    memberMap.Setter(patchObj, value);
+                }
+
+                return new ReplaceOneModel<T>(
                     filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
-                    replacement: patchObj as dynamic)
+                    replacement: patchObj)
                 {
                     IsUpsert = true,
                 };
-
-                return replaceOneModel;
             }
         }
 
         private static async Task<WriteResult> SavePartial<T>(T entity, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
         {
             var writeModel = await PrepareEntityForPartialSave(entity, dbContext, members, excludeMode);
-            if (writeModel is UpdateOneModel<T> updateOneModel)
+            WriteResult result = writeModel switch
             {
-                return await Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, updateOneModel.Update, updateOptions, cancellation);
-            }
-            else if (writeModel is ReplaceOneModel<T> replaceOneModel)
-            {
-                return await Collection<T>().ReplaceOneAsync(e => e.Id == entity.Id, replaceOneModel.Replacement, replaceOptions, cancellation);
-            }
+                UpdateOneModel<T> updateOneModel =>
+                    await Collection<T>().UpdateOneAsync(e => e.Id == entity.Id, updateOneModel.Update, updateOptions, cancellation),
+                ReplaceOneModel<T> replaceOneModel =>
+                    await Collection<T>().ReplaceOneAsync(e => e.Id == entity.Id, replaceOneModel.Replacement, replaceOptions, cancellation),
+                _ => throw new InvalidOperationException("Invalid write model type")
+            };
 
-            throw new InvalidOperationException("Invalid write model type");
+            dbContext?.UpdateDbDataCache(entity);
+            return result;
         }
 
         /// <summary>
@@ -497,75 +589,66 @@ namespace MongoDB.Entities
         /// <param name="dbContext">数据库上下文</param>
         /// <param name="excludeMode">是否为排除模式</param>
         /// <returns>写入模型集合</returns>
-        private static async Task<IEnumerable<WriteModel<T>>> PrepareForPartialSaveBatchActualType<T>(T[] entities, Type entityType, Expression<Func<T, object>> members, DbContext dbContext, bool excludeMode) where T : IEntityBase
+        private static async Task<IEnumerable<WriteModel<T>>> PrepareForPartialSaveBatchActualType<T>(IEnumerable<T> entities, Type entityType, Expression<Func<T, object>> members, DbContext dbContext, bool excludeMode) where T : IEntityBase
         {
             var propNames = RootPropNames(members);
             if (!propNames.Any())
                 throw new ArgumentException("Unable to get any properties from the members expression!");
-
-            var changeSet = new Dictionary<string, DateTimeOffset>(entities.Length);
-            var models = new List<WriteModel<T>>(entities.Length);
-            var now = DateTimeOffset.Now;
+            var models = entities is ICollection<T> collection ? new List<WriteModel<T>>(collection.Count) : new List<WriteModel<T>>(64);
 
             // 只获取一次类型配置信息
-            var typeCache = DB.GetCacheInfo(entityType);
-            var discriminators = typeCache.Discriminators;
-            var discriminatorValue = discriminators.Count == 1 ? discriminators[0] : (BsonValue)discriminators;
-
+            var typeCache = DB.GetCacheInfo(entityType).ToTyped<T>();
+            var rootType = typeCache.RootEntityType;
             // 预先计算要处理的成员映射
-            var memberMaps = typeCache.MemberMapsWithoutId.AsEnumerable();
+            var memberMaps = typeCache.MemberMapsWithoutSpecial.AsEnumerable();
             if (excludeMode)
                 memberMaps = memberMaps.Where(m => !propNames.Contains(m.MemberName));
             else
                 memberMaps = memberMaps.Where(m => propNames.Contains(m.MemberName));
 
-            var memberMapsArray = memberMaps;
-
             foreach (var entity in entities)
             {
-                var isNewEntity = false;
+                var isNewEntity = entity.ModifiedOn == default;
 
                 if (dbContext != default && entity.DbContext == default)
                 {
                     dbContext.Attach(entity);
                 }
-                else
+                if (entity.Id == null)
                 {
-                    if (entity.Id == default)
-                    {
-                        entity.Id = entity.GenerateNewId().ToString();
-                        entity.CreatedOn = now;
-                        isNewEntity = true;
-                    }
+                    entity.Id = entity.GenerateNewId().ToString();
+                    entity.CreatedOn = DateTimeOffset.Now;
                 }
 
+                var snapshot = dbContext?.DbDataCache[rootType].GetOrDefault(entity.Id);
                 if (entity is ISaveIntercepted intercepted)
                 {
-                    var original = dbContext?.DbDataCache[entityType].GetOrDefault(entity.Id);
-                    await intercepted.InterceptOnSave(original);
+                    await intercepted.InterceptOnSave(snapshot);
                 }
 
-                // 在修改ModifiedOn之前进行乐观锁并发检查（仅对已存在的实体）, 忽略 100000 ticks = 10ms 内的修改
-                if (!isNewEntity && (DateTime.Now.Ticks - entity.ModifiedOn.Ticks < 100000))
-                {
-                    changeSet.Add(entity.Id, entity.ModifiedOn);
-                }
-
-                entity.ModifiedOn = now;
-
+                // 设置ModifiedOn时间
                 if (!isNewEntity)
                 {
-                    // 构建更新定义 - 重用类型配置信息和成员映射
-                    var updateDefs = new List<UpdateDefinition<T>>(50);
+                    var bsonDiffResult = await CheckChanges<T>(typeCache, dbContext, snapshot, entity, memberMaps);
 
-                    foreach (var memberMap in memberMapsArray)
+                    if (bsonDiffResult.AreEqual)
                     {
-                        var value = memberMap.Getter(entity);
-                        updateDefs.Add(Builders<T>.Update.Set(memberMap.ElementName, value));
+                        continue;
                     }
 
-                    updateDefs.Add(Builders<T>.Update.Set("_t", discriminatorValue));
+                    // 构建更新定义
+                    var differences = bsonDiffResult.Differences;
+                    var updateDefs = new List<UpdateDefinition<T>>(differences.Count);
 
+                    foreach (var (propName, fieldDiff) in differences)
+                    {
+                        var value = fieldDiff.NewValue;
+                        updateDefs.Add(Builders<T>.Update.Set(propName, value));
+                    }
+
+                    var discriminators = typeCache.Discriminators;
+                    updateDefs.Add(Builders<T>.Update.Set("_t", discriminators));
+                    updateDefs.Add(Builders<T>.Update.Set(nameof(IEntityBase.ModifiedOn), DateTimeOffset.Now));
                     var updateOneModel = new UpdateOneModel<T>(
                         filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
                         update: Builders<T>.Update.Combine(updateDefs))
@@ -579,15 +662,15 @@ namespace MongoDB.Entities
                 {
                     var patchObj = (T)typeCache.ClassMap.CreateInstance();
                     patchObj.Id = entity.Id;
-                    foreach (var memberMap in memberMapsArray)
+                    foreach (var memberMap in memberMaps)
                     {
                         var value = memberMap.Getter(entity);
                         memberMap.Setter(patchObj, value);
                     }
-
+                    patchObj.ModifiedOn = DateTimeOffset.Now;
                     var replaceOneModel = new ReplaceOneModel<T>(
                         filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
-                        replacement: patchObj as dynamic)
+                        replacement: patchObj)
                     {
                         IsUpsert = true,
                     };
@@ -595,219 +678,108 @@ namespace MongoDB.Entities
                     models.Add(replaceOneModel);
                 }
             }
-            await BulkCheckOptimisticConcurrency<T>(dbContext, changeSet);
+
             return models;
         }
 
         private static async Task<BulkWriteResult<T>> SavePartial<T>(IEnumerable<T> entities, Expression<Func<T, object>> members, DbContext dbContext, CancellationToken cancellation, bool excludeMode = false) where T : IEntityBase
         {
-            var entitiesArray = entities as T[] ?? entities.ToArray();
-            if (entitiesArray.Length == 0)
-                return new BulkWriteResult<T>.Acknowledged(0, 0, 0, 0, null, [], []);
-
             // 按实际类型分组，以减少重复的类型信息获取
-            var entitiesByType = entitiesArray.GroupBy(e => e.GetType()).ToArray();
-            var models = new List<WriteModel<T>>();
+            var entitiesByType = entities.GroupBy(e => e.GetType());
+            var models = entities is ICollection<T> collection ? new List<WriteModel<T>>(collection.Count) : new List<WriteModel<T>>(64);
 
             foreach (var typeGroup in entitiesByType)
             {
                 var entityType = typeGroup.Key;
-                var entitiesOfSameType = typeGroup.ToArray();
+                var entitiesOfSameType = typeGroup;
 
                 // 对相同类型的实体批量处理
                 var typeModels = await PrepareForPartialSaveBatchActualType<T>(entitiesOfSameType, entityType, members, dbContext, excludeMode);
                 models.AddRange(typeModels);
             }
 
-            return dbContext?.Session == null
+            if (models.Count == 0)
+            {
+                return NoOp<T>.Instance;
+            }
+
+            var result = dbContext?.Session == null
                 ? await Collection<T>().BulkWriteAsync(models, unOrdBlkOpts, cancellation)
                 : await Collection<T>().BulkWriteAsync(dbContext.Session, models, unOrdBlkOpts, cancellation);
+            dbContext?.UpdateDbDataCache(entities);
+            return result;
         }
 
         /// <summary>
-        /// 乐观锁并发检查
+        /// 批量乐观锁并发检查和自动合并, 必须在ModifiedOn被更新前调用
         /// </summary>
+        /// <param name="typeCache"></param>
         /// <param name="dbContext">数据库上下文</param>
-        private static async Task BulkCheckOptimisticConcurrency<T>(DbContext dbContext, Dictionary<string, DateTimeOffset> changeSet) where T : IEntityBase
+        /// <param name="ourEntity"></param>
+        /// <param name="memberMapsToUpdate"></param>
+        /// <returns>可以自动合并的变更字典，键为实体ID，值为他们的变更</returns>
+        private static async Task<BsonDiffResult> CheckChanges<T>(CacheInfo<T> typeCache, DbContext? dbContext,
+            IEntityBase snapshot, T ourEntity, IEnumerable<BsonMemberMap> memberMapsToUpdate) where T : IEntityBase
         {
-            if (dbContext == null)
+            var rootType = typeCache.RootEntityType;
+
+            var ourChanges = BsonDataDiffer.DiffEntity(typeCache, snapshot, ourEntity, BsonDiffMode.Full, memberMapsToUpdate);
+
+            if (ourChanges.AreEqual || snapshot == null)
             {
-                return;
+                return ourChanges;
             }
 
-            if (!changeSet.Any())
+            var filter = Builders<T>.Filter.Eq(x => x.Id, ourEntity.Id);
+            // 第一阶段：只查询Id和ModifiedOn字段，识别真正有并发修改的实体
+            var touch = Collection<T>()
+                .Find(filter)
+                .Project(typeCache.ProjectionIdAndModifiedOn)
+                .FirstOrDefault();
+
+            if (touch == null)
             {
-                return;
+                throw new OptimisticConcurrencyException(
+                    rootType,
+                    ourEntity.Id,
+                    [],
+                    snapshot.ModifiedOn,
+                    null
+                );
             }
 
-            var rootType = DB.GetCacheInfo(typeof(T)).RootEntityType;
-            var ids = dbContext.DbDataCache[rootType].Keys.Except(changeSet.Keys).ToArray();
-            if (!ids.Any())
+            var currentDbTimestamp = touch[nameof(IEntityBase.ModifiedOn)].ToUniversalTime();
+
+
+            // 如果没有并发修改，直接返回
+            if (currentDbTimestamp <= snapshot.ModifiedOn)
             {
-                return;
-            }
-            var dbRecents = await Collection<T>().FindSync(Builders<T>.Filter.In(x => x.Id, ids)).ToListAsync();
-            for (var i = 0; i < dbRecents.Count; i++)
-            {
-                var dbRecent = dbRecents[i];
-                // 查询数据库获取最新值来检查是否有并发修改
-                if (dbRecent == null)
-                {
-                    // 有字段冲突，抛出乐观锁异常
-                    dbContext.Logger.LogError(
-                        "Optimistic concurrency conflict, entity removed: {EntityType}[{EntityId}]",
-                        rootType.Name, ids[i]);
-
-                    throw new OptimisticConcurrencyException(
-                        rootType,
-                        dbRecent.Id,
-                        [],
-                        default,
-                        default
-                    );
-                }
-
-                // 检查ModifiedOn是否发生了变化（乐观锁冲突检测）
-                var changedItemDate = changeSet[dbRecent.Id];
-                var existingDbValue = dbContext.DbDataCache[rootType][dbRecent.Id];
-                if (dbRecent.ModifiedOn <= changedItemDate)
-                {
-                    // 没有冲突，数据库值没有更新
-                    return;
-                }
-
-                dbContext.Logger.LogDebug("ModifiedOn changed for {EntityType}[{EntityId}]", rootType.Name,
-                    dbRecent.Id);
-
-                // 检查本地内存中是否有该实体的修改
-                if (!dbContext.MemoryDataCache[rootType].TryGetValue(dbRecent.Id, out var localValue))
-                {
-                    // 本地没有该实体，更新缓存并继续
-                    dbContext.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB but not in local cache",
-                        rootType.Name, dbRecent.Id);
-                    return;
-                }
-
-                // 比较本地值是否有修改
-                var ourChanges = dbContext.Diff(localValue, existingDbValue, BsonDiffMode.Full);
-                if (ourChanges.AreEqual)
-                {
-                    // 本地值没有修改，直接更新缓存
-                    dbContext.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB, local has no changes",
-                        rootType.Name, dbRecent.Id);
-                    return;
-                }
-
-                // 本地值有修改，检查字段冲突
-                var theirChanges = dbContext.Diff(dbRecent, existingDbValue, BsonDiffMode.Full);
-                var conflictingFields =
-                    DetectConflictingFields(ourChanges, theirChanges, existingDbValue, localValue, dbRecent);
-
-                if (conflictingFields.Count > 0)
-                {
-                    // 有字段冲突，抛出乐观锁异常
-                    dbContext.Logger.LogError(
-                        "Optimistic concurrency conflict: {EntityType}[{EntityId}], fields: {ConflictingFields}",
-                        rootType.Name, dbRecent.Id, string.Join(", ", conflictingFields.Select(f => f.FieldName)));
-
-                    throw new OptimisticConcurrencyException(
-                        rootType,
-                        dbRecent.Id,
-                        conflictingFields,
-                        existingDbValue.ModifiedOn,
-                        dbRecent.ModifiedOn
-                    );
-                }
-                else
-                {
-                    // 没有字段冲突，记录信息日志
-                    dbContext.Logger.LogInformation(
-                        "Concurrent modifications without field conflicts: {EntityType}[{EntityId}]", rootType.Name,
-                        dbRecent.Id);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 乐观锁并发检查
-        /// </summary>
-        /// <param name="dbContext">数据库上下文</param>
-        /// <param name="entity">当前实体</param>
-        /// <param name="entityModifiedOn"></param>
-        private static async Task CheckOptimisticConcurrency<T>(DbContext dbContext, T entity) where T : IEntityBase
-        {
-            // 如果没有DbContext或者实体ID为空，跳过乐观锁检查
-            if (dbContext == null || string.IsNullOrEmpty(entity.Id))
-            {
-                return;
+                return ourChanges;
             }
 
-            var rootType = DB.GetCacheInfo(typeof(T)).RootEntityType;
+            var theirEntity = await Collection<T>().Find(filter).FirstOrDefaultAsync();
+            var theirChanges = BsonDataDiffer.DiffEntity(typeCache, snapshot, theirEntity, mode: BsonDiffMode.Full, memberMapsToCompare: memberMapsToUpdate);
 
-            // 获取缓存中的数据库值
-            var existingDbValue = dbContext.DbDataCache[rootType].GetOrDefault(entity.Id);
-            if (existingDbValue == null)
+            if (theirChanges.AreEqual)
             {
-                // 数据库中没有此实体，跳过检查
-                return;
-            }
-            // 查询数据库获取最新值来检查是否有并发修改
-            var currentDbValue = Collection<T>().FindSync(Builders<T>.Filter.Eq(x => x.Id, entity.Id)).FirstOrDefault();
-            if (currentDbValue == null)
-            {
-                // 实体已被删除
-                return;
+                return ourChanges;
             }
 
-            // 检查ModifiedOn是否发生了变化（乐观锁冲突检测）
-            if (currentDbValue.ModifiedOn <= existingDbValue.ModifiedOn)
-            {
-                // 没有冲突，数据库值没有更新
-                return;
-            }
-
-            dbContext.Logger.LogDebug("ModifiedOn changed for {EntityType}[{EntityId}]", rootType.Name, currentDbValue.Id);
-
-            // 检查本地内存中是否有该实体的修改
-            if (!dbContext.MemoryDataCache[rootType].TryGetValue(entity.Id, out var localValue))
-            {
-                // 本地没有该实体，更新缓存并继续
-                dbContext.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB but not in local cache", rootType.Name, entity.Id);
-                return;
-            }
-
-            // 比较本地值是否有修改
-            var ourChanges = dbContext.Diff(localValue, existingDbValue, BsonDiffMode.Full);
-            if (ourChanges.AreEqual)
-            {
-                // 本地值没有修改，直接更新缓存
-                dbContext.Logger.LogWarning("Entity {EntityType}[{EntityId}] updated in DB, local has no changes", rootType.Name, entity.Id);
-                return;
-            }
-
-            // 本地值有修改，检查字段冲突
-            var theirChanges = dbContext.Diff(currentDbValue, existingDbValue, BsonDiffMode.Full);
-            var conflictingFields = DetectConflictingFields(ourChanges, theirChanges, existingDbValue, localValue, currentDbValue);
+            // 检查冲突
+            var conflictingFields = DetectConflictingFields(ourChanges, theirChanges, snapshot, ourEntity, theirEntity);
 
             if (conflictingFields.Count > 0)
             {
-                // 有字段冲突，抛出乐观锁异常
-                dbContext.Logger.LogError("Optimistic concurrency conflict: {EntityType}[{EntityId}], fields: {ConflictingFields}",
-                                         rootType.Name, currentDbValue.Id, string.Join(", ", conflictingFields.Select(f => f.FieldName)));
-
                 throw new OptimisticConcurrencyException(
                     rootType,
-                    currentDbValue.Id,
+                    ourEntity.Id,
                     conflictingFields,
-                    existingDbValue.ModifiedOn,
-                    currentDbValue.ModifiedOn
-                    );
+                    snapshot.ModifiedOn,
+                    theirEntity.ModifiedOn
+                );
             }
-            else
-            {
-                // 没有字段冲突，记录信息日志
-                dbContext.Logger.LogInformation("Concurrent modifications without field conflicts: {EntityType}[{EntityId}]", rootType.Name, entity.Id);
-            }
+
+            return ourChanges;
         }
 
         /// <summary>
@@ -827,11 +799,6 @@ namespace MongoDB.Entities
             IEntityBase theirValue)
         {
             var conflictingFields = new List<FieldConflictInfo>();
-
-            if (ourChanges.Differences == null || theirChanges.Differences == null)
-            {
-                return conflictingFields;
-            }
 
             // 检查我们修改的字段是否与他们修改的字段有交集
             var ourModifiedFields = ourChanges.Differences.Keys;
@@ -854,7 +821,10 @@ namespace MongoDB.Entities
                         TheirValue = GetFieldValue(theirValue, fieldName, theirDiff.FieldType)
                     };
 
-                    conflictingFields.Add(conflictInfo);
+                    if (!BsonDataDiffer.AreValuesEqual(conflictInfo.OurValue, conflictInfo.TheirValue, ourDiff.FieldType, theirDiff.FieldType))
+                    {
+                        conflictingFields.Add(conflictInfo);
+                    }
                 }
             }
 

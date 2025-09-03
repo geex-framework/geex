@@ -45,7 +45,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(new BatchLoadEntity(thisId: "1.2", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "2", parentId: "0"));
             var saved = await dbContext.SaveChanges();
-            saved.Count.ShouldBe(5);
+            saved.InsertedAndUpsertedCount.ShouldBe(5);
 
             dbContext = new DbContext();
             var count = dbContext.Query<BatchLoadEntity>().Count();
@@ -54,7 +54,7 @@ namespace MongoDB.Entities.Tests
             var deleteResult = await item1.DeleteAsync();
             deleteResult.ShouldBe(3);
             saved = await dbContext.SaveChanges();
-            saved.Count.ShouldBe(0);
+            saved.ModifiedCount.ShouldBe(0);
 
             dbContext = new DbContext();
             count = dbContext.Query<BatchLoadEntity>().Count();

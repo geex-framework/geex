@@ -207,7 +207,7 @@ namespace MongoDB.Entities
         /// </summary>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<WriteResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<WriteResult> SaveAsync<T>(this T entity, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveAsync(entity, entity.DbContext, cancellation);
         }
@@ -218,7 +218,7 @@ namespace MongoDB.Entities
         /// </summary>
         /// <param name="dbContext">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, DbContext? dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<BulkWriteResult<T>> SaveAsync<T>(this IEnumerable<T> entities, DbContext? dbContext = null, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveAsync(entities, dbContext, cancellation);
         }
@@ -234,7 +234,7 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<WriteResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<WriteResult> SaveOnlyAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveOnlyAsync(entity, members, entity.DbContext, cancellation);
         }
@@ -250,7 +250,7 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<BulkWriteResult<T>> SaveOnlyAsync<T>(this IEnumerable<T> entities, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<BulkWriteResult<T>> SaveOnlyAsync<T>(this IEnumerable<T> entities, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             var enumerable = entities.ToList();
             return DB.SaveOnlyAsync(enumerable, members, enumerable.FirstOrDefault()?.DbContext, cancellation);
@@ -267,7 +267,7 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<WriteResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<WriteResult> SaveExceptAsync<T>(this T entity, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             return DB.SaveExceptAsync(entity, members, entity.DbContext, cancellation);
         }
@@ -283,7 +283,7 @@ namespace MongoDB.Entities
         /// <param name="members">x => new { x.PropOne, x.PropTwo }</param>
         /// <param name="session">An optional session if using within a transaction</param>
         /// <param name="cancellation">An optional cancellation token</param>
-        internal static Task<BulkWriteResult<T>> SaveExceptAsync<T>(this IEnumerable<T> entities, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
+        public static Task<BulkWriteResult<T>> SaveExceptAsync<T>(this IEnumerable<T> entities, Expression<Func<T, object>> members, CancellationToken cancellation = default) where T : IEntityBase
         {
             var enumerable = entities.ToList();
             return DB.SaveExceptAsync(enumerable, members, enumerable.FirstOrDefault()?.DbContext, cancellation);
@@ -292,7 +292,7 @@ namespace MongoDB.Entities
         /// <summary>
         /// Deletes multiple entities from the database
         /// </summary>
-        internal static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities,
+        public static async Task<long> DeleteAsync<T>(this IEnumerable<T> entities,
             CancellationToken cancellationToken = default) where T : IEntityBase
         {
             var enumerable = entities.ToList();

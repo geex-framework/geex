@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
@@ -51,7 +52,9 @@ namespace MongoDB.Entities.Core
                 case BsonType.DateTime:
                     var dateTimeValue = bsonReader.ReadDateTime();
                     return DateTimeOffset.FromUnixTimeMilliseconds(dateTimeValue).ToOffset(TimeZoneInfo.Local.BaseUtcOffset);
-
+                case BsonType.Document:
+                    bsonReader.SkipValue();
+                    return default;
                 default:
                     throw CreateCannotDeserializeFromBsonTypeException(bsonType);
             }
@@ -61,7 +64,6 @@ namespace MongoDB.Entities.Core
            (BsonSerializationContext context, BsonSerializationArgs args, DateTimeOffset value)
         {
             var bsonWriter = context.Writer;
-
             switch (_representation)
             {
                 case BsonType.String:

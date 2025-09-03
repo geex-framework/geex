@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -18,35 +19,6 @@ using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
 {
-    /// <summary>
-    /// Contains cache information for an entity type
-    /// </summary>
-    public class CacheInfo
-    {
-        public Type EntityType { get; set; }
-        public IMongoDatabase Database { get; set; }
-        public string DBName { get; set; }
-        public string CollectionName { get; set; }
-        public BsonClassMap ClassMap { get; set; }
-        public BsonMemberMap[] MemberMaps { get; set; }
-        public BsonArray Discriminators { get; set; }
-        public Type RootEntityType { get; set; }
-        public BsonClassMap RootClassMap { get; set; }
-        public BsonMemberMap[] MemberMapsWithoutId { get; set; }
-        public BsonMemberMap[] MemberMapsWithoutModifiedOn { get; set; }
-        public BsonMemberMap[] MemberMapsWithoutSpecial { get; set; }
-    }
-
-    /// <summary>
-    /// Contains cache information for a specific entity type
-    /// </summary>
-    /// <typeparam name="T">The entity type</typeparam>
-    public class CacheInfo<T> : CacheInfo where T : IEntityBase
-    {
-        public IMongoCollection<T> Collection { get; set; }
-        public ConcurrentDictionary<string, Watcher<T>> Watchers { get; set; }
-    }
-
     /// <summary>
     /// The main entrypoint for all data access methods of the library
     /// </summary>
@@ -298,7 +270,7 @@ namespace MongoDB.Entities
             return DB.DefaultDb.GetCollection<ProfilerLog>("system.profile");
         }
 
-        private static ConcurrentDictionary<Type, CacheInfo> CacheInfoStorage = new ConcurrentDictionary<Type, CacheInfo>();
+        internal static ConcurrentDictionary<Type, CacheInfo> CacheInfoStorage = new ConcurrentDictionary<Type, CacheInfo>();
 
         /// <summary>
         /// Gets cache information for a given entity type, initializing it if necessary
@@ -330,7 +302,6 @@ namespace MongoDB.Entities
             var memberMapsWithoutIdProperty = cacheType.GetProperty(nameof(Cache<>.MemberMapsWithoutId), BindingFlags.Public | BindingFlags.Static);
             var memberMapsWithoutModifiedOnProperty = cacheType.GetProperty(nameof(Cache<>.MemberMapsWithoutModifiedOn), BindingFlags.Public | BindingFlags.Static);
             var memberMapsWithoutSpecialProperty = cacheType.GetProperty(nameof(Cache<>.MemberMapsWithoutSpecial), BindingFlags.Public | BindingFlags.Static);
-
             var cacheInfo = new CacheInfo
             {
                 EntityType = entityType,
@@ -339,18 +310,80 @@ namespace MongoDB.Entities
                 CollectionName = (string)collectionNameProperty?.GetValue(null),
                 ClassMap = (BsonClassMap)classMapProperty?.GetValue(null),
                 MemberMaps = (BsonMemberMap[])memberMapsProperty?.GetValue(null),
-                Discriminators = (BsonArray)bsonDiscriminatorsProperty?.GetValue(null),
+                Discriminators = (BsonValue)bsonDiscriminatorsProperty?.GetValue(null),
                 RootEntityType = (Type)rootEntityTypeProperty?.GetValue(null),
                 RootClassMap = (BsonClassMap)rootClassMapProperty?.GetValue(null),
                 MemberMapsWithoutId = (BsonMemberMap[])memberMapsWithoutIdProperty?.GetValue(null),
                 MemberMapsWithoutModifiedOn = (BsonMemberMap[])memberMapsWithoutModifiedOnProperty?.GetValue(null),
-                MemberMapsWithoutSpecial = (BsonMemberMap[])memberMapsWithoutSpecialProperty?.GetValue(null)
+                MemberMapsWithoutSpecial = (BsonMemberMap[])memberMapsWithoutSpecialProperty?.GetValue(null),
             };
 
             // 缓存结果
             CacheInfoStorage.TryAdd(entityType, cacheInfo);
             return cacheInfo;
         }
+    }
+
+    /// <summary>
+    /// Contains cache information for an entity type
+    /// </summary>
+    public class CacheInfo
+    {
+        public Type EntityType { get; set; }
+        public IMongoDatabase Database { get; set; }
+        public string DBName { get; set; }
+        public string CollectionName { get; set; }
+        public BsonClassMap ClassMap { get; set; }
+        public BsonMemberMap[] MemberMaps { get; set; }
+        public BsonValue Discriminators { get; set; }
+        public Type RootEntityType { get; set; }
+        public BsonClassMap RootClassMap { get; set; }
+        public BsonMemberMap[] MemberMapsWithoutId { get; set; }
+        public BsonMemberMap[] MemberMapsWithoutModifiedOn { get; set; }
+        public BsonMemberMap[] MemberMapsWithoutSpecial { get; set; }
+
+        public CacheInfo<T> ToTyped<T>() where T : IEntityBase
+        {
+            if (DB.CacheInfoStorage.TryGetValue(this.EntityType, out var cachedInfo) && cachedInfo is CacheInfo<T> typedCachedInfo)
+            {
+                return typedCachedInfo;
+            }
+            var cacheInfo = new CacheInfo<T>()
+            {
+                EntityType = this.EntityType,
+                Database = this.Database,
+                DBName = this.DBName,
+                CollectionName = this.CollectionName,
+                ClassMap = this.ClassMap,
+                MemberMaps = this.MemberMaps,
+                Discriminators = this.Discriminators,
+                RootEntityType = this.RootEntityType,
+                RootClassMap = this.RootClassMap,
+                MemberMapsWithoutId = this.MemberMapsWithoutId,
+                MemberMapsWithoutModifiedOn = this.MemberMapsWithoutModifiedOn,
+                MemberMapsWithoutSpecial = this.MemberMapsWithoutSpecial,
+                ProjectionModifiedOn = Cache<T>.ProjectionModifiedOn,
+                ProjectionId = Cache<T>.ProjectionId,
+                ProjectionIdAndModifiedOn = Cache<T>.ProjectionIdAndModifiedOn,
+                Collection = Cache<T>.Collection,
+                Watchers = Cache<T>.Watchers
+            };
+            DB.CacheInfoStorage.AddOrUpdate(this.EntityType, cacheInfo, (_, _) => cacheInfo);
+            return cacheInfo;
+        }
+    }
+
+    /// <summary>
+    /// Contains cache information for a specific entity type
+    /// </summary>
+    /// <typeparam name="T">The entity type</typeparam>
+    public class CacheInfo<T> : CacheInfo where T : IEntityBase
+    {
+        public IMongoCollection<T> Collection { get; set; }
+        public ConcurrentDictionary<string, Watcher<T>> Watchers { get; set; }
+        public ProjectionDefinition<T, DateTimeOffset> ProjectionModifiedOn { get; set; }
+        public ProjectionDefinition<T, string> ProjectionId { get; set; }
+        public ProjectionDefinition<T, BsonDocument> ProjectionIdAndModifiedOn { get; set; }
     }
 
     internal static class TypeMap
@@ -393,12 +426,16 @@ namespace MongoDB.Entities
 
         public static BsonClassMap ClassMap { get; private set; }
         public static BsonMemberMap[] MemberMaps { get; private set; }
-        public static BsonArray Discriminators { get; private set; }
+        public static BsonValue Discriminators { get; private set; }
         public static Type RootEntityType { get; private set; }
         public static BsonClassMap RootClassMap { get; private set; }
         public static BsonMemberMap[] MemberMapsWithoutId { get; private set; }
         public static BsonMemberMap[] MemberMapsWithoutModifiedOn { get; private set; }
         public static BsonMemberMap[] MemberMapsWithoutSpecial { get; private set; }
+
+        public static ProjectionDefinition<T, DateTimeOffset> ProjectionModifiedOn { get; private set; } = Builders<T>.Projection.Include(x => x.ModifiedOn);
+        public static ProjectionDefinition<T, string> ProjectionId { get; private set; } = Builders<T>.Projection.Include(x => x.Id);
+        public static ProjectionDefinition<T, BsonDocument> ProjectionIdAndModifiedOn { get; private set; } = Builders<T>.Projection.Include(x => x.Id).Include(x => x.ModifiedOn);
 
         static Cache()
         {
@@ -431,7 +468,7 @@ namespace MongoDB.Entities
             MemberMaps = GetBsonMemberMaps();
             MemberMapsWithoutId = MemberMaps.Where(x => x.MemberName != nameof(IEntityBase.Id)).ToArray();
             MemberMapsWithoutSpecial = MemberMaps.Where(x => x.MemberName != nameof(IEntityBase.Id) && x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
-            MemberMapsWithoutModifiedOn = MemberMaps.Where(x => x.MemberName != nameof(IEntityBase.Id)).ToArray();
+            MemberMapsWithoutModifiedOn = MemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
             Discriminators = type.GetBsonDiscriminators();
         }
 
@@ -443,14 +480,14 @@ namespace MongoDB.Entities
             try
             {
                 var classMap = BsonClassMap.LookupClassMap(typeof(T));
-                return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
+                return classMap.AllMemberMaps.ToArray();
             }
             catch
             {
                 var classMap = new BsonClassMap(typeof(T));
                 classMap.SetDiscriminatorIsRequired(true);
                 classMap.AutoMap();
-                return classMap.AllMemberMaps.Where(x => x.MemberName != nameof(IEntityBase.ModifiedOn)).ToArray();
+                return classMap.AllMemberMaps.ToArray();
             }
         }
 
