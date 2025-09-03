@@ -45,7 +45,7 @@ namespace MongoDB.Entities.Tests
             dbContext.Attach(new BatchLoadEntity(thisId: "1.2", parentId: "1"));
             dbContext.Attach(new BatchLoadEntity(thisId: "2", parentId: "0"));
             var saved = await dbContext.SaveChanges();
-            saved.InsertedAndUpsertedCount.ShouldBe(5);
+            saved.InsertedCount.ShouldBe(5);
 
             dbContext = new DbContext();
             var count = dbContext.Query<BatchLoadEntity>().Count();

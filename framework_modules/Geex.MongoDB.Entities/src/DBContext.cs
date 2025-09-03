@@ -645,6 +645,11 @@ namespace MongoDB.Entities
                 }
                 throw;
             }
+            catch(Exception ex)
+            {
+                Logger.LogError(ex, "Error saving changes.");
+                throw;
+            }
 
             if (Session.IsInTransaction && !IsInExplicitTransaction)
             {

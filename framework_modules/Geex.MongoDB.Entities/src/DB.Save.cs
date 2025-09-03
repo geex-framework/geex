@@ -20,179 +20,6 @@ using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities
 {
-    public class NoOp<T> : BulkWriteResult<T>.Acknowledged
-    {
-        public static NoOp<T> Instance = new NoOp<T>();
-        /// <inheritdoc />
-        private NoOp() : base(0, 0, 0, 0, 0, [], [])
-        {
-        }
-    }
-
-    public interface IGeexBulkWriteResult
-    {
-        bool IsAcknowledged { get; }
-        long MatchedCount { get; }
-        IReadOnlyList<BulkWriteUpsert> Upserts { get; }
-        long DeletedCount { get; }
-        long InsertedCount { get; }
-        long ModifiedCount { get; }
-        public static IGeexBulkWriteResult FromBulkWriteResult<T>(BulkWriteResult bulkWriteResult) where T : IEntityBase
-        {
-            if (bulkWriteResult.IsAcknowledged)
-            {
-                return new GeexBulkWriteResult<T>(bulkWriteResult as BulkWriteResult<T>.Acknowledged);
-            }
-            return new GeexBulkWriteResult<T>(bulkWriteResult as BulkWriteResult<T>.Unacknowledged);
-        }
-    }
-
-    public struct GeexBulkWriteResult<T> : IGeexBulkWriteResult where T : IEntityBase
-    {
-        public GeexBulkWriteResult(BulkWriteResult<T>.Acknowledged baseResult)
-        {
-            IsAcknowledged = baseResult.IsAcknowledged;
-            MatchedCount = baseResult.MatchedCount;
-            Upserts = baseResult.Upserts;
-            DeletedCount = baseResult.DeletedCount;
-            InsertedCount = baseResult.InsertedCount;
-            ModifiedCount = baseResult.ModifiedCount;
-        }
-
-        public GeexBulkWriteResult(BulkWriteResult<T>.Unacknowledged baseResult)
-        {
-            IsAcknowledged = false;
-            MatchedCount = 0;
-            Upserts = [];
-            DeletedCount = 0;
-            InsertedCount = 0;
-            ModifiedCount = 0;
-            IsModifiedCountAvailable = false;
-        }
-        public bool IsModifiedCountAvailable { get; private set; }
-
-        public bool IsAcknowledged { get; private set; }
-
-        public long MatchedCount { get; private set; }
-
-        public IReadOnlyList<BulkWriteUpsert> Upserts { get; private set; }
-
-        public long DeletedCount { get; private set; }
-
-        public long InsertedCount { get; private set; }
-
-        public long ModifiedCount { get; private set; }
-    }
-
-    public struct MergedBulkWriteResult()
-    {
-        public MergedBulkWriteResult(params IGeexBulkWriteResult[] baseResults) : this()
-        {
-            foreach (var baseResult in baseResults)
-            {
-                Results[baseResult.GetType().GenericTypeArguments[0]] = baseResult;
-            }
-            MatchedCount = baseResults.Sum(x => x.MatchedCount);
-            DeletedCount = baseResults.Sum(x => x.DeletedCount);
-            InsertedAndUpsertedCount = baseResults.Sum(x => x.InsertedCount);
-            ModifiedCount = baseResults.Sum(x => x.ModifiedCount);
-        }
-
-        public Dictionary<Type, IGeexBulkWriteResult> Results { get; private set; } = new();
-
-        public long MatchedCount { get; private set; }
-
-        public long DeletedCount { get; private set; }
-
-        public long InsertedAndUpsertedCount { get; private set; }
-
-        public long ModifiedCount { get; private set; }
-
-        public static MergedBulkWriteResult operator +(MergedBulkWriteResult current, IGeexBulkWriteResult newResult)
-        {
-            current.Results[newResult.GetType().GenericTypeArguments[0]] = newResult;
-            current.MatchedCount += newResult.MatchedCount;
-            current.DeletedCount += newResult.DeletedCount;
-            current.InsertedAndUpsertedCount += newResult.InsertedCount;
-            current.ModifiedCount += newResult.ModifiedCount;
-            return current;
-        }
-        private static MethodInfo FromBulkWriteResultMethod = typeof(IGeexBulkWriteResult).GetMethod(nameof(IGeexBulkWriteResult.FromBulkWriteResult));
-        public static MergedBulkWriteResult operator +(MergedBulkWriteResult current, object newResult)
-        {
-            var entityRootType = newResult.GetType().GenericTypeArguments[0];
-            if (newResult is BulkWriteResult bulkWriteResult)
-            {
-                current.Results[entityRootType] = FromBulkWriteResultMethod.MakeGenericMethodFast(entityRootType).Invoke(null, [bulkWriteResult]) as IGeexBulkWriteResult;
-                current.MatchedCount += bulkWriteResult.MatchedCount;
-                current.DeletedCount += bulkWriteResult.DeletedCount;
-                current.InsertedAndUpsertedCount += bulkWriteResult.InsertedCount + bulkWriteResult.Upserts.Count;
-                current.ModifiedCount += bulkWriteResult.IsModifiedCountAvailable ? bulkWriteResult.ModifiedCount : 0;
-                return current;
-            }
-            throw new InvalidOperationException();
-
-        }
-    }
-
-    public struct WriteResult
-    {
-        public static implicit operator WriteResult(UpdateResult result)
-        {
-            return result.IsAcknowledged switch
-            {
-                true => new WriteResult()
-                {
-                    UpsertedId = result.UpsertedId?.ToString(),
-                    IsAcknowledged = true,
-                    MatchedCount = result.MatchedCount,
-                    ModifiedCount = result.ModifiedCount
-                },
-                _ => new WriteResult() { IsAcknowledged = false }
-            };
-        }
-
-        public static implicit operator WriteResult(ReplaceOneResult result)
-        {
-            return result.IsAcknowledged switch
-            {
-                true => new WriteResult()
-                {
-                    UpsertedId = result.UpsertedId?.ToString(),
-                    IsAcknowledged = true,
-                    MatchedCount = result.MatchedCount,
-                    ModifiedCount = result.ModifiedCount
-                },
-                _ => new WriteResult() { IsAcknowledged = false }
-            };
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether the result is acknowledged.
-        /// </summary>
-        public bool IsAcknowledged { get; init; }
-
-        /// <summary>
-        /// Gets a value indicating whether the modified count is available.
-        /// </summary>
-        /// <remarks>The available modified count.</remarks>
-        public bool IsModifiedCountAvailable { get; init; }
-
-        /// <summary>
-        /// Gets the matched count. If IsAcknowledged is false, this will throw an exception.
-        /// </summary>
-        public long MatchedCount { get; init; }
-
-        /// <summary>
-        /// Gets the modified count. If IsAcknowledged is false, this will throw an exception.
-        /// </summary>
-        public long ModifiedCount { get; init; }
-
-        /// <summary>
-        /// Gets the upserted id, if one exists. If IsAcknowledged is false, this will throw an exception.
-        /// </summary>
-        public string? UpsertedId { get; init; }
-    }
     public static partial class DB
     {
         private static readonly BulkWriteOptions unOrdBlkOpts = new BulkWriteOptions { IsOrdered = false };
@@ -250,7 +77,7 @@ namespace MongoDB.Entities
 
             if (models.Count == 0)
             {
-                return NoOp<T>.Instance;
+                return default;
             }
 
             var result = dbContext?.Session == null
@@ -700,7 +527,7 @@ namespace MongoDB.Entities
 
             if (models.Count == 0)
             {
-                return NoOp<T>.Instance;
+                return default;
             }
 
             var result = dbContext?.Session == null
@@ -766,7 +593,7 @@ namespace MongoDB.Entities
             }
 
             // 检查冲突
-            var conflictingFields = DetectConflictingFields(ourChanges, theirChanges, snapshot, ourEntity, theirEntity);
+            var conflictingFields = DetectConflictingFields(ourChanges, theirChanges);
 
             if (conflictingFields.Count > 0)
             {
@@ -787,16 +614,10 @@ namespace MongoDB.Entities
         /// </summary>
         /// <param name="ourChanges">我们的变更</param>
         /// <param name="theirChanges">他们的变更</param>
-        /// <param name="baseValue">基础值</param>
-        /// <param name="ourValue">我们的值</param>
-        /// <param name="theirValue">他们的值</param>
         /// <returns>冲突字段的详细信息列表</returns>
         private static List<FieldConflictInfo> DetectConflictingFields(
             BsonDiffResult ourChanges,
-            BsonDiffResult theirChanges,
-            IEntityBase baseValue,
-            IEntityBase ourValue,
-            IEntityBase theirValue)
+            BsonDiffResult theirChanges)
         {
             var conflictingFields = new List<FieldConflictInfo>();
 
@@ -816,9 +637,9 @@ namespace MongoDB.Entities
                     {
                         FieldName = fieldName,
                         FieldType = ourDiff.FieldType,
-                        BaseValue = GetFieldValue(baseValue, fieldName, ourDiff.FieldType),
-                        OurValue = GetFieldValue(ourValue, fieldName, ourDiff.FieldType),
-                        TheirValue = GetFieldValue(theirValue, fieldName, theirDiff.FieldType)
+                        BaseValue = ourDiff.BaseValue,
+                        OurValue = ourDiff.NewValue,
+                        TheirValue = theirDiff.NewValue
                     };
 
                     if (!BsonDataDiffer.AreValuesEqual(conflictInfo.OurValue, conflictInfo.TheirValue, ourDiff.FieldType, theirDiff.FieldType))
@@ -829,39 +650,6 @@ namespace MongoDB.Entities
             }
 
             return conflictingFields;
-        }
-
-        /// <summary>
-        /// 通过反射获取字段值
-        /// </summary>
-        /// <param name="entity">实体对象</param>
-        /// <param name="fieldName">字段名</param>
-        /// <param name="fieldType">字段类型</param>
-        /// <returns>字段值</returns>
-        private static object GetFieldValue(IEntityBase entity, string fieldName, Type fieldType)
-        {
-            if (entity == null) return null;
-
-            try
-            {
-                var property = entity.GetType().GetProperty(fieldName);
-                if (property != null)
-                {
-                    return property.GetValue(entity);
-                }
-
-                var field = entity.GetType().GetField(fieldName);
-                if (field != null)
-                {
-                    return field.GetValue(entity);
-                }
-
-                return null;
-            }
-            catch
-            {
-                return null;
-            }
         }
     }
 }
