@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+
 using MongoDB.Bson.Serialization;
 
 namespace MongoDB.Entities.Utilities
 {
-    public class DbContextCache
+    public struct DbContextCache
     {
+        public DbContextCache()
+        {
+            TypedCacheDictionary = new();
+        }
         public ConcurrentDictionary<Type, ConcurrentDictionary<string, IEntityBase>> TypedCacheDictionary { get; set; } = new();
         public ConcurrentDictionary<string, IEntityBase> this[Type index]
         {

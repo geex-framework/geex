@@ -37,21 +37,30 @@ namespace MongoDB.Entities
             var tasks = new List<Task>(2);
             var delResTask =
                     dbContext?.Session == null
-                    ? Collection<T>().DeleteManyAsync(x => ids.Contains(x.Id), cancellationToken: cancellation)
-                    : Collection<T>().DeleteManyAsync(dbContext?.Session, x => ids.Contains(x.Id), null, cancellation);
+                    ? Collection<T>().DeleteManyAsync(filter, cancellationToken: cancellation)
+                    : Collection<T>().DeleteManyAsync(dbContext?.Session, filter, null, cancellation);
 
             tasks.Add(delResTask);
 
             if (typeof(T).IsAssignableTo<FileEntity>())
             {
+                var fileEntityFilter = Filter<FileChunk>().In(x => x.FileId, ids);
                 tasks.Add(
                     dbContext?.Session == null
-                    ? Collection<FileChunk>().DeleteManyAsync(x => ids.Contains(x.FileId), cancellationToken: cancellation)
-                    : Collection<FileChunk>().DeleteManyAsync(dbContext?.Session, x => ids.Contains(x.FileId), null, cancellation));
+                    ? Collection<FileChunk>().DeleteManyAsync(fileEntityFilter, cancellationToken: cancellation)
+                    : Collection<FileChunk>().DeleteManyAsync(dbContext?.Session, fileEntityFilter, null, cancellation));
             }
             await Task.WhenAll(tasks);
             //await Task.WhenAll(tasks).ConfigureAwait(false);
-
+            if (dbContext != default)
+            {
+                var rootType = Cache<T>.RootEntityType;
+                foreach (var id in ids)
+                {
+                    dbContext.DbDataCache[rootType].TryRemove(id, out _);
+                    dbContext.MemoryDataCache[rootType].TryRemove(id, out _);
+                }
+            }
             var delRes = await delResTask;
             return delRes.DeletedCount;
         }

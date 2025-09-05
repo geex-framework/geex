@@ -645,7 +645,7 @@ namespace MongoDB.Entities
                 }
                 throw;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogError(ex, "Error saving changes.");
                 throw;
@@ -749,7 +749,7 @@ namespace MongoDB.Entities
         {
             var bson = dbEntity.ToBson(rootType);
             var deserializedEntity = (IEntityBase)BsonSerializer.Deserialize(bson, rootType);
-            this.DbDataCache[rootType].AddOrUpdate(deserializedEntity.Id, deserializedEntity, (_, _) => deserializedEntity);
+            this.DbDataCache[rootType][deserializedEntity.Id] = deserializedEntity;
         }
 
         public void UpdateDbDataCache<T>(T dbEntity) where T : IEntityBase

@@ -240,17 +240,18 @@ namespace MongoDB.Entities.Core.Comparers
 
             memberMapsToCompare ??= DB.GetCacheInfo(baseType).MemberMapsWithoutModifiedOn.AsEnumerable();
 
-            if (baseObj == null){
-              context.Result.AreEqual = false;
-              context.Result.Differences = memberMapsToCompare.Select(x => new BsonMemberDifference
-              {
-                FieldName = x.ElementName,
-                FieldType = x.MemberType,
-                BaseValue = null,
-                NewValue = x.Getter(newObj),
-                MemberMap = x
-              }).ToDictionary(x => x.FieldName, x => (IBsonMemberDifference)x);
-              return context.Result;
+            if (baseObj == null)
+            {
+                context.Result.AreEqual = false;
+                context.Result.Differences = memberMapsToCompare.Select(x => new BsonMemberDifference
+                {
+                    FieldName = x.ElementName,
+                    FieldType = x.MemberType,
+                    BaseValue = null,
+                    NewValue = x.Getter(newObj),
+                    MemberMap = x
+                }).ToDictionary(x => x.FieldName, x => (IBsonMemberDifference)x);
+                return context.Result;
             }
 
             foreach (var memberMap in memberMapsToCompare)
@@ -311,7 +312,7 @@ namespace MongoDB.Entities.Core.Comparers
             [typeof(DateTimeOffset)] = (a, b) => ((DateTimeOffset)a == (DateTimeOffset)b),
         };
 
-        public static bool AreValuesEqual(object baseObj, object newObj, Type baseType, Type newType)
+        public static bool AreValuesEqual(object baseObj, object newObj, Type? baseType = null, Type? newType = null)
         {
             // 快速基础检查
             var basicCheckResult = BasicCompare(baseObj, newObj);
@@ -319,8 +320,9 @@ namespace MongoDB.Entities.Core.Comparers
                 return basicCheckResult.Value;
 
             // 对于复杂类型的特殊处理
+            baseType ??= baseObj.GetType();
             if (Type.GetTypeCode(baseType) == TypeCode.Object)
-                return HandleComplexTypes(baseObj, newObj, baseType, newType);
+                return HandleComplexTypes(baseObj, newObj, baseType, newType ?? newObj.GetType());
 
             // 所有基础类型直接使用 Equals
             return baseObj.Equals(newObj);
@@ -382,17 +384,16 @@ namespace MongoDB.Entities.Core.Comparers
             if (ReferenceEquals(baseEnumerable, newEnumerable)) return true;
             if (baseEnumerable == null || newEnumerable == null) return false;
 
-            var baseList = baseEnumerable.Cast<object>().ToList();
-            var newList = newEnumerable.Cast<object>().ToList();
-
-            if (baseList.Count != newList.Count) return false;
-
-            for (int i = 0; i < baseList.Count; i++)
+            var baseEnumerator = baseEnumerable.GetEnumerator();
+            var newEnumerator = newEnumerable.GetEnumerator();
+            while (baseEnumerator.MoveNext() && newEnumerator.MoveNext())
             {
-                if (!Equals(baseList[i], newList[i])) return false;
+                var current1 = baseEnumerator.Current;
+                var current2 = newEnumerator.Current;
+                if (!AreValuesEqual(current1, current2))
+                    return false;
             }
-
-            return true;
+            return !baseEnumerator.MoveNext() && !newEnumerator.MoveNext();
         }
 
         private static bool CompareByteArrays(byte[] baseArray, byte[] newArray)

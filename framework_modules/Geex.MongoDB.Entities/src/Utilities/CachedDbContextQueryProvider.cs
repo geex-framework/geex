@@ -116,19 +116,9 @@ namespace MongoDB.Entities.Utilities
                         }
 
                         var localEntities = this.DbContext.MemoryDataCache[rootType].Values.OfType<T>();
-
-                        var originLocalEntities = this.DbContext.DbDataCache[rootType].Values.OfType<T>();
-
-                        var localIds = localEntities.Select(x => x.Id).ToList();
-                        var deletedEntities = Enumerable.Empty<T>();
-                        if (localIds.Count != 0)
-                        {
-                            deletedEntities = originLocalEntities.Where(x => !localIds.Contains(x.Id));
-                        }
-
                         IQueryable<T> entities;
                         var dbQuery = this.CreateQuery<T>(visitor.PreSelectExpression);
-                        if (localEntities.Any() || deletedEntities.Any())
+                        if (localEntities.Any())
                         {
                             var dbEntities = dbQuery
                             //.Where(x => !localIds.Contains(x.Id))
@@ -140,7 +130,7 @@ namespace MongoDB.Entities.Utilities
                                 this.DbContext.UpdateDbDataCache(dbEntities);
                             }
 
-                            entities = localEntities.Union(dbEntities).Except(deletedEntities).AsQueryable();
+                            entities = localEntities.Union(dbEntities).AsQueryable();
                             var resultQueryExpression =
                                 visitor.PreSelectExpression.ReplaceSource(entities, ReplaceType.OriginSource);
                             entities = entities.Provider.CreateQuery<T>(resultQueryExpression).AsQueryable();
