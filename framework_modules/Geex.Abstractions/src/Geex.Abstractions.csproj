@@ -14,6 +14,10 @@
     <ItemGroup>
         <PackageReference Include="AutoEquality" Version="0.5.4" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
+        <PackageReference Include="Costura.Fody" Version="6.0.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="fasterflect" Version="3.0.0" />
         <PackageReference Include="Flurl.Http" Version="3.2.3" />
         <PackageReference Include="HonkSharp" Version="1.0.3" />
@@ -30,6 +34,7 @@
         <PackageReference Include="HotChocolate.Validation" Version="13.9.14" />
         <PackageReference Include="Humanizer.Core" Version="2.14.1" />
         <PackageReference Include="ImpromptuInterface" Version="8.0.6" />
+        <PackageReference Include="Lib.Harmony" Version="2.4.1" />
         <PackageReference Include="MethodBoundaryAspect.Fody" Version="2.0.149" />
         <PackageReference Include="MethodTimer.Fody" Version="3.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
@@ -59,6 +64,7 @@
     <PropertyGroup>
         <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CompareDll</TargetsForTfmSpecificBuildOutput>
         <RootNamespace>Geex</RootNamespace>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
     <Target Name="CompareDll">
         <ItemGroup>

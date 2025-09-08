@@ -144,7 +144,6 @@ namespace Geex
 
         }
 
-        [Obsolete("Do not use this ctor, use static method of Create instead.", false)]
         public Enumeration()
         {
 

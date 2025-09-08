@@ -6,7 +6,6 @@ using HotChocolate;
 using HotChocolate.Types;
 
 using Microsoft.Extensions.DependencyInjection;
-
 using Shouldly;
 
 namespace Geex.Tests.SchemaTests
@@ -32,7 +31,7 @@ namespace Geex.Tests.SchemaTests
         public async Task ApproveEntityFieldsShouldBeAdded()
         {
             // Arrange
-            
+
             var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
@@ -47,7 +46,7 @@ namespace Geex.Tests.SchemaTests
         public async Task ApproveMutationMethodsShouldBeAdded()
         {
             // Arrange
-            
+
             var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
@@ -84,7 +83,7 @@ namespace Geex.Tests.SchemaTests
         public async Task AuditDirectiveShouldBeAddedToApproveMethods()
         {
             // Arrange
-            
+
             var schema = ScopedService.GetService<ISchema>();
 
             // Act & Assert
