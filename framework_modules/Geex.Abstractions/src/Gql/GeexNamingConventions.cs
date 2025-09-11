@@ -2,11 +2,6 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-using Geex.Gql;
-
-using HarmonyLib;
-
-using HotChocolate.Language;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 

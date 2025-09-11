@@ -6,7 +6,6 @@ using System.Reflection;
 using Geex.Migrations;
 using Geex.Storage;
 using HotChocolate.AspNetCore;
-using HotChocolate.AspNetCore.Voyager;
 using HotChocolate.Execution.Configuration;
 using MediatX;
 
@@ -173,7 +172,6 @@ namespace Geex
             var app = context.GetApplicationBuilder();
             //var _env = context.GetEnvironment();
             //var _configuration = context.GetConfiguration();
-            app.UseVoyager("/graphql", "/voyager");
         }
 
         /// <inheritdoc />
@@ -191,8 +189,8 @@ namespace Geex
                     EnableGetRequests = false,
                     Tool =
                     {
-                        Enable = !coreModuleOptions.DisableIntrospection,
-                    }
+                        Enable = !coreModuleOptions.DisableIntrospection
+                    },
                 });
             });
             coreModuleOptions.AutoMigration ??= !Env.IsProduction();

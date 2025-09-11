@@ -9,7 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Elastic.Apm.AspNetCore" Version="1.18.0" />
-    <PackageReference Include="HotChocolate.Diagnostics" Version="13.9.12" />
+    <PackageReference Include="Geex.HotChocolate.Diagnostics" Version="13.9.15-geex-4" />
     <PackageReference Include="Elasticsearch.Net" Version="7.8.2" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="8.1.2" />
   </ItemGroup>
