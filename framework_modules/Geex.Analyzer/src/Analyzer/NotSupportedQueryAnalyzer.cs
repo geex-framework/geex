@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -88,6 +89,18 @@ namespace Geex.Analyzer.Analyzer
         private static readonly ImmutableHashSet<string> SupportedTimeSpanProperties =
             ImmutableHashSet.Create("Ticks", "TotalMilliseconds", "TotalSeconds", "TotalMinutes", "TotalHours", "TotalDays");
 
+        // 查询方法集合，避免重复创建
+        private static readonly ImmutableHashSet<string> QueryMethods = ImmutableHashSet.Create(
+            "Where", "Select", "SelectMany", "OrderBy", "OrderByDescending",
+            "ThenBy", "ThenByDescending", "GroupBy", "Join", "Count", "Any",
+            "All", "First", "FirstOrDefault", "Single", "SingleOrDefault",
+            "Sum", "Min", "Max", "Average", "Take", "Skip", "Distinct"
+        );
+
+        // Where子句中有参数限制的字符串方法
+        private static readonly ImmutableHashSet<string> StringMethodsWithParameterConstraints =
+            ImmutableHashSet.Create("StartsWith", "EndsWith", "Contains");
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(NotSupportedQueryExpressionRule, NotSupportedPropertyRule, NotSupportedDateTimePropertyInMatchRule);
 
@@ -102,252 +115,195 @@ namespace Geex.Analyzer.Analyzer
         private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
+            var queryContext = GetQueryContext(invocation, context);
 
-            // 检查是否在查询表达式中（Where, Select, OrderBy等）
-            if (!IsInQueryExpression(invocation))
-                return;
+            if (!queryContext.IsInQuery) return;
 
-            // 检查调用的方法是否在不支持列表中
-            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess) return;
+
+            var methodName = memberAccess.Name.Identifier.ValueText;
+
+            // 检查通用不支持的方法
+            if (UnsupportedMethods.TryGetValue(methodName, out var suggestion))
             {
-                var methodName = memberAccess.Name.Identifier.ValueText;
-
-                if (UnsupportedMethods.TryGetValue(methodName, out var suggestion))
+                if (IsEntityBaseInvocation(memberAccess.Expression, context.SemanticModel))
                 {
-                    // 检查调用者类型是否实现了IEntityBase或其属性
-                    var symbolInfo = context.SemanticModel.GetSymbolInfo(memberAccess.Expression);
-                    if (symbolInfo.Symbol is IPropertySymbol property)
-                    {
-                        if (IsEntityBaseType(property.ContainingType) || HasEntityBaseInPropertyChain(property, context.SemanticModel))
-                        {
-                            var diagnostic = Diagnostic.Create(
-                                NotSupportedQueryExpressionRule,
-                                invocation.GetLocation(),
-                                methodName,
-                                suggestion);
-                            context.ReportDiagnostic(diagnostic);
-                        }
-                    }
-                    else if (symbolInfo.Symbol is IParameterSymbol parameter)
-                    {
-                        if (IsEntityBaseType(parameter.Type))
-                        {
-                            var diagnostic = Diagnostic.Create(
-                                NotSupportedQueryExpressionRule,
-                                invocation.GetLocation(),
-                                methodName,
-                                suggestion);
-                            context.ReportDiagnostic(diagnostic);
-                        }
-                    }
+                    ReportDiagnostic(context, NotSupportedQueryExpressionRule, invocation.GetLocation(), methodName, suggestion);
                 }
+            }
 
-                // 特殊检查：字符串方法在Where子句中的限制
-                if (IsInWhereClause(invocation))
-                {
-                    var receiverType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
-                    if (receiverType?.SpecialType == SpecialType.System_String)
-                    {
-                        // 检查不支持的字符串方法
-                        var unsupportedStringMethods = new[] { "StartsWith", "EndsWith", "Contains" };
-                        if (unsupportedStringMethods.Contains(methodName))
-                        {
-                            // 检查参数是否为常量
-                            if (invocation.ArgumentList.Arguments.Count > 0)
-                            {
-                                var firstArg = invocation.ArgumentList.Arguments[0].Expression;
-                                if (firstArg is not LiteralExpressionSyntax)
-                                {
-                                    var diagnostic = Diagnostic.Create(
-                                        NotSupportedQueryExpressionRule,
-                                        invocation.GetLocation(),
-                                        $"string.{methodName}",
-                                        $"在Where子句中，{methodName}只支持常量字符串参数");
-                                    context.ReportDiagnostic(diagnostic);
-                                }
-                            }
-                        }
-                    }
-                }
+            // 检查字符串方法的参数限制（仅在Where子句中）
+            if (queryContext.IsInWhere)
+            {
+                CheckStringMethodParameterConstraints(context, invocation, memberAccess, methodName);
             }
         }
 
         private static void AnalyzeMemberAccessExpression(SyntaxNodeAnalysisContext context)
         {
             var memberAccess = (MemberAccessExpressionSyntax)context.Node;
+            var queryContext = GetQueryContext(memberAccess, context);
 
-            // 检查是否在查询表达式中
-            if (!IsInQueryExpression(memberAccess))
-                return;
+            if (!queryContext.IsInQuery) return;
 
             var symbolInfo = context.SemanticModel.GetSymbolInfo(memberAccess);
-            if (symbolInfo.Symbol is IPropertySymbol property)
-            {
-                var containingTypeName = property.ContainingType.ToDisplayString();
-                var propertyName = property.Name;
+            if (symbolInfo.Symbol is not IPropertySymbol property) return;
 
-                // 特殊处理：DateTime/DateTimeOffset属性在$match阶段（Where子句）的限制
-                if (IsInWhereClause(memberAccess) &&
-                    (containingTypeName == "System.DateTime" || containingTypeName == "System.DateTimeOffset"))
+            var containingTypeName = property.ContainingType.ToDisplayString();
+            var propertyName = property.Name;
+
+            // 特殊处理：DateTime/DateTimeOffset属性在$match阶段（Where子句）的限制
+            if (queryContext.IsInWhere && IsDateTimeType(containingTypeName))
+            {
+                if (IsEntityBaseProperty(memberAccess.Expression, context.SemanticModel))
                 {
-                    // 在Where子句中，所有DateTime属性都不支持
-                    var expressionSymbol = context.SemanticModel.GetSymbolInfo(memberAccess.Expression);
-                    if (expressionSymbol.Symbol is IPropertySymbol sourceProperty)
-                    {
-                        if (IsEntityBaseType(sourceProperty.ContainingType) || HasEntityBaseInPropertyChain(sourceProperty, context.SemanticModel))
-                        {
-                            var diagnostic = Diagnostic.Create(
-                                NotSupportedDateTimePropertyInMatchRule,
-                                memberAccess.GetLocation(),
-                                $"{containingTypeName}.{propertyName}");
-                            context.ReportDiagnostic(diagnostic);
-                        }
-                    }
-                    else if (expressionSymbol.Symbol is IParameterSymbol parameter)
-                    {
-                        if (IsEntityBaseType(parameter.Type))
-                        {
-                            var diagnostic = Diagnostic.Create(
-                                NotSupportedDateTimePropertyInMatchRule,
-                                memberAccess.GetLocation(),
-                                $"{containingTypeName}.{propertyName}");
-                            context.ReportDiagnostic(diagnostic);
-                        }
-                    }
+                    ReportDiagnostic(context, NotSupportedDateTimePropertyInMatchRule,
+                        memberAccess.GetLocation(), $"{containingTypeName}.{propertyName}");
                     return; // 已经报告了诊断，不需要继续检查
                 }
-
-                // 检查是否为不支持的属性
-                if (UnsupportedProperties.TryGetValue(containingTypeName, out var unsupportedProps) &&
-                    unsupportedProps.Contains(propertyName))
-                {
-                    // 特殊处理：String.Length只在$match阶段不支持
-                    if (containingTypeName == "System.String" && propertyName == "Length")
-                    {
-                        if (!IsInWhereClause(memberAccess))
-                            return; // 在Select等其他地方是支持的
-                    }
-
-                    // 特殊处理：DateTime属性在Select中的支持情况
-                    if (containingTypeName == "System.DateTime")
-                    {
-                        if (SupportedDateTimeProperties.Contains(propertyName) && !IsInWhereClause(memberAccess))
-                            return; // 在Select等地方支持这些属性
-                    }
-
-                    // 特殊处理：TimeSpan属性在Select中的支持情况
-                    if (containingTypeName == "System.TimeSpan")
-                    {
-                        if (SupportedTimeSpanProperties.Contains(propertyName) && !IsInWhereClause(memberAccess))
-                            return; // 在Select等地方支持这些属性
-                    }
-
-                    // 检查是否在EntityBase类型的查询中
-                    var expressionSymbol = context.SemanticModel.GetSymbolInfo(memberAccess.Expression);
-                    if (expressionSymbol.Symbol is IPropertySymbol sourceProperty)
-                    {
-                        if (IsEntityBaseType(sourceProperty.ContainingType) || HasEntityBaseInPropertyChain(sourceProperty, context.SemanticModel))
-                        {
-                            var suggestion = GetPropertySuggestion(containingTypeName, propertyName);
-                            var diagnostic = Diagnostic.Create(
-                                NotSupportedPropertyRule,
-                                memberAccess.GetLocation(),
-                                $"{containingTypeName}.{propertyName}",
-                                suggestion);
-                            context.ReportDiagnostic(diagnostic);
-                        }
-                    }
-                    else if (expressionSymbol.Symbol is IParameterSymbol parameter)
-                    {
-                        if (IsEntityBaseType(parameter.Type))
-                        {
-                            var suggestion = GetPropertySuggestion(containingTypeName, propertyName);
-                            var diagnostic = Diagnostic.Create(
-                                NotSupportedPropertyRule,
-                                memberAccess.GetLocation(),
-                                $"{containingTypeName}.{propertyName}",
-                                suggestion);
-                            context.ReportDiagnostic(diagnostic);
-                        }
-                    }
-                }
             }
+
+            // 检查不支持的属性
+            CheckUnsupportedProperty(context, memberAccess, containingTypeName, propertyName, queryContext.IsInWhere);
         }
 
-        private static bool IsInQueryExpression(SyntaxNode node)
+        /// <summary>
+        /// 获取查询上下文信息（是否在查询中，是否在Where子句中）
+        /// </summary>
+        private static (bool IsInQuery, bool IsInWhere) GetQueryContext(SyntaxNode node, SyntaxNodeAnalysisContext context)
         {
-            // 向上查找，检查是否在LINQ查询方法的lambda表达式中
             var current = node.Parent;
             while (current != null)
             {
-                if (current is LambdaExpressionSyntax lambda)
+                if (current is LambdaExpressionSyntax lambda &&
+                    lambda.Parent is ArgumentSyntax argument &&
+                    argument.Parent is ArgumentListSyntax argumentList &&
+                    argumentList.Parent is InvocationExpressionSyntax invocation &&
+                    invocation.Expression is MemberAccessExpressionSyntax memberAccess)
                 {
-                    // 检查lambda是否是查询方法的参数
-                    if (lambda.Parent is ArgumentSyntax argument &&
-                        argument.Parent is ArgumentListSyntax argumentList &&
-                        argumentList.Parent is InvocationExpressionSyntax invocation)
+                    var methodName = memberAccess.Name.Identifier.ValueText;
+
+                    if (QueryMethods.Contains(methodName))
                     {
-                        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
-                        {
-                            var methodName = memberAccess.Name.Identifier.ValueText;
-                            return IsQueryMethod(methodName);
-                        }
+                        var isQueryable = IsQueryableOfEntityBase(memberAccess.Expression, context.SemanticModel);
+                        return (isQueryable, isQueryable && methodName == "Where");
                     }
                 }
                 current = current.Parent;
             }
-            return false;
+            return (false, false);
         }
 
-        private static bool IsInWhereClause(SyntaxNode node)
+        /// <summary>
+        /// 检查字符串方法的参数限制
+        /// </summary>
+        private static void CheckStringMethodParameterConstraints(SyntaxNodeAnalysisContext context,
+            InvocationExpressionSyntax invocation, MemberAccessExpressionSyntax memberAccess, string methodName)
         {
-            // 检查是否特定在Where子句中
-            var current = node.Parent;
-            while (current != null)
+            var receiverType = context.SemanticModel.GetTypeInfo(memberAccess.Expression).Type;
+            if (receiverType?.SpecialType != SpecialType.System_String) return;
+
+            if (!StringMethodsWithParameterConstraints.Contains(methodName)) return;
+
+            // 检查参数是否为常量
+            if (invocation.ArgumentList.Arguments.Count > 0)
             {
-                if (current is LambdaExpressionSyntax lambda)
+                var firstArg = invocation.ArgumentList.Arguments[0].Expression;
+                if (firstArg is not LiteralExpressionSyntax)
                 {
-                    if (lambda.Parent is ArgumentSyntax argument &&
-                        argument.Parent is ArgumentListSyntax argumentList &&
-                        argumentList.Parent is InvocationExpressionSyntax invocation)
-                    {
-                        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
-                        {
-                            var methodName = memberAccess.Name.Identifier.ValueText;
-                            return methodName == "Where";
-                        }
-                    }
+                    var suggestion = $"在Where子句中，{methodName}只支持常量字符串参数";
+                    ReportDiagnostic(context, NotSupportedQueryExpressionRule, invocation.GetLocation(),
+                        $"string.{methodName}", suggestion);
                 }
-                current = current.Parent;
             }
+        }
+
+        /// <summary>
+        /// 检查不支持的属性访问
+        /// </summary>
+        private static void CheckUnsupportedProperty(SyntaxNodeAnalysisContext context,
+            MemberAccessExpressionSyntax memberAccess, string containingTypeName, string propertyName, bool isInWhere)
+        {
+            if (!UnsupportedProperties.TryGetValue(containingTypeName, out var unsupportedProps) ||
+                !unsupportedProps.Contains(propertyName)) return;
+
+            // 检查特殊情况的支持性
+            if (IsPropertySupportedInCurrentContext(containingTypeName, propertyName, isInWhere)) return;
+
+            // 检查是否在EntityBase类型的查询中
+            if (!IsEntityBaseProperty(memberAccess.Expression, context.SemanticModel)) return;
+
+            var suggestion = GetPropertySuggestion(containingTypeName, propertyName);
+            ReportDiagnostic(context, NotSupportedPropertyRule, memberAccess.GetLocation(),
+                $"{containingTypeName}.{propertyName}", suggestion);
+        }
+
+        /// <summary>
+        /// 检查属性在当前上下文中是否被支持
+        /// </summary>
+        private static bool IsPropertySupportedInCurrentContext(string typeName, string propertyName, bool isInWhere)
+        {
+            // String.Length只在$match阶段不支持
+            if (typeName == "System.String" && propertyName == "Length" && !isInWhere)
+                return true;
+
+            // DateTime属性在Select中的支持情况
+            if (typeName == "System.DateTime" && !isInWhere && SupportedDateTimeProperties.Contains(propertyName))
+                return true;
+
+            // TimeSpan属性在Select中的支持情况
+            if (typeName == "System.TimeSpan" && !isInWhere && SupportedTimeSpanProperties.Contains(propertyName))
+                return true;
+
             return false;
         }
 
-        private static bool IsQueryMethod(string methodName)
+        /// <summary>
+        /// 统一的诊断报告方法
+        /// </summary>
+        private static void ReportDiagnostic(SyntaxNodeAnalysisContext context, DiagnosticDescriptor rule,
+            Location location, params object[] messageArgs)
         {
-            var queryMethods = new HashSet<string>
+            var diagnostic = Diagnostic.Create(rule, location, messageArgs);
+            context.ReportDiagnostic(diagnostic);
+        }
+
+        /// <summary>
+        /// 检查表达式是否为EntityBase类型的调用
+        /// </summary>
+        private static bool IsEntityBaseInvocation(ExpressionSyntax expression, SemanticModel semanticModel)
+        {
+            var symbolInfo = semanticModel.GetSymbolInfo(expression);
+            return symbolInfo.Symbol switch
             {
-                "Where", "Select", "SelectMany", "OrderBy", "OrderByDescending",
-                "ThenBy", "ThenByDescending", "GroupBy", "Join", "Count", "Any",
-                "All", "First", "FirstOrDefault", "Single", "SingleOrDefault",
-                "Sum", "Min", "Max", "Average", "Take", "Skip", "Distinct"
+                IPropertySymbol property => IsEntityBaseType(property.ContainingType) || HasEntityBaseInPropertyChain(property),
+                IParameterSymbol parameter => IsEntityBaseType(parameter.Type),
+                _ => false
             };
-            return queryMethods.Contains(methodName);
+        }
+
+        /// <summary>
+        /// 检查表达式是否为EntityBase类型的属性
+        /// </summary>
+        private static bool IsEntityBaseProperty(ExpressionSyntax expression, SemanticModel semanticModel)
+        {
+            var symbolInfo = semanticModel.GetSymbolInfo(expression);
+            return symbolInfo.Symbol switch
+            {
+                IPropertySymbol property => IsEntityBaseType(property.ContainingType) || HasEntityBaseInPropertyChain(property),
+                IParameterSymbol parameter => IsEntityBaseType(parameter.Type),
+                _ => false
+            };
         }
 
         private static bool IsEntityBaseType(ITypeSymbol type)
         {
-            if (type == null) return false;
-
-            // 检查类型是否直接或间接实现IEntityBase接口
-            return type.AllInterfaces.Any(i =>
-                i.ToDisplayString() == "MongoDB.Entities.IEntityBase" ||
-                i.Name == "IEntityBase");
+            return type?.AllInterfaces.Any(i =>
+                i.ToDisplayString() == "MongoDB.Entities.IEntityBase" || i.Name == "IEntityBase") ?? false;
         }
 
-        private static bool HasEntityBaseInPropertyChain(IPropertySymbol property, SemanticModel semanticModel)
+        private static bool HasEntityBaseInPropertyChain(IPropertySymbol property)
         {
-            // 检查属性链中是否包含EntityBase类型
             var currentType = property.ContainingType;
             while (currentType != null)
             {
@@ -360,22 +316,42 @@ namespace Geex.Analyzer.Analyzer
 
         private static string GetPropertySuggestion(string typeName, string propertyName)
         {
-            if (typeName == "System.String" && propertyName == "Length")
-                return "在$match阶段不支持String.Length，考虑使用聚合管道或在Select阶段使用";
+            return (typeName, propertyName) switch
+            {
+                ("System.String", "Length") => "在$match阶段不支持String.Length，考虑使用聚合管道或在Select阶段使用",
+                _ when typeName.Contains("DateTime") && (propertyName == "Ticks" || propertyName == "TimeOfDay") =>
+                    "Ticks和TimeOfDay属性在MongoDB查询中不受支持，考虑使用支持的日期属性如Year, Month, Day等",
+                _ when typeName.Contains("DateTime") && propertyName == "Kind" =>
+                    "在$match阶段不支持DateTime.Kind属性，考虑在Select阶段使用",
+                _ when typeName == "System.DateTimeOffset" && (propertyName == "Offset" || propertyName == "LocalDateTime" || propertyName == "UtcDateTime") =>
+                    "在$match阶段不支持此DateTimeOffset属性，考虑使用聚合管道",
+                ("System.TimeSpan", _) => "部分TimeSpan属性在某些上下文中不受支持，建议使用Ticks或Total*属性",
+                _ => "此属性在MongoDB查询中不受支持"
+            };
+        }
 
-            if (typeName.Contains("DateTime") && (propertyName == "Ticks" || propertyName == "TimeOfDay"))
-                return "Ticks和TimeOfDay属性在MongoDB查询中不受支持，考虑使用支持的日期属性如Year, Month, Day等";
+        private static bool IsDateTimeType(string typeName) =>
+            typeName == "System.DateTime" || typeName == "System.DateTimeOffset";
 
-            if (typeName.Contains("DateTime") && propertyName == "Kind")
-                return "在$match阶段不支持DateTime.Kind属性，考虑在Select阶段使用";
+        /// <summary>
+        /// 检查表达式是否为 IQueryable&lt;实体类&gt; 类型
+        /// </summary>
+        private static bool IsQueryableOfEntityBase(ExpressionSyntax expression, SemanticModel semanticModel)
+        {
+            var typeInfo = semanticModel.GetTypeInfo(expression);
+            var type = typeInfo.Type;
 
-            if (typeName == "System.DateTimeOffset" && (propertyName == "Offset" || propertyName == "LocalDateTime" || propertyName == "UtcDateTime"))
-                return "在$match阶段不支持此DateTimeOffset属性，考虑使用聚合管道";
+            if (type == null) return false;
 
-            if (typeName == "System.TimeSpan")
-                return "部分TimeSpan属性在某些上下文中不受支持，建议使用Ticks或Total*属性";
+            // 检查是否为 IQueryable<T>
+            var queryableInterface = type.AllInterfaces.FirstOrDefault(i =>
+                i.ToDisplayString().StartsWith("System.Linq.IQueryable<"));
 
-            return "此属性在MongoDB查询中不受支持";
+            var queryableType = queryableInterface as INamedTypeSymbol ??
+                               (type.ToDisplayString().StartsWith("System.Linq.IQueryable<") ? type as INamedTypeSymbol : null);
+
+            // 获取泛型参数 T 并检查是否实现了 IEntityBase
+            return queryableType?.TypeArguments.Length > 0 && IsEntityBaseType(queryableType.TypeArguments[0]);
         }
     }
 }

@@ -259,5 +259,36 @@ namespace Geex.Analyzer.Tests
             // 测试复杂查询表达式应该正确处理
             await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("QueryTests/ComplexQueryExpressions.cs");
         }
+
+        [Fact]
+        public async Task IEnumerableEntityBase_ShouldNotReportDiagnostic()
+        {
+            // 测试对IEnumerable<IEntityBase>不应该报告诊断
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("QueryTests/IEnumerableEntityBase.cs");
+        }
+
+        [Fact]
+        public async Task IQueryableString_ShouldNotReportDiagnostic()
+        {
+            // 测试对IQueryable<string>不应该报告诊断
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("QueryTests/IQueryableString.cs");
+        }
+
+        [Fact]
+        public async Task IQueryableEntityBase_ShouldReportDiagnostic()
+        {
+            // 测试对IQueryable<实体类>应该报告诊断
+            var expected = DiagnosticResultBuilder.Create("GEEX003")
+                .WithArguments("GetHashCode", "GetHashCode方法在MongoDB查询中不受支持");
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync("QueryTests/IQueryableEntityBase.cs", expected);
+        }
+
+        [Fact]
+        public async Task IEnumerableNonEntityType_ShouldNotReportDiagnostic()
+        {
+            // 测试对IEnumerable<非实体类>不应该报告诊断
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync("QueryTests/IEnumerableNonEntityType.cs");
+        }
     }
 }
