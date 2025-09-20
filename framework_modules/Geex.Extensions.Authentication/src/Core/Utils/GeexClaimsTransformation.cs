@@ -56,6 +56,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 var claimsPrincipal = await transformation.TransformAsync(user, principal);
                 principalIdentity.AppendClaims(claimsPrincipal.Claims.ToList());
             }
+            principalIdentity.AppendClaims(new GeexClaim(GeexClaimType.Provider, user.LoginProvider));
 
             //var tokenDescriptor = new GeexSecurityTokenDescriptor(userId, LoginProviderEnum.Local, _options, principalIdentity.Claims);
             // 设置用户session, 缓存数据10分钟, 避免大量的组织架构和权限查询

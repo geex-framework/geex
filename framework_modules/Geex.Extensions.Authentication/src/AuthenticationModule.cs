@@ -155,15 +155,17 @@ namespace Geex.Extensions.Authentication
             X509Certificate2? cert = default;
             SigningCredentials? signCredentials = default;
             services.AddOpenIddict()
-                .AddCore(options => options.UseMongoDb())
+                .AddCore(options =>
+                {
+                    options.UseMongoDb();
+                    options.ReplaceApplicationManager<GeexOpenIddictApplicationManager>();
+                })
                 .AddServer(options =>
                 {
                     ConfigureOpenIddictEndpoints(options);
                     ConfigureOpenIddictClaims(options);
                     ConfigureOpenIddictScopes(options);
                     ConfigureOpenIddictFlows(options);
-
-                    options.SetAccessTokenLifetime(TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
 
                     (cert, signCredentials) = ConfigureOpenIddictCertificates(options, certificateInfo);
 
@@ -177,8 +179,15 @@ namespace Geex.Extensions.Authentication
 
                     options.DisableAccessTokenEncryption();
 
-                    ConfigureOpenIddictOptions(options, cert, moduleOptions, geexCoreModuleOptions);
-                    ConfigureOpenIddictAspNetCore(options);
+                    options.SetAccessTokenLifetime(TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
+                    options.Configure(x =>
+                    {
+                        ConfigTokenValidationParameters(x.TokenValidationParameters, cert, moduleOptions, geexCoreModuleOptions);
+                        x.IgnoreEndpointPermissions = true;
+                        x.IgnoreResponseTypePermissions = true;
+                        x.IgnoreGrantTypePermissions = true;
+                        x.IgnoreScopePermissions = true;
+                    });
                 })
                 .AddValidation(options =>
                 {
@@ -191,9 +200,17 @@ namespace Geex.Extensions.Authentication
 
         private void ConfigureOpenIddictEndpoints(OpenIddictServerBuilder options)
         {
+            options.UseAspNetCore()
+                .EnableAuthorizationEndpointPassthrough()
+                .EnableLogoutEndpointPassthrough()
+                .EnableTokenEndpointPassthrough()
+                .EnableUserinfoEndpointPassthrough()
+                .EnableVerificationEndpointPassthrough()
+                .EnableErrorPassthrough()
+                .DisableTransportSecurityRequirement();
             options
                 .SetUserinfoEndpointUris("/idsvr/userinfo")
-                .SetLogoutEndpointUris("/idsvr/logout")
+                .SetLogoutEndpointUris("/idsvr/endsession")
                 .SetRevocationEndpointUris("/idsvr/revocation")
                 .SetCryptographyEndpointUris("/.well-known/openid-configuration/jwks")
                 .SetIntrospectionEndpointUris("/idsvr/introspect")
@@ -239,9 +256,9 @@ namespace Geex.Extensions.Authentication
                 .AllowClientCredentialsFlow()
                 .AllowDeviceCodeFlow()
                 .AllowRefreshTokenFlow()
-                .AllowImplicitFlow()
+                //.AllowImplicitFlow()
                 .AllowHybridFlow()
-                .AllowNoneFlow()
+                //.AllowNoneFlow()
                 .AllowPasswordFlow();
         }
 
@@ -361,32 +378,6 @@ namespace Geex.Extensions.Authentication
             }
         }
 
-        private void ConfigureOpenIddictOptions(OpenIddictServerBuilder options, X509Certificate2? cert,
-            AuthenticationModuleOptions moduleOptions, GeexCoreModuleOptions geexCoreModuleOptions)
-        {
-            options.Configure(x =>
-            {
-                ConfigTokenValidationParameters(x.TokenValidationParameters, cert, moduleOptions, geexCoreModuleOptions);
-                x.IgnoreEndpointPermissions = true;
-                x.IgnoreResponseTypePermissions = true;
-                x.IgnoreGrantTypePermissions = true;
-                x.IgnoreScopePermissions = true;
-            });
-        }
-
-        private void ConfigureOpenIddictAspNetCore(OpenIddictServerBuilder options)
-        {
-            var aspNetCoreBuilder = options.UseAspNetCore();
-            aspNetCoreBuilder
-                .EnableAuthorizationEndpointPassthrough()
-                .EnableLogoutEndpointPassthrough()
-                .EnableTokenEndpointPassthrough()
-                .EnableUserinfoEndpointPassthrough()
-                .EnableVerificationEndpointPassthrough()
-                .EnableErrorPassthrough()
-                .DisableTransportSecurityRequirement();
-        }
-
         private void ConfigureAuthentication(IServiceCollection services, AuthenticationBuilder authenticationBuilder,
             X509Certificate2 cert, AuthenticationModuleOptions moduleOptions, GeexCoreModuleOptions geexCoreModuleOptions)
         {
@@ -431,7 +422,7 @@ namespace Geex.Extensions.Authentication
             {
                 var signingCredentials = serviceProvider.GetService<SigningCredentials>();
                 return new UserTokenGenerateOptions(
-                    cert?.Issuer,
+                    new Uri(geexCoreModuleOptions.Host).ToString(),
                     moduleOptions.ValidAudience,
                     signingCredentials,
                     TimeSpan.FromSeconds(moduleOptions.TokenExpireInSeconds));
@@ -453,10 +444,10 @@ namespace Geex.Extensions.Authentication
             parameters.RequireSignedTokens = parameters.ValidateIssuerSigningKey = securityKey != null;
             parameters.IssuerSigningKey = securityKey;
 
-            parameters.ValidateIssuer = !string.IsNullOrEmpty(cert?.Issuer);
-            if (!string.IsNullOrEmpty(cert?.Issuer))
+            parameters.ValidateIssuer = parameters.ValidateIssuer;
+            if (parameters.ValidateIssuer)
             {
-                parameters.ValidIssuers = [cert.Issuer, new Uri(geexCoreModuleOptions.Host).ToString()];
+                parameters.ValidIssuers = [new Uri(geexCoreModuleOptions.Host).ToString()];
             }
 
             parameters.ValidateAudience = !authOptions.ValidAudience.IsNullOrEmpty();

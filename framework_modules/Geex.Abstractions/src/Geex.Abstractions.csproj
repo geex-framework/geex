@@ -21,16 +21,16 @@
         <PackageReference Include="fasterflect" Version="3.0.0" />
         <PackageReference Include="Flurl.Http" Version="3.2.3" />
         <PackageReference Include="HonkSharp" Version="1.0.3" />
-        <PackageReference Include="Geex.HotChocolate.AspNetCore" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.AspNetCore.Authorization" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.Data" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.Language" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.Stitching" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.Stitching.Redis" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.Subscriptions.InMemory" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.Types.Scalars" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.Types.Scalars.Upload" Version="13.9.15-geex-4" />
-        <PackageReference Include="Geex.HotChocolate.Validation" Version="13.9.15-geex-4" />
+        <PackageReference Include="HotChocolate.AspNetCore" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Data" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Language" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Stitching" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Stitching.Redis" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Subscriptions.InMemory" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Types.Scalars" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Types.Scalars.Upload" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Validation" Version="13.9.14" />
         <PackageReference Include="Humanizer.Core" Version="2.14.1" />
         <PackageReference Include="ImpromptuInterface" Version="8.0.6" />
         <PackageReference Include="Lib.Harmony" Version="2.4.1" />

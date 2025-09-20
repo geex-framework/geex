@@ -198,16 +198,14 @@ namespace Geex.Extensions.Authentication.Core.Utils
             {
                 claimsPrincipal = (await context.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
 
-                // Also sign in to Cookie scheme to maintain login state
-                await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+                // Remove Cookie scheme sign-in: Token endpoint should not write browser cookies.
             }
             else if (request.IsRefreshTokenGrantType())
             {
                 // Retrieve the claims principal stored in the refresh token.
                 claimsPrincipal = (await context.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
 
-                // Also sign in to Cookie scheme to maintain login state
-                await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincipal);
+                // Remove Cookie scheme sign-in: Token endpoint should not write browser cookies.
             }
 
             // Use OpenIddict authentication scheme to generate and return tokens
