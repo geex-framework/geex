@@ -20,6 +20,10 @@ namespace Geex.Extensions.Identity.Gql
         }
 
         public async Task<IRole> CreateRole(CreateRoleRequest request) => await _uow.Request(request);
+        
+        public async Task<IRole> UpdateRole(UpdateRoleRequest request) => await _uow.Request(request);
+        
+        public async Task<IRole> CopyRole(CopyRoleRequest request) => await _uow.Request(request);
 
         public async Task<bool> SetRoleDefault(
            SetRoleDefaultRequest request)

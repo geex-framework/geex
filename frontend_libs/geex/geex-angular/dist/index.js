@@ -30,6 +30,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
+  ExtensionModule: () => ExtensionModule,
   Geex: () => Geex,
   LoginProviderEnum: () => LoginProviderEnum,
   OrgTypeEnum: () => OrgTypeEnum,
@@ -66,6 +67,7 @@ var LoginProviderEnum = {
 var OrgTypeEnum = {
   Default: "Default"
 };
+var ExtensionModule = {};
 var GQL_CHECK_TENANT = import_graphql_tag.default`mutation checkTenant($code: String!) { checkTenant(code: $code) { id code name isEnabled createdOn } }`;
 var GQL_FEDERATE_AUTH = import_graphql_tag.default`mutation federateAuthenticate(
   $code: String!
@@ -166,7 +168,7 @@ function createAuthModule(injector) {
   const module2 = {
     init: async () => {
       try {
-        let userData = await module2.loadUserData();
+        const userData = await module2.loadUserData();
         user.set(userData ?? null);
       } catch (err) {
         console.error(err);
@@ -203,46 +205,59 @@ function createAuthModule(injector) {
 function createIdentityModule(injector) {
   const orgsSignal = (0, import_core.signal)([]);
   const userOwnedOrgsSignal = (0, import_core.signal)([]);
-  return {
+  const module2 = {
     orgs: orgsSignal,
     userOwnedOrgs: userOwnedOrgsSignal,
-    init() {
-      const orgs$ = injector.get(import_apollo_angular.Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe((0, import_rxjs.map)((res) => (0, import_util.deepCopy)(res.data.orgs.items)));
-      orgs$.subscribe((orgs) => {
-        (0, import_core.runInInjectionContext)(injector, () => {
-          orgsSignal.set(orgs);
-          const userData = geex.auth.user();
-          let allOwned = [];
-          if (orgs?.length && userData) {
-            if (userData.id === "000000000000000000000001") {
-              allOwned = (0, import_util.deepCopy)(orgs);
-            } else {
-              const ownedCodes = userData.orgs.map((x) => x.code);
-              allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
+    async init() {
+      try {
+        const orgs$ = injector.get(import_apollo_angular.Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe((0, import_rxjs.map)((res) => (0, import_util.deepCopy)(res.data.orgs.items)));
+        orgs$.subscribe((orgs) => {
+          (0, import_core.runInInjectionContext)(injector, () => {
+            orgsSignal.set(orgs);
+            const userData = geex.auth.user();
+            let allOwned = [];
+            if (orgs?.length && userData) {
+              if (userData.id === "000000000000000000000001") {
+                allOwned = (0, import_util.deepCopy)(orgs);
+              } else {
+                const ownedCodes = userData.orgs.map((x) => x.code);
+                allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
+              }
             }
-          }
-          userOwnedOrgsSignal.set(allOwned);
+            userOwnedOrgsSignal.set(allOwned);
+          });
         });
-      });
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
+  return module2;
 }
 function createMessagingModule(injector) {
-  return {
-    init: async () => {
-      return;
+  const module2 = {
+    async init() {
+      try {
+        await geex.auth.init();
+        if (injector.get(import_angular_oauth2_oidc.OAuthService).hasValidAccessToken()) {
+          const subClient = injector.get(import_apollo_angular.Apollo).use("subscription");
+          subClient.subscribe({ query: GQL_ON_PUBLIC_NOTIFY }).pipe((0, import_rxjs.map)((res) => res?.data?.onPublicNotify)).subscribe((notify) => {
+            module2.onPublicNotify(notify);
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
     },
-    onPublicNotify() {
-      const subClient = injector.get(import_apollo_angular.Apollo).use("subscription");
-      subClient.subscribe({ query: GQL_ON_PUBLIC_NOTIFY }).pipe((0, import_rxjs.map)((res) => res?.data?.onPublicNotify)).subscribe((notify) => {
-        console.log("Public notify", notify);
-      });
+    onPublicNotify(notify) {
+      console.log("Public notify", notify);
     }
   };
+  return module2;
 }
 function createSettingsModule(injector) {
   const settingsSignal = (0, import_core.signal)([]);
-  return {
+  const module2 = {
     settings: settingsSignal,
     async init() {
       const res = await (0, import_rxjs.firstValueFrom)(
@@ -252,6 +267,7 @@ function createSettingsModule(injector) {
       settingsSignal.set(settings);
     }
   };
+  return module2;
 }
 function createUiModule(injector) {
   const fullScreenSignal = (0, import_core.signal)(false);
@@ -259,55 +275,60 @@ function createUiModule(injector) {
     (0, import_operators.debounceTime)(200),
     (0, import_operators.switchMap)(async () => window.innerHeight / window.innerWidth >= 1.5)
   ));
-  return {
+  const module2 = {
     fullScreen: fullScreenSignal,
     isMobile,
-    activeRoutedComponent: void 0
+    activeRoutedComponent: void 0,
+    async init() {
+      return;
+    }
   };
+  return module2;
 }
 
 // src/geex.ts
 var geex;
 var Geex = new import_core2.InjectionToken("Geex");
-function configGeex(injector, overrides) {
+function configGeex(injector, overrides = {}) {
+  const modules = {
+    ...overrides
+  };
   (0, import_core2.runInInjectionContext)(injector, () => {
-    const modules = {
-      init: async () => {
-        const entries = Object.entries(modules).filter(([key]) => key !== "init");
-        await Promise.all(
-          entries.map(async ([, mod]) => {
-            const maybeInit = mod.init;
-            if (typeof maybeInit === "function") {
-              try {
-                await maybeInit();
-              } catch (err) {
-                console.error(err);
-              }
-            }
-          })
-        );
-      },
-      tenant: createTenantModule(injector),
-      auth: createAuthModule(injector),
-      identity: createIdentityModule(injector),
-      messaging: createMessagingModule(injector),
-      settings: createSettingsModule(injector),
-      ui: createUiModule(injector)
-    };
-    if (overrides) {
-      Object.assign(modules, overrides);
-    }
+    modules.init ?? (modules.init = async () => {
+      const entries = Object.entries(modules).filter(([key]) => key !== "init");
+      return Object.fromEntries(await Promise.all(
+        entries.map(async ([key, mod]) => {
+          const maybeInit = mod.init;
+          try {
+            return [key, await maybeInit()];
+          } catch (err) {
+            console.error(err);
+            return [key, null];
+          }
+        })
+      ));
+    });
+    modules.tenant ?? (modules.tenant = createTenantModule(injector));
+    modules.auth ?? (modules.auth = createAuthModule(injector));
+    modules.identity ?? (modules.identity = createIdentityModule(injector));
+    modules.messaging ?? (modules.messaging = createMessagingModule(injector));
+    modules.settings ?? (modules.settings = createSettingsModule(injector));
+    modules.ui ?? (modules.ui = createUiModule(injector));
     geex = modules;
   });
 }
 
 // src/provide-geex.ts
-function provideGeex(overrides) {
+function provideGeex(overrides = {}, extensions = {}) {
   return [
     {
       provide: Geex,
       useFactory: (injector) => {
-        configGeex(injector, overrides);
+        const mergedModules = {
+          ...extensions,
+          ...overrides
+        };
+        configGeex(injector, mergedModules);
         return geex;
       },
       deps: [import_core3.Injector]
@@ -316,6 +337,7 @@ function provideGeex(overrides) {
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  ExtensionModule,
   Geex,
   LoginProviderEnum,
   OrgTypeEnum,

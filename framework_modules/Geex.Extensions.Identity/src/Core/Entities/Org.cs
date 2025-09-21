@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Geex.MultiTenant;
 using Geex.Storage;
 using Geex.Validation;
@@ -98,13 +99,65 @@ public partial class Org : Entity<Org>, ITenantFilteredEntity, IOrg
 
     /// <param name="cancellation"></param>
     /// <inheritdoc />
-    public override Task<long> DeleteAsync(CancellationToken cancellation = default)
+    public override async Task<long> DeleteAsync(CancellationToken cancellation = default)
     {
-        return base.DeleteAsync(cancellation);
+        if (this.DbContext.Query<User>().Any(x => x.OrgCodes.Contains(this.Code)))
+        {
+            throw new BusinessException($"组织{this.ToString()}中存在用户，不能删除, 请先移除用户");
+        }
+        long result = 0;
+        var subs = this.DirectSubOrgs.ToList();
+        foreach (var sub in subs)
+        {
+            result += await sub.DeleteAsync(cancellation);
+        }
+
+        result += await base.DeleteAsync(cancellation);
+        return result;
+    }
+
+    /// <summary>
+    ///     更新组织信息
+    /// </summary>
+    /// <param name="name">组织名称</param>
+    /// <param name="code">组织编码</param>
+    /// <param name="orgType">组织类型</param>
+    public void UpdateOrg(string? name = null, string? code = null, OrgTypeEnum? orgType = null)
+    {
+        if (!name.IsNullOrEmpty())
+            Name = name;
+
+        if (!code.IsNullOrEmpty() && code != Code)
+            SetCode(code);
+
+        if (orgType != null)
+            OrgType = orgType;
+    }
+
+    /// <summary>
+    ///     移动组织到新的父级
+    /// </summary>
+    /// <param name="newParentOrgCode">新的父组织编码</param>
+    public void MoveToParent(string newParentOrgCode)
+    {
+        var currentCode = Code;
+        var parentPrefix = ParentOrgCode;
+
+        // 构建新的编码
+        var newCode = newParentOrgCode.IsNullOrEmpty()
+            ? currentCode.Split('.').LastOrDefault()
+            : $"{newParentOrgCode}.{currentCode.Split('.').LastOrDefault()}";
+
+        SetCode(newCode);
     }
 
     public override async Task<ValidationResult> Validate(CancellationToken cancellation = default)
     {
         return ValidationResult.Success;
+    }
+
+    public override string ToString()
+    {
+        return $"{Name}[{Code}]";
     }
 }

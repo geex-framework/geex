@@ -83,5 +83,19 @@ namespace Geex.Extensions.Identity
         /// </summary>
         /// <param name="newOrgCode"></param>
         void SetCode(string newOrgCode);
+
+        /// <summary>
+        ///     更新组织信息
+        /// </summary>
+        /// <param name="name">组织名称</param>
+        /// <param name="code">组织编码</param>
+        /// <param name="orgType">组织类型</param>
+        void UpdateOrg(string? name = null, string? code = null, OrgTypeEnum? orgType = null);
+
+        /// <summary>
+        ///     移动组织到新的父级
+        /// </summary>
+        /// <param name="newParentOrgCode">新的父组织编码</param>
+        void MoveToParent(string newParentOrgCode);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,9 @@ namespace Geex.Extensions.Identity.Core.Handlers
     public class OrgHandler :
         IRequestHandler<QueryRequest<IOrg>, IQueryable<IOrg>>,
         IRequestHandler<CreateOrgRequest, IOrg>,
+        IRequestHandler<UpdateOrgRequest, IOrg>,
+        IRequestHandler<MoveOrgRequest, bool>,
+        IRequestHandler<ImportOrgRequest, IEnumerable<IOrg>>,
         IRequestHandler<FixUserOrgRequest, bool>,
         IEventHandler<OrgCodeChangedEvent>,
         IEventHandler<EntityCreatedEvent<IOrg>>,
@@ -110,6 +114,65 @@ namespace Geex.Extensions.Identity.Core.Handlers
                 Console.WriteLine(e);
             }
             return true;
+        }
+
+        /// <summary>Handles a request</summary>
+        /// <param name="request">The request</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Response from the request</returns>
+        public virtual async Task<IOrg> Handle(UpdateOrgRequest request, CancellationToken cancellationToken)
+        {
+            var org = await Uow.Query<Org>().OneAsync(request.Id, cancellationToken: cancellationToken);
+            org.UpdateOrg(request.Name, request.Code, request.OrgType);
+            return org;
+        }
+
+        /// <summary>Handles a request</summary>
+        /// <param name="request">The request</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Response from the request</returns>
+        public virtual async Task<bool> Handle(MoveOrgRequest request, CancellationToken cancellationToken)
+        {
+            var org = await Uow.Query<Org>().OneAsync(request.Id, cancellationToken: cancellationToken);
+            org.MoveToParent(request.NewParentOrgCode);
+            return true;
+        }
+
+        /// <summary>Handles a request</summary>
+        /// <param name="request">The request</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Response from the request</returns>
+        public virtual async Task<IEnumerable<IOrg>> Handle(ImportOrgRequest request, CancellationToken cancellationToken)
+        {
+            var createdOrgs = new List<IOrg>();
+            
+            foreach (var orgItem in request.OrgItems)
+            {
+                // 检查组织是否已存在
+                var existingOrg = Uow.Query<Org>().FirstOrDefault(x => x.Code == orgItem.Code);
+                if (existingOrg != null)
+                {
+                    // 更新现有组织
+                    existingOrg.UpdateOrg(orgItem.Name, orgItem.Code, orgItem.OrgType);
+                    createdOrgs.Add(existingOrg);
+                }
+                else
+                {
+                    // 创建新组织
+                    var newOrg = new Org(orgItem.Code, orgItem.Name, orgItem.OrgType);
+                    Uow.Attach(newOrg);
+                    
+                    // 如果指定了父组织，则调整编码
+                    if (!orgItem.ParentOrgCode.IsNullOrEmpty())
+                    {
+                        newOrg.MoveToParent(orgItem.ParentOrgCode);
+                    }
+                    
+                    createdOrgs.Add(newOrg);
+                }
+            }
+            
+            return createdOrgs;
         }
 
         /// <inheritdoc />

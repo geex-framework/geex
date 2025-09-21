@@ -1,5 +1,5 @@
 import { InjectionToken, Injector, runInInjectionContext, signal } from "@angular/core";
-import type { GeexModule, GeexModules } from "./modules";
+import type { GeexModule, GeexModules, ExtensionModule } from "./modules";
 import {
   createTenantModule,
   createAuthModule,
@@ -9,7 +9,9 @@ import {
   createUiModule,
 } from "./modules";
 
-export type GeexOverrides<TExtensionModules extends Record<string, GeexModule> = {}> = Partial<GeexModules<TExtensionModules>>;
+export type GeexOverrides<TExtensionModules extends Record<string, GeexModule> = {}> = Partial<Omit<GeexModules<TExtensionModules>, "init">>;
+
+export type GeexExtensions<TExtensionModules extends Record<string, GeexModule> = {}> = Partial<TExtensionModules>;
 
 export let geex: GeexModules;
 export let Geex = new InjectionToken<GeexModules>("Geex");
@@ -19,34 +21,36 @@ export let Geex = new InjectionToken<GeexModules>("Geex");
  * @param deps   Required runtime services
  * @param overrides  Custom module overrides – properties will be merged into generated modules
  */
-export function configGeex<TExtensionModules extends Record<string, GeexModule> = {}>(injector: Injector, overrides?: GeexOverrides<TExtensionModules>) {
+export function configGeex<TExtensionModules extends Record<string, GeexModule> = ExtensionModule>(
+  injector: Injector,
+  overrides: GeexOverrides<TExtensionModules> = {} as GeexOverrides<TExtensionModules>,
+) {
+  // Start with an empty collection and merge in overrides later (overrides have higher priority)
+  const modules: GeexModules<TExtensionModules> = {
+    ...(overrides as Partial<GeexModules<TExtensionModules>>) as any,
+  } as GeexModules<TExtensionModules>;
   runInInjectionContext(injector, () => {
-    const modules: GeexModules = {
-      init: async () => {
-        const entries = Object.entries(modules).filter(([key]) => key !== "init");
-        await Promise.all(
-          entries.map(async ([, mod]) => {
-            const maybeInit = (mod as GeexModule).init;
-            if (typeof maybeInit === "function") {
-              try {
-                await maybeInit();
-              } catch (err) {
-                console.error(err);
-              }
-            }
-          })
-        );
-      },
-      tenant: createTenantModule(injector),
-      auth: createAuthModule(injector),
-      identity: createIdentityModule(injector),
-      messaging: createMessagingModule(injector),
-      settings: createSettingsModule(injector),
-      ui: createUiModule(injector),
+    modules.init ??= async () => {
+      const entries = Object.entries(modules).filter(([key]) => key !== "init");
+      return Object.fromEntries(await Promise.all(
+        entries.map(async ([key, mod]) => {
+          const maybeInit = (mod as GeexModule).init;
+          try {
+            return [key, await maybeInit()]
+          } catch (err) {
+            console.error(err);
+            return [key, null];
+          }
+        })
+      ));
     };
-    if (overrides) {
-      Object.assign(modules, overrides);
-    }
+    modules.tenant ??= createTenantModule(injector);
+    modules.auth ??= createAuthModule(injector);
+    modules.identity ??= createIdentityModule(injector);
+    modules.messaging ??= createMessagingModule(injector);
+    modules.settings ??= createSettingsModule(injector);
+    modules.ui ??= createUiModule(injector);
+
     geex = modules;
   });
 }

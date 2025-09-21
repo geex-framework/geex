@@ -21,6 +21,7 @@ var LoginProviderEnum = {
 var OrgTypeEnum = {
   Default: "Default"
 };
+var ExtensionModule = {};
 var GQL_CHECK_TENANT = gql`mutation checkTenant($code: String!) { checkTenant(code: $code) { id code name isEnabled createdOn } }`;
 var GQL_FEDERATE_AUTH = gql`mutation federateAuthenticate(
   $code: String!
@@ -121,7 +122,7 @@ function createAuthModule(injector) {
   const module = {
     init: async () => {
       try {
-        let userData = await module.loadUserData();
+        const userData = await module.loadUserData();
         user.set(userData ?? null);
       } catch (err) {
         console.error(err);
@@ -158,46 +159,59 @@ function createAuthModule(injector) {
 function createIdentityModule(injector) {
   const orgsSignal = signal([]);
   const userOwnedOrgsSignal = signal([]);
-  return {
+  const module = {
     orgs: orgsSignal,
     userOwnedOrgs: userOwnedOrgsSignal,
-    init() {
-      const orgs$ = injector.get(Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe(map((res) => deepCopy(res.data.orgs.items)));
-      orgs$.subscribe((orgs) => {
-        runInInjectionContext(injector, () => {
-          orgsSignal.set(orgs);
-          const userData = geex.auth.user();
-          let allOwned = [];
-          if (orgs?.length && userData) {
-            if (userData.id === "000000000000000000000001") {
-              allOwned = deepCopy(orgs);
-            } else {
-              const ownedCodes = userData.orgs.map((x) => x.code);
-              allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
+    async init() {
+      try {
+        const orgs$ = injector.get(Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe(map((res) => deepCopy(res.data.orgs.items)));
+        orgs$.subscribe((orgs) => {
+          runInInjectionContext(injector, () => {
+            orgsSignal.set(orgs);
+            const userData = geex.auth.user();
+            let allOwned = [];
+            if (orgs?.length && userData) {
+              if (userData.id === "000000000000000000000001") {
+                allOwned = deepCopy(orgs);
+              } else {
+                const ownedCodes = userData.orgs.map((x) => x.code);
+                allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
+              }
             }
-          }
-          userOwnedOrgsSignal.set(allOwned);
+            userOwnedOrgsSignal.set(allOwned);
+          });
         });
-      });
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
+  return module;
 }
 function createMessagingModule(injector) {
-  return {
-    init: async () => {
-      return;
+  const module = {
+    async init() {
+      try {
+        await geex.auth.init();
+        if (injector.get(OAuthService).hasValidAccessToken()) {
+          const subClient = injector.get(Apollo).use("subscription");
+          subClient.subscribe({ query: GQL_ON_PUBLIC_NOTIFY }).pipe(map((res) => res?.data?.onPublicNotify)).subscribe((notify) => {
+            module.onPublicNotify(notify);
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
     },
-    onPublicNotify() {
-      const subClient = injector.get(Apollo).use("subscription");
-      subClient.subscribe({ query: GQL_ON_PUBLIC_NOTIFY }).pipe(map((res) => res?.data?.onPublicNotify)).subscribe((notify) => {
-        console.log("Public notify", notify);
-      });
+    onPublicNotify(notify) {
+      console.log("Public notify", notify);
     }
   };
+  return module;
 }
 function createSettingsModule(injector) {
   const settingsSignal = signal([]);
-  return {
+  const module = {
     settings: settingsSignal,
     async init() {
       const res = await firstValueFrom(
@@ -207,6 +221,7 @@ function createSettingsModule(injector) {
       settingsSignal.set(settings);
     }
   };
+  return module;
 }
 function createUiModule(injector) {
   const fullScreenSignal = signal(false);
@@ -214,55 +229,60 @@ function createUiModule(injector) {
     debounceTime(200),
     switchMap(async () => window.innerHeight / window.innerWidth >= 1.5)
   ));
-  return {
+  const module = {
     fullScreen: fullScreenSignal,
     isMobile,
-    activeRoutedComponent: void 0
+    activeRoutedComponent: void 0,
+    async init() {
+      return;
+    }
   };
+  return module;
 }
 
 // src/geex.ts
 var geex;
 var Geex = new InjectionToken("Geex");
-function configGeex(injector, overrides) {
+function configGeex(injector, overrides = {}) {
+  const modules = {
+    ...overrides
+  };
   runInInjectionContext2(injector, () => {
-    const modules = {
-      init: async () => {
-        const entries = Object.entries(modules).filter(([key]) => key !== "init");
-        await Promise.all(
-          entries.map(async ([, mod]) => {
-            const maybeInit = mod.init;
-            if (typeof maybeInit === "function") {
-              try {
-                await maybeInit();
-              } catch (err) {
-                console.error(err);
-              }
-            }
-          })
-        );
-      },
-      tenant: createTenantModule(injector),
-      auth: createAuthModule(injector),
-      identity: createIdentityModule(injector),
-      messaging: createMessagingModule(injector),
-      settings: createSettingsModule(injector),
-      ui: createUiModule(injector)
-    };
-    if (overrides) {
-      Object.assign(modules, overrides);
-    }
+    modules.init ?? (modules.init = async () => {
+      const entries = Object.entries(modules).filter(([key]) => key !== "init");
+      return Object.fromEntries(await Promise.all(
+        entries.map(async ([key, mod]) => {
+          const maybeInit = mod.init;
+          try {
+            return [key, await maybeInit()];
+          } catch (err) {
+            console.error(err);
+            return [key, null];
+          }
+        })
+      ));
+    });
+    modules.tenant ?? (modules.tenant = createTenantModule(injector));
+    modules.auth ?? (modules.auth = createAuthModule(injector));
+    modules.identity ?? (modules.identity = createIdentityModule(injector));
+    modules.messaging ?? (modules.messaging = createMessagingModule(injector));
+    modules.settings ?? (modules.settings = createSettingsModule(injector));
+    modules.ui ?? (modules.ui = createUiModule(injector));
     geex = modules;
   });
 }
 
 // src/provide-geex.ts
-function provideGeex(overrides) {
+function provideGeex(overrides = {}, extensions = {}) {
   return [
     {
       provide: Geex,
       useFactory: (injector) => {
-        configGeex(injector, overrides);
+        const mergedModules = {
+          ...extensions,
+          ...overrides
+        };
+        configGeex(injector, mergedModules);
         return geex;
       },
       deps: [Injector3]
@@ -270,6 +290,7 @@ function provideGeex(overrides) {
   ];
 }
 export {
+  ExtensionModule,
   Geex,
   LoginProviderEnum,
   OrgTypeEnum,

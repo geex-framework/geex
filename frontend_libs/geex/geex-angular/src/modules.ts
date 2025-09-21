@@ -117,7 +117,7 @@ export interface MessagingModule extends GeexModule {
   /**
    * Subscribe to server broadcast events.
    */
-  onPublicNotify(): void;
+  onPublicNotify(notify: any): void;
 }
 
 export interface SettingsModule extends GeexModule {
@@ -134,9 +134,16 @@ export interface UiModule extends GeexModule {
   /** Currently active routed component (framework dependent) */
   activeRoutedComponent?: any;
 }
+export const ExtensionModule: Record<string, any> & {
+} = {
+};
 
-export type GeexModules<TExtensionModules extends Record<string, GeexModule> = {}> = {
-  init: () => Promise<any>;
+export type ExtensionModule = typeof ExtensionModule;
+
+
+
+export type GeexModules<TExtensionModules extends ExtensionModule = ExtensionModule> = {
+  init(): Promise<{ [K in keyof GeexModules<TExtensionModules>]: any }>;
   tenant: TenantModule;
   auth: AuthModule;
   identity: IdentityModule;
@@ -146,13 +153,13 @@ export type GeexModules<TExtensionModules extends Record<string, GeexModule> = {
 } & TExtensionModules;
 
 
-export type GeexModule<TExtension = any> = {
+export type GeexModule<TExtension = ExtensionModule> = {
   /**
    * A module combines both reactive state (signals) and business logic methods.
    * Concrete modules can extend this interface to expose their own signals & methods.
    * This empty base exists mainly for typing convenience and future extension.
    */
-  init?: () => Promise<any>;
+  init: () => Promise<any>;
 } & TExtension;
 
 // -------------------------------------------------------------
@@ -223,7 +230,7 @@ const GQL_INIT_SETTINGS = gql`query initSettings { initSettings { id name value 
 
 export function createTenantModule(injector: Injector): TenantModule {
   const current = signal<Tenant | null>(null);
-  const module = {
+  const module: TenantModule = {
     init: async () => {
       try {
         const tenantCode = injector.get(CookieService).get("__tenant");
@@ -258,14 +265,14 @@ export function createTenantModule(injector: Injector): TenantModule {
     },
   } as TenantModule;
   return module;
-}
+};
 
 export function createAuthModule(injector: Injector): AuthModule {
   const user = signal<User | null>(null);
-  const module = {
+  const module: AuthModule = {
     init: async () => {
       try {
-        let userData = await module.loadUserData();
+        const userData = await module.loadUserData();
         user.set(userData ?? null);
       }
       catch (err) {
@@ -283,7 +290,7 @@ export function createAuthModule(injector: Injector): AuthModule {
         await oAuthService.loadUserProfile();
         const profile = oAuthService.getIdentityClaims() as { login_provider: string } | null;
         if (profile) {
-          type FederateAuthResponse = { federateAuthenticate: {user: User} };
+          type FederateAuthResponse = { federateAuthenticate: { user: User } };
           const result = await firstValueFrom(injector.get(Apollo)
             .mutate<FederateAuthResponse>({
               mutation: GQL_FEDERATE_AUTH,
@@ -302,59 +309,71 @@ export function createAuthModule(injector: Injector): AuthModule {
     },
   } as AuthModule;
   return module;
-}
+};
 
 export function createIdentityModule(injector: Injector): IdentityModule {
   const orgsSignal = signal<Org[]>([]);
   const userOwnedOrgsSignal = signal<Org[]>([]);
-  return {
+  const module: IdentityModule = {
     orgs: orgsSignal,
     userOwnedOrgs: userOwnedOrgsSignal,
-    init() {
-      const orgs$ = injector.get(Apollo)
-        .watchQuery<{ orgs: { items: Org[] } }>({ query: GQL_ORGS_CACHE })
-        .valueChanges.pipe(map(res => deepCopy(res.data.orgs.items) as Org[]));
-      orgs$.subscribe((orgs: Org[]) => {
-        runInInjectionContext(injector, () => {
-          orgsSignal.set(orgs);
-          const userData = geex.auth.user();
-          let allOwned: Org[] = [];
-          if (orgs?.length && userData) {
-            if (userData.id === "000000000000000000000001") {
-              allOwned = deepCopy(orgs);
-            } else {
-              const ownedCodes = userData.orgs.map((x: any) => x.code);
-              allOwned = orgs.filter(o => ownedCodes.some(code => o.code.startsWith(code)));
+    async init() {
+      try {
+        const orgs$ = injector.get(Apollo)
+          .watchQuery<{ orgs: { items: Org[] } }>({ query: GQL_ORGS_CACHE })
+          .valueChanges.pipe(map(res => deepCopy(res.data.orgs.items) as Org[]));
+        orgs$.subscribe((orgs: Org[]) => {
+          runInInjectionContext(injector, () => {
+            orgsSignal.set(orgs);
+            const userData = geex.auth.user();
+            let allOwned: Org[] = [];
+            if (orgs?.length && userData) {
+              if (userData.id === "000000000000000000000001") {
+                allOwned = deepCopy(orgs);
+              } else {
+                const ownedCodes = userData.orgs.map((x: any) => x.code);
+                allOwned = orgs.filter(o => ownedCodes.some(code => o.code.startsWith(code)));
+              }
             }
-          }
-          userOwnedOrgsSignal.set(allOwned);
+            userOwnedOrgsSignal.set(allOwned);
+          });
         });
-      });
+      } catch (error) {
+        console.error(error);
+      }
     },
   };
+  return module;
 }
 
 export function createMessagingModule(injector: Injector): MessagingModule {
-  return {
-    init: async () => {
-      return;
+  const module: MessagingModule = {
+    async init() {
+      try {
+        await geex.auth.init();
+        if (injector.get(OAuthService).hasValidAccessToken()) {
+          const subClient = injector.get(Apollo).use("subscription");
+          subClient
+            .subscribe<{ onPublicNotify: any }>({ query: GQL_ON_PUBLIC_NOTIFY })
+            .pipe(map(res => res?.data?.onPublicNotify))
+            .subscribe(notify => {
+              module.onPublicNotify(notify);
+            });
+        }
+      } catch (err) {
+        console.error(err);
+      }
     },
-    onPublicNotify() {
-      const subClient = injector.get(Apollo).use("subscription");
-      subClient
-        .subscribe<{ onPublicNotify: any }>({ query: GQL_ON_PUBLIC_NOTIFY })
-        .pipe(map(res => res?.data?.onPublicNotify))
-        .subscribe(notify => {
-          // Implement business logic or leave for consumer override
-          console.log("Public notify", notify);
-        });
+    onPublicNotify(notify: any) {
+      console.log("Public notify", notify);
     },
-  } as MessagingModule;
+  };
+  return module;
 }
 
 export function createSettingsModule(injector: Injector): SettingsModule {
   const settingsSignal = signal<SettingItem[]>([]);
-  return {
+  const module: SettingsModule = {
     settings: settingsSignal,
     async init() {
       type InitSettingsResponse = { data: { initSettings: SettingItem[] } };
@@ -365,6 +384,7 @@ export function createSettingsModule(injector: Injector): SettingsModule {
       settingsSignal.set(settings);
     },
   };
+  return module;
 }
 
 export function createUiModule(injector: Injector): UiModule {
@@ -373,9 +393,13 @@ export function createUiModule(injector: Injector): UiModule {
     debounceTime(200),
     switchMap(async () => window.innerHeight / window.innerWidth >= 1.5)
   ));
-  return {
+  const module: UiModule = {
     fullScreen: fullScreenSignal,
     isMobile,
     activeRoutedComponent: undefined,
+    async init() {
+      return;
+    },
   };
+  return module;
 }

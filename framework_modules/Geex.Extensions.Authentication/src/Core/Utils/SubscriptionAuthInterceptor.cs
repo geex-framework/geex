@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using HotChocolate.AspNetCore;
 using HotChocolate.AspNetCore.Subscriptions;
 using HotChocolate.AspNetCore.Subscriptions.Protocols;
-using HotChocolate.AspNetCore.Subscriptions.Protocols.Apollo;
 using HotChocolate.Execution;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
@@ -32,11 +31,11 @@ namespace Geex.Extensions.Authentication.Core.Utils
 
         /// <inheritdoc />
         public async ValueTask<ConnectionStatus> OnConnectAsync(ISocketSession session, IOperationMessagePayload connectionInitMessage,
-            CancellationToken cancellationToken = new CancellationToken())
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var payload = (connectionInitMessage as InitializeConnectionMessage)?.Payload.GetValueOrDefault();
+                var payload = (connectionInitMessage as OperationMessage<System.Text.Json.JsonElement?>)?.Payload.GetValueOrDefault();
                 var jwtHeader = payload?.GetString(HeaderNames.Authorization) ?? payload?.GetString(HeaderNames.Authorization.ToLowerInvariant());
 
                 //if (string.IsNullOrEmpty(jwtHeader) || !jwtHeader.StartsWith("Bearer "))
@@ -73,13 +72,6 @@ namespace Geex.Extensions.Authentication.Core.Utils
                     return ConnectionStatus.Reject("Unauthoized(invalid token)");
                 }
 
-                //// Grab our User ID
-                //var userId = claims.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
-
-                //// Add it to our HttpContext
-                //connection.HttpContext.Items["userId"] = userId;
-
-                // Accept the websocket connection
                 return ConnectionStatus.Reject("Unauthoized(no token provided)");
             }
             catch (Exception ex)

@@ -1,4 +1,4 @@
-import { WritableSignal, Signal, Injector, InjectionToken, Provider } from '@angular/core';
+import { WritableSignal, Signal, Injector, Provider, InjectionToken } from '@angular/core';
 
 interface Tenant {
     /** Unique identifier */
@@ -89,7 +89,7 @@ interface MessagingModule extends GeexModule {
     /**
      * Subscribe to server broadcast events.
      */
-    onPublicNotify(): void;
+    onPublicNotify(notify: any): void;
 }
 interface SettingsModule extends GeexModule {
     settings: WritableSignal<SettingItem[]>;
@@ -102,8 +102,12 @@ interface UiModule extends GeexModule {
     /** Currently active routed component (framework dependent) */
     activeRoutedComponent?: any;
 }
-type GeexModules<TExtensionModules extends Record<string, GeexModule> = {}> = {
-    init: () => Promise<any>;
+declare const ExtensionModule: Record<string, any> & {};
+type ExtensionModule = typeof ExtensionModule;
+type GeexModules<TExtensionModules extends ExtensionModule = ExtensionModule> = {
+    init(): Promise<{
+        [K in keyof GeexModules<TExtensionModules>]: any;
+    }>;
     tenant: TenantModule;
     auth: AuthModule;
     identity: IdentityModule;
@@ -111,13 +115,13 @@ type GeexModules<TExtensionModules extends Record<string, GeexModule> = {}> = {
     settings: SettingsModule;
     ui: UiModule;
 } & TExtensionModules;
-type GeexModule<TExtension = any> = {
+type GeexModule<TExtension = ExtensionModule> = {
     /**
      * A module combines both reactive state (signals) and business logic methods.
      * Concrete modules can extend this interface to expose their own signals & methods.
      * This empty base exists mainly for typing convenience and future extension.
      */
-    init?: () => Promise<any>;
+    init: () => Promise<any>;
 } & TExtension;
 declare function createTenantModule(injector: Injector): TenantModule;
 declare function createAuthModule(injector: Injector): AuthModule;
@@ -126,24 +130,17 @@ declare function createMessagingModule(injector: Injector): MessagingModule;
 declare function createSettingsModule(injector: Injector): SettingsModule;
 declare function createUiModule(injector: Injector): UiModule;
 
-type GeexOverrides<TExtensionModules extends Record<string, GeexModule> = {}> = Partial<GeexModules<TExtensionModules>>;
+declare function provideGeex<TExtensionModules extends Record<string, GeexModule> = {}>(overrides?: Partial<GeexModules>, extensions?: TExtensionModules): Provider[];
+
+type GeexOverrides<TExtensionModules extends Record<string, GeexModule> = {}> = Partial<Omit<GeexModules<TExtensionModules>, "init">>;
+type GeexExtensions<TExtensionModules extends Record<string, GeexModule> = {}> = Partial<TExtensionModules>;
 declare let geex: GeexModules;
-declare let Geex: InjectionToken<{
-    init: () => Promise<any>;
-    tenant: TenantModule;
-    auth: AuthModule;
-    identity: IdentityModule;
-    messaging: MessagingModule;
-    settings: SettingsModule;
-    ui: UiModule;
-}>;
+declare let Geex: InjectionToken<GeexModules>;
 /**
  * Initialize geex singleton with concrete dependencies
  * @param deps   Required runtime services
  * @param overrides  Custom module overrides – properties will be merged into generated modules
  */
-declare function configGeex<TExtensionModules extends Record<string, GeexModule> = {}>(injector: Injector, overrides?: GeexOverrides<TExtensionModules>): void;
+declare function configGeex<TExtensionModules extends Record<string, GeexModule> = ExtensionModule>(injector: Injector, overrides?: GeexOverrides<TExtensionModules>): void;
 
-declare function provideGeex(overrides?: GeexOverrides): Provider[];
-
-export { type AuthModule, Geex, type GeexModule, type GeexModules, type GeexOverrides, type IdentityModule, LoginProviderEnum, type MessagingModule, type Org, OrgTypeEnum, type SettingItem, type SettingsModule, type Tenant, type TenantModule, type UiModule, type User, type UserOrgMembership, configGeex, createAuthModule, createIdentityModule, createMessagingModule, createSettingsModule, createTenantModule, createUiModule, geex, provideGeex };
+export { type AuthModule, ExtensionModule, Geex, type GeexExtensions, type GeexModule, type GeexModules, type GeexOverrides, type IdentityModule, LoginProviderEnum, type MessagingModule, type Org, OrgTypeEnum, type SettingItem, type SettingsModule, type Tenant, type TenantModule, type UiModule, type User, type UserOrgMembership, configGeex, createAuthModule, createIdentityModule, createMessagingModule, createSettingsModule, createTenantModule, createUiModule, geex, provideGeex };
