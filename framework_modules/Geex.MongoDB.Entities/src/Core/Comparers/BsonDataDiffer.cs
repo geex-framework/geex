@@ -320,9 +320,10 @@ namespace MongoDB.Entities.Core.Comparers
                 return basicCheckResult.Value;
 
             // 对于复杂类型的特殊处理
-            baseType ??= baseObj.GetType();
+            baseType = baseObj.GetType();
+            newType = newObj.GetType();
             if (Type.GetTypeCode(baseType) == TypeCode.Object)
-                return HandleComplexTypes(baseObj, newObj, baseType, newType ?? newObj.GetType());
+                return HandleComplexTypes(baseObj, newObj, baseType, newType);
 
             // 所有基础类型直接使用 Equals
             return baseObj.Equals(newObj);
