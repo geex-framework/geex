@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Requests.Accounting;
@@ -9,7 +10,7 @@ using HotChocolate.Types;
 
 namespace Geex.Extensions.Identity.Gql
 {
-    public sealed class UserMutation : MutationExtension<UserMutation>
+    public sealed class UserMutation : MutationExtension<UserMutation>, IHasDeleteMutation<User>
     {
         protected override void Configure(IObjectTypeDescriptor<UserMutation> descriptor)
         {
@@ -22,7 +23,6 @@ namespace Geex.Extensions.Identity.Gql
         public async Task<bool> AssignOrgs(AssignOrgRequest request) => await _uow.Request(request);
         public async Task<IUser> EditUser(EditUserRequest request) => await _uow.Request(request);
         public async Task<IUser> CreateUser(CreateUserRequest request) => await _uow.Request(request);
-        public async Task<bool> DeleteUser(DeleteUserRequest request) => await _uow.Request(request);
         public async Task<IUser> ResetUserPassword(ResetUserPasswordRequest request) => await _uow.Request(request);
 
         /// <summary>
