@@ -100,7 +100,7 @@ public interface IUnitOfWork : IRepository, IBus, IDisposable
     public Task<long> DeleteAsync<T>(IEnumerable<string> ids,
         CancellationToken cancellation = default) where T : IEntityBase;
 
-    public IDisposable StartExplicitTransaction();
+    public IAsyncDisposable StartExplicitTransaction();
     public bool IsInExplicitTransaction { get; }
     public Task CommitExplicitTransaction();
 }

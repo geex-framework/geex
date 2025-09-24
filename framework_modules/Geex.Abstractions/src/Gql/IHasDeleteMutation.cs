@@ -40,13 +40,12 @@ public interface IHasDeleteMutation<T> : IHasDeleteMutation where T : IEntityBas
         if (uow == null) throw new ArgumentNullException(nameof(uow));
 
         var entities = uow.Query<T>().Where(x => ids.Contains(x.Id)).ToArray();
-        using (uow.StartExplicitTransaction())
+        await using var _ = uow.StartExplicitTransaction();
+        foreach (var entity in entities)
         {
-            foreach (var entity in entities)
-            {
-                await entity.DeleteAsync();
-            }
+            await entity.DeleteAsync();
         }
+
         return true;
     }
 }
