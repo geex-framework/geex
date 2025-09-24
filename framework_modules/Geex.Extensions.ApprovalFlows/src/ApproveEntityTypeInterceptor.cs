@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+
 using Geex.Gql;
 using Geex.Gql.Types;
+
 using HotChocolate.Configuration;
 using HotChocolate.Language;
 using HotChocolate.Types.Descriptors;
@@ -14,7 +16,7 @@ namespace Geex.Extensions.ApprovalFlows
 {
     public class ApproveEntityTypeInterceptor : TypeInterceptor
     {
-        public Dictionary<Type, string> PatchedEntities = new Dictionary<Type, string>();
+        public Dictionary<Type, (Type implementation, string entityName)> PatchedEntities = new Dictionary<Type, (Type implementation, string entityName)>();
         /// <inheritdoc />
         public override void OnAfterMergeTypeExtensions()
         {
@@ -33,7 +35,7 @@ namespace Geex.Extensions.ApprovalFlows
                 {
                     entityName = entityName[1..];
                 }
-                PatchedEntities.Add(approveMutationType, entityName);
+                PatchedEntities.TryAdd(approveMutationType, (runtimeType, entityName));
             }
             base.OnAfterMergeTypeExtensions();
         }
@@ -50,9 +52,6 @@ namespace Geex.Extensions.ApprovalFlows
             var runtimeType = objectTypeDefinition.RuntimeType;
             if (typeof(IApproveEntity).IsAssignableFrom(runtimeType))
             {
-                // Apply entity configuration using reflection to call the generic ConfigEntity method
-                //Type descriptorType = typeof(IObjectTypeDescriptor<>).MakeGenericType(runtimeType);
-                //var objectTypeDescriptor = Activator.CreateInstance(descriptorType).As<IObjectTypeDescriptor<IApproveEntity>>();
                 objectTypeDefinition.Fields.Add(
                     new ObjectFieldDefinition(nameof(IApproveEntity.ApproveStatus),
                         type: completionContext.TypeInspector.GetTypeRef(typeof(ApproveStatus)),
@@ -61,15 +60,14 @@ namespace Geex.Extensions.ApprovalFlows
                     new ObjectFieldDefinition(nameof(IApproveEntity.Submittable),
                         type: TypeReference.Parse("Boolean"),
                         pureResolver: context => context.Parent<IApproveEntity>().Submittable));
-                //objectTypeDescriptor.Field(x => ((IApproveEntity)x).ApproveStatus);
-                //objectTypeDescriptor.Field(x => ((IApproveEntity)x).Submittable);
             }
 
             if (typeof(Mutation).IsAssignableFrom(runtimeType))
             {
 
-                foreach (var (mutationExtType, entityName) in PatchedEntities)
+                foreach (var (mutationExtType, data) in PatchedEntities)
                 {
+                    var (implementation, entityName) = data;
                     var hasApproveMutationType = mutationExtType.GetInterface(nameof(IHasApproveMutation));
                     var submit = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.Submit));
                     var approve = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.Approve));
@@ -81,10 +79,13 @@ namespace Geex.Extensions.ApprovalFlows
                         var fieldDefinition = new ObjectFieldDefinition($"{method.Name.ToCamelCase()}{entityName}",
                             type: TypeReference.Parse("Boolean"),
                             resolver: async (context) =>
-                                await (submit.Invoke(this, [
+                            {
+                                var instance = context.Service(implementation);
+                                return await (submit.Invoke(instance, [
                                     context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"),
                                     context.Service<IUnitOfWork>()
-                                ]) as Task<bool>));
+                                ]) as Task<bool>);
+                            });
                         fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("String[]")));
                         fieldDefinition.Arguments.Add(new InputFieldDefinition("remark", type: TypeReference.Parse("String")));
                         if (GeexTypeInterceptor.AuditTypes.Contains(mutationExtType))
@@ -93,48 +94,7 @@ namespace Geex.Extensions.ApprovalFlows
                         }
                         objectTypeDefinition.Fields.Add(fieldDefinition);
                     }
-
-                    //objectTypeDefinition.Fields.Add(fieldDefinition);
-                    //var submitFieldDescriptor = objectTypeDescriptor.Field($"submit{entityName}")
-                    //    .Type<BooleanType>()
-                    //    .Argument("ids", argumentDescriptor => argumentDescriptor.Type(typeof(string[])))
-                    //    .Argument("remark", argumentDescriptor => argumentDescriptor.Type(typeof(string)))
-                    //    .Resolve(resolver: async (context, token) =>
-                    //    {
-                    //        return await (submit.Invoke(this,
-                    //            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
-                    //    });
-                    //var approveFieldDescriptor = objectTypeDescriptor.Field($"approve{entityName}")
-                    //    .Type<BooleanType>()
-                    //    .Argument("ids", argumentDescriptor => argumentDescriptor.Type(typeof(string[])))
-                    //    .Argument("remark", argumentDescriptor => argumentDescriptor.Type(typeof(string)))
-                    //    .Resolve(resolver: async (context, token) =>
-                    //    {
-                    //        return await (approve.Invoke(this,
-                    //            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
-                    //    });
-                    //var unSubmitFieldDescriptor = objectTypeDescriptor.Field($"unSubmit{entityName}")
-                    //    .Type<BooleanType>()
-                    //    .Argument("ids", argumentDescriptor => argumentDescriptor.Type(typeof(string[])))
-                    //    .Argument("remark", argumentDescriptor => argumentDescriptor.Type(typeof(string)))
-                    //    .Resolve(resolver: async (context, token) =>
-                    //    {
-                    //        return await (unSubmit.Invoke(this,
-                    //            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
-                    //    })
-                    //    ;
-                    //var unApproveFieldDescriptor = objectTypeDescriptor.Field($"unApprove{entityName}")
-                    //    .Type<BooleanType>()
-                    //    .Argument("ids", argumentDescriptor => argumentDescriptor.Type(typeof(string[])))
-                    //    .Argument("remark", argumentDescriptor => argumentDescriptor.Type(typeof(string)))
-                    //    .Resolve(resolver: async (context, token) =>
-                    //    {
-                    //        return await (unApprove.Invoke(this,
-                    //            new object?[] { context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"), context.Service<IUnitOfWork>() }) as Task<bool>);
-                    //    });
-
                 }
-
             }
 
             base.OnBeforeCompleteType(completionContext, definition);

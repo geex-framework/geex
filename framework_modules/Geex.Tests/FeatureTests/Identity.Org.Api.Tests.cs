@@ -225,12 +225,12 @@ namespace Geex.Tests.FeatureTests
             // Act & Assert - Delete using GraphQL
             var client = this.SuperAdminClient;
             var query = """
-                mutation($id: String!) {
-                    deleteOrg(id: $id)
+                mutation($ids: [String!]!) {
+                    deleteOrg(ids: $ids)
                 }
                 """;
 
-            var (responseData, responseString) = await client.PostGqlRequest(query, new { id = orgId });
+            var (responseData, responseString) = await client.PostGqlRequest(query, new { ids = new List<string>() { orgId } });
 
             bool deleteResult = (bool)responseData["data"]["deleteOrg"];
             deleteResult.ShouldBeTrue();

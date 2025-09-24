@@ -1,7 +1,10 @@
 ﻿using System.Threading.Tasks;
+using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Requests.Accounting;
+using Geex.Gql;
 using Geex.Gql.Types;
+
 using HotChocolate.Types;
 
 namespace Geex.Extensions.Identity.Gql

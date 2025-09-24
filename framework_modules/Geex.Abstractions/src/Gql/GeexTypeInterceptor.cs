@@ -2,18 +2,24 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
+
 using Geex.Gql.Extensions;
 using Geex.Gql.Types;
 
 using HotChocolate;
 using HotChocolate.Configuration;
+using HotChocolate.Language;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 using HotChocolate.Types.Helpers;
+
 using Microsoft.Extensions.Logging;
 
 using MongoDB.Entities;
+
+using Open.Collections;
 
 namespace Geex.Gql
 {
@@ -24,6 +30,7 @@ namespace Geex.Gql
         public static HashSet<Type> AuditTypes { get; } = new HashSet<Type>();
         public static HashSet<Type> IgnoredTypes { get; } = new HashSet<Type>();
         public static HashSet<KeyValuePair<Type, Type>> OneOfConfigs { get; } = new HashSet<KeyValuePair<Type, Type>>();
+        public Dictionary<Type, (Type implementation, string entityName)> PatchedDeleteMutationEntities { get; } = new Dictionary<Type, (Type implementation, string entityName)>();
 
         private static readonly MethodInfo AddObjectTypeMethod = typeof(SchemaBuilderExtensions).GetMethods()
             .First(x => x is { Name: nameof(SchemaBuilderExtensions.AddObjectType), ContainsGenericParameters: true } &&
@@ -42,6 +49,31 @@ namespace Geex.Gql
             OneOfConfigs.GroupBy(x => x.Key).ToDictionary(x => x.Key, x => x.Select(y => y.Value).ToList());
 
         #endregion
+
+        public override void OnAfterMergeTypeExtensions()
+        {
+            // Process IHasDeleteMutation types
+            var hasDeleteMutationTypes = GeexModule.RootTypes.Where(x => x.IsAssignableTo<IHasDeleteMutation>());
+            foreach (var rootType in hasDeleteMutationTypes)
+            {
+                var runtimeType = rootType;
+                var deleteMutationType = runtimeType.GetInterfaces().FirstOrDefault(x => x.Name.StartsWith(
+                    $"{nameof(IHasDeleteMutation)}`1"));
+
+                if (deleteMutationType != null)
+                {
+                    var entityType = deleteMutationType.GenericTypeArguments[0];
+                    var entityName = entityType.Name;
+                    if (entityName.StartsWith("I") && char.IsUpper(entityName[1]))
+                    {
+                        entityName = entityName[1..];
+                    }
+                    PatchedDeleteMutationEntities.TryAdd(deleteMutationType, (runtimeType, entityName));
+                }
+            }
+
+            base.OnAfterMergeTypeExtensions();
+        }
 
         public override void OnCreateSchemaError(IDescriptorContext context, Exception error)
         {
@@ -135,6 +167,12 @@ namespace Geex.Gql
                 IgnoreEntityMethods(definition);
             }
 
+            // Process delete mutations for Mutation type
+            if (typeof(Mutation).IsAssignableFrom(runtimeType))
+            {
+                ProcessDeleteMutations(completionContext, definition);
+            }
+
             ProcessArgumentDefaults(completionContext, definition);
         }
 
@@ -161,6 +199,33 @@ namespace Geex.Gql
             //{
             //    field.Ignore = true;
             //}
+        }
+
+        private void ProcessDeleteMutations(ITypeCompletionContext completionContext, ObjectTypeDefinition definition)
+        {
+            foreach (var (mutationExtType, data) in PatchedDeleteMutationEntities)
+            {
+                var (implementation, entityName) = data;
+                var deleteMethod = mutationExtType?.GetMethod(nameof(IHasDeleteMutation<IEntityBase>.Delete));
+
+                if (deleteMethod != null)
+                {
+                    var fieldDefinition = new ObjectFieldDefinition($"delete{entityName}",
+                        type: TypeReference.Parse("Boolean"),
+                        resolver: async (context) =>
+                        {
+                            var ids = context.ArgumentValue<string[]>("ids");
+                            var uow = context.Service<IUnitOfWork>();
+
+                            var instance = context.Service(implementation);
+                            return await (deleteMethod.Invoke(instance, [ids, uow]) as Task<bool>);
+                        });
+
+                    fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("[String!]!")));
+
+                    definition.Fields.Add(fieldDefinition);
+                }
+            }
         }
 
         private void ProcessArgumentDefaults(ITypeCompletionContext completionContext, ObjectTypeDefinition definition)

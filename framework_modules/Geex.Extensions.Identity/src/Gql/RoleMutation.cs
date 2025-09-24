@@ -1,11 +1,13 @@
 ﻿using System.Threading.Tasks;
+using Geex.Extensions.Identity.Core.Entities;
 using Geex.Extensions.Identity.Requests;
+using Geex.Gql;
 using Geex.Gql.Types;
 using HotChocolate.Types;
 
 namespace Geex.Extensions.Identity.Gql
 {
-    public sealed class RoleMutation : MutationExtension<RoleMutation>
+    public sealed class RoleMutation : MutationExtension<RoleMutation>, IHasDeleteMutation<Role>
     {
         protected override void Configure(IObjectTypeDescriptor<RoleMutation> descriptor)
         {

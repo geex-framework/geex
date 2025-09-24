@@ -21,6 +21,8 @@ using MongoDB.Entities.Exceptions;
 using MongoDB.Entities.Interceptors;
 using MongoDB.Entities.Utilities;
 
+using Nito.Disposables;
+
 using ReadConcern = MongoDB.Driver.ReadConcern;
 using WriteConcern = MongoDB.Driver.WriteConcern;
 
@@ -831,7 +833,7 @@ namespace MongoDB.Entities
         /// 显式开启事务
         /// 显式开启的事务需要手动显式提交(或在Dispose的时候被回滚)
         /// </summary>
-        public virtual void StartExplicitTransaction()
+        public virtual IDisposable StartExplicitTransaction()
         {
             if (!Session.IsInTransaction && this.SupportTransaction)
             {
@@ -842,6 +844,14 @@ namespace MongoDB.Entities
             {
                 this.Logger.LogWarning("Failed to start explicit transaction, current session is already in a transaction or transaction is not supported.");
             }
+            return new Disposable(() =>
+            {
+                if (IsInExplicitTransaction && Session.IsInTransaction)
+                {
+                    IsInExplicitTransaction = false;
+                    Session.AbortTransaction(new CancellationTokenSource(3000).Token);
+                }
+            });
         }
         /// <summary>
         /// 是否开启显式事务
