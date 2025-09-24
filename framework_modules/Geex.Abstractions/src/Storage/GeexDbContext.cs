@@ -17,8 +17,10 @@ using MediatX;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using MongoDB.Driver;
 using MongoDB.Entities;
+using MongoDB.Entities.Core.Comparers;
 
 using Nito.AsyncEx.Synchronous;
 
@@ -28,8 +30,7 @@ namespace Geex.Storage
     {
         static GeexDbContext()
         {
-            //DbContext._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
-            //DbContext._compareLogic.Config.CustomComparers.Add(new GeexByteArrayComparer(RootComparerFactory.GetRootComparer()));
+            BsonDataDiffer._compareLogic.Config.CustomComparers.Add(new EnumerationComparer(RootComparerFactory.GetRootComparer()));
         }
 
         /// <inheritdoc />

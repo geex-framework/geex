@@ -7,13 +7,13 @@ using KellermanSoftware.CompareNetObjects;
 
 namespace Geex.MongoDB.Entities.Utilities
 {
-    public class GeexByteArrayComparer : BaseTypeComparer
+    public class ByteArrayComparer : BaseTypeComparer
     {
         /// <summary>
         /// Protected constructor that references the root comparer
         /// </summary>
         /// <param name="rootComparer">The root comparer.</param>
-        public GeexByteArrayComparer(RootComparer rootComparer)
+        public ByteArrayComparer(RootComparer rootComparer)
           : base(rootComparer)
         {
         }

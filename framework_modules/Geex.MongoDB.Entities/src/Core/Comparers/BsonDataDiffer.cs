@@ -11,6 +11,8 @@ using System.Text.Json.Nodes;
 using Geex;
 using Geex.MongoDB.Entities.Utilities;
 
+using KellermanSoftware.CompareNetObjects;
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Entities.Utilities;
@@ -187,6 +189,22 @@ namespace MongoDB.Entities.Core.Comparers
     /// </summary>
     public static class BsonDataDiffer
     {
+        static BsonDataDiffer()
+        {
+            BsonDataDiffer._compareLogic.Config.CustomComparers.Add(new JsonNodeComparer(RootComparerFactory.GetRootComparer()));
+            BsonDataDiffer._compareLogic.Config.CustomComparers.Add(new ByteArrayComparer(RootComparerFactory.GetRootComparer()));
+        }
+        public static readonly CompareLogic _compareLogic = new CompareLogic(new ComparisonConfig()
+        {
+            CompareFields = false,
+            CompareReadOnly = false,
+            CompareStaticFields = false,
+            CompareStaticProperties = false,
+            MaxStructDepth = 5,
+            Caching = true,
+            AutoClearCache = false,
+            IgnoreLogicGetters = true,
+        });
         private static readonly ConcurrentDictionary<Type, bool> _isSimpleTypeCache = new();
         private static readonly ConcurrentDictionary<Type, Func<object, object, bool>> _equalityComparerCache = new();
         private static readonly ConcurrentDictionary<Type, MethodInfo> _diffMethodCache = new();
@@ -264,12 +282,32 @@ namespace MongoDB.Entities.Core.Comparers
                     var baseValue = memberMap.Getter(baseObj);
                     var newValue = memberMap.Getter(newObj);
 
+                    // 快速基础检查
+                    var basicCheckResult = BasicCompare(baseObj, newObj);
+
                     // 使用高效的相等性比较
-                    if (!AreValuesEqual(baseValue, newValue, baseType, newType))
+                    if (basicCheckResult == false)
                     {
                         // 创建泛型差异对象，避免装拆箱（使用优化的工厂）
                         var difference = memberMap.CreateFieldDifference(memberMap.ElementName, baseValue, newValue);
                         context.Result.AddDifference(difference);
+                        if (mode == BsonDiffMode.Fast)
+                        {
+                            break;
+                        }
+                        continue;
+                    }
+                    var compareResult = _compareLogic.Compare(baseValue, newValue);
+                    if (!compareResult.AreEqual)
+                    {
+                        // 创建泛型差异对象，避免装拆箱（使用优化的工厂）
+                        var difference = memberMap.CreateFieldDifference(memberMap.ElementName, baseValue, newValue);
+                        context.Result.AddDifference(difference);
+                        if (mode == BsonDiffMode.Fast)
+                        {
+                            break;
+                        }
+                        continue;
                     }
                 }
                 catch (Exception ex)
@@ -324,7 +362,6 @@ namespace MongoDB.Entities.Core.Comparers
             newType = newObj.GetType();
             if (Type.GetTypeCode(baseType) == TypeCode.Object)
                 return HandleComplexTypes(baseObj, newObj, baseType, newType);
-
             // 所有基础类型直接使用 Equals
             return baseObj.Equals(newObj);
         }

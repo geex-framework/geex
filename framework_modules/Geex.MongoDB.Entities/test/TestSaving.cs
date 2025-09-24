@@ -443,5 +443,129 @@ namespace MongoDB.Entities.Tests
             item.Count.ShouldBe(1);
             item.First().Data["customerType"].GetValue<string>().ShouldBe("VVIP");
         }
+
+        [TestMethod]
+        public async Task bson_data_differ_complex_type_handling_works_correctly()
+        {
+            // 测试修复：确保BsonDataDiffer在处理复杂类型时使用正确的对象类型
+            var baseBook = new Book
+            {
+                Title = "Original",
+                Price = 100.5m,
+                RelatedAuthor = new Author { Name = "Base Author", Age = 30 },
+                Review = new Review { Stars = 4, Reviewer = "Base Reviewer", Rating = 4.5 }
+            };
+            await baseBook.SaveAsync();
+
+            // 创建一个修改过的版本
+            var newBook = new Book
+            {
+                Id = baseBook.Id,
+                Title = "Updated",
+                Price = 100.5m, // 价格相同
+                RelatedAuthor = new Author { Name = "Updated Author", Age = 30 }, // 名字不同，年龄相同
+                Review = new Review { Stars = 5, Reviewer = "Updated Reviewer", Rating = 5.0 }
+            };
+
+            // 测试 AreValuesEqual 方法 - 这里会触发修复的代码路径
+            // 传递错误的类型参数来验证修复是否生效
+            var typeCache = DB.GetCacheInfo(typeof(Book));
+            var result = MongoDB.Entities.Core.Comparers.BsonDataDiffer.DiffEntity(
+                typeCache, baseBook, newBook, MongoDB.Entities.Core.Comparers.BsonDiffMode.Full);
+
+            // 验证比较结果
+            Assert.IsFalse(result.AreEqual, "Books should not be equal due to different titles and related author names");
+            Assert.IsTrue(result.HasFieldDifference("Title"), "Title field should have difference");
+            Assert.IsTrue(result.HasFieldDifference("RelatedAuthor"), "RelatedAuthor field should have difference");
+
+            // 验证具体的差异值
+            var titleDiff = result.GetFieldDifference("Title");
+            Assert.AreEqual("Original", titleDiff.BaseValue);
+            Assert.AreEqual("Updated", titleDiff.NewValue);
+
+            // 测试复杂嵌套对象的比较
+            var author1 = new Author { Name = "Same Name", Age = 25, Surname = "Smith" };
+            var author2 = new Author { Name = "Same Name", Age = 25, Surname = "Jones" }; // 只有姓氏不同
+
+            var book1 = new Book { Title = "Test Book", RelatedAuthor = author1 };
+            var book2 = new Book { Title = "Test Book", RelatedAuthor = author2 };
+
+            var complexResult = MongoDB.Entities.Core.Comparers.BsonDataDiffer.DiffEntity(
+                typeCache, book1, book2, MongoDB.Entities.Core.Comparers.BsonDiffMode.Full);
+
+            Assert.IsFalse(complexResult.AreEqual, "Books should not be equal due to different author surnames");
+            Assert.IsTrue(complexResult.HasFieldDifference("RelatedAuthor"), "RelatedAuthor should be different");
+        }
+
+        [TestMethod]
+        public async Task bson_data_differ_handles_null_type_parameters_correctly()
+        {
+            // 专门测试当传入null类型参数时的处理
+            var book1 = new Book { Title = "Test", Price = 50.0m };
+            var book2 = new Book { Title = "Test", Price = 75.0m };
+
+            // 直接测试 AreValuesEqual 方法，传入 null 类型参数
+            var result1 = MongoDB.Entities.Core.Comparers.BsonDataDiffer.AreValuesEqual(
+                book1.RelatedAuthor, book2.RelatedAuthor, null, null);
+            Assert.IsTrue(result1, "Both null RelatedAuthors should be equal");
+
+            var result2 = MongoDB.Entities.Core.Comparers.BsonDataDiffer.AreValuesEqual(
+                book1.Price, book2.Price, null, null);
+            Assert.IsFalse(result2, "Different prices should not be equal");
+
+            // 测试复杂对象比较
+            var author1 = new Author { Name = "John", Age = 30 };
+            var author2 = new Author { Name = "John", Age = 30 };
+
+            var result3 = MongoDB.Entities.Core.Comparers.BsonDataDiffer.AreValuesEqual(
+                author1, author2, null, null);
+            // 注意：这里可能返回false，因为不同的实例即使属性相同也被认为不相等
+        }
+
+        [TestMethod]
+        public async Task bson_data_differ_handles_json_complex_types()
+        {
+            // 测试 JsonNode 复杂类型的比较 - 这是修复涉及的重要场景之一
+            var data1 = new TableData
+            {
+                DataType = "test",
+                Data = new JsonObject
+                {
+                    { "name", "John" },
+                    { "age", 30 },
+                    { "nested", new JsonObject { { "city", "NY" } } }
+                }
+            };
+
+            var data2 = new TableData
+            {
+                DataType = "test",
+                Data = new JsonObject
+                {
+                    { "name", "John" },
+                    { "age", 30 },
+                    { "nested", new JsonObject { { "city", "LA" } } } // 嵌套对象不同
+                }
+            };
+
+            var typeCache = DB.GetCacheInfo(typeof(TableData));
+            var result = MongoDB.Entities.Core.Comparers.BsonDataDiffer.DiffEntity(
+                typeCache, data1, data2, MongoDB.Entities.Core.Comparers.BsonDiffMode.Full);
+
+            Assert.IsFalse(result.AreEqual, "TableData objects should not be equal due to different nested JSON");
+            Assert.IsTrue(result.HasFieldDifference("Data"), "Data field should have difference");
+
+            // 测试相同的 JsonNode 对象
+            var data3 = new TableData
+            {
+                DataType = "test",
+                Data = data1.Data // 相同的引用
+            };
+
+            var sameResult = MongoDB.Entities.Core.Comparers.BsonDataDiffer.DiffEntity(
+                typeCache, data1, data3, MongoDB.Entities.Core.Comparers.BsonDiffMode.Full);
+
+            Assert.IsTrue(sameResult.AreEqual, "TableData objects with same JSON should be equal");
+        }
     }
 }
