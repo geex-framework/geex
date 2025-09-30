@@ -7,8 +7,8 @@
         /// </summary>
         public string FileDownloadPath { get; set; } = "/download";
         /// <summary>
-        /// Local system storage path, default is "./_BlobStorageFiles"(relative to entry execution)
+        /// Local system storage path, default is "./App_Data/BlobStorageFiles"(relative to entry execution)
         /// </summary>
-        public string FileSystemStoragePath { get; set; } = "./App_Data/BlobStorageFiles";
+        public string FileSystemStoragePath { get; set; } = $"{GeexConstants.AppDataPath}/BlobStorageFiles";
     }
 }

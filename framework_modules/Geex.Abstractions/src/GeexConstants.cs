@@ -4,5 +4,6 @@
     {
         public const string SuperAdminName = "superAdmin";
         public const string SuperAdminId = "000000000000000000000001";
+        public const string AppDataPath = "./App_Data";
     }
 }
