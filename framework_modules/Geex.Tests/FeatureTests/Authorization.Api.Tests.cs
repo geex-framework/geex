@@ -233,5 +233,70 @@ namespace Geex.Tests.FeatureTests
             elapsed.TotalSeconds.ShouldBeLessThan(5.0, "Permission checks should complete within reasonable time");
             results.Count.ShouldBe(testPermissions.Length);
         }
+
+        [Fact]
+        public async Task GeneratePersonalAccessToken_ShouldWork()
+        {
+            // Arrange - 使用超级管理员客户端生成个人访问 Token
+            var client = this.SuperAdminClient;
+            var mutation = """
+                mutation ($req: GeneratePersonalAccessTokenRequest!){
+                    generatePersonalAccessToken(request:$req){
+                        token
+                        userId
+                    }
+                }
+            """;
+
+            var variables = new { req = new { expireInSeconds = 600 } };
+
+            // Act
+            var (responseData, responseString) = await client.PostGqlRequest(mutation, variables);
+
+            // Assert
+            responseData["data"].ShouldNotBeNull();
+            var tokenData = responseData["data"]["generatePersonalAccessToken"];
+            tokenData.ShouldNotBeNull();
+
+            var firstToken = (string)tokenData["token"];
+            firstToken.ShouldNotBeNullOrEmpty();
+            ((string)tokenData["userId"]).ShouldBe(GeexConstants.SuperAdminId);
+
+            // 使用新生成的 token 作为身份再次调用 generatePersonalAccessToken
+            var authedClient = this.AnonymousClient;
+            authedClient.DefaultRequestHeaders.Add("Authorization", $"Local {firstToken}");
+
+            var secondMutation = mutation;
+            var (secondResp, _) = await authedClient.PostGqlRequest(secondMutation, new { req = new { expireInSeconds = 30 } });
+            secondResp["data"].ShouldNotBeNull();
+            var secondTokenData = secondResp["data"]["generatePersonalAccessToken"];
+            secondTokenData.ShouldNotBeNull();
+            ((string)secondTokenData["token"]).ShouldNotBeNullOrEmpty();
+        }
+
+        [Fact]
+        public async Task GeneratePersonalAccessToken_AsAnonymous_ShouldFail()
+        {
+            // Arrange - 匿名客户端尝试生成 Token
+            var client = this.AnonymousClient;
+            var mutation = """
+                mutation ($req:GeneratePersonalAccessTokenRequest!){
+                    generatePersonalAccessToken(request:$req){
+                        token
+                    }
+                }
+            """;
+
+            var variables = new { req = new { expireInSeconds = 60 } };
+
+            // Act
+            var (responseData, responseString) = await client.PostGqlRequest(mutation, variables, true);
+
+            // Assert - 应该返回未授权错误
+            responseData["errors"].ShouldNotBeNull();
+            var error = responseData["errors"][0];
+            var errorCode = (string)error["extensions"]["code"];
+            (errorCode == "AUTH_NOT_AUTHENTICATED" || errorCode == "AUTH_NOT_AUTHORIZED").ShouldBeTrue();
+        }
     }
 }

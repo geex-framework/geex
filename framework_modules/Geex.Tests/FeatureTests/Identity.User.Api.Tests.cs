@@ -236,7 +236,7 @@ namespace Geex.Tests.FeatureTests
 
             var query = """
                 mutation($id: String!) {
-                    deleteUser(request: { id: $id })
+                    deleteUser(ids: [$id])
                 }
                 """;
 
