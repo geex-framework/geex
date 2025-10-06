@@ -80,21 +80,52 @@ var GQL_FEDERATE_AUTH = gql`mutation federateAuthenticate(
 var GQL_ON_PUBLIC_NOTIFY = gql`subscription onPublicNotify { onPublicNotify { __typename ... on DataChangeClientNotify { dataChangeType } } }`;
 var GQL_ORGS_CACHE = gql`query orgsCache { orgs(take: 999) { items { id orgType code name parentOrgCode } } }`;
 var GQL_INIT_SETTINGS = gql`query initSettings { initSettings { id name value } }`;
+function guardedSignal(innerSignal, isInitialized) {
+  const guard = (() => {
+    if (!isInitialized()) {
+      throw new Error(`GuardedSignal not initialized. 
+        isInitialized: ${isInitialized.toString()}
+        innerSignal: ${innerSignal.toString()}
+        `);
+    }
+    return innerSignal();
+  });
+  if ("set" in innerSignal) {
+    guard.set = innerSignal.set.bind(innerSignal);
+    guard.update = innerSignal.update.bind(innerSignal);
+  }
+  if ("asReadonly" in innerSignal) {
+    guard.asReadonly = innerSignal.asReadonly.bind(innerSignal);
+  }
+  return guard;
+}
 function createTenantModule(injector) {
-  const current = signal(null);
+  const _current = signal(null);
+  let _initialized = false;
+  let _initPromise = null;
   const module = {
-    init: async () => {
-      try {
-        const tenantCode = injector.get(CookieService).get("__tenant");
-        if (tenantCode) {
-          const tenantData = await module.loadTenantData(tenantCode);
-          current.set(tenantData ?? null);
-        }
-      } catch (err) {
-        console.error(err);
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            const tenantCode = injector.get(CookieService).get("__tenant");
+            if (tenantCode) {
+              const tenantData = await module.loadTenantData(tenantCode);
+              _current.set(tenantData ?? null);
+            }
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
-    current,
+    current: guardedSignal(_current, () => _initialized),
     async loadTenantData(code) {
       const res = await firstValueFrom(
         injector.get(Apollo).mutate({ mutation: GQL_CHECK_TENANT, variables: { code } })
@@ -118,17 +149,29 @@ function createTenantModule(injector) {
   return module;
 }
 function createAuthModule(injector) {
-  const user = signal(null);
+  const _user = signal(null);
+  let _initialized = false;
+  let _initPromise = null;
   const module = {
-    init: async () => {
-      try {
-        const userData = await module.loadUserData();
-        user.set(userData ?? null);
-      } catch (err) {
-        console.error(err);
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            const userData = await module.loadUserData();
+            _user.set(userData ?? null);
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
-    user,
+    user: guardedSignal(_user, () => _initialized),
     async loadUserData() {
       const oAuthService = injector.get(OAuthService);
       try {
@@ -157,51 +200,86 @@ function createAuthModule(injector) {
   return module;
 }
 function createIdentityModule(injector) {
-  const orgsSignal = signal([]);
-  const userOwnedOrgsSignal = signal([]);
+  const _orgsSignal = signal([]);
+  const _userOwnedOrgsSignal = signal([]);
+  let _initialized = false;
+  let _initPromise = null;
   const module = {
-    orgs: orgsSignal,
-    userOwnedOrgs: userOwnedOrgsSignal,
-    async init() {
-      try {
-        const orgs$ = injector.get(Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe(map((res) => deepCopy(res.data.orgs.items)));
-        orgs$.subscribe((orgs) => {
-          runInInjectionContext(injector, () => {
-            orgsSignal.set(orgs);
-            const userData = geex.auth.user();
-            let allOwned = [];
-            if (orgs?.length && userData) {
-              if (userData.id === "000000000000000000000001") {
-                allOwned = deepCopy(orgs);
-              } else {
-                const ownedCodes = userData.orgs.map((x) => x.code);
-                allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
-              }
-            }
-            userOwnedOrgsSignal.set(allOwned);
-          });
-        });
-      } catch (error) {
-        console.error(error);
+    orgs: guardedSignal(_orgsSignal, () => _initialized),
+    userOwnedOrgs: guardedSignal(_userOwnedOrgsSignal, () => _initialized),
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            await geex.tenant.init();
+            await geex.auth.init();
+            await new Promise((resolve, reject) => {
+              const orgs$ = injector.get(Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe(map((res) => deepCopy(res.data.orgs.items)));
+              orgs$.subscribe({
+                next: (orgs) => {
+                  runInInjectionContext(injector, () => {
+                    _orgsSignal.set(orgs);
+                    const userData = geex.auth.user();
+                    let allOwned = [];
+                    if (orgs?.length && userData) {
+                      if (userData.id === "000000000000000000000001") {
+                        allOwned = deepCopy(orgs);
+                      } else {
+                        const ownedCodes = userData.orgs.map((x) => x.code);
+                        allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
+                      }
+                    }
+                    _userOwnedOrgsSignal.set(allOwned);
+                    resolve();
+                  });
+                },
+                error: (err) => {
+                  console.error(err);
+                  reject(err);
+                }
+              });
+            });
+            _initialized = true;
+          } catch (error) {
+            console.error(error);
+          }
+        })();
+      }
+      return _initPromise;
     }
   };
   return module;
 }
 function createMessagingModule(injector) {
+  let _initialized = false;
+  let _initPromise = null;
   const module = {
-    async init() {
-      try {
-        await geex.auth.init();
-        if (injector.get(OAuthService).hasValidAccessToken()) {
-          const subClient = injector.get(Apollo).use("subscription");
-          subClient.subscribe({ query: GQL_ON_PUBLIC_NOTIFY }).pipe(map((res) => res?.data?.onPublicNotify)).subscribe((notify) => {
-            module.onPublicNotify(notify);
-          });
-        }
-      } catch (err) {
-        console.error(err);
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            await geex.auth.init();
+            if (injector.get(OAuthService).hasValidAccessToken()) {
+              const subClient = injector.get(Apollo).use("subscription");
+              subClient.subscribe({ query: GQL_ON_PUBLIC_NOTIFY }).pipe(map((res) => res?.data?.onPublicNotify)).subscribe((notify) => {
+                module.onPublicNotify(notify);
+              });
+            }
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
     onPublicNotify(notify) {
       console.log("Public notify", notify);
@@ -210,31 +288,58 @@ function createMessagingModule(injector) {
   return module;
 }
 function createSettingsModule(injector) {
-  const settingsSignal = signal([]);
+  const _settingsSignal = signal([]);
+  let _initialized = false;
+  let _initPromise = null;
   const module = {
-    settings: settingsSignal,
-    async init() {
-      const res = await firstValueFrom(
-        injector.get(Apollo).query({ query: GQL_INIT_SETTINGS })
-      );
-      const settings = res.data.initSettings;
-      settingsSignal.set(settings);
+    settings: guardedSignal(_settingsSignal, () => _initialized),
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            const res = await firstValueFrom(
+              injector.get(Apollo).query({ query: GQL_INIT_SETTINGS })
+            );
+            const settings = res.data.initSettings;
+            _settingsSignal.set(settings);
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     }
   };
   return module;
 }
 function createUiModule(injector) {
-  const fullScreenSignal = signal(false);
-  const isMobile = toSignal(fromEvent(window, "resize").pipe(
+  const _fullScreenSignal = signal(false);
+  const _isMobile = toSignal(fromEvent(window, "resize").pipe(
     debounceTime(200),
     switchMap(async () => window.innerHeight / window.innerWidth >= 1.5)
   ));
+  let _initialized = false;
+  let _initPromise = null;
   const module = {
-    fullScreen: fullScreenSignal,
-    isMobile,
+    fullScreen: guardedSignal(_fullScreenSignal, () => _initialized),
+    isMobile: guardedSignal(_isMobile, () => _initialized),
     activeRoutedComponent: void 0,
-    async init() {
-      return;
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          _initialized = true;
+        })();
+      }
+      return _initPromise;
     }
   };
   return module;
@@ -244,23 +349,32 @@ function createUiModule(injector) {
 var geex;
 var Geex = new InjectionToken("Geex");
 function configGeex(injector, overrides = {}) {
-  const modules = {
-    ...overrides
-  };
   runInInjectionContext2(injector, () => {
-    modules.init ?? (modules.init = async () => {
-      const entries = Object.entries(modules).filter(([key]) => key !== "init");
-      return Object.fromEntries(await Promise.all(
-        entries.map(async ([key, mod]) => {
-          const maybeInit = mod.init;
-          try {
-            return [key, await maybeInit()];
-          } catch (err) {
-            console.error(err);
-            return [key, null];
-          }
-        })
-      ));
+    const modules = {
+      ...overrides
+    };
+    let _initPromise = null;
+    modules.init ?? (modules.init = (force = false) => {
+      if (force) {
+        _initPromise = null;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          const entries = Object.entries(modules).filter(([key]) => key !== "init");
+          return Object.fromEntries(await Promise.all(
+            entries.map(async ([key, mod]) => {
+              const maybeInit = mod.init;
+              try {
+                return [key, await maybeInit(force)];
+              } catch (err) {
+                console.error(err);
+                return [key, null];
+              }
+            })
+          ));
+        })();
+      }
+      return _initPromise;
     });
     modules.tenant ?? (modules.tenant = createTenantModule(injector));
     modules.auth ?? (modules.auth = createAuthModule(injector));

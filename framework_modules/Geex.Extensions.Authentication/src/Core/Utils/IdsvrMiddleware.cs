@@ -190,8 +190,6 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 //identity.AddClaim(OpenIddictConstants.Claims., "some-value", OpenIddictConstants.Destinations.AccessToken);
 
                 claimsPrincipal = new ClaimsPrincipal(identity);
-                var cliamsTrans = context.RequestServices.GetRequiredService<IClaimsTransformation>();
-                await cliamsTrans.TransformAsync(claimsPrincipal);
                 claimsPrincipal.SetScopes(request.GetScopes());
             }
             else if (request.IsAuthorizationCodeGrantType())

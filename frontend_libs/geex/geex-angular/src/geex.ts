@@ -25,25 +25,36 @@ export function configGeex<TExtensionModules extends Record<string, GeexModule> 
   injector: Injector,
   overrides: GeexOverrides<TExtensionModules> = {} as GeexOverrides<TExtensionModules>,
 ) {
-  // Start with an empty collection and merge in overrides later (overrides have higher priority)
-  const modules: GeexModules<TExtensionModules> = {
-    ...(overrides as Partial<GeexModules<TExtensionModules>>) as any,
-  } as GeexModules<TExtensionModules>;
   runInInjectionContext(injector, () => {
-    modules.init ??= async () => {
-      const entries = Object.entries(modules).filter(([key]) => key !== "init");
-      return Object.fromEntries(await Promise.all(
-        entries.map(async ([key, mod]) => {
-          const maybeInit = (mod as GeexModule).init;
-          try {
-            return [key, await maybeInit()]
-          } catch (err) {
-            console.error(err);
-            return [key, null];
-          }
-        })
-      ));
+    // Start with an empty collection and merge in overrides later (overrides have higher priority)
+    const modules: GeexModules<TExtensionModules> = {
+      ...(overrides as Partial<GeexModules<TExtensionModules>>) as any,
+    } as GeexModules<TExtensionModules>;
+    
+    let _initPromise: Promise<any> | null = null;
+    modules.init ??= (force = false) => {
+      if (force) {
+        _initPromise = null;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          const entries = Object.entries(modules).filter(([key]) => key !== "init");
+          return Object.fromEntries(await Promise.all(
+            entries.map(async ([key, mod]) => {
+              const maybeInit = (mod as GeexModule).init;
+              try {
+                return [key, await maybeInit(force)]
+              } catch (err) {
+                console.error(err);
+                return [key, null];
+              }
+            })
+          ));
+        })();
+      }
+      return _initPromise;
     };
+    
     modules.tenant ??= createTenantModule(injector);
     modules.auth ??= createAuthModule(injector);
     modules.identity ??= createIdentityModule(injector);

@@ -17,7 +17,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
         private TokenValidationParameters _validationParams;
 
-        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IUnitOfWork uow,UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
+        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IUnitOfWork uow, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
         {
             _transformations = transformations;
             _uow = uow;
@@ -42,6 +42,12 @@ namespace Geex.Extensions.Authentication.Core.Utils
             //    principal.AddIdentity(claimsIdentity);
             //    return principal;
             //}
+
+            if (principal.HasClaim(x=>x.Type == GeexClaimType.Provider))
+            {
+                return principal;
+            }
+
             var disableAllDataFilters = _uow.DbContext.DisableAllDataFilters(); // 禁用所有数据过滤器, 以便获取用户信息
             var user = _uow.Query<IAuthUser>().GetById(userId);
             disableAllDataFilters.Dispose(); // 确保禁用数据过滤器被释放

@@ -105,7 +105,7 @@ interface UiModule extends GeexModule {
 declare const ExtensionModule: Record<string, any> & {};
 type ExtensionModule = typeof ExtensionModule;
 type GeexModules<TExtensionModules extends ExtensionModule = ExtensionModule> = {
-    init(): Promise<{
+    init: (force?: boolean) => Promise<{
         [K in keyof GeexModules<TExtensionModules>]: any;
     }>;
     tenant: TenantModule;
@@ -120,8 +120,10 @@ type GeexModule<TExtension = ExtensionModule> = {
      * A module combines both reactive state (signals) and business logic methods.
      * Concrete modules can extend this interface to expose their own signals & methods.
      * This empty base exists mainly for typing convenience and future extension.
+     * @param force - If true, forces re-initialization. Defaults to false.
+     * When force is false, multiple calls will share the same initialization Promise.
      */
-    init: () => Promise<any>;
+    init: (force?: boolean) => Promise<any>;
 } & TExtension;
 declare function createTenantModule(injector: Injector): TenantModule;
 declare function createAuthModule(injector: Injector): AuthModule;

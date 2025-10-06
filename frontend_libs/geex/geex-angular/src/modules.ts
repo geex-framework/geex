@@ -143,7 +143,7 @@ export type ExtensionModule = typeof ExtensionModule;
 
 
 export type GeexModules<TExtensionModules extends ExtensionModule = ExtensionModule> = {
-  init(): Promise<{ [K in keyof GeexModules<TExtensionModules>]: any }>;
+  init: (force?: boolean) => Promise<{ [K in keyof GeexModules<TExtensionModules>]: any }>;
   tenant: TenantModule;
   auth: AuthModule;
   identity: IdentityModule;
@@ -158,8 +158,10 @@ export type GeexModule<TExtension = ExtensionModule> = {
    * A module combines both reactive state (signals) and business logic methods.
    * Concrete modules can extend this interface to expose their own signals & methods.
    * This empty base exists mainly for typing convenience and future extension.
+   * @param force - If true, forces re-initialization. Defaults to false.
+   * When force is false, multiple calls will share the same initialization Promise.
    */
-  init: () => Promise<any>;
+  init: (force?: boolean) => Promise<any>;
 } & TExtension;
 
 // -------------------------------------------------------------
@@ -226,23 +228,75 @@ const GQL_INIT_SETTINGS = gql`query initSettings { initSettings { id name value 
 // Default GraphQL documents are defined inside each module. Consumers can override by providing
 // custom module implementations via the `overrides` parameter in `initGeex`.
 
+// ----- Helper function to guard signal access -----
+
+/**
+ * Wraps a signal to throw an error if accessed before module initialization.
+ * Supports both Signal and WritableSignal.
+ */
+function guardedSignal<T>(
+  innerSignal: WritableSignal<T>,
+  isInitialized: () => boolean
+): WritableSignal<T>;
+function guardedSignal<T>(
+  innerSignal: Signal<T>,
+  isInitialized: () => boolean,
+): Signal<T>;
+function guardedSignal<T>(
+  innerSignal: Signal<T> | WritableSignal<T>,
+  isInitialized: () => boolean
+): Signal<T> | WritableSignal<T> {
+  const guard = (() => {
+    if (!isInitialized()) {
+      throw new Error(`GuardedSignal not initialized. 
+        isInitialized: ${isInitialized.toString()}
+        innerSignal: ${innerSignal.toString()}
+        `);
+    }
+    return innerSignal();
+  }) as any;
+
+  // Preserve WritableSignal methods if present
+  if ('set' in innerSignal) {
+    guard.set = innerSignal.set.bind(innerSignal);
+    guard.update = innerSignal.update.bind(innerSignal);
+  }
+  if ('asReadonly' in innerSignal) {
+    guard.asReadonly = innerSignal.asReadonly.bind(innerSignal);
+  }
+
+  return guard;
+}
+
 // ----- default implementations -----
 
 export function createTenantModule(injector: Injector): TenantModule {
-  const current = signal<Tenant | null>(null);
-  const module: TenantModule = {
-    init: async () => {
-      try {
-        const tenantCode = injector.get(CookieService).get("__tenant");
-        if (tenantCode) {
-          const tenantData = await module.loadTenantData(tenantCode);
-          current.set(tenantData ?? null);
-        }
-      } catch (err) {
-        console.error(err);
+  const _current = signal<Tenant | null>(null);
+  let _initialized = false;
+  let _initPromise: Promise<void> | null = null;
+  const module = {
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            const tenantCode = injector.get(CookieService).get("__tenant");
+            if (tenantCode) {
+              const tenantData = await module.loadTenantData(tenantCode);
+              _current.set(tenantData ?? null);
+            }
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
-    current,
+    current: guardedSignal(_current, () => _initialized),
     async loadTenantData(code: string): Promise<Tenant> {
       type CheckTenantResponse = { data: { checkTenant: Tenant } };
       const res = (await firstValueFrom(
@@ -263,23 +317,34 @@ export function createTenantModule(injector: Injector): TenantModule {
         domain: rootDomain,
       });
     },
-  } as TenantModule;
-  return module;
+  };
+  return module as TenantModule;
 };
 
 export function createAuthModule(injector: Injector): AuthModule {
-  const user = signal<User | null>(null);
-  const module: AuthModule = {
-    init: async () => {
-      try {
-        const userData = await module.loadUserData();
-        user.set(userData ?? null);
+  const _user = signal<User | null>(null);
+  let _initialized = false;
+  let _initPromise: Promise<void> | null = null;
+  const module = {
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
-      catch (err) {
-        console.error(err);
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            const userData = await module.loadUserData();
+            _user.set(userData ?? null);
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
       }
+      return _initPromise;
     },
-    user,
+    user: guardedSignal(_user, () => _initialized),
     async loadUserData(): Promise<User | undefined> {
       const oAuthService = injector.get(OAuthService);
       try {
@@ -307,99 +372,163 @@ export function createAuthModule(injector: Injector): AuthModule {
       }
       return undefined;
     },
-  } as AuthModule;
-  return module;
+  };
+  return module as AuthModule;
 };
 
 export function createIdentityModule(injector: Injector): IdentityModule {
-  const orgsSignal = signal<Org[]>([]);
-  const userOwnedOrgsSignal = signal<Org[]>([]);
-  const module: IdentityModule = {
-    orgs: orgsSignal,
-    userOwnedOrgs: userOwnedOrgsSignal,
-    async init() {
-      try {
-        const orgs$ = injector.get(Apollo)
-          .watchQuery<{ orgs: { items: Org[] } }>({ query: GQL_ORGS_CACHE })
-          .valueChanges.pipe(map(res => deepCopy(res.data.orgs.items) as Org[]));
-        orgs$.subscribe((orgs: Org[]) => {
-          runInInjectionContext(injector, () => {
-            orgsSignal.set(orgs);
-            const userData = geex.auth.user();
-            let allOwned: Org[] = [];
-            if (orgs?.length && userData) {
-              if (userData.id === "000000000000000000000001") {
-                allOwned = deepCopy(orgs);
-              } else {
-                const ownedCodes = userData.orgs.map((x: any) => x.code);
-                allOwned = orgs.filter(o => ownedCodes.some(code => o.code.startsWith(code)));
-              }
-            }
-            userOwnedOrgsSignal.set(allOwned);
-          });
-        });
-      } catch (error) {
-        console.error(error);
+  const _orgsSignal = signal<Org[]>([]);
+  const _userOwnedOrgsSignal = signal<Org[]>([]);
+  let _initialized = false;
+  let _initPromise: Promise<void> | null = null;
+  const module = {
+    orgs: guardedSignal(_orgsSignal, () => _initialized),
+    userOwnedOrgs: guardedSignal(_userOwnedOrgsSignal, () => _initialized),
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            await geex.tenant.init();
+            await geex.auth.init();
+            // 创建一个 Promise 用于等待第一次订阅回调完成
+            await new Promise<void>((resolve, reject) => {
+              const orgs$ = injector.get(Apollo)
+                .watchQuery<{ orgs: { items: Org[] } }>({ query: GQL_ORGS_CACHE })
+                .valueChanges.pipe(map(res => deepCopy(res.data.orgs.items) as Org[]));
+              
+              orgs$.subscribe({
+                next: (orgs: Org[]) => {
+                  runInInjectionContext(injector, () => {
+                    _orgsSignal.set(orgs);
+                    const userData = geex.auth.user();
+                    let allOwned: Org[] = [];
+                    if (orgs?.length && userData) {
+                      if (userData.id === "000000000000000000000001") {
+                        allOwned = deepCopy(orgs);
+                      } else {
+                        const ownedCodes = userData.orgs.map((x: any) => x.code);
+                        allOwned = orgs.filter(o => ownedCodes.some(code => o.code.startsWith(code)));
+                      }
+                    }
+                    _userOwnedOrgsSignal.set(allOwned);
+                    resolve();
+                  });
+                },
+                error: (err) => {
+                  console.error(err);
+                  reject(err);
+                }
+              });
+            });
+            _initialized = true;
+          } catch (error) {
+            console.error(error);
+          }
+        })();
+      }
+      return _initPromise;
     },
   };
-  return module;
+  return module as IdentityModule;
 }
 
 export function createMessagingModule(injector: Injector): MessagingModule {
-  const module: MessagingModule = {
-    async init() {
-      try {
-        await geex.auth.init();
-        if (injector.get(OAuthService).hasValidAccessToken()) {
-          const subClient = injector.get(Apollo).use("subscription");
-          subClient
-            .subscribe<{ onPublicNotify: any }>({ query: GQL_ON_PUBLIC_NOTIFY })
-            .pipe(map(res => res?.data?.onPublicNotify))
-            .subscribe(notify => {
-              module.onPublicNotify(notify);
-            });
-        }
-      } catch (err) {
-        console.error(err);
+  let _initialized = false;
+  let _initPromise: Promise<void> | null = null;
+  const module = {
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            await geex.auth.init();
+            if (injector.get(OAuthService).hasValidAccessToken()) {
+              const subClient = injector.get(Apollo).use("subscription");
+              subClient
+                .subscribe<{ onPublicNotify: any }>({ query: GQL_ON_PUBLIC_NOTIFY })
+                .pipe(map(res => res?.data?.onPublicNotify))
+                .subscribe(notify => {
+                  module.onPublicNotify(notify);
+                });
+            }
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
     onPublicNotify(notify: any) {
       console.log("Public notify", notify);
     },
   };
-  return module;
+  return module as MessagingModule;
 }
 
 export function createSettingsModule(injector: Injector): SettingsModule {
-  const settingsSignal = signal<SettingItem[]>([]);
-  const module: SettingsModule = {
-    settings: settingsSignal,
-    async init() {
-      type InitSettingsResponse = { data: { initSettings: SettingItem[] } };
-      const res = (await firstValueFrom(
-        injector.get(Apollo).query<InitSettingsResponse>({ query: GQL_INIT_SETTINGS })
-      )) as unknown as InitSettingsResponse;
-      const settings = res.data.initSettings;
-      settingsSignal.set(settings);
+  const _settingsSignal = signal<SettingItem[]>([]);
+  let _initialized = false;
+  let _initPromise: Promise<void> | null = null;
+  const module = {
+    settings: guardedSignal(_settingsSignal, () => _initialized),
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            type InitSettingsResponse = { data: { initSettings: SettingItem[] } };
+            const res = (await firstValueFrom(
+              injector.get(Apollo).query<InitSettingsResponse>({ query: GQL_INIT_SETTINGS })
+            )) as unknown as InitSettingsResponse;
+            const settings = res.data.initSettings;
+            _settingsSignal.set(settings);
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
   };
-  return module;
+  return module as SettingsModule;
 }
 
 export function createUiModule(injector: Injector): UiModule {
-  const fullScreenSignal = signal<boolean>(false);
-  const isMobile = toSignal(fromEvent(window, "resize").pipe(
+  const _fullScreenSignal = signal<boolean>(false);
+  const _isMobile = toSignal(fromEvent(window, "resize").pipe(
     debounceTime(200),
     switchMap(async () => window.innerHeight / window.innerWidth >= 1.5)
   ));
-  const module: UiModule = {
-    fullScreen: fullScreenSignal,
-    isMobile,
+  let _initialized = false;
+  let _initPromise: Promise<void> | null = null;
+  const module = {
+    fullScreen: guardedSignal(_fullScreenSignal, () => _initialized),
+    isMobile: guardedSignal(_isMobile, () => _initialized),
     activeRoutedComponent: undefined,
-    async init() {
-      return;
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          _initialized = true;
+        })();
+      }
+      return _initPromise;
     },
   };
-  return module;
+  return module as UiModule;
 }

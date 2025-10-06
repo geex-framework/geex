@@ -144,7 +144,7 @@ namespace Geex.Extensions.Identity.Core.Entities
             {
                 return;
             }
-            this.TenantCode = code;
+            this.TenantCode ??= code;
         }
     }
 }

@@ -126,21 +126,52 @@ var GQL_FEDERATE_AUTH = import_graphql_tag.default`mutation federateAuthenticate
 var GQL_ON_PUBLIC_NOTIFY = import_graphql_tag.default`subscription onPublicNotify { onPublicNotify { __typename ... on DataChangeClientNotify { dataChangeType } } }`;
 var GQL_ORGS_CACHE = import_graphql_tag.default`query orgsCache { orgs(take: 999) { items { id orgType code name parentOrgCode } } }`;
 var GQL_INIT_SETTINGS = import_graphql_tag.default`query initSettings { initSettings { id name value } }`;
+function guardedSignal(innerSignal, isInitialized) {
+  const guard = (() => {
+    if (!isInitialized()) {
+      throw new Error(`GuardedSignal not initialized. 
+        isInitialized: ${isInitialized.toString()}
+        innerSignal: ${innerSignal.toString()}
+        `);
+    }
+    return innerSignal();
+  });
+  if ("set" in innerSignal) {
+    guard.set = innerSignal.set.bind(innerSignal);
+    guard.update = innerSignal.update.bind(innerSignal);
+  }
+  if ("asReadonly" in innerSignal) {
+    guard.asReadonly = innerSignal.asReadonly.bind(innerSignal);
+  }
+  return guard;
+}
 function createTenantModule(injector) {
-  const current = (0, import_core.signal)(null);
+  const _current = (0, import_core.signal)(null);
+  let _initialized = false;
+  let _initPromise = null;
   const module2 = {
-    init: async () => {
-      try {
-        const tenantCode = injector.get(import_util.CookieService).get("__tenant");
-        if (tenantCode) {
-          const tenantData = await module2.loadTenantData(tenantCode);
-          current.set(tenantData ?? null);
-        }
-      } catch (err) {
-        console.error(err);
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            const tenantCode = injector.get(import_util.CookieService).get("__tenant");
+            if (tenantCode) {
+              const tenantData = await module2.loadTenantData(tenantCode);
+              _current.set(tenantData ?? null);
+            }
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
-    current,
+    current: guardedSignal(_current, () => _initialized),
     async loadTenantData(code) {
       const res = await (0, import_rxjs.firstValueFrom)(
         injector.get(import_apollo_angular.Apollo).mutate({ mutation: GQL_CHECK_TENANT, variables: { code } })
@@ -164,17 +195,29 @@ function createTenantModule(injector) {
   return module2;
 }
 function createAuthModule(injector) {
-  const user = (0, import_core.signal)(null);
+  const _user = (0, import_core.signal)(null);
+  let _initialized = false;
+  let _initPromise = null;
   const module2 = {
-    init: async () => {
-      try {
-        const userData = await module2.loadUserData();
-        user.set(userData ?? null);
-      } catch (err) {
-        console.error(err);
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            const userData = await module2.loadUserData();
+            _user.set(userData ?? null);
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
-    user,
+    user: guardedSignal(_user, () => _initialized),
     async loadUserData() {
       const oAuthService = injector.get(import_angular_oauth2_oidc.OAuthService);
       try {
@@ -203,51 +246,86 @@ function createAuthModule(injector) {
   return module2;
 }
 function createIdentityModule(injector) {
-  const orgsSignal = (0, import_core.signal)([]);
-  const userOwnedOrgsSignal = (0, import_core.signal)([]);
+  const _orgsSignal = (0, import_core.signal)([]);
+  const _userOwnedOrgsSignal = (0, import_core.signal)([]);
+  let _initialized = false;
+  let _initPromise = null;
   const module2 = {
-    orgs: orgsSignal,
-    userOwnedOrgs: userOwnedOrgsSignal,
-    async init() {
-      try {
-        const orgs$ = injector.get(import_apollo_angular.Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe((0, import_rxjs.map)((res) => (0, import_util.deepCopy)(res.data.orgs.items)));
-        orgs$.subscribe((orgs) => {
-          (0, import_core.runInInjectionContext)(injector, () => {
-            orgsSignal.set(orgs);
-            const userData = geex.auth.user();
-            let allOwned = [];
-            if (orgs?.length && userData) {
-              if (userData.id === "000000000000000000000001") {
-                allOwned = (0, import_util.deepCopy)(orgs);
-              } else {
-                const ownedCodes = userData.orgs.map((x) => x.code);
-                allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
-              }
-            }
-            userOwnedOrgsSignal.set(allOwned);
-          });
-        });
-      } catch (error) {
-        console.error(error);
+    orgs: guardedSignal(_orgsSignal, () => _initialized),
+    userOwnedOrgs: guardedSignal(_userOwnedOrgsSignal, () => _initialized),
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            await geex.tenant.init();
+            await geex.auth.init();
+            await new Promise((resolve, reject) => {
+              const orgs$ = injector.get(import_apollo_angular.Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe((0, import_rxjs.map)((res) => (0, import_util.deepCopy)(res.data.orgs.items)));
+              orgs$.subscribe({
+                next: (orgs) => {
+                  (0, import_core.runInInjectionContext)(injector, () => {
+                    _orgsSignal.set(orgs);
+                    const userData = geex.auth.user();
+                    let allOwned = [];
+                    if (orgs?.length && userData) {
+                      if (userData.id === "000000000000000000000001") {
+                        allOwned = (0, import_util.deepCopy)(orgs);
+                      } else {
+                        const ownedCodes = userData.orgs.map((x) => x.code);
+                        allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
+                      }
+                    }
+                    _userOwnedOrgsSignal.set(allOwned);
+                    resolve();
+                  });
+                },
+                error: (err) => {
+                  console.error(err);
+                  reject(err);
+                }
+              });
+            });
+            _initialized = true;
+          } catch (error) {
+            console.error(error);
+          }
+        })();
+      }
+      return _initPromise;
     }
   };
   return module2;
 }
 function createMessagingModule(injector) {
+  let _initialized = false;
+  let _initPromise = null;
   const module2 = {
-    async init() {
-      try {
-        await geex.auth.init();
-        if (injector.get(import_angular_oauth2_oidc.OAuthService).hasValidAccessToken()) {
-          const subClient = injector.get(import_apollo_angular.Apollo).use("subscription");
-          subClient.subscribe({ query: GQL_ON_PUBLIC_NOTIFY }).pipe((0, import_rxjs.map)((res) => res?.data?.onPublicNotify)).subscribe((notify) => {
-            module2.onPublicNotify(notify);
-          });
-        }
-      } catch (err) {
-        console.error(err);
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
       }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            await geex.auth.init();
+            if (injector.get(import_angular_oauth2_oidc.OAuthService).hasValidAccessToken()) {
+              const subClient = injector.get(import_apollo_angular.Apollo).use("subscription");
+              subClient.subscribe({ query: GQL_ON_PUBLIC_NOTIFY }).pipe((0, import_rxjs.map)((res) => res?.data?.onPublicNotify)).subscribe((notify) => {
+                module2.onPublicNotify(notify);
+              });
+            }
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     },
     onPublicNotify(notify) {
       console.log("Public notify", notify);
@@ -256,31 +334,58 @@ function createMessagingModule(injector) {
   return module2;
 }
 function createSettingsModule(injector) {
-  const settingsSignal = (0, import_core.signal)([]);
+  const _settingsSignal = (0, import_core.signal)([]);
+  let _initialized = false;
+  let _initPromise = null;
   const module2 = {
-    settings: settingsSignal,
-    async init() {
-      const res = await (0, import_rxjs.firstValueFrom)(
-        injector.get(import_apollo_angular.Apollo).query({ query: GQL_INIT_SETTINGS })
-      );
-      const settings = res.data.initSettings;
-      settingsSignal.set(settings);
+    settings: guardedSignal(_settingsSignal, () => _initialized),
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          try {
+            const res = await (0, import_rxjs.firstValueFrom)(
+              injector.get(import_apollo_angular.Apollo).query({ query: GQL_INIT_SETTINGS })
+            );
+            const settings = res.data.initSettings;
+            _settingsSignal.set(settings);
+            _initialized = true;
+          } catch (err) {
+            console.error(err);
+          }
+        })();
+      }
+      return _initPromise;
     }
   };
   return module2;
 }
 function createUiModule(injector) {
-  const fullScreenSignal = (0, import_core.signal)(false);
-  const isMobile = (0, import_rxjs_interop.toSignal)((0, import_rxjs.fromEvent)(window, "resize").pipe(
+  const _fullScreenSignal = (0, import_core.signal)(false);
+  const _isMobile = (0, import_rxjs_interop.toSignal)((0, import_rxjs.fromEvent)(window, "resize").pipe(
     (0, import_operators.debounceTime)(200),
     (0, import_operators.switchMap)(async () => window.innerHeight / window.innerWidth >= 1.5)
   ));
+  let _initialized = false;
+  let _initPromise = null;
   const module2 = {
-    fullScreen: fullScreenSignal,
-    isMobile,
+    fullScreen: guardedSignal(_fullScreenSignal, () => _initialized),
+    isMobile: guardedSignal(_isMobile, () => _initialized),
     activeRoutedComponent: void 0,
-    async init() {
-      return;
+    init: (force = false) => {
+      if (force) {
+        _initPromise = null;
+        _initialized = false;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          _initialized = true;
+        })();
+      }
+      return _initPromise;
     }
   };
   return module2;
@@ -290,23 +395,32 @@ function createUiModule(injector) {
 var geex;
 var Geex = new import_core2.InjectionToken("Geex");
 function configGeex(injector, overrides = {}) {
-  const modules = {
-    ...overrides
-  };
   (0, import_core2.runInInjectionContext)(injector, () => {
-    modules.init ?? (modules.init = async () => {
-      const entries = Object.entries(modules).filter(([key]) => key !== "init");
-      return Object.fromEntries(await Promise.all(
-        entries.map(async ([key, mod]) => {
-          const maybeInit = mod.init;
-          try {
-            return [key, await maybeInit()];
-          } catch (err) {
-            console.error(err);
-            return [key, null];
-          }
-        })
-      ));
+    const modules = {
+      ...overrides
+    };
+    let _initPromise = null;
+    modules.init ?? (modules.init = (force = false) => {
+      if (force) {
+        _initPromise = null;
+      }
+      if (!_initPromise) {
+        _initPromise = (async () => {
+          const entries = Object.entries(modules).filter(([key]) => key !== "init");
+          return Object.fromEntries(await Promise.all(
+            entries.map(async ([key, mod]) => {
+              const maybeInit = mod.init;
+              try {
+                return [key, await maybeInit(force)];
+              } catch (err) {
+                console.error(err);
+                return [key, null];
+              }
+            })
+          ));
+        })();
+      }
+      return _initPromise;
     });
     modules.tenant ?? (modules.tenant = createTenantModule(injector));
     modules.auth ?? (modules.auth = createAuthModule(injector));

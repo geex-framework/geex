@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Security.Principal;
 using Geex;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Volo.Abp;
 
 // ReSharper disable once CheckNamespace
@@ -106,9 +108,13 @@ public static class ClaimsIdentityExtensions
     {
         foreach (var claim in claims)
         {
-            if (claim.ValueType == "array" || !claimsIdentity.HasClaim(claim.Type, claim.Value))
+            if (!claimsIdentity.HasClaim(claim.Type, claim.Value))
             {
                 claimsIdentity.AddClaim(claim);
+            }
+            else
+            {
+                ServiceLocator.Global.GetService<ILogger<ClaimsIdentity>>()?.LogWarning("Non array claim '{ClaimType}' with value '{ClaimValue}' already exists.", claim.Type, claim.Value);
             }
         }
     }
