@@ -22,10 +22,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+
 using FastExpressionCompiler;
+
+using Geex.MongoDB.Entities.InnerQuery;
+
 using ExpressionType = System.Linq.Expressions.ExpressionType;
 
 namespace MongoDB.Entities.InnerQuery
@@ -82,7 +87,7 @@ namespace MongoDB.Entities.InnerQuery
                     throw new InvalidOperationException("Invalid internal state.");
 
                 // Handle special case.  Don't allow our queryable constant node to be simplified.
-                var constExp = (ConstantExpression) expression;
+                var constExp = (ConstantExpression)expression;
                 if (constExp.Value == rootQueryable)
                     return false;
 
@@ -104,10 +109,11 @@ namespace MongoDB.Entities.InnerQuery
             }
 
             // Recurse!
-            var childrenResults = children.Select(c => new {
-                                              Child = c,
-                                              CanBeUsedInSimplification = SaveIfSimplifiable(rootQueryable, c)
-                                          })
+            var childrenResults = children.Select(c => new
+            {
+                Child = c,
+                CanBeUsedInSimplification = SaveIfSimplifiable(rootQueryable, c)
+            })
                                           .ToArray();
 
             // Don't allow Lambdas to be simplified by themselves but allow them to be used in other
@@ -180,7 +186,6 @@ namespace MongoDB.Entities.InnerQuery
 
             throw new InvalidQueryException("Unhandled type " + expression.NodeType + " in ExpressionSimplifier.GetChildren");
         }
-
         /// <summary>
         /// Evaluate an expression locally.  If the expression is a ConstantExpression then we
         /// don't bother to evaluate it and just return it back.  Otherwise, we compile the
@@ -200,6 +205,10 @@ namespace MongoDB.Entities.InnerQuery
             {
                 object result = function.DynamicInvoke();
                 return Expression.Constant(result, expression.Type);
+            }
+            catch (NotSupportedException)
+            {
+                return expression;
             }
             catch (TargetInvocationException e)
             {
@@ -222,14 +231,64 @@ namespace MongoDB.Entities.InnerQuery
             return _simplifiableExpressions.Contains(expression) ? EvaluateLocally(expression) : base.Visit(expression);
         }
 
+        static bool TryUnwrapSpanImplicitCast(Expression expression, [NotNullWhen(true)] out Expression? result)
+        {
+            if (expression is MethodCallExpression
+                {
+                    Method: { Name: "op_Implicit", DeclaringType: { IsGenericType: true } implicitCastDeclaringType },
+                    Arguments: [var unwrapped]
+                }
+                && implicitCastDeclaringType.GetGenericTypeDefinition() is var genericTypeDefinition
+                && (genericTypeDefinition == typeof(Span<>) || genericTypeDefinition == typeof(ReadOnlySpan<>)))
+            {
+                result = unwrapped;
+                return true;
+            }
+
+            result = null;
+            return false;
+        }
+
+        /// <inheritdoc />
+        protected override Expression VisitMethodCall(MethodCallExpression expression)
+        {
+            if (expression is MethodCallExpression methodCall && methodCall.Method.DeclaringType == typeof(MemoryExtensions))
+            {
+                var method = methodCall.Method;
+                switch (method.Name)
+                {
+                    case nameof(MemoryExtensions.Contains)
+                        when methodCall.Arguments is [var arg0, var arg1] && TryUnwrapSpanImplicitCast(arg0, out var unwrappedArg0):
+                        {
+                            return Visit(
+                                Expression.Call(
+                                    EnumerableMethods.Contains.MakeGenericMethod(methodCall.Method.GetGenericArguments()[0]),
+                                    unwrappedArg0, arg1));
+                        }
+
+                    case nameof(MemoryExtensions.SequenceEqual)
+                        when methodCall.Arguments is [var arg0, var arg1]
+                        && TryUnwrapSpanImplicitCast(arg0, out var unwrappedArg0)
+                        && TryUnwrapSpanImplicitCast(arg1, out var unwrappedArg1):
+                        return Visit(
+                            Expression.Call(
+                                EnumerableMethods.SequenceEqual.MakeGenericMethod(methodCall.Method.GetGenericArguments()[0]),
+                                unwrappedArg0, unwrappedArg1));
+                }
+            }
+
+            return base.VisitMethodCall(expression);
+        }
+
         /// <summary>The default visitor on MemberInitExpression crashes.  So we need to implement our own.</summary>
         protected override Expression VisitMemberInit(MemberInitExpression node)
         {
             // Visit the children
             var visitedBindings = node.Bindings
-                                      .Select(c => new {
-                                          MemberAssignment = (MemberAssignment) c,
-                                          Expression = base.Visit(((MemberAssignment) c).Expression)
+                                      .Select(c => new
+                                      {
+                                          MemberAssignment = (MemberAssignment)c,
+                                          Expression = base.Visit(((MemberAssignment)c).Expression)
                                       })
                                       .ToArray();
 

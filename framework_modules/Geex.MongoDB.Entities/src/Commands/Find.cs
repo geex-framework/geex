@@ -9,6 +9,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using MongoDB.Entities.InnerQuery;
 
 #pragma warning disable 618
 
@@ -102,7 +103,9 @@ namespace MongoDB.Entities
         /// <param name="expression">x => x.Property == Value</param>
         public Find<T, TProjection> Match(Expression<Func<T, bool>> expression)
         {
-            return Match(f => f.Where(expression));
+
+            var simplifiedExpression = ExpressionSimplifier.Simplify(Cache<T>.Collection, expression);
+            return Match(f => f.Where(simplifiedExpression as Expression<Func<T, bool>>));
         }
 
         /// <summary>

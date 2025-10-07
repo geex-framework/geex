@@ -698,13 +698,31 @@ namespace MongoDB.Entities.Tests
             });
             await dbContext.SaveChanges();
             dbContext.Dispose();
-            dbContext = new DbContext();
             var id = attached.Id;
-            var array = new[] { "local1", "local_not_exist" };
-            var list = dbContext.Query<TestEntity>().Where(x => array.Contains(x.Name)).ToList();
-            list.First().Id.ShouldBe(id);
-            dbContext.Query<TestEntity>().Where(x => array.Contains(x.Name)).Any().ShouldBe(true);
-            dbContext.Query<TestEntity>().Any(x => array.Contains(x.Name)).ShouldBe(true);
+            {
+                var array = new[] { "local1", "local_not_exist" };
+                dbContext = new DbContext();
+                var list = dbContext.Query<TestEntity>().Where(x => array.Contains(x.Name)).ToList();
+                list.First().Id.ShouldBe(id);
+                dbContext.Query<TestEntity>().Where(x => array.Contains(x.Name)).Any().ShouldBe(true);
+                dbContext.Query<TestEntity>().Any(x => array.Contains(x.Name)).ShouldBe(true);
+            }
+            {
+                var array = new[] { id, ObjectId.GenerateNewId().ToString() };
+                dbContext = new DbContext();
+                var list = dbContext.Query<TestEntity>().Where(x => array.Contains(x.Id)).ToList();
+                list.First().Id.ShouldBe(id);
+                dbContext.Query<TestEntity>().Where(x => array.Contains(x.Id)).Any().ShouldBe(true);
+                dbContext.Query<TestEntity>().Any(x => array.Contains(x.Id)).ShouldBe(true);
+            }
+            {
+                var nestedArray = new { array = new[] { id, ObjectId.GenerateNewId().ToString() } };
+                dbContext = new DbContext();
+                var list = dbContext.Query<TestEntity>().Where(x => nestedArray.array.Contains(x.Id)).ToList();
+                list.First().Id.ShouldBe(id);
+                dbContext.Query<TestEntity>().Where(x => nestedArray.array.Contains(x.Id)).Any().ShouldBe(true);
+                dbContext.Query<TestEntity>().Any(x => nestedArray.array.Contains(x.Id)).ShouldBe(true);
+            }
         }
 
         [TestMethod]
