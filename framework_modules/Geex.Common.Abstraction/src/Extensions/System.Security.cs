@@ -14,12 +14,12 @@ namespace System.Security.Claims
     {
         public static string? FindUserId(this ClaimsPrincipal principal)
         {
-            return principal.Identity?.FindUserId();
+            return principal?.Identity?.FindUserId();
         }
 
         public static string? FindClientId(this ClaimsPrincipal principal)
         {
-            return principal.Identity?.FindClientId();
+            return principal?.Identity?.FindClientId();
         }
 
         public static string[]? FindOrgCodes(this ClaimsPrincipal principal)

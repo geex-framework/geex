@@ -50,32 +50,47 @@ namespace Geex.Common.Authentication.Utils
         /// <inheritdoc />
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            var authResult = AuthenticateResult.NoResult();
             var request = Context.GetOpenIddictServerRequest();
             var parts = Context.Request.Headers.Authorization.ToString().Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var accessToken = request != default ? request.AccessToken : parts.ElementAtOrDefault(1);
             var schema = parts.ElementAtOrDefault(0);
-            if (schema == "SuperAdmin")
+            try
             {
-                return AuthenticateResult.NoResult();
+                if (schema == "SuperAdmin")
+                {
+                    this.Logger.LogWarning("SuperAdmin is not supported in this version of the API");
+                    return authResult;
+                }
+                if (accessToken.IsNullOrEmpty())
+                {
+                    this.Logger.LogWarning("Access token is null or empty");
+                    return authResult;
+                }
+                var token = _tokenHandler.ReadToken(accessToken);
+
+                if (token is not null && token.Issuer is not null && token.Issuer.Contains("account.api"))
+                {
+                    return authResult;
+                }
+
+                var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenValidationParameters);
+                if (result == null || !result.IsValid || result.ClaimsIdentity == null)
+                {
+                    this.Logger.LogWarningWithData("Access token is invalid or not issued by this API", result?.Exception);
+                    authResult = AuthenticateResult.Fail(result.Exception);
+                }
+                var identity = result.ClaimsIdentity;
+                var principal = new ClaimsPrincipal(identity);
+                var ticket = new AuthenticationTicket(principal, SchemeName);
+                authResult = AuthenticateResult.Success(ticket);
+                return authResult;
             }
-            if (accessToken.IsNullOrEmpty())
+            catch(Exception ex)
             {
-                return AuthenticateResult.NoResult();
+                this.Logger.LogWarningWithData("Access token is invalid or not issued by this API", ex);
+                return authResult;
             }
-            var token = _tokenHandler.ReadToken(accessToken);
-            if (token.Issuer.Contains("account.api"))
-            {
-                return AuthenticateResult.NoResult();
-            }
-            var result = await _tokenHandler.ValidateTokenAsync(accessToken, _tokenValidationParameters);
-            if (result == null || !result.IsValid || result.ClaimsIdentity == null)
-            {
-                return AuthenticateResult.Fail(result.Exception);
-            }
-            var identity = result.ClaimsIdentity;
-            var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, SchemeName);
-            return AuthenticateResult.Success(ticket);
         }
 
         /// <inheritdoc />
