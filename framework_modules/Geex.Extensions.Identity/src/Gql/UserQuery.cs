@@ -50,7 +50,16 @@ namespace Geex.Extensions.Identity.Gql
         /// </summary>
         /// <param name="dto"></param>
         /// <returns></returns>
-        public async Task<IQueryable<IUser>> Users() => _uow.Query<IUser>();
+        public async Task<IQueryable<IUser>> Users()
+        {
+            var query = _uow.Query<IUser>();
+            // 非 superAdmin 用户不应看到 superAdmin 账号
+            if (_currentUser.UserId != GeexConstants.SuperAdminId)
+            {
+                query = query.Where(x => x.Id != GeexConstants.SuperAdminId);
+            }
+            return query;
+        }
 
         public async Task<IUser?> CurrentUser()
         {
