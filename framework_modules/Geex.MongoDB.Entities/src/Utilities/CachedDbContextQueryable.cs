@@ -182,53 +182,8 @@ namespace MongoDB.Entities.Utilities
             return result;
         }
 
-        private void BatchLoadLazyQueries(IQueryable entities, BatchLoadConfig batchLoadConfig)
-        {
-            foreach (var (propertyInfo, subBatchLoadConfig) in batchLoadConfig.SubBatchLoadConfigs)
-            {
-                var subQueryEntityType = propertyInfo.PropertyType.GenericTypeArguments.First().GetRootBsonClassMap().ClassType;
-                var listType = ListType.MakeGenericTypeFast(subQueryEntityType);
-
-                var lazyQueries = new List<ILazyQuery>();
-
-                foreach (var entity in entities)
-                {
-                    if (entity is IEntityBase entityBase && entityBase.LazyQueryCache.TryGetValue(propertyInfo.Name, out var lazyQuery))
-                    {
-                        lazyQueries.Add(lazyQuery);
-                    }
-                }
-
-                if (lazyQueries.Count == 0) continue;
-
-                var first = lazyQueries.First();
-                var allQuery = first.DefaultSourceProvider().OfType(subQueryEntityType);
-
-                var filterExpression = first.BatchQuery.DynamicInvoke(entities) as LambdaExpression;
-                filterExpression = filterExpression.CastParamType(subQueryEntityType);
-
-                var whereMethod = QueryableWhereMethodInfo.MakeGenericMethodFast(subQueryEntityType);
-                var filteredQuery = (IQueryable)whereMethod.Invoke(null, [allQuery, filterExpression]);
-
-                var list = (IList)Activator.CreateInstance(listType, filteredQuery);
-
-                var batchLoadResult = list.AsQueryable();
-
-                if (list.Count > 0 && subBatchLoadConfig.SubBatchLoadConfigs.Count != 0)
-                {
-                    BatchLoadLazyQueries(batchLoadResult, subBatchLoadConfig);
-                }
-
-                foreach (var lazyQuery in lazyQueries)
-                {
-                    lazyQuery.Source = batchLoadResult;
-                }
-            }
-        }
-
-        private static readonly MethodInfo QueryableWhereMethodInfo = typeof(Queryable)
-            .GetMethods()
-            .First(m => m.Name == nameof(Queryable.Where) && m.GetParameters().Length == 2);
+        private void BatchLoadLazyQueries(IQueryable entities, BatchLoadConfig batchLoadConfig) =>
+            BatchLoadHelper.BatchLoadLazyQueries(entities, batchLoadConfig);
 
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }

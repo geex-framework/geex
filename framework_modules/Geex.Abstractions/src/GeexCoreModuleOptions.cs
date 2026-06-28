@@ -35,5 +35,9 @@ namespace Geex
 
         public string CorsRegex { get; set; } = ".+";
         public RabbitMqConfiguration? RabbitMq { get; set; }
+        /// <summary>
+        /// GraphQL Query 根字段是否默认启用 AutoBatchLoad（按 selection 自动配置 BatchLoad）。
+        /// </summary>
+        public bool AutoBatchLoadEnabled { get; set; } = true;
     }
 }
