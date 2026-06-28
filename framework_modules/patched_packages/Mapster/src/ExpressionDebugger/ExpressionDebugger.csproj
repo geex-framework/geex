@@ -14,7 +14,6 @@
     <AssemblyOriginatorKeyFile>ExpressionDebugger.snk</AssemblyOriginatorKeyFile>
     <Version>2.2.0</Version>
     <PackageLicenseUrl>https://github.com/chaowlert/ExpressionDebugger/blob/master/LICENSE</PackageLicenseUrl>
-    <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
