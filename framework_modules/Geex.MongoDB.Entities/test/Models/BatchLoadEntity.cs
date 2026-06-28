@@ -10,7 +10,7 @@ public class BatchLoadEntity : EntityBase<BatchLoadEntity>
     public BatchLoadEntity()
     {
         this.ConfigLazyQuery(x => x.Children, x => x.ParentId == ThisId, children => parent => children.Select(y => y.ThisId).ToList().Contains(parent.ParentId));
-        this.ConfigLazyQuery(x => x.FirstChild, x => x.ParentId == ThisId, children => parent => children.Select(y => y.ThisId).ToList().Contains(parent.ParentId));
+        this.ConfigLazyQuery(x => x.FirstChild, x => x.ParentId == ThisId && x.ThisId == ThisId + ".1", children => parent => children.Select(y => y.ThisId + ".1").ToList().Contains(parent.ThisId));
     }
 
     public BatchLoadEntity(string thisId) : this()
@@ -42,7 +42,7 @@ public class RootEntity : EntityBase<RootEntity>
     public RootEntity()
     {
         this.ConfigLazyQuery(x => x.C1, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
-        this.ConfigLazyQuery(x => x.FirstChild, x => x.ParentId == ThisId, entities => relatedEntity => entities.Select(y => y.ThisId).ToList().Contains(relatedEntity.ParentId));
+        this.ConfigLazyQuery(x => x.FirstChild, x => x.ParentId == ThisId && x.ThisId == ThisId + ".1", entities => relatedEntity => entities.Select(y => y.ThisId + ".1").ToList().Contains(relatedEntity.ThisId));
     }
 
     public RootEntity(string thisId) : this()

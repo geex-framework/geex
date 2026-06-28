@@ -43,5 +43,8 @@ namespace Geex.Tests.SchemaTests
 
         public IQueryable<AutoBatchLoadTestEntity> AutoBatchLoadManualChildren() =>
             _uow.Query<AutoBatchLoadTestEntity>().BatchLoad(x => x.Children);
+
+        public IQueryable<AutoBatchLoadTestEntity> AutoBatchLoadNonCachedList() =>
+            _uow.Query<AutoBatchLoadTestEntity>().ToList().AsQueryable();
     }
 }

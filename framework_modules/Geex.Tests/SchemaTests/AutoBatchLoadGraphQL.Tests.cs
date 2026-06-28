@@ -1,10 +1,7 @@
-using System.Linq;
-
 using Geex.Tests.SchemaTests.TestEntities;
 
 using Microsoft.Extensions.DependencyInjection;
 
-using MongoDB.Driver;
 using MongoDB.Entities;
 
 using Shouldly;
@@ -14,6 +11,18 @@ namespace Geex.Tests.SchemaTests
     [Collection(nameof(TestsCollection))]
     public class AutoBatchLoadGraphQLTests : TestsBase
     {
+        private const string NestedChildrenQuery = """
+            query {
+              {field} {
+                thisId
+                children {
+                  thisId
+                  firstChild { thisId }
+                }
+              }
+            }
+            """;
+
         public AutoBatchLoadGraphQLTests(TestApplicationFactory factory) : base(factory)
         {
         }
@@ -21,7 +30,7 @@ namespace Geex.Tests.SchemaTests
         [Fact]
         public async Task PagedQueryWithNestedSelectionShouldReturnNestedData()
         {
-            await SeedAsync();
+            await AutoBatchLoadTestData.SeedSingleTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
 
             var query = """
                 query {
@@ -44,7 +53,7 @@ namespace Geex.Tests.SchemaTests
         [Fact]
         public async Task NonPagedQueryableWithNestedSelectionShouldReturnNestedData()
         {
-            await SeedAsync();
+            await AutoBatchLoadTestData.SeedSingleTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
 
             var query = """
                 query {
@@ -64,7 +73,7 @@ namespace Geex.Tests.SchemaTests
         [Fact]
         public async Task SingleEntityQueryWithNestedSelectionShouldReturnNestedData()
         {
-            await SeedAsync();
+            await AutoBatchLoadTestData.SeedSingleTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
 
             var query = """
                 query {
@@ -83,7 +92,7 @@ namespace Geex.Tests.SchemaTests
         [Fact]
         public async Task OptOutFieldShouldStillReturnNestedData()
         {
-            await SeedAsync();
+            await AutoBatchLoadTestData.SeedSingleTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
 
             var query = """
                 query {
@@ -102,7 +111,7 @@ namespace Geex.Tests.SchemaTests
         [Fact]
         public async Task NestedThenBatchLoadThreeLevelsShouldReturnGrandChild()
         {
-            await SeedAsync();
+            await AutoBatchLoadTestData.SeedSingleTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
 
             var query = """
                 query {
@@ -121,7 +130,7 @@ namespace Geex.Tests.SchemaTests
         [Fact]
         public async Task ScalarOnlySelectionShouldNotBatchLoadNavigations()
         {
-            await SeedAsync();
+            await AutoBatchLoadTestData.SeedSingleTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
 
             await DB.RestartProfiler();
 
@@ -136,48 +145,111 @@ namespace Geex.Tests.SchemaTests
             var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
             responseData["data"]!["autoBatchLoadList"]!.AsArray().Count.ShouldBeGreaterThan(0);
 
-            var logs = DB.GetProfilerLogs().AsQueryable()
-                .Where(x => x.ns != null && x.ns.Contains("AutoBatchLoadTest"));
-            logs.Count().ShouldBe(1);
+            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.AutoBatchLoadNamespace).ShouldBe(1);
             DB.StopProfiler();
         }
 
         [Fact]
         public async Task ManualBatchLoadShouldSkipAutoConfigInjection()
         {
-            await SeedAsync();
+            await AutoBatchLoadTestData.SeedMultiChildTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
+
+            var nestedQuery = NestedChildrenQuery.Replace("{field}", "autoBatchLoadList");
+            var manualQuery = NestedChildrenQuery.Replace("{field}", "autoBatchLoadManualChildren");
 
             await DB.RestartProfiler();
+            await SuperAdminClient.PostGqlRequest(nestedQuery);
+            var autoBatchCount = BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.AutoBatchLoadNamespace);
+            DB.StopProfiler();
+
+            await DB.RestartProfiler();
+            await SuperAdminClient.PostGqlRequest(manualQuery);
+            var manualBatchCount = BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.AutoBatchLoadNamespace);
+            DB.StopProfiler();
+
+            autoBatchCount.ShouldBe(3);
+            manualBatchCount.ShouldBe(4);
+        }
+
+        [Fact]
+        public async Task OptOutShouldUseMoreQueriesThanAutoBatchForNestedSelection()
+        {
+            await AutoBatchLoadTestData.SeedMultiChildTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
+
+            var autoQuery = """
+                query {
+                  autoBatchLoadById(thisId: "1") {
+                    thisId
+                    children {
+                      thisId
+                      firstChild { thisId }
+                    }
+                  }
+                }
+                """;
+
+            var optOutQuery = """
+                query {
+                  autoBatchLoadOptOut(thisId: "1") {
+                    thisId
+                    children {
+                      thisId
+                      firstChild { thisId }
+                    }
+                  }
+                }
+                """;
+
+            await DB.RestartProfiler();
+            await SuperAdminClient.PostGqlRequest(autoQuery);
+            var autoBatchCount = BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.AutoBatchLoadNamespace);
+            DB.StopProfiler();
+
+            await DB.RestartProfiler();
+            await SuperAdminClient.PostGqlRequest(optOutQuery);
+            var optOutCount = BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.AutoBatchLoadNamespace);
+            DB.StopProfiler();
+
+            autoBatchCount.ShouldBe(3);
+            optOutCount.ShouldBeGreaterThan(autoBatchCount);
+        }
+
+        [Fact]
+        public async Task ResettableLazyNavigationShouldReturnNestedData()
+        {
+            await AutoBatchLoadTestData.SeedSingleTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
 
             var query = """
                 query {
-                  autoBatchLoadManualChildren {
-                    thisId
-                    children { thisId firstChild { thisId } }
+                  autoBatchLoadById(thisId: "1") {
+                    children {
+                      resettableGrandChild { thisId }
+                    }
                   }
                 }
                 """;
 
             var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
-            responseData["data"]!["autoBatchLoadManualChildren"]!.AsArray().Count.ShouldBeGreaterThan(0);
-
-            var logs = DB.GetProfilerLogs().AsQueryable()
-                .Where(x => x.ns != null && x.ns.Contains("AutoBatchLoadTest"));
-            logs.Count().ShouldBe(3);
-            DB.StopProfiler();
+            ((string?)responseData["data"]!["autoBatchLoadById"]!["children"]![0]!["resettableGrandChild"]!["thisId"]).ShouldBe("1.1.1");
         }
 
-        private async Task SeedAsync()
+        [Fact]
+        public async Task NonCachedQueryableShouldReturnNestedDataWithoutThrowing()
         {
-            var uow = ScopedService.GetRequiredService<IUnitOfWork>();
-            await uow.DeleteAsync<AutoBatchLoadTestEntity>(_ => true);
-            await uow.DeleteAsync<AutoBatchLoadChildEntity>(_ => true);
-            await uow.DeleteAsync<AutoBatchLoadGrandChildEntity>(_ => true);
+            await AutoBatchLoadTestData.SeedSingleTreeAsync(ScopedService.GetRequiredService<IUnitOfWork>());
 
-            uow.Attach(new AutoBatchLoadTestEntity("1"));
-            uow.Attach(new AutoBatchLoadChildEntity("1.1", "1"));
-            uow.Attach(new AutoBatchLoadGrandChildEntity("1.1.1", "1.1"));
-            await uow.SaveChanges();
+            var query = """
+                query {
+                  autoBatchLoadNonCachedList {
+                    thisId
+                    children { thisId }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["autoBatchLoadNonCachedList"]!.AsArray().Count.ShouldBeGreaterThan(0);
+            responseData["data"]!["autoBatchLoadNonCachedList"]![0]!["children"]!.AsArray().Count.ShouldBe(1);
         }
     }
 }

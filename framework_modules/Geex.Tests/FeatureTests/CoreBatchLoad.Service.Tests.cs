@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Driver;
 using MongoDB.Entities;
+using MongoDB.Entities.Utilities;
 
 using Shouldly;
 
@@ -14,8 +15,6 @@ namespace Geex.Tests.FeatureTests
     [Collection(nameof(TestsCollection))]
     public class CoreBatchLoadServiceTests : TestsBase
     {
-        private const string ProfilerNamespaceFilter = "BatchLoadTest";
-
         public CoreBatchLoadServiceTests(TestApplicationFactory factory) : base(factory)
         {
         }
@@ -37,9 +36,7 @@ namespace Geex.Tests.FeatureTests
             result.TrueForAll(x => x.Children.All(child => child.ParentId == x.ThisId)).ShouldBeTrue();
             result.Select(x => x.FirstChild).Count(x => x?.Value != default).ShouldBe(2);
 
-            var logs = DB.GetProfilerLogs().AsQueryable()
-                .Where(x => x.ns != null && x.ns.Contains("BatchLoadTest"));
-            logs.Count().ShouldBe(3);
+            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(3);
             DB.StopProfiler();
         }
 
@@ -73,9 +70,45 @@ namespace Geex.Tests.FeatureTests
                 .Children.First(x => x.ThisId == "1.1")
                 .FirstChild.Value!.ThisId.ShouldBe("1.1.1");
 
-            var logs = DB.GetProfilerLogs().AsQueryable()
-                .Where(x => x.ns != null && x.ns.Contains(ProfilerNamespaceFilter));
-            logs.Count().ShouldBe(3);
+            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(3);
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task PureLinqQueryShouldNotAutoBatchLoadNavigations()
+        {
+            await SeedBatchLoadDataAsync();
+
+            var uow = ScopedService.GetRequiredService<IUnitOfWork>();
+            await DB.RestartProfiler();
+
+            var roots = uow.Query<BatchLoadTestEntity>().ToList();
+            roots.Count.ShouldBe(2);
+
+            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(1);
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task SelectProjectionWithBatchLoadConfigShouldBatchBeforeProjecting()
+        {
+            await SeedBatchLoadDataAsync();
+
+            var uow = ScopedService.GetRequiredService<IUnitOfWork>();
+            var childrenProperty = typeof(BatchLoadTestEntity).GetProperty(nameof(BatchLoadTestEntity.Children))!;
+            var config = new BatchLoadConfig();
+            config.EnsurePath([childrenProperty]);
+
+            await DB.RestartProfiler();
+
+            var query = uow.Query<BatchLoadTestEntity>();
+            query.MergeBatchLoadConfig(config);
+            var result = query
+                .Select(x => new { x.ThisId, ChildCount = x.Children.Count() })
+                .ToList();
+
+            result.First(x => x.ThisId == "1").ChildCount.ShouldBe(2);
+            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(2);
             DB.StopProfiler();
         }
 

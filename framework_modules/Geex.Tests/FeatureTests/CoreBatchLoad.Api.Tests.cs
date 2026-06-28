@@ -145,9 +145,7 @@ namespace Geex.Tests.FeatureTests
             var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
             responseData["data"]!["coreBatchLoadList"]!.AsArray().Count.ShouldBe(2);
 
-            var logs = DB.GetProfilerLogs().AsQueryable()
-                .Where(x => x.ns != null && x.ns.Contains("BatchLoadTest"));
-            logs.Count().ShouldBe(2);
+            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(2);
             DB.StopProfiler();
         }
 
@@ -170,9 +168,7 @@ namespace Geex.Tests.FeatureTests
             var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
             ((string?)responseData["data"]!["coreBatchLoadById"]!["thisId"]).ShouldBe("1");
 
-            var logs = DB.GetProfilerLogs().AsQueryable()
-                .Where(x => x.ns != null && x.ns.Contains("BatchLoadTest"));
-            logs.Count().ShouldBe(3);
+            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(3);
             DB.StopProfiler();
         }
 

@@ -13,22 +13,32 @@ namespace Geex.Gql
     /// </summary>
     public class LazyQueryTypeInterceptor : TypeInterceptor
     {
-        private static Dictionary<Type, MethodInfo> LazyGetterCache = new Dictionary<Type, MethodInfo>();
+        private static readonly Dictionary<Type, MethodInfo> LazyGetterCache = new();
 
         /// <summary>
         /// 用于强制获取Lazy值
         /// </summary>
         private static object? GetLazyValue(object lazy, Type valueType)
         {
-            if (LazyGetterCache.TryGetValue(valueType, out var method))
+            if (lazy == null)
             {
-                return method.Invoke(lazy, []);
+                return null;
             }
 
             var lazyType = lazy.GetType();
-            method = lazyType.GetProperty(nameof(Lazy<object>.Value))!.GetMethod!;
-            LazyGetterCache.Add(valueType, method);
-            return method.Invoke(lazy, []);
+            if (LazyGetterCache.TryGetValue(lazyType, out var getter))
+            {
+                return getter.Invoke(lazy, []);
+            }
+
+            var valueProperty = lazyType.GetProperty(nameof(Lazy<object>.Value));
+            if (valueProperty?.GetMethod is not { } getMethod)
+            {
+                return null;
+            }
+
+            LazyGetterCache[lazyType] = getMethod;
+            return getMethod.Invoke(lazy, []);
         }
 
         /// <inheritdoc />

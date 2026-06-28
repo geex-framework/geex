@@ -46,6 +46,19 @@ namespace MongoDB.Entities
             return lazyObj;
         }
 
+        protected LazySingleQuery<TEntity, TRelated> ConfigLazyQuery<TEntity, TRelated>(
+            Expression<Func<TEntity, ResettableLazy<TRelated>>> propExpression,
+            Expression<Func<TRelated, bool>> lazyQuery,
+            Expression<Func<IQueryable<TEntity>, Expression<Func<TRelated, bool>>>> batchQuery,
+            Func<IQueryable<TRelated>>? sourceProvider = default) where TRelated : IEntityBase where TEntity : T
+        {
+            var lazyObj = new LazySingleQuery<TEntity, TRelated>(lazyQuery, batchQuery, sourceProvider ??
+                                                                          (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
+            var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
+            LazyQueryCache[propertyMember.Name] = lazyObj;
+            return lazyObj;
+        }
+
         protected LazyMultiQuery<T, TRelated> ConfigLazyQuery<TRelated>(
             Expression<Func<T, IQueryable<TRelated>>> propToLoad, Expression<Func<TRelated, bool>> loadCondition,
             Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batchLoadRule,
@@ -73,6 +86,24 @@ namespace MongoDB.Entities
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             return lazyObj;
+        }
+
+        protected LazySingleQuery<T, TRelated> ConfigLazyQuery<TRelated>(
+            Expression<Func<T, ResettableLazy<TRelated>>> propExpression,
+            Expression<Func<TRelated, bool>> lazyQuery,
+            Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batchQuery,
+            Func<IQueryable<TRelated>>? sourceProvider = default) where TRelated : IEntityBase
+        {
+            var lazyObj = new LazySingleQuery<T, TRelated>(lazyQuery, batchQuery, sourceProvider ??
+                                                                          (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
+            var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
+            LazyQueryCache[propertyMember.Name] = lazyObj;
+            return lazyObj;
+        }
+
+        protected void RegisterLazyQuery(string propertyName, ILazyQuery lazyQuery)
+        {
+            LazyQueryCache[propertyName] = lazyQuery;
         }
 
         public EntityBase()
@@ -125,7 +156,25 @@ namespace MongoDB.Entities
             {
                 return typedValue;
             }
+
+            if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(ResettableLazy<>))
+            {
+                var relatedType = typeof(T).GenericTypeArguments[0];
+                var wrapMethod = typeof(ResettableLazyQueryHelper).GetMethod(
+                    nameof(ResettableLazyQueryHelper.Wrap),
+                    BindingFlags.Static | BindingFlags.Public)!.MakeGenericMethod(relatedType);
+                return (T)wrapMethod.Invoke(null, [lazyQuery])!;
+            }
+
             return (dynamic)lazyQuery.Value;
+        }
+
+        private static class ResettableLazyQueryHelper
+        {
+            public static ResettableLazy<TRelated> Wrap<TRelated>(ILazyQuery lazyQuery) where TRelated : class
+            {
+                return new ResettableLazy<TRelated>(() => ((Lazy<TRelated>)lazyQuery.Value).Value!);
+            }
         }
         /// <summary>
         /// This property is auto managed. A new Id will be assigned for new entities upon saving.

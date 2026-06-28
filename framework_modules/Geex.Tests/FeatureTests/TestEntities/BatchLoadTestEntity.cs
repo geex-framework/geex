@@ -16,8 +16,8 @@ namespace Geex.Tests.FeatureTests.TestEntities
                 parents => child => parents.SelectList(x => x.ThisId).Contains(child.ParentId));
             ConfigLazyQuery(
                 x => x.FirstChild,
-                child => child.ParentId == ThisId,
-                parents => child => parents.SelectList(x => x.ThisId).Contains(child.ParentId));
+                child => child.ParentId == ThisId && child.ThisId == ThisId + ".1",
+                parents => child => parents.SelectList(x => x.ThisId + ".1").Contains(child.ThisId));
         }
 
         public BatchLoadTestEntity(string thisId) : this()
@@ -36,8 +36,8 @@ namespace Geex.Tests.FeatureTests.TestEntities
         {
             ConfigLazyQuery(
                 x => x.FirstChild,
-                child => child.ParentId == ThisId,
-                parents => child => parents.SelectList(x => x.ThisId).Contains(child.ParentId));
+                child => child.ParentId == ThisId && child.ThisId == ThisId + ".1",
+                parents => child => parents.SelectList(x => x.ThisId + ".1").Contains(child.ThisId));
         }
 
         public BatchLoadTestChildEntity(string thisId, string parentId) : this()

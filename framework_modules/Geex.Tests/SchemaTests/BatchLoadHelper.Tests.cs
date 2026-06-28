@@ -8,11 +8,6 @@ namespace Geex.Tests.SchemaTests
 {
     public class BatchLoadHelperTests
     {
-        private sealed class ResettableLazyNavigationHolder
-        {
-            public ResettableLazy<AutoBatchLoadTestEntity> Related { get; set; } = default!;
-        }
-
         [Fact]
         public void IsLazyQueryNavigationPropertyShouldDetectQueryableAndLazy()
         {
@@ -26,21 +21,14 @@ namespace Geex.Tests.SchemaTests
         }
 
         [Fact]
-        public void TryGetRelatedEntityTypeShouldDetectResettableLazy()
-        {
-            var relatedProperty = typeof(ResettableLazyNavigationHolder).GetProperty(nameof(ResettableLazyNavigationHolder.Related))!;
-
-            relatedProperty.TryGetRelatedEntityType(out var relatedType).ShouldBeTrue();
-            relatedType.ShouldBe(typeof(AutoBatchLoadTestEntity));
-        }
-
-        [Fact]
         public void IsRegisteredLazyQueryNavigationShouldDetectConfiguredProperties()
         {
             var childrenProperty = typeof(AutoBatchLoadTestEntity).GetProperty(nameof(AutoBatchLoadTestEntity.Children))!;
+            var resettableGrandChildProperty = typeof(AutoBatchLoadChildEntity).GetProperty(nameof(AutoBatchLoadChildEntity.ResettableGrandChild))!;
             var thisIdProperty = typeof(AutoBatchLoadTestEntity).GetProperty(nameof(AutoBatchLoadTestEntity.ThisId))!;
 
             BatchLoadHelper.IsRegisteredLazyQueryNavigation(typeof(AutoBatchLoadTestEntity), childrenProperty).ShouldBeTrue();
+            BatchLoadHelper.IsRegisteredLazyQueryNavigation(typeof(AutoBatchLoadChildEntity), resettableGrandChildProperty).ShouldBeTrue();
             BatchLoadHelper.IsRegisteredLazyQueryNavigation(typeof(AutoBatchLoadTestEntity), thisIdProperty).ShouldBeFalse();
         }
 

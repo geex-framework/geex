@@ -117,7 +117,7 @@ namespace MongoDB.Entities.Utilities
             this.Batch = batch;
         }
 
-        public Lazy<TRelated> Value => new(() => this.Source.Where(this.Lazy).FirstOrDefault());
+        public Lazy<TRelated> Value => new(() => this.Source.Where(this.Lazy).SingleOrDefault());
         public Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> Batch { get; set; }
 
 
