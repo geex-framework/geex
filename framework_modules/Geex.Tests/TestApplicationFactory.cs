@@ -5,14 +5,24 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-using MongoDB.Entities;
-
 using Volo.Abp.DependencyInjection;
 
 namespace Geex.Tests;
 
-public class TestApplicationFactory : WebApplicationFactory<Program>
+public class TestApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    /// <inheritdoc />
+    public async Task InitializeAsync()
+    {
+        await IntegrationTestDataCleaner.CleanAsync();
+    }
+
+    /// <inheritdoc />
+    async Task IAsyncLifetime.DisposeAsync()
+    {
+        await base.DisposeAsync();
+    }
+
     /// <inheritdoc />
     protected override IHostBuilder? CreateHostBuilder()
     {
@@ -25,20 +35,6 @@ public class TestApplicationFactory : WebApplicationFactory<Program>
         var host = builder.Build();
         host.Start();
         return host;
-    }
-
-    /// <inheritdoc />
-    protected override void Dispose(bool disposing)
-    {
-        var listCollectionNames = DB.DefaultDb.ListCollectionNames();
-        while (listCollectionNames.MoveNext())
-        {
-            foreach (var collectionName in listCollectionNames.Current)
-            {
-                DB.DefaultDb.DropCollection(collectionName);
-            }
-        }
-        base.Dispose(disposing);
     }
 }
 public class Program
