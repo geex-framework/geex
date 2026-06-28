@@ -3,7 +3,6 @@
     <OutputType>Exe</OutputType>
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <TargetFrameworks>net8.0;</TargetFrameworks>
-    <LangVersion>10.0</LangVersion>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
