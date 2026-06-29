@@ -143,7 +143,8 @@ namespace MongoDB.Entities.Utilities
                             entities = dbEntities.AsQueryable();
                         }
 
-                        BatchLoadLazyQueries(entities, this.BatchLoadConfig);
+                        BatchLoadMaterializationHooks.ApplySelectionOverlayIfPresent(this.BatchLoadConfig);
+                        entities.BatchLoadLazyQueries(this.BatchLoadConfig);
 
                         if (visitor.PostSelectExpression != default)
                         {
@@ -195,58 +196,6 @@ namespace MongoDB.Entities.Utilities
                 //{
                 //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} takes long, query: {expression}");
                 //}
-            }
-        }
-
-        static Type ListType = typeof(List<>);
-        private void BatchLoadLazyQueries(IQueryable entities, BatchLoadConfig batchLoadConfig)
-        {
-            foreach (var (propertyInfo, subBatchLoadConfig) in batchLoadConfig.SubBatchLoadConfigs)
-            {
-                var subQueryType = propertyInfo.PropertyType;
-                Type subQueryEntityType;
-                if (subQueryType.IsAssignableTo<IQueryable>() || subQueryType.Name.StartsWith($"{nameof(Lazy<object>)}`"))
-                {
-                    subQueryEntityType = subQueryType.GenericTypeArguments.First().GetRootBsonClassMap().ClassType;
-                }
-                else
-                {
-                    subQueryEntityType = subQueryType.GetRootBsonClassMap().ClassType;
-                }
-
-                var listType = ListType.MakeGenericTypeFast(subQueryEntityType);
-                IQueryable batchLoadResult = default;
-                foreach (var entity in entities)
-                {
-                    if (!((IEntityBase)entity).LazyQueryCache.TryGetValue(propertyInfo.Name, out var lazyQuery))
-                    {
-                        throw new Exception("非LazyQuery不可进行BatchLoad, 请使用IQueryable.");
-                    }
-
-                    if (batchLoadResult == default)
-                    {
-                        var allQuery = lazyQuery.DefaultSourceProvider();
-                        var filterExpression = lazyQuery.BatchQuery.DynamicInvoke(entities).As<LambdaExpression>();
-
-                        filterExpression = filterExpression.CastParamType(subQueryEntityType);
-
-                        var filteredQuery = (IQueryable)queryableWhereMethodInfo.MakeGenericMethodFast(subQueryEntityType).Invoke(null, [allQuery, filterExpression]);
-
-                        var list = (IList)Activator.CreateInstance(listType, filteredQuery);
-                        batchLoadResult = list
-                            .AsQueryable();
-
-                        if (list.Count > 0)
-                        {
-                            if (subBatchLoadConfig.SubBatchLoadConfigs.Count != 0)
-                            {
-                                this.BatchLoadLazyQueries(batchLoadResult, subBatchLoadConfig);
-                            }
-                        }
-                    }
-
-                    lazyQuery.Source = batchLoadResult;
-                }
             }
         }
     }

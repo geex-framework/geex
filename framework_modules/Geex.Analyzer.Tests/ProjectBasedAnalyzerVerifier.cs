@@ -260,6 +260,11 @@ namespace Geex.Analyzer.Tests
             return new DiagnosticResult(diagnosticId, DiagnosticSeverity.Warning);
         }
 
+        public static DiagnosticResult CreateError(string diagnosticId)
+        {
+            return new DiagnosticResult(diagnosticId, DiagnosticSeverity.Error);
+        }
+
         /// <summary>
         /// 创建指定 ID 和参数的诊断结果
         /// </summary>

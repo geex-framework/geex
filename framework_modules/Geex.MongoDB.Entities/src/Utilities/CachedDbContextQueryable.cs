@@ -16,7 +16,6 @@ namespace MongoDB.Entities.Utilities
         private readonly Type _selectType = typeof(TSelect);
         private readonly Type _sourceType = typeof(T);
         private readonly Type _rootType;
-        private static readonly Type ListType = typeof(List<>);
 
         public Type ElementType { get; } = typeof(T);
         public Expression Expression { get; }
@@ -52,7 +51,7 @@ namespace MongoDB.Entities.Utilities
                 {
                     var entities = _selectType == _sourceType ? (IQueryable<T>)resultQuery : resultQuery.OfType<T>();
                     var attachedEntities = _dbContext.AttachNoTracking(entities).AsQueryable();
-                    BatchLoadLazyQueries(attachedEntities, this.TypedProvider.BatchLoadConfig);
+                    RunBatchLoad(attachedEntities);
                     var finalResult = _selectType == _sourceType ? (IQueryable<TSelect>)attachedEntities : attachedEntities.OfType<TSelect>();
                     finalResult = PostFilter(finalResult);
                     return finalResult.GetEnumerator();
@@ -67,7 +66,7 @@ namespace MongoDB.Entities.Utilities
                     var resultQueryExpression = visitor.PreSelectExpression.ReplaceSource(attachedEntities, ReplaceType.OriginSource);
                     var entities = attachedEntities.Provider.CreateQuery<T>(resultQueryExpression);
 
-                    BatchLoadLazyQueries(entities, this.TypedProvider.BatchLoadConfig);
+                    RunBatchLoad(entities);
 
                     if (visitor.PostSelectExpression != null)
                     {
@@ -135,7 +134,7 @@ namespace MongoDB.Entities.Utilities
                     entities = _dbContext.Attach(dbEntities).AsQueryable();
                 }
 
-                BatchLoadLazyQueries(entities, this.TypedProvider.BatchLoadConfig);
+                RunBatchLoad(entities);
 
                 if (visitor.PostSelectExpression != null)
                 {
@@ -182,53 +181,11 @@ namespace MongoDB.Entities.Utilities
             return result;
         }
 
-        private void BatchLoadLazyQueries(IQueryable entities, BatchLoadConfig batchLoadConfig)
+        private void RunBatchLoad(IQueryable entities)
         {
-            foreach (var (propertyInfo, subBatchLoadConfig) in batchLoadConfig.SubBatchLoadConfigs)
-            {
-                var subQueryEntityType = propertyInfo.PropertyType.GenericTypeArguments.First().GetRootBsonClassMap().ClassType;
-                var listType = ListType.MakeGenericTypeFast(subQueryEntityType);
-
-                var lazyQueries = new List<ILazyQuery>();
-
-                foreach (var entity in entities)
-                {
-                    if (entity is IEntityBase entityBase && entityBase.LazyQueryCache.TryGetValue(propertyInfo.Name, out var lazyQuery))
-                    {
-                        lazyQueries.Add(lazyQuery);
-                    }
-                }
-
-                if (lazyQueries.Count == 0) continue;
-
-                var first = lazyQueries.First();
-                var allQuery = first.DefaultSourceProvider().OfType(subQueryEntityType);
-
-                var filterExpression = first.BatchQuery.DynamicInvoke(entities) as LambdaExpression;
-                filterExpression = filterExpression.CastParamType(subQueryEntityType);
-
-                var whereMethod = QueryableWhereMethodInfo.MakeGenericMethodFast(subQueryEntityType);
-                var filteredQuery = (IQueryable)whereMethod.Invoke(null, [allQuery, filterExpression]);
-
-                var list = (IList)Activator.CreateInstance(listType, filteredQuery);
-
-                var batchLoadResult = list.AsQueryable();
-
-                if (list.Count > 0 && subBatchLoadConfig.SubBatchLoadConfigs.Count != 0)
-                {
-                    BatchLoadLazyQueries(batchLoadResult, subBatchLoadConfig);
-                }
-
-                foreach (var lazyQuery in lazyQueries)
-                {
-                    lazyQuery.Source = batchLoadResult;
-                }
-            }
+            BatchLoadMaterializationHooks.ApplySelectionOverlayIfPresent(this.TypedProvider.BatchLoadConfig);
+            entities.BatchLoadLazyQueries(this.TypedProvider.BatchLoadConfig);
         }
-
-        private static readonly MethodInfo QueryableWhereMethodInfo = typeof(Queryable)
-            .GetMethods()
-            .First(m => m.Name == nameof(Queryable.Where) && m.GetParameters().Length == 2);
 
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Geex.Bson;
 using Geex.Gql;
+using Geex.Gql.AutoBatchLoad;
 using Geex.Gql.Types;
 using Geex.Validation;
 using HotChocolate;
@@ -27,6 +28,8 @@ using MongoDB.Bson.Serialization.Conventions;
 using RestSharp;
 
 using StackExchange.Redis.Extensions.Core;
+
+using MongoDB.Entities.Utilities;
 
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -72,6 +75,8 @@ namespace Geex
             context.Services.TryAddTransient<IRestClient, LoggedRestClient>();
             context.Services.TryAddTransient<RestClient, LoggedRestClient>();
             context.Services.TryAddTransient<LoggedRestClient>();
+            context.Services.TryAddTransient<AutoBatchLoadMiddleware>();
+            context.Services.TryAddScoped<IAutoBatchLoadContext, AutoBatchLoadContext>();
             var schemaBuilder = context.Services
                 .AddGraphQLServer()
                 .AllowIntrospection(!moduleOptions.DisableIntrospection);
@@ -107,6 +112,7 @@ namespace Geex
                 .TryAddTypeInterceptor<ValidateAttributeTypeInterceptor>()
                 .TryAddTypeInterceptor<ValidateTypeInterceptor>()
                 .TryAddTypeInterceptor<LazyQueryTypeInterceptor>()
+                .TryAddTypeInterceptor<AutoBatchLoadTypeInterceptor>()
                 .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
                 {
                     converter = o => o;
@@ -150,9 +156,9 @@ namespace Geex
                 })
                 .UseDefaultPipeline()
                 .UseField<ValidateMiddleware>()
-                .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
-                .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
-                .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
+                .AddQueryType<Query>(x => AutoBatchLoadSchemaConfigurator.ConfigureOperation(x, moduleOptions.AutoBatchLoad).Field("_").Type<StringType>().Resolve(x => null))
+                .AddMutationType<Mutation>(x => AutoBatchLoadSchemaConfigurator.ConfigureOperation(x, moduleOptions.AutoBatchLoad).Field("_").Type<StringType>().Resolve(x => null))
+                .AddSubscriptionType<Subscription>(x => AutoBatchLoadSchemaConfigurator.ConfigureOperation(x, moduleOptions.AutoBatchLoad).Field("_").Type<StringType>().Resolve(x => null))
                 .AddCommonTypes()
                 .AddQueryFieldToMutationPayloads()
                 .AddFiltering<GeexFilterConvention>()
@@ -198,6 +204,17 @@ namespace Geex
             var _env = context.GetEnvironment();
             var app = context.GetApplicationBuilder();
             ServiceLocator.Global = app.ApplicationServices;
+            BatchLoadMaterializationHooks.ResolveSelectionOverlay = () =>
+            {
+                try
+                {
+                    return ServiceLocator.Scoped.GetService<IAutoBatchLoadContext>()?.CurrentOverlay;
+                }
+                catch
+                {
+                    return null;
+                }
+            };
             var logger = context.ServiceProvider.GetService<ILogger<GeexCoreModule>>();
             logger.LogInformation("Loaded geex modules:");
             logger.LogInformation(GeexModule.LoadedModules.Select(x => x.ModuleName).ToJsonSafe());
