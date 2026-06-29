@@ -15,6 +15,8 @@ namespace Geex.Tests.FeatureTests
     [Collection(nameof(TestsCollection))]
     public class CoreBatchLoadServiceTests : TestsBase
     {
+        private const string ProfilerNamespaceFilter = "BatchLoadTest";
+
         public CoreBatchLoadServiceTests(TestApplicationFactory factory) : base(factory)
         {
         }
@@ -36,7 +38,8 @@ namespace Geex.Tests.FeatureTests
             result.TrueForAll(x => x.Children.All(child => child.ParentId == x.ThisId)).ShouldBeTrue();
             result.Select(x => x.FirstChild).Count(x => x?.Value != default).ShouldBe(2);
 
-            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(3);
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespaceFilter)).ShouldBe(3);
             DB.StopProfiler();
         }
 
@@ -70,7 +73,8 @@ namespace Geex.Tests.FeatureTests
                 .Children.First(x => x.ThisId == "1.1")
                 .FirstChild.Value!.ThisId.ShouldBe("1.1.1");
 
-            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(3);
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespaceFilter)).ShouldBe(3);
             DB.StopProfiler();
         }
 
@@ -85,7 +89,8 @@ namespace Geex.Tests.FeatureTests
             var roots = uow.Query<BatchLoadTestEntity>().ToList();
             roots.Count.ShouldBe(2);
 
-            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(1);
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespaceFilter)).ShouldBe(1);
             DB.StopProfiler();
         }
 
@@ -108,7 +113,8 @@ namespace Geex.Tests.FeatureTests
                 .ToList();
 
             result.First(x => x.ThisId == "1").ChildCount.ShouldBe(2);
-            BatchLoadProfilerAssertions.CountLogs(BatchLoadProfilerAssertions.BatchLoadTestNamespace).ShouldBe(2);
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespaceFilter)).ShouldBe(2);
             DB.StopProfiler();
         }
 

@@ -1,4 +1,4 @@
-using Geex.Gql.AutoBatchLoad;
+using Geex.Gql.GeexFeatures;
 using Geex.Gql.Types;
 using Geex.Tests.SchemaTests.TestEntities;
 

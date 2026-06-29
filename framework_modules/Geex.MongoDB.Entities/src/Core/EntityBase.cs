@@ -101,11 +101,6 @@ namespace MongoDB.Entities
             return lazyObj;
         }
 
-        protected void RegisterLazyQuery(string propertyName, ILazyQuery lazyQuery)
-        {
-            LazyQueryCache[propertyName] = lazyQuery;
-        }
-
         public EntityBase()
         {
 

@@ -1,5 +1,7 @@
 using System;
 
+using Geex.Gql.GeexFeatures;
+
 using HotChocolate.Configuration;
 using HotChocolate.Types.Descriptors.Definitions;
 
