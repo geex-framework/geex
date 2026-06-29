@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -19,6 +20,17 @@ namespace Geex.Analyzer.Tests
     /// </summary>
     public class GeexOnlyVerifier : XUnitVerifier
     {
+        private static readonly FieldInfo ContextBackingField =
+            typeof(XUnitVerifier).GetField("<Context>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        public override IVerifier PushContext(string context)
+        {
+            var verifier = new GeexOnlyVerifier();
+            var currentContext = (ImmutableStack<string>)ContextBackingField.GetValue(this)!;
+            ContextBackingField.SetValue(verifier, currentContext.Push(context));
+            return verifier;
+        }
+
         public override void Equal<T>(T expected, T actual, string message = null)
         {
 

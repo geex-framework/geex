@@ -194,7 +194,7 @@ namespace Geex.Analyzer.Tests
     /// <summary>
     /// 基于项目的分析器测试类
     /// </summary>
-    internal class ProjectBasedAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer, XUnitVerifier>
+    internal class ProjectBasedAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer, GeexOnlyVerifier>
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
         public ProjectBasedAnalyzerTest()
