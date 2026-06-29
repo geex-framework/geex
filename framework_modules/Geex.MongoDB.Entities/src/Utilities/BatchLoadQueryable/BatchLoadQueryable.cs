@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -22,7 +22,7 @@ namespace System.Linq
 
             BatchLoadConfig config = rootProvider.BatchLoadConfig;
             this.Provider = rootProvider;
-            config.SubBatchLoadConfigs.TryAdd(parentProp, new BatchLoadConfig());
+            config.RegisterBatchLoad(parentProp);
             _sources = sources;
         }
         public BatchLoadQueryable(IQueryable<TSource> sources, PropertyInfo parentProp)
@@ -59,7 +59,7 @@ namespace System.Linq
                 }
             }
             this.Provider = rootProvider;
-            config.SubBatchLoadConfigs.TryAdd(parentProp, new BatchLoadConfig());
+            config.RegisterBatchLoad(parentProp);
             _sources = sources;
         }
 

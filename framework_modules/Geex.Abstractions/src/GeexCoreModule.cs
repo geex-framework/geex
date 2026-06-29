@@ -76,7 +76,6 @@ namespace Geex
             context.Services.TryAddTransient<RestClient, LoggedRestClient>();
             context.Services.TryAddTransient<LoggedRestClient>();
             context.Services.TryAddTransient<AutoBatchLoadMiddleware>();
-            context.Services.TryAddScoped<IAutoBatchLoadContext, AutoBatchLoadContext>();
             var schemaBuilder = context.Services
                 .AddGraphQLServer()
                 .AllowIntrospection(!moduleOptions.DisableIntrospection);
@@ -204,17 +203,6 @@ namespace Geex
             var _env = context.GetEnvironment();
             var app = context.GetApplicationBuilder();
             ServiceLocator.Global = app.ApplicationServices;
-            BatchLoadMaterializationHooks.ResolveSelectionOverlay = () =>
-            {
-                try
-                {
-                    return ServiceLocator.Scoped.GetService<IAutoBatchLoadContext>()?.CurrentOverlay;
-                }
-                catch
-                {
-                    return null;
-                }
-            };
             var logger = context.ServiceProvider.GetService<ILogger<GeexCoreModule>>();
             logger.LogInformation("Loaded geex modules:");
             logger.LogInformation(GeexModule.LoadedModules.Select(x => x.ModuleName).ToJsonSafe());

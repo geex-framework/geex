@@ -183,7 +183,6 @@ namespace MongoDB.Entities.Utilities
 
         private void RunBatchLoad(IQueryable entities)
         {
-            BatchLoadMaterializationHooks.ApplySelectionOverlayIfPresent(this.TypedProvider.BatchLoadConfig);
             entities.BatchLoadLazyQueries(this.TypedProvider.BatchLoadConfig);
         }
 

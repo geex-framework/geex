@@ -1,9 +1,3 @@
-using System;
-using System.Reflection;
-
-using System;
-using System.Linq;
-
 using Geex.Gql.Types;
 
 using HotChocolate;
@@ -18,7 +12,7 @@ namespace Geex.Gql.AutoBatchLoad
         {
             descriptor.Extend().OnBeforeCreate((_, definition) =>
             {
-                if (!IsOperationType(definition.RuntimeType))
+                if (!OperationTypeHelper.IsOperationObjectType(definition.RuntimeType, definition.Name))
                 {
                     throw new SchemaException(
                         SchemaErrorBuilder.New()
@@ -37,10 +31,5 @@ namespace Geex.Gql.AutoBatchLoad
             ((IObjectTypeDescriptor)descriptor).UseAutoBatchLoad(enabled);
             return descriptor;
         }
-
-        private static bool IsOperationType(Type runtimeType) =>
-            runtimeType == typeof(Query) ||
-            runtimeType == typeof(Mutation) ||
-            runtimeType == typeof(Subscription);
     }
 }

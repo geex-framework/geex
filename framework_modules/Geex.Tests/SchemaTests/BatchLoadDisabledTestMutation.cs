@@ -24,6 +24,7 @@ namespace Geex.Tests.SchemaTests
         }
 
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesDisabled() =>
-            _uow.Query<BatchLoadGraphQLEntity>();
+            _uow.Query<BatchLoadGraphQLEntity>()
+                .Where(x => string.IsNullOrEmpty(x.ParentId));
     }
 }

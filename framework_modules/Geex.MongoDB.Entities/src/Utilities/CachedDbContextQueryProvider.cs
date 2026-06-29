@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -143,7 +143,6 @@ namespace MongoDB.Entities.Utilities
                             entities = dbEntities.AsQueryable();
                         }
 
-                        BatchLoadMaterializationHooks.ApplySelectionOverlayIfPresent(this.BatchLoadConfig);
                         entities.BatchLoadLazyQueries(this.BatchLoadConfig);
 
                         if (visitor.PostSelectExpression != default)

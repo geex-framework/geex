@@ -14,70 +14,82 @@ namespace MongoDB.Entities.Tests
     public class TestBatchLoadExtensions
     {
         [TestMethod]
-        public void apply_selection_overlay_should_add_new_paths()
+        public void register_batch_load_should_be_idempotent()
         {
             var childrenProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.Children))!;
-            var manual = new BatchLoadConfig();
-            var selection = new BatchLoadConfig();
-            selection.GetOrAddSubConfig(childrenProperty);
 
-            manual.ApplySelectionOverlay(selection);
+            var config = new BatchLoadConfig();
+            config.RegisterBatchLoad(childrenProperty);
+            config.RegisterBatchLoad(childrenProperty);
 
-            manual.ContainsSubConfig(childrenProperty).ShouldBeTrue();
+            config.SubBatchLoadConfigs.Count.ShouldBe(1);
+            config.SubBatchLoadConfigs.ContainsKey(childrenProperty).ShouldBeTrue();
         }
 
         [TestMethod]
-        public void apply_selection_overlay_should_overwrite_manual_at_same_path()
+        public void apply_selection_batch_load_should_add_new_paths()
+        {
+            var childrenProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.Children))!;
+
+            var manual = new BatchLoadConfig();
+            var selection = new BatchLoadConfig();
+            selection.RegisterBatchLoad(childrenProperty);
+
+            manual.ApplySelectionBatchLoad(selection);
+
+            manual.SubBatchLoadConfigs.ContainsKey(childrenProperty).ShouldBeTrue();
+        }
+
+        [TestMethod]
+        public void apply_selection_batch_load_should_not_remove_manual_only_paths()
         {
             var childrenProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.Children))!;
             var firstChildProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.FirstChild))!;
 
             var manual = new BatchLoadConfig();
-            var manualChildren = manual.GetOrAddSubConfig(childrenProperty);
-            manualChildren.GetOrAddSubConfig(firstChildProperty);
+            manual.RegisterBatchLoad(childrenProperty).RegisterBatchLoad(firstChildProperty);
 
             var selection = new BatchLoadConfig();
-            selection.GetOrAddSubConfig(childrenProperty);
+            selection.RegisterBatchLoad(childrenProperty);
 
-            manual.ApplySelectionOverlay(selection);
+            manual.ApplySelectionBatchLoad(selection);
 
-            manual.ContainsSubConfig(childrenProperty).ShouldBeTrue();
-            manual.GetOrAddSubConfig(childrenProperty).ContainsSubConfig(firstChildProperty).ShouldBeFalse();
+            manual.RegisterBatchLoad(childrenProperty).SubBatchLoadConfigs.ContainsKey(firstChildProperty).ShouldBeTrue();
         }
 
         [TestMethod]
-        public void apply_selection_overlay_should_keep_manual_orphan_siblings()
+        public void apply_selection_batch_load_should_supplement_manual_partial_paths()
         {
             var childrenProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.Children))!;
             var firstChildProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.FirstChild))!;
 
             var manual = new BatchLoadConfig();
-            manual.GetOrAddSubConfig(firstChildProperty);
+            manual.RegisterBatchLoad(childrenProperty);
 
             var selection = new BatchLoadConfig();
-            selection.GetOrAddSubConfig(childrenProperty);
+            selection.RegisterBatchLoad(childrenProperty).RegisterBatchLoad(firstChildProperty);
 
-            manual.ApplySelectionOverlay(selection);
+            manual.ApplySelectionBatchLoad(selection);
 
-            manual.ContainsSubConfig(childrenProperty).ShouldBeTrue();
-            manual.ContainsSubConfig(firstChildProperty).ShouldBeTrue();
+            manual.RegisterBatchLoad(childrenProperty).SubBatchLoadConfigs.ContainsKey(firstChildProperty).ShouldBeTrue();
         }
 
         [TestMethod]
-        public void apply_selection_overlay_should_keep_nested_manual_orphan()
+        public void apply_selection_batch_load_duplicate_path_should_be_idempotent()
         {
             var childrenProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.Children))!;
             var firstChildProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.FirstChild))!;
 
             var manual = new BatchLoadConfig();
-            manual.GetOrAddSubConfig(childrenProperty).GetOrAddSubConfig(firstChildProperty);
+            manual.RegisterBatchLoad(childrenProperty).RegisterBatchLoad(firstChildProperty);
 
             var selection = new BatchLoadConfig();
-            selection.GetOrAddSubConfig(childrenProperty);
+            selection.RegisterBatchLoad(childrenProperty).RegisterBatchLoad(firstChildProperty);
 
-            manual.ApplySelectionOverlay(selection);
+            manual.ApplySelectionBatchLoad(selection);
 
-            manual.GetOrAddSubConfig(childrenProperty).ContainsSubConfig(firstChildProperty).ShouldBeTrue();
+            manual.SubBatchLoadConfigs.Count.ShouldBe(1);
+            manual.RegisterBatchLoad(childrenProperty).SubBatchLoadConfigs.Count.ShouldBe(1);
         }
     }
 }

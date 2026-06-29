@@ -16,10 +16,12 @@ namespace Geex.Analyzer.Tests
         public async Task FieldLevel_UseAutoBatchLoad_ShouldReportError()
         {
             var expected = DiagnosticResultBuilder
-                .CreateError("GEEX006");
+                .CreateError("GEEX006")
+                .WithSpan(15, 13, 15, 42);
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
                 "AutoBatchLoadTests/InvalidFieldLevelUseAutoBatchLoad.cs",
+                includeTestCodeAssembly: false,
                 expected);
         }
 

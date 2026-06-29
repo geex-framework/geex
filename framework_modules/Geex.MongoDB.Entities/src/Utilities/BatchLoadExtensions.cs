@@ -17,25 +17,6 @@ namespace MongoDB.Entities.Utilities
             .GetMethods()
             .First(m => m.Name == nameof(Queryable.Where) && m.GetParameters().Length == 2);
 
-        public static void ApplySelectionOverlay(this BatchLoadConfig target, BatchLoadConfig selectionTree)
-        {
-            if (selectionTree == null)
-            {
-                return;
-            }
-
-            foreach (var (property, autoChildren) in selectionTree.SubBatchLoadConfigs)
-            {
-                if (!target.SubBatchLoadConfigs.TryGetValue(property, out var child))
-                {
-                    child = new BatchLoadConfig();
-                    target.SubBatchLoadConfigs[property] = child;
-                }
-
-                ApplySelectionOverlay(child, autoChildren);
-            }
-        }
-
         public static void BatchLoadLazyQueries(this IQueryable entities, BatchLoadConfig batchLoadConfig)
         {
             if (batchLoadConfig?.SubBatchLoadConfigs.Count == 0)
@@ -96,10 +77,7 @@ namespace MongoDB.Entities.Utilities
             }
         }
 
-        public static bool ContainsSubConfig(this BatchLoadConfig config, PropertyInfo property) =>
-            config.SubBatchLoadConfigs.ContainsKey(property);
-
-        public static BatchLoadConfig GetOrAddSubConfig(this BatchLoadConfig config, PropertyInfo property)
+        public static BatchLoadConfig RegisterBatchLoad(this BatchLoadConfig config, PropertyInfo property)
         {
             if (!config.SubBatchLoadConfigs.TryGetValue(property, out var subConfig))
             {
@@ -109,6 +87,27 @@ namespace MongoDB.Entities.Utilities
 
             return subConfig;
         }
+
+        /// <summary>
+        /// 将 selection 分析结果注册到目标配置，语义等价于对每条路径调用
+        /// <c>.BatchLoad()</c> / <c>.ThenBatchLoad()</c>；已存在的节点不会被覆盖。
+        /// </summary>
+        public static void ApplySelectionBatchLoad(this BatchLoadConfig target, BatchLoadConfig selectionTree)
+        {
+            if (selectionTree == null)
+            {
+                return;
+            }
+
+            foreach (var (property, children) in selectionTree.SubBatchLoadConfigs)
+            {
+                var subConfig = target.RegisterBatchLoad(property);
+                subConfig.ApplySelectionBatchLoad(children);
+            }
+        }
+
+        public static BatchLoadConfig GetOrAddSubConfig(this BatchLoadConfig config, PropertyInfo property) =>
+            config.RegisterBatchLoad(property);
 
         private static bool TryGetSubQueryEntityType(PropertyInfo propertyInfo, out Type subQueryEntityType)
         {
@@ -151,20 +150,6 @@ namespace MongoDB.Entities.Utilities
 
             subQueryEntityType = relatedEntityType.GetRootBsonClassMap().ClassType;
             return true;
-        }
-    }
-
-    public static class BatchLoadMaterializationHooks
-    {
-        public static Func<BatchLoadConfig?>? ResolveSelectionOverlay { get; set; }
-
-        internal static void ApplySelectionOverlayIfPresent(BatchLoadConfig target)
-        {
-            var overlay = ResolveSelectionOverlay?.Invoke();
-            if (overlay != null && overlay.SubBatchLoadConfigs.Count > 0)
-            {
-                target.ApplySelectionOverlay(overlay);
-            }
         }
     }
 }

@@ -31,22 +31,30 @@ namespace Geex.Tests.SchemaTests
         }
 
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntities() =>
-            _uow.Query<BatchLoadGraphQLEntity>();
+            RootEntities();
 
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesPaged(string? thisId) =>
-            _uow.Query<BatchLoadGraphQLEntity>()
+            RootEntities()
                 .WhereIf(!string.IsNullOrEmpty(thisId), x => x.ThisId == thisId);
 
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesFiltered() =>
-            _uow.Query<BatchLoadGraphQLEntity>();
+            RootEntities();
 
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesManualOrphan() =>
-            _uow.Query<BatchLoadGraphQLEntity>()
+            RootEntities()
                 .BatchLoad(x => x.Children)
                 .ThenBatchLoad(x => x.FirstChild);
 
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesManualPartial() =>
-            _uow.Query<BatchLoadGraphQLEntity>()
+            RootEntities()
                 .BatchLoad(x => x.Children);
+
+        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesManualOnly() =>
+            RootEntities()
+                .BatchLoad(x => x.FirstChild);
+
+        private IQueryable<BatchLoadGraphQLEntity> RootEntities() =>
+            _uow.Query<BatchLoadGraphQLEntity>()
+                .Where(x => string.IsNullOrEmpty(x.ParentId));
     }
 }

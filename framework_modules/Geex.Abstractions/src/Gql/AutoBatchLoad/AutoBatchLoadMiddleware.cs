@@ -26,23 +26,33 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            if (!TryGetQueryableEntityElementType(context, out var entityType))
+            if (!QueryableEntityFieldHelper.TryGetEntityElementType(context.Selection.Field, out var entityType))
             {
                 await next(context).ConfigureAwait(false);
                 return;
             }
 
-            var autoBatchLoadContext = context.Services.GetRequiredService<IAutoBatchLoadContext>();
             var selectionConfig = SelectionTreeWalker.Analyze(context, entityType);
-            autoBatchLoadContext.PushOverlay(selectionConfig);
-            try
+
+            await next(context).ConfigureAwait(false);
+
+            // Resolver 已返回原始 IQueryable（含手写 .BatchLoad()）；分页等外层 middleware 尚未包装结果
+            TryApplySelectionBatchLoad(context, selectionConfig);
+        }
+
+        private static void TryApplySelectionBatchLoad(IMiddlewareContext context, BatchLoadConfig selectionConfig)
+        {
+            if (context.Result is not IQueryable queryable)
             {
-                await next(context).ConfigureAwait(false);
+                return;
             }
-            finally
+
+            if (queryable.Provider is not ICachedDbContextQueryProvider provider)
             {
-                autoBatchLoadContext.PopOverlay();
+                return;
             }
+
+            provider.BatchLoadConfig.ApplySelectionBatchLoad(selectionConfig);
         }
 
         private static bool ShouldRun(IMiddlewareContext context)
@@ -54,8 +64,9 @@ namespace Geex.Gql.AutoBatchLoad
                 return false;
             }
 
-            var operationType = context.ObjectType.RuntimeType;
-            if (!IsOperationType(operationType))
+            if (!OperationTypeHelper.IsOperationObjectType(
+                    context.ObjectType.RuntimeType,
+                    context.ObjectType.Name))
             {
                 return false;
             }
@@ -70,35 +81,6 @@ namespace Geex.Gql.AutoBatchLoad
 
             var options = context.Services.GetService<GeexCoreModuleOptions>();
             return options?.AutoBatchLoad ?? true;
-        }
-
-        private static bool IsOperationType(Type runtimeType) =>
-            runtimeType == typeof(Gql.Types.Query) ||
-            runtimeType == typeof(Gql.Types.Mutation) ||
-            runtimeType == typeof(Gql.Types.Subscription);
-
-        private static bool TryGetQueryableEntityElementType(IMiddlewareContext context, out Type entityType)
-        {
-            entityType = null!;
-
-            var resultType = context.Selection.Field.Type.ToRuntimeType();
-            if (resultType == null)
-            {
-                return false;
-            }
-
-            if (resultType.IsGenericType && resultType.GetGenericTypeDefinition() == typeof(Task<>))
-            {
-                resultType = resultType.GetGenericArguments()[0];
-            }
-
-            if (!resultType.IsGenericType || resultType.GetGenericTypeDefinition() != typeof(IQueryable<>))
-            {
-                return false;
-            }
-
-            entityType = resultType.GetGenericArguments()[0];
-            return typeof(IEntityBase).IsAssignableFrom(entityType);
         }
     }
 
@@ -122,7 +104,9 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            definition.MiddlewareDefinitions.Insert(0, CreateDefinition());
+            // 追加到链尾：紧贴 resolver，位于 UseOffsetPaging 等外层 middleware 之内侧，
+            // 以便在分页包装前对 resolver 返回的 IQueryable 写入 BatchLoadConfig。
+            definition.MiddlewareDefinitions.Add(CreateDefinition());
         }
     }
 }

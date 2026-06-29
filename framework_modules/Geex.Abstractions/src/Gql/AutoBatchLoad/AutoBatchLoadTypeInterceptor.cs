@@ -31,7 +31,7 @@ namespace Geex.Gql.AutoBatchLoad
 
         private static void ValidateFieldLevelMisuse(ObjectTypeDefinition objectTypeDefinition)
         {
-            if (IsOperationType(objectTypeDefinition.RuntimeType))
+            if (OperationTypeHelper.IsOperationObjectType(objectTypeDefinition.RuntimeType, objectTypeDefinition.Name))
             {
                 return;
             }
@@ -54,7 +54,7 @@ namespace Geex.Gql.AutoBatchLoad
             ITypeCompletionContext completionContext,
             ObjectTypeDefinition objectTypeDefinition)
         {
-            if (!IsOperationType(objectTypeDefinition.RuntimeType))
+            if (!OperationTypeHelper.IsOperationObjectType(objectTypeDefinition.RuntimeType, objectTypeDefinition.Name))
             {
                 return;
             }
@@ -66,7 +66,7 @@ namespace Geex.Gql.AutoBatchLoad
 
             foreach (var field in objectTypeDefinition.Fields)
             {
-                if (ShouldSkipField(field) || !IsQueryableEntityRootField(field))
+                if (ShouldSkipField(field) || !QueryableEntityFieldHelper.IsQueryableEntityRootField(field))
                 {
                     continue;
                 }
@@ -80,31 +80,5 @@ namespace Geex.Gql.AutoBatchLoad
             field.IsIntrospectionField ||
             field.Name.StartsWith("__", StringComparison.Ordinal);
 
-        private static bool IsQueryableEntityRootField(ObjectFieldDefinition field)
-        {
-            var resultType = field.ResultType;
-            if (resultType == null)
-            {
-                return false;
-            }
-
-            if (resultType.IsGenericType && resultType.GetGenericTypeDefinition() == typeof(Task<>))
-            {
-                resultType = resultType.GetGenericArguments()[0];
-            }
-
-            if (!resultType.IsGenericType || resultType.GetGenericTypeDefinition() != typeof(IQueryable<>))
-            {
-                return false;
-            }
-
-            var elementType = resultType.GetGenericArguments()[0];
-            return typeof(IEntityBase).IsAssignableFrom(elementType);
-        }
-
-        private static bool IsOperationType(Type runtimeType) =>
-            runtimeType == typeof(Query) ||
-            runtimeType == typeof(Mutation) ||
-            runtimeType == typeof(Subscription);
     }
 }

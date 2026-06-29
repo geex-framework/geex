@@ -1,7 +1,4 @@
-using Geex.Gql.Types;
-
 using HotChocolate.Types;
-using HotChocolate.Types.Descriptors;
 
 namespace Geex.Analyzer.TestCode.AutoBatchLoadTests
 {
@@ -11,16 +8,11 @@ namespace Geex.Analyzer.TestCode.AutoBatchLoadTests
             descriptor;
     }
 
-    public class InvalidFieldLevelUseAutoBatchLoadQuery : QueryExtension<InvalidFieldLevelUseAutoBatchLoadQuery>
+    public class InvalidFieldLevelUseAutoBatchLoadSample
     {
-        protected override void Configure(IObjectTypeDescriptor<InvalidFieldLevelUseAutoBatchLoadQuery> descriptor)
+        public void Configure(IObjectFieldDescriptor field)
         {
-            descriptor.Field("batchLoadEntities")
-                .Type<StringType>()
-                .Resolve(_ => "test")
-                .UseAutoBatchLoad(false);
-
-            base.Configure(descriptor);
+            field.UseAutoBatchLoad(false);
         }
     }
 }

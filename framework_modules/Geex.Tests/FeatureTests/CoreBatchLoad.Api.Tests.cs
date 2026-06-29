@@ -80,7 +80,7 @@ namespace Geex.Tests.FeatureTests
         }
 
         [Fact]
-        public async Task AutoBatchLoadManualPartialShouldBeOverwrittenBySelection()
+        public async Task AutoBatchLoadManualPartialShouldBeSupplementedBySelection()
         {
             await SeedBatchLoadDataAsync();
 
@@ -108,6 +108,31 @@ namespace Geex.Tests.FeatureTests
             DB.GetProfilerLogs().AsQueryable()
                 .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
                 .ShouldBe(3);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadManualOnlyShouldBePreservedWhenSelectionHasNoNavigation()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadEntitiesManualOnly {
+                    thisId
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntitiesManualOnly"]!.AsArray().Count.ShouldBe(5);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(2);
 
             DB.StopProfiler();
         }
@@ -209,6 +234,9 @@ namespace Geex.Tests.FeatureTests
 
             uow.Attach(new BatchLoadGraphQLEntity("1"));
             uow.Attach(new BatchLoadGraphQLEntity("2"));
+            uow.Attach(new BatchLoadGraphQLEntity("3"));
+            uow.Attach(new BatchLoadGraphQLEntity("4"));
+            uow.Attach(new BatchLoadGraphQLEntity("5"));
             uow.Attach(new BatchLoadGraphQLEntity("1.1", "1"));
             uow.Attach(new BatchLoadGraphQLEntity("1.2", "1"));
             uow.Attach(new BatchLoadGraphQLEntity("2.1", "2"));

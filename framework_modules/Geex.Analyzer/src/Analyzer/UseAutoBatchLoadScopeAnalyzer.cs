@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 
@@ -55,8 +56,7 @@ namespace Geex.Analyzer.Analyzer
                 return;
             }
 
-            var receiverTypeName = receiverType.ToDisplayString();
-            if (!FieldDescriptorTypeNames.Any(name => receiverTypeName.StartsWith(name)))
+            if (!IsFieldDescriptorType(receiverType))
             {
                 return;
             }
@@ -64,6 +64,14 @@ namespace Geex.Analyzer.Analyzer
             context.ReportDiagnostic(Diagnostic.Create(
                 FieldLevelUseRule,
                 invocation.GetLocation()));
+        }
+
+        private static bool IsFieldDescriptorType(ITypeSymbol receiverType)
+        {
+            var name = receiverType.Name;
+            return FieldDescriptorTypeNames.Any(descriptorName =>
+                name == descriptorName ||
+                name.StartsWith(descriptorName.TrimEnd('`') + "`", StringComparison.Ordinal));
         }
     }
 }
