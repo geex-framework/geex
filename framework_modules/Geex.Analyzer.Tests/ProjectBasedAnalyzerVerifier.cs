@@ -20,8 +20,6 @@ using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 
-using Microsoft.CodeAnalysis.Testing.Verifiers;
-
 using MongoDB.Entities;
 
 namespace Geex.Analyzer.Tests
@@ -194,7 +192,7 @@ namespace Geex.Analyzer.Tests
     /// <summary>
     /// 基于项目的分析器测试类
     /// </summary>
-    internal class ProjectBasedAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer, GeexOnlyVerifier>
+    internal class ProjectBasedAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer, GeexVerifier>
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
         public ProjectBasedAnalyzerTest()
