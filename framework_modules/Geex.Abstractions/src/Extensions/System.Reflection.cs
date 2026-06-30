@@ -2,6 +2,7 @@
 using System.Dynamic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
 namespace System
@@ -96,6 +97,26 @@ namespace System
             }
 
             return @this.BaseType?.ImplementsOrInherits(from) ?? false;
+        }
+
+        /// <summary>
+        /// 剥离 <see cref="Task{TResult}"/> / <see cref="ValueTask{TResult}"/> 外层，返回最内层结果类型。
+        /// </summary>
+        public static Type? UnwrapAsyncReturnType(this Type? type)
+        {
+            while (type != null && type.IsGenericType)
+            {
+                var genericDefinition = type.GetGenericTypeDefinition();
+                if (genericDefinition == typeof(Task<>) || genericDefinition == typeof(ValueTask<>))
+                {
+                    type = type.GetGenericArguments()[0];
+                    continue;
+                }
+
+                break;
+            }
+
+            return type;
         }
     }
 

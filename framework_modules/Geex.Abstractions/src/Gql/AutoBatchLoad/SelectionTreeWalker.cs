@@ -23,12 +23,13 @@ namespace Geex.Gql.AutoBatchLoad
 
         public static BatchLoadConfig Analyze(IMiddlewareContext context, Type entityType)
         {
+            var navigationEntityType = EntityGraphQLTypeResolver.ResolveNavigationEntityType(context, entityType);
             var config = new BatchLoadConfig();
-            var selections = GetEntityFieldSelections(context, entityType);
+            var selections = GetEntityFieldSelections(context, navigationEntityType);
 
             foreach (var selection in selections)
             {
-                AppendSelection(config, context, entityType, selection);
+                AppendSelection(config, context, navigationEntityType, selection);
             }
 
             return config;
@@ -40,11 +41,6 @@ namespace Geex.Gql.AutoBatchLoad
             Type entityType,
             ISelection selection)
         {
-            if (!ShouldIncludeSelection(context, selection))
-            {
-                return;
-            }
-
             if (IgnoredFieldNames.Contains(selection.Field.Name))
             {
                 return;
@@ -57,17 +53,23 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            var subConfig = config.GetOrAddSubConfig(property);
+            if (!BatchLoadNavigationValidator.TryValidate(property, entityType, out _))
+            {
+                return;
+            }
+
+            var subConfig = config.RegisterBatchLoad(property, entityType);
 
             if (selection.SelectionSet == null)
             {
                 return;
             }
 
-            var nestedSelections = GetNestedEntityFieldSelections(context, relatedType, selection);
+            var nestedEntityType = EntityGraphQLTypeResolver.ResolveNavigationEntityType(context, relatedType);
+            var nestedSelections = GetNestedEntityFieldSelections(context, nestedEntityType, selection);
             foreach (var nestedSelection in nestedSelections)
             {
-                AppendSelection(subConfig, context, relatedType, nestedSelection);
+                AppendSelection(subConfig, context, nestedEntityType, nestedSelection);
             }
         }
 
@@ -98,7 +100,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return GetEntitySelectionsUnderOffsetPaging(context, entityType, selection, selection.Field);
             }
 
-            if (TryResolveEntityObjectType(context, entityType, out var objectType))
+            if (EntityGraphQLTypeResolver.TryResolveEntityObjectType(context, entityType, out var objectType))
             {
                 return context.GetSelections(objectType, selection, true).ToArray();
             }
@@ -124,7 +126,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return Array.Empty<ISelection>();
             }
 
-            if (!TryResolveEntityObjectType(context, entityType, out var entityObjectType))
+            if (!EntityGraphQLTypeResolver.TryResolveEntityObjectType(context, entityType, out var entityObjectType))
             {
                 return Array.Empty<ISelection>();
             }
@@ -132,41 +134,7 @@ namespace Geex.Gql.AutoBatchLoad
             return context.GetSelections(entityObjectType, itemsSelection, true).ToArray();
         }
 
-        private static bool ShouldIncludeSelection(IMiddlewareContext context, ISelection selection) => true;
-
         private static bool IsPagedField(IOutputField field) =>
             field.Type.NamedType().Name.EndsWith("CollectionSegment", StringComparison.Ordinal);
-
-        private static bool TryResolveEntityObjectType(
-            IMiddlewareContext context,
-            Type entityType,
-            out IObjectType objectType)
-        {
-            foreach (var typeName in GetGraphQLTypeNameCandidates(entityType))
-            {
-                if (context.Schema.GetType<IObjectType>(typeName) is { } resolvedType)
-                {
-                    objectType = resolvedType;
-                    return true;
-                }
-            }
-
-            objectType = null!;
-            return false;
-        }
-
-        private static IEnumerable<string> GetGraphQLTypeNameCandidates(Type entityType)
-        {
-            var typeName = entityType.Name;
-            if (entityType.IsInterface &&
-                typeName.StartsWith('I') &&
-                typeName.Length > 1 &&
-                char.IsUpper(typeName[1]))
-            {
-                yield return typeName[1..];
-            }
-
-            yield return typeName;
-        }
     }
 }

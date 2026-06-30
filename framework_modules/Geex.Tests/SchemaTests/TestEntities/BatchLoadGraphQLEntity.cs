@@ -6,7 +6,15 @@ using MongoDB.Entities;
 
 namespace Geex.Tests.SchemaTests.TestEntities
 {
-    public class BatchLoadGraphQLEntity : Entity<BatchLoadGraphQLEntity>
+    public interface IBatchLoadGraphQLEntity : IEntityBase
+    {
+        string ThisId { get; }
+        string ParentId { get; }
+        IQueryable<IBatchLoadGraphQLEntity> Children { get; }
+        Lazy<IBatchLoadGraphQLEntity> FirstChild { get; }
+    }
+
+    public class BatchLoadGraphQLEntity : Entity<BatchLoadGraphQLEntity>, IBatchLoadGraphQLEntity
     {
         public BatchLoadGraphQLEntity()
         {
@@ -30,6 +38,11 @@ namespace Geex.Tests.SchemaTests.TestEntities
             ThisId = thisId;
             ParentId = parentId;
         }
+
+        IQueryable<IBatchLoadGraphQLEntity> IBatchLoadGraphQLEntity.Children => Children;
+
+        Lazy<IBatchLoadGraphQLEntity> IBatchLoadGraphQLEntity.FirstChild =>
+            new(() => FirstChild.Value);
 
         public IQueryable<BatchLoadGraphQLEntity> Children => LazyQuery(() => Children);
         public Lazy<BatchLoadGraphQLEntity> FirstChild => LazyQuery(() => FirstChild);

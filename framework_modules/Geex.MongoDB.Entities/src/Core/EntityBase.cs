@@ -26,6 +26,7 @@ namespace MongoDB.Entities
                                                                            (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
             var propertyMember = propToLoad.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
+            LazyQueryMetadataRegistry.Register(typeof(TEntity), propertyMember.Name);
             return lazyObj;
         }
 
@@ -43,6 +44,7 @@ namespace MongoDB.Entities
                                                                           (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
+            LazyQueryMetadataRegistry.Register(typeof(TEntity), propertyMember.Name);
             return lazyObj;
         }
 
@@ -55,6 +57,7 @@ namespace MongoDB.Entities
                                                                            (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
             var propertyMember = propToLoad.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
+            LazyQueryMetadataRegistry.Register(typeof(T), propertyMember.Name);
             return lazyObj;
         }
 
@@ -72,6 +75,7 @@ namespace MongoDB.Entities
                                                                           (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
+            LazyQueryMetadataRegistry.Register(typeof(T), propertyMember.Name);
             return lazyObj;
         }
 

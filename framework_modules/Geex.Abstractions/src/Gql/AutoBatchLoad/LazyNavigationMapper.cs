@@ -7,6 +7,7 @@ using HotChocolate;
 using HotChocolate.Types;
 
 using MongoDB.Entities;
+using MongoDB.Entities.Utilities;
 
 namespace Geex.Gql.AutoBatchLoad
 {
@@ -39,15 +40,9 @@ namespace Geex.Gql.AutoBatchLoad
             return FindPropertyByName(entityType, field.Name);
         }
 
-        public static bool IsLazyQueryNavigation(Type entityType, PropertyInfo property)
-        {
-            if (!IsLazyNavigationPropertyType(property.PropertyType))
-            {
-                return false;
-            }
-
-            return HasRegisteredLazyQuery(entityType, property.Name);
-        }
+        public static bool IsLazyQueryNavigation(Type entityType, PropertyInfo property) =>
+            IsLazyNavigationPropertyType(property.PropertyType) &&
+            LazyQueryMetadataRegistry.IsRegistered(entityType, property.Name);
 
         public static bool TryGetRelatedEntityType(PropertyInfo property, out Type relatedEntityType)
         {
@@ -88,23 +83,6 @@ namespace Geex.Gql.AutoBatchLoad
             return LazyTypeNames.Contains(propertyType.Name) &&
                    propertyType.GenericTypeArguments.Length > 0 &&
                    typeof(IEntityBase).IsAssignableFrom(propertyType.GenericTypeArguments[0]);
-        }
-
-        private static bool HasRegisteredLazyQuery(Type entityType, string propertyName)
-        {
-            try
-            {
-                if (Activator.CreateInstance(entityType, nonPublic: true) is IEntityBase entity)
-                {
-                    return entity.LazyQueryCache.ContainsKey(propertyName);
-                }
-            }
-            catch
-            {
-                // fall through
-            }
-
-            return false;
         }
 
         private static PropertyInfo? FindPropertyByName(Type entityType, string fieldName)

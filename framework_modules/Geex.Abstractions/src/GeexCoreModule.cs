@@ -29,8 +29,6 @@ using RestSharp;
 
 using StackExchange.Redis.Extensions.Core;
 
-using MongoDB.Entities.Utilities;
-
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Modularity;
@@ -75,7 +73,6 @@ namespace Geex
             context.Services.TryAddTransient<IRestClient, LoggedRestClient>();
             context.Services.TryAddTransient<RestClient, LoggedRestClient>();
             context.Services.TryAddTransient<LoggedRestClient>();
-            context.Services.TryAddTransient<AutoBatchLoadMiddleware>();
             var schemaBuilder = context.Services
                 .AddGraphQLServer()
                 .AllowIntrospection(!moduleOptions.DisableIntrospection);
@@ -155,9 +152,9 @@ namespace Geex
                 })
                 .UseDefaultPipeline()
                 .UseField<ValidateMiddleware>()
-                .AddQueryType<Query>(x => AutoBatchLoadSchemaConfigurator.ConfigureOperation(x, moduleOptions.AutoBatchLoad).Field("_").Type<StringType>().Resolve(x => null))
-                .AddMutationType<Mutation>(x => AutoBatchLoadSchemaConfigurator.ConfigureOperation(x, moduleOptions.AutoBatchLoad).Field("_").Type<StringType>().Resolve(x => null))
-                .AddSubscriptionType<Subscription>(x => AutoBatchLoadSchemaConfigurator.ConfigureOperation(x, moduleOptions.AutoBatchLoad).Field("_").Type<StringType>().Resolve(x => null))
+                .AddQueryType<Query>(x => x.Field("_").Type<StringType>().Resolve(x => null))
+                .AddMutationType<Mutation>(x => x.Field("_").Type<StringType>().Resolve(x => null))
+                .AddSubscriptionType<Subscription>(x => x.Field("_").Type<StringType>().Resolve(x => null))
                 .AddCommonTypes()
                 .AddQueryFieldToMutationPayloads()
                 .AddFiltering<GeexFilterConvention>()

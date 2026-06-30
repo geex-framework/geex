@@ -22,7 +22,7 @@ namespace System.Linq
 
             BatchLoadConfig config = rootProvider.BatchLoadConfig;
             this.Provider = rootProvider;
-            config.RegisterBatchLoad(parentProp);
+            config.RegisterBatchLoad(parentProp, parentProp.DeclaringType!);
             _sources = sources;
         }
         public BatchLoadQueryable(IQueryable<TSource> sources, PropertyInfo parentProp)
@@ -59,7 +59,7 @@ namespace System.Linq
                 }
             }
             this.Provider = rootProvider;
-            config.RegisterBatchLoad(parentProp);
+            config.RegisterBatchLoad(parentProp, parentProp.DeclaringType!);
             _sources = sources;
         }
 

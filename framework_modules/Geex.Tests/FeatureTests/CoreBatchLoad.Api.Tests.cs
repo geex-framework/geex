@@ -166,6 +166,183 @@ namespace Geex.Tests.FeatureTests
         }
 
         [Fact]
+        public async Task AutoBatchLoadPagedWithTotalCountShouldNotDoubleSubQueries()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadEntitiesPaged(thisId: "1") {
+                    totalCount
+                    items {
+                      thisId
+                      children { thisId firstChild { thisId } }
+                    }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntitiesPaged"]!["totalCount"]!.GetValue<int>().ShouldBe(1);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(3);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadInterfacePagedQueryShouldBoundDatabaseQueries()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadInterfaceEntitiesPaged(thisId: "1") {
+                    items {
+                      thisId
+                      children { thisId firstChild { thisId } }
+                    }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadInterfaceEntitiesPaged"]!["items"]!.AsArray().Count.ShouldBe(1);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(3);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadFilteredQueryShouldBoundDatabaseQueries()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadEntitiesFiltered(where: { thisId: { eq: "1" } }) {
+                    thisId
+                    children { thisId firstChild { thisId } }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntitiesFiltered"]!.AsArray().Count.ShouldBe(1);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(3);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadSkipDirectiveShouldNotBatchLoadSkippedNavigation()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query($skipChildren: Boolean!) {
+                  batchLoadEntities {
+                    thisId
+                    children @skip(if: $skipChildren) {
+                      thisId
+                      firstChild { thisId }
+                    }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(
+                query,
+                new { skipChildren = true });
+            responseData["data"]!["batchLoadEntities"]!.AsArray().Count.ShouldBe(5);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(1);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadFragmentShouldBatchLoadNestedNavigation()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadEntities {
+                    ...BatchLoadEntityFields
+                  }
+                }
+                fragment BatchLoadEntityFields on BatchLoadGraphQLEntity {
+                  thisId
+                  children {
+                    thisId
+                    firstChild { thisId }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntities"]!.AsArray().Count.ShouldBe(5);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(3);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadRenamedNavigationFieldShouldBatchLoad()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadEntities {
+                    thisId
+                    childNodes {
+                      thisId
+                      firstChild { thisId }
+                    }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            var root = responseData["data"]!["batchLoadEntities"]!.AsArray()
+                .First(x => x!["thisId"]!.GetValue<string>() == "1");
+            root!["childNodes"]!.AsArray().Count.ShouldBeGreaterThan(0);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(3);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
         public async Task AutoBatchLoadDisabledOperationShouldDegradeToNPlusOne()
         {
             await SeedBatchLoadDataAsync();
@@ -194,37 +371,27 @@ namespace Geex.Tests.FeatureTests
         [Fact]
         public async Task AutoBatchLoadOperationOverrideShouldEnableBatchLoadWhenGlobalDisabled()
         {
-            var options = ScopedService.GetRequiredService<GeexCoreModuleOptions>();
-            var original = options.AutoBatchLoad;
-            options.AutoBatchLoad = false;
-            try
-            {
-                await SeedBatchLoadDataAsync();
+            await SeedBatchLoadDataAsync();
 
-                await DB.RestartProfiler();
+            await DB.RestartProfiler();
 
-                var query = """
-                    query {
-                      batchLoadEntities {
-                        thisId
-                        firstChild { thisId }
-                      }
-                    }
-                    """;
+            var query = """
+                query {
+                  batchLoadEntities {
+                    thisId
+                    firstChild { thisId }
+                  }
+                }
+                """;
 
-                var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
-                responseData["data"]!["batchLoadEntities"]!.AsArray().Count.ShouldBe(5);
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntities"]!.AsArray().Count.ShouldBe(5);
 
-                DB.GetProfilerLogs().AsQueryable()
-                    .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
-                    .ShouldBe(2);
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(2);
 
-                DB.StopProfiler();
-            }
-            finally
-            {
-                options.AutoBatchLoad = original;
-            }
+            DB.StopProfiler();
         }
 
         private async Task SeedBatchLoadDataAsync()

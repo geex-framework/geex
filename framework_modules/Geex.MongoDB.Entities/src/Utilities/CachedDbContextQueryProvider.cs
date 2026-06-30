@@ -143,7 +143,10 @@ namespace MongoDB.Entities.Utilities
                             entities = dbEntities.AsQueryable();
                         }
 
-                        entities.BatchLoadLazyQueries(this.BatchLoadConfig);
+                        if (!IsCountOnlyExecution<TResult>(expression))
+                        {
+                            entities.BatchLoadLazyQueries(this.BatchLoadConfig);
+                        }
 
                         if (visitor.PostSelectExpression != default)
                         {
@@ -195,6 +198,35 @@ namespace MongoDB.Entities.Utilities
                 //{
                 //Debug.WriteLine($"CachedDbContextQueryableProvider.Execute {sourceType}=>{resultType} takes long, query: {expression}");
                 //}
+            }
+        }
+
+        private static bool IsCountOnlyExecution<TResult>(Expression expression)
+        {
+            if (typeof(TResult) != typeof(int) && typeof(TResult) != typeof(long))
+            {
+                return false;
+            }
+
+            return ContainsCountMethod(expression);
+        }
+
+        private static bool ContainsCountMethod(Expression expression)
+        {
+            switch (expression)
+            {
+                case MethodCallExpression methodCall:
+                    if (methodCall.Method.Name is nameof(Enumerable.Count) or nameof(Enumerable.LongCount) or nameof(Queryable.Count) or nameof(Queryable.LongCount))
+                    {
+                        return true;
+                    }
+
+                    return (methodCall.Object != null && ContainsCountMethod(methodCall.Object)) ||
+                           methodCall.Arguments.Any(ContainsCountMethod);
+                case UnaryExpression unary:
+                    return ContainsCountMethod(unary.Operand);
+                default:
+                    return false;
             }
         }
     }
