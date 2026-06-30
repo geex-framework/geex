@@ -28,7 +28,7 @@ namespace Geex.Gql.AutoBatchLoad
             ITypeCompletionContext completionContext,
             ObjectTypeDefinition objectTypeDefinition)
         {
-            if (!OperationTypeHelper.IsOperationObjectType(objectTypeDefinition.RuntimeType, objectTypeDefinition.Name))
+            if (!AutoBatchLoadGraphQL.IsOperationObjectType(objectTypeDefinition.RuntimeType, objectTypeDefinition.Name))
             {
                 return;
             }
@@ -45,8 +45,8 @@ namespace Geex.Gql.AutoBatchLoad
                     continue;
                 }
 
-                if (!QueryableEntityFieldHelper.IsQueryableEntityRootField(field) &&
-                    !QueryableEntityFieldHelper.IsObservableEntityRootField(field))
+                if (!AutoBatchLoadGraphQL.IsQueryableEntityRootField(field) &&
+                    !AutoBatchLoadGraphQL.IsObservableEntityRootField(field))
                 {
                     continue;
                 }

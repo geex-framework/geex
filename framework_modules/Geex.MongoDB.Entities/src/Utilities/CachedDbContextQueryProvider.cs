@@ -11,10 +11,6 @@ using MongoDB.Entities.Utilities;
 
 namespace MongoDB.Entities.Utilities
 {
-    public class BatchLoadConfig
-    {
-        internal Dictionary<PropertyInfo, BatchLoadConfig> SubBatchLoadConfigs { get; } = new Dictionary<PropertyInfo, BatchLoadConfig>();
-    }
     public interface ICachedDbContextQueryProvider : IQueryProvider
     {
         public DbContext DbContext { get; set; }

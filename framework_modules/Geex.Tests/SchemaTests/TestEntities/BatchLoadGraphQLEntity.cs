@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 
 using Geex.Storage;
 
@@ -11,7 +12,6 @@ namespace Geex.Tests.SchemaTests.TestEntities
         string ThisId { get; }
         string ParentId { get; }
         IQueryable<IBatchLoadGraphQLEntity> Children { get; }
-        Lazy<IBatchLoadGraphQLEntity> FirstChild { get; }
     }
 
     public class BatchLoadGraphQLEntity : Entity<BatchLoadGraphQLEntity>, IBatchLoadGraphQLEntity
@@ -40,9 +40,6 @@ namespace Geex.Tests.SchemaTests.TestEntities
         }
 
         IQueryable<IBatchLoadGraphQLEntity> IBatchLoadGraphQLEntity.Children => Children;
-
-        Lazy<IBatchLoadGraphQLEntity> IBatchLoadGraphQLEntity.FirstChild =>
-            new(() => FirstChild.Value);
 
         public IQueryable<BatchLoadGraphQLEntity> Children => LazyQuery(() => Children);
         public Lazy<BatchLoadGraphQLEntity> FirstChild => LazyQuery(() => FirstChild);

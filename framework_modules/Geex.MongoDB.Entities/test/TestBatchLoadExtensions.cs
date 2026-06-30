@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Reflection;
 
@@ -15,6 +16,9 @@ namespace MongoDB.Entities.Tests
     {
         private static readonly Type EntityType = typeof(BatchLoadEntity);
 
+        private static bool ContainsPath(BatchLoadConfig config, PropertyInfo property, Type declaringEntityType) =>
+            config.SubBatchLoadConfigs.ContainsKey(new BatchLoadPathKey(declaringEntityType, property.Name));
+
         [TestMethod]
         public void register_batch_load_should_be_idempotent()
         {
@@ -25,7 +29,7 @@ namespace MongoDB.Entities.Tests
             config.RegisterBatchLoad(childrenProperty, EntityType);
 
             config.SubBatchLoadConfigs.Count.ShouldBe(1);
-            config.SubBatchLoadConfigs.ContainsKey(childrenProperty).ShouldBeTrue();
+            ContainsPath(config, childrenProperty, EntityType).ShouldBeTrue();
         }
 
         [TestMethod]
@@ -48,7 +52,7 @@ namespace MongoDB.Entities.Tests
 
             manual.ApplySelectionBatchLoad(selection);
 
-            manual.SubBatchLoadConfigs.ContainsKey(childrenProperty).ShouldBeTrue();
+            ContainsPath(manual, childrenProperty, EntityType).ShouldBeTrue();
         }
 
         [TestMethod]
@@ -65,7 +69,8 @@ namespace MongoDB.Entities.Tests
 
             manual.ApplySelectionBatchLoad(selection);
 
-            manual.RegisterBatchLoad(childrenProperty, EntityType).SubBatchLoadConfigs.ContainsKey(firstChildProperty).ShouldBeTrue();
+            manual.GetSubConfig(childrenProperty, EntityType).SubBatchLoadConfigs
+                .ContainsKey(new BatchLoadPathKey(EntityType, firstChildProperty.Name)).ShouldBeTrue();
         }
 
         [TestMethod]
@@ -82,7 +87,8 @@ namespace MongoDB.Entities.Tests
 
             manual.ApplySelectionBatchLoad(selection);
 
-            manual.RegisterBatchLoad(childrenProperty, EntityType).SubBatchLoadConfigs.ContainsKey(firstChildProperty).ShouldBeTrue();
+            manual.GetSubConfig(childrenProperty, EntityType).SubBatchLoadConfigs
+                .ContainsKey(new BatchLoadPathKey(EntityType, firstChildProperty.Name)).ShouldBeTrue();
         }
 
         [TestMethod]
@@ -100,7 +106,21 @@ namespace MongoDB.Entities.Tests
             manual.ApplySelectionBatchLoad(selection);
 
             manual.SubBatchLoadConfigs.Count.ShouldBe(1);
-            manual.RegisterBatchLoad(childrenProperty, EntityType).SubBatchLoadConfigs.Count.ShouldBe(1);
+            manual.GetSubConfig(childrenProperty, EntityType).SubBatchLoadConfigs.Count.ShouldBe(1);
+        }
+
+        [TestMethod]
+        public void register_batch_load_should_normalize_interface_and_concrete_property()
+        {
+            var childrenProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.Children))!;
+
+            var config = new BatchLoadConfig();
+            config.RegisterBatchLoad(childrenProperty, EntityType);
+
+            var interfaceProperty = typeof(BatchLoadEntity).GetProperty(nameof(BatchLoadEntity.Children))!;
+            config.RegisterBatchLoad(interfaceProperty, EntityType);
+
+            config.SubBatchLoadConfigs.Count.ShouldBe(1);
         }
     }
 }

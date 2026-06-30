@@ -24,9 +24,11 @@ namespace MongoDB.Entities.Utilities
                 return;
             }
 
-            foreach (var (propertyInfo, subBatchLoadConfig) in batchLoadConfig.SubBatchLoadConfigs)
+            foreach (var node in batchLoadConfig.SubBatchLoadConfigs.Values)
             {
-                var entityType = ResolveDeclaringEntityType(entities, propertyInfo);
+                var propertyInfo = node.Property;
+                var entityType = node.DeclaringEntityType;
+                var subBatchLoadConfig = node.Children;
 
                 if (!TryGetSubQueryEntityType(propertyInfo, out var subQueryEntityType))
                 {
@@ -36,7 +38,6 @@ namespace MongoDB.Entities.Utilities
                         $"属性类型 '{propertyInfo.PropertyType.Name}' 无法解析为实体 IQueryable/Lazy 导航");
                 }
 
-                var listType = ListType.MakeGenericTypeFast(subQueryEntityType);
                 var lazyQueries = new List<ILazyQuery>();
 
                 foreach (var entity in entities)
@@ -50,12 +51,10 @@ namespace MongoDB.Entities.Utilities
 
                 if (lazyQueries.Count == 0)
                 {
-                    throw BatchLoadException.ExecutionFailed(
-                        propertyInfo,
-                        entityType,
-                        "结果集中没有任何实体包含已注册的 LazyQuery");
+                    continue;
                 }
 
+                var listType = ListType.MakeGenericTypeFast(subQueryEntityType);
                 var first = lazyQueries.First();
                 var allQuery = first.DefaultSourceProvider().OfType(subQueryEntityType);
                 var filterExpression = first.BatchQuery.DynamicInvoke(entities) as LambdaExpression;
@@ -95,13 +94,27 @@ namespace MongoDB.Entities.Utilities
         {
             BatchLoadNavigationValidator.Ensure(property, declaringEntityType);
 
-            if (!config.SubBatchLoadConfigs.TryGetValue(property, out var subConfig))
+            var canonicalProperty = BatchLoadNavigationValidator.ResolveCanonicalProperty(
+                declaringEntityType,
+                property.Name) ?? property;
+            var key = new BatchLoadPathKey(declaringEntityType, property.Name);
+
+            if (!config.SubBatchLoadConfigs.TryGetValue(key, out var node))
             {
-                subConfig = new BatchLoadConfig();
-                config.SubBatchLoadConfigs[property] = subConfig;
+                node = new BatchLoadPathNode(canonicalProperty, declaringEntityType);
+                config.SubBatchLoadConfigs[key] = node;
             }
 
-            return subConfig;
+            return node.Children;
+        }
+
+        public static BatchLoadConfig GetSubConfig(
+            this BatchLoadConfig config,
+            PropertyInfo property,
+            Type declaringEntityType)
+        {
+            var key = new BatchLoadPathKey(declaringEntityType, property.Name);
+            return config.SubBatchLoadConfigs[key].Children;
         }
 
         /// <summary>
@@ -115,53 +128,16 @@ namespace MongoDB.Entities.Utilities
                 return;
             }
 
-            foreach (var (property, children) in selectionTree.SubBatchLoadConfigs)
+            foreach (var node in selectionTree.SubBatchLoadConfigs.Values)
             {
-                var subConfig = target.RegisterBatchLoad(property, property.DeclaringType!);
-                subConfig.ApplySelectionBatchLoad(children);
+                var subConfig = target.RegisterBatchLoad(node.Property, node.DeclaringEntityType);
+                subConfig.ApplySelectionBatchLoad(node.Children);
             }
-        }
-
-        private static Type ResolveDeclaringEntityType(IQueryable entities, PropertyInfo propertyInfo)
-        {
-            if (entities.ElementType != null &&
-                propertyInfo.DeclaringType != null &&
-                propertyInfo.DeclaringType.IsAssignableFrom(entities.ElementType))
-            {
-                return entities.ElementType;
-            }
-
-            return propertyInfo.DeclaringType ?? typeof(object);
         }
 
         private static bool TryGetSubQueryEntityType(PropertyInfo propertyInfo, out Type subQueryEntityType)
         {
-            var propertyType = propertyInfo.PropertyType;
-            Type relatedEntityType;
-
-            if (propertyType.IsGenericType)
-            {
-                var genericDefinition = propertyType.GetGenericTypeDefinition();
-                if (genericDefinition == typeof(IQueryable<>) || genericDefinition == typeof(Lazy<>))
-                {
-                    relatedEntityType = propertyType.GenericTypeArguments[0];
-                }
-                else
-                {
-                    subQueryEntityType = null!;
-                    return false;
-                }
-            }
-            else if (propertyType.Name is "Lazy`1" or "ResettableLazy`1" &&
-                     propertyType.GenericTypeArguments.Length > 0)
-            {
-                relatedEntityType = propertyType.GenericTypeArguments[0];
-            }
-            else if (propertyType.IsAssignableTo<IQueryable>())
-            {
-                relatedEntityType = propertyType.GenericTypeArguments.First();
-            }
-            else
+            if (!BatchLoadNavigationValidator.TryGetRelatedEntityType(propertyInfo, out var relatedEntityType))
             {
                 subQueryEntityType = null!;
                 return false;

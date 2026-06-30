@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -8,6 +7,9 @@ using HotChocolate.Resolvers;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
+
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using MongoDB.Entities.Utilities;
 
@@ -30,7 +32,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            if (!QueryableEntityFieldHelper.TryGetNavigationEntityType(context.Selection.Field, out var entityType))
+            if (!AutoBatchLoadGraphQL.TryGetNavigationEntityType(context.Selection.Field, out var entityType))
             {
                 await _next(context).ConfigureAwait(false);
                 return;
@@ -52,7 +54,7 @@ namespace Geex.Gql.AutoBatchLoad
 
             if (context.Result is IQueryable queryable)
             {
-                ApplyToQueryable(queryable, selectionConfig);
+                ApplyToQueryable(context, queryable, selectionConfig);
                 return;
             }
 
@@ -62,10 +64,19 @@ namespace Geex.Gql.AutoBatchLoad
             }
         }
 
-        private static void ApplyToQueryable(IQueryable queryable, BatchLoadConfig selectionConfig)
+        private static void ApplyToQueryable(
+            IMiddlewareContext context,
+            IQueryable queryable,
+            BatchLoadConfig selectionConfig)
         {
             if (queryable.Provider is not ICachedDbContextQueryProvider provider)
             {
+                context.Services.GetService<ILogger<AutoBatchLoadMiddleware>>()?.LogWarning(
+                    "AutoBatchLoad 未能应用到字段 {FieldName}：结果 IQueryable 的 Provider 类型为 {ProviderType}，" +
+                    "不是 {ExpectedProviderType}。此处可能发生 N+1 查询，请使用 Uow.Query<T>() 返回的 IQueryable 以启用 BatchLoad 查询优化。",
+                    context.Selection.Field.Name,
+                    queryable.Provider.GetType().Name,
+                    nameof(ICachedDbContextQueryProvider));
                 return;
             }
 
@@ -104,6 +115,9 @@ namespace Geex.Gql.AutoBatchLoad
 
     internal static class BatchLoadObservableAdapter
     {
+        private static readonly MethodInfo WrapTypedMethod = typeof(BatchLoadObservableAdapter)
+            .GetMethod(nameof(WrapTyped), BindingFlags.Static | BindingFlags.NonPublic)!;
+
         public static bool TryWrap(object? result, BatchLoadConfig config, out object wrapped)
         {
             wrapped = result!;
@@ -117,10 +131,9 @@ namespace Geex.Gql.AutoBatchLoad
                 return false;
             }
 
-            var method = typeof(BatchLoadObservableAdapter)
-                .GetMethod(nameof(WrapTyped), BindingFlags.Static | BindingFlags.NonPublic)!
-                .MakeGenericMethod(elementType);
-            wrapped = method.Invoke(null, [result, config])!;
+            wrapped = WrapTypedMethod
+                .MakeGenericMethodFast(elementType)
+                .Invoke(null, [result, config])!;
             return true;
         }
 

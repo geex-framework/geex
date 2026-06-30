@@ -55,7 +55,7 @@ namespace System.Linq
                 propQueue = new Queue<PropertyInfo>(propQueue.Reverse());
                 while (propQueue.TryDequeue(out var prop))
                 {
-                    config = config.SubBatchLoadConfigs[prop];
+                    config = config.GetSubConfig(prop, prop.DeclaringType!);
                 }
             }
             this.Provider = rootProvider;

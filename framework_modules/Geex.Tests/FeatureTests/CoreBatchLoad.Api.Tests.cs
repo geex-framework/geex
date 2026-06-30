@@ -1,6 +1,10 @@
 using System.Linq;
+using System.Threading.Tasks;
 
 using Geex.Tests.SchemaTests.TestEntities;
+
+using HotChocolate.Execution;
+using HotChocolate.Execution.Configuration;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -386,6 +390,113 @@ namespace Geex.Tests.FeatureTests
 
             var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
             responseData["data"]!["batchLoadEntities"]!.AsArray().Count.ShouldBe(5);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(2);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadEmptyResultSetShouldNotThrow()
+        {
+            await SeedBatchLoadDataAsync();
+
+            var query = """
+                query {
+                  batchLoadEntitiesFiltered(where: { thisId: { eq: "nonexistent" } }) {
+                    thisId
+                    children { thisId firstChild { thisId } }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntitiesFiltered"]!.AsArray().Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadAsyncResolverShouldBoundDatabaseQueries()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadEntitiesAsync {
+                    thisId
+                    children { thisId firstChild { thisId } }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntitiesAsync"]!.AsArray().Count.ShouldBe(5);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(3);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadEnabledMutationShouldBoundDatabaseQueries()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                mutation {
+                  batchLoadEntitiesEnabled {
+                    thisId
+                    firstChild { thisId }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntitiesEnabled"]!.AsArray().Count.ShouldBe(5);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(2);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadSubscriptionObservableShouldBoundDatabaseQueries()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var builder = ScopedService.GetRequiredService<IRequestExecutorBuilder>();
+            var executor = await builder.BuildRequestExecutorAsync();
+
+            await using var result = await executor.ExecuteAsync(
+                QueryRequestBuilder.New()
+                    .SetQuery("""
+                        subscription {
+                          onBatchLoadEntities {
+                            thisId
+                            firstChild { thisId }
+                          }
+                        }
+                        """)
+                    .SetServices(ScopedService)
+                    .Create());
+
+            var stream = result.ExpectResponseStream();
+            await foreach (var response in stream.ReadResultsAsync())
+            {
+                response.ExpectQueryResult().Data.ShouldNotBeNull();
+                break;
+            }
 
             DB.GetProfilerLogs().AsQueryable()
                 .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))

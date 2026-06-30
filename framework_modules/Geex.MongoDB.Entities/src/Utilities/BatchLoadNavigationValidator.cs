@@ -46,7 +46,7 @@ namespace MongoDB.Entities.Utilities
             }
         }
 
-        private static bool IsLazyNavigationPropertyType(Type propertyType)
+        public static bool IsLazyNavigationPropertyType(Type propertyType)
         {
             if (propertyType.IsGenericType)
             {
@@ -64,6 +64,54 @@ namespace MongoDB.Entities.Utilities
             }
 
             return false;
+        }
+
+        public static bool TryGetRelatedEntityType(PropertyInfo property, out Type relatedEntityType)
+        {
+            relatedEntityType = null!;
+            if (!IsLazyNavigationPropertyType(property.PropertyType))
+            {
+                return false;
+            }
+
+            if (property.PropertyType.IsGenericType)
+            {
+                relatedEntityType = property.PropertyType.GenericTypeArguments[0];
+                return typeof(IEntityBase).IsAssignableFrom(relatedEntityType);
+            }
+
+            if (property.PropertyType.Name is "Lazy`1" or "ResettableLazy`1" &&
+                property.PropertyType.GenericTypeArguments.Length > 0)
+            {
+                relatedEntityType = property.PropertyType.GenericTypeArguments[0];
+                return typeof(IEntityBase).IsAssignableFrom(relatedEntityType);
+            }
+
+            return false;
+        }
+
+        public static PropertyInfo? ResolveCanonicalProperty(Type declaringEntityType, string propertyName)
+        {
+            for (var current = declaringEntityType; current != null; current = current.BaseType)
+            {
+                var property = current.GetProperty(
+                    propertyName,
+                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.DeclaredOnly);
+                if (property != null && IsLazyNavigationPropertyType(property.PropertyType))
+                {
+                    return property;
+                }
+
+                property = current.GetProperty(
+                    propertyName,
+                    BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+                if (property != null && IsLazyNavigationPropertyType(property.PropertyType))
+                {
+                    return property;
+                }
+            }
+
+            return null;
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Geex.Gql.AutoBatchLoad
         {
             descriptor.Extend().OnBeforeCreate((_, definition) =>
             {
-                if (!OperationTypeHelper.IsOperationObjectType(definition.RuntimeType, definition.Name))
+                if (!AutoBatchLoadGraphQL.IsOperationObjectType(definition.RuntimeType, definition.Name))
                 {
                     throw new SchemaException(
                         SchemaErrorBuilder.New()

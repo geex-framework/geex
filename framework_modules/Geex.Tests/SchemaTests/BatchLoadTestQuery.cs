@@ -40,6 +40,9 @@ namespace Geex.Tests.SchemaTests
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntities() =>
             RootEntities();
 
+        public Task<IQueryable<BatchLoadGraphQLEntity>> BatchLoadEntitiesAsync() =>
+            Task.FromResult(RootEntities());
+
         public IQueryable<IBatchLoadGraphQLEntity> BatchLoadInterfaceEntities() =>
             RootEntities();
 

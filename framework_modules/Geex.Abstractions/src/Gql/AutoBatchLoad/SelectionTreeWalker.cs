@@ -23,7 +23,7 @@ namespace Geex.Gql.AutoBatchLoad
 
         public static BatchLoadConfig Analyze(IMiddlewareContext context, Type entityType)
         {
-            var navigationEntityType = EntityGraphQLTypeResolver.ResolveNavigationEntityType(context, entityType);
+            var navigationEntityType = AutoBatchLoadGraphQL.ResolveNavigationEntityType(context, entityType);
             var config = new BatchLoadConfig();
             var selections = GetEntityFieldSelections(context, navigationEntityType);
 
@@ -46,9 +46,9 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            var property = LazyNavigationMapper.ResolveNavigationProperty(entityType, selection.Field);
+            var property = AutoBatchLoadGraphQL.ResolveNavigationProperty(entityType, selection.Field);
             if (property == null ||
-                !LazyNavigationMapper.TryGetRelatedEntityType(property, out var relatedType))
+                !BatchLoadNavigationValidator.TryGetRelatedEntityType(property, out var relatedType))
             {
                 return;
             }
@@ -65,7 +65,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            var nestedEntityType = EntityGraphQLTypeResolver.ResolveNavigationEntityType(context, relatedType);
+            var nestedEntityType = AutoBatchLoadGraphQL.ResolveNavigationEntityType(context, relatedType);
             var nestedSelections = GetNestedEntityFieldSelections(context, nestedEntityType, selection);
             foreach (var nestedSelection in nestedSelections)
             {
@@ -100,7 +100,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return GetEntitySelectionsUnderOffsetPaging(context, entityType, selection, selection.Field);
             }
 
-            if (EntityGraphQLTypeResolver.TryResolveEntityObjectType(context, entityType, out var objectType))
+            if (AutoBatchLoadGraphQL.TryResolveEntityObjectType(context, entityType, out var objectType))
             {
                 return context.GetSelections(objectType, selection, true).ToArray();
             }
@@ -126,7 +126,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return Array.Empty<ISelection>();
             }
 
-            if (!EntityGraphQLTypeResolver.TryResolveEntityObjectType(context, entityType, out var entityObjectType))
+            if (!AutoBatchLoadGraphQL.TryResolveEntityObjectType(context, entityType, out var entityObjectType))
             {
                 return Array.Empty<ISelection>();
             }
