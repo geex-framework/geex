@@ -152,7 +152,7 @@ namespace Geex.Gql.AutoBatchLoad
         }
 
         private static bool IsLazyQueryNavigation(Type entityType, PropertyInfo property) =>
-            property.PropertyType.IsLazyBatchLoadNavigationPropertyType() &&
+            property.PropertyType.IsLazyEntityNavigation() &&
             LazyQueryMetadataRegistry.IsRegistered(entityType, property.Name);
 
         private static PropertyInfo? FindNavigationPropertyByName(Type entityType, string fieldName)

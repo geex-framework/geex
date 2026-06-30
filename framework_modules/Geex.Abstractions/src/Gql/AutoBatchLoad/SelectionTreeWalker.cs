@@ -48,12 +48,12 @@ namespace Geex.Gql.AutoBatchLoad
 
             var property = AutoBatchLoadGraphQL.ResolveNavigationProperty(entityType, selection.Field);
             if (property == null ||
-                !property.TryGetBatchLoadRelatedEntityType(out var relatedType))
+                !property.TryGetRelatedEntityType(out var relatedType))
             {
                 return;
             }
 
-            if (!property.TryValidateBatchLoadNavigation(entityType, out _))
+            if (!property.TryValidateBatchLoadable(entityType, out _))
             {
                 return;
             }
