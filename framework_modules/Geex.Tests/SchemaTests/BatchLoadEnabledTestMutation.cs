@@ -19,7 +19,7 @@ namespace Geex.Tests.SchemaTests
 
         protected override void Configure(IObjectTypeDescriptor<BatchLoadEnabledTestMutation> descriptor)
         {
-            descriptor.UseAutoBatchLoad(true);
+            descriptor.Field(x => x.BatchLoadEntitiesEnabled()).UseAutoBatchLoad(true);
             base.Configure(descriptor);
         }
 

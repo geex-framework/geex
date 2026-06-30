@@ -6,7 +6,6 @@ using Geex.Gql.Types;
 using Geex.Tests.SchemaTests.TestEntities;
 
 using HotChocolate;
-using HotChocolate.Data;
 using HotChocolate.Types;
 using HotChocolate.Types.Pagination;
 
@@ -23,25 +22,24 @@ namespace Geex.Tests.SchemaTests
 
         protected override void Configure(IObjectTypeDescriptor<BatchLoadTestQuery> descriptor)
         {
-            descriptor.UseAutoBatchLoad(true);
-
+            descriptor.Field(x => x.BatchLoadEntities()).UseAutoBatchLoad(true);
+            descriptor.Field(x => x.BatchLoadInterfaceEntities()).UseAutoBatchLoad(true);
+            descriptor.Field(x => x.BatchLoadEntitiesManualOrphan()).UseAutoBatchLoad(true);
+            descriptor.Field(x => x.BatchLoadEntitiesManualPartial()).UseAutoBatchLoad(true);
+            descriptor.Field(x => x.BatchLoadEntitiesManualOnly()).UseAutoBatchLoad(true);
+            descriptor.Field(x => x.BatchLoadEntitiesFiltered(default)).UseAutoBatchLoad(true);
             descriptor.Field(x => x.BatchLoadEntitiesPaged(default))
+                .UseAutoBatchLoad(true)
                 .UseOffsetPaging<ObjectType<BatchLoadGraphQLEntity>>();
-
             descriptor.Field(x => x.BatchLoadInterfaceEntitiesPaged(default))
+                .UseAutoBatchLoad(true)
                 .UseOffsetPaging<InterfaceType<IBatchLoadGraphQLEntity>>();
-
-            descriptor.Field(x => x.BatchLoadEntitiesFiltered())
-                .UseFiltering();
 
             base.Configure(descriptor);
         }
 
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntities() =>
             RootEntities();
-
-        public Task<IQueryable<BatchLoadGraphQLEntity>> BatchLoadEntitiesAsync() =>
-            Task.FromResult(RootEntities());
 
         public IQueryable<IBatchLoadGraphQLEntity> BatchLoadInterfaceEntities() =>
             RootEntities();
@@ -54,8 +52,9 @@ namespace Geex.Tests.SchemaTests
             RootEntities()
                 .WhereIf(!string.IsNullOrEmpty(thisId), x => x.ThisId == thisId);
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesFiltered() =>
-            RootEntities();
+        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesFiltered(string? thisId) =>
+            RootEntities()
+                .WhereIf(!string.IsNullOrEmpty(thisId), x => x.ThisId == thisId);
 
         public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesManualOrphan() =>
             RootEntities()

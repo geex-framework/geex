@@ -139,7 +139,7 @@ namespace MongoDB.Entities.Utilities
                             entities = dbEntities.AsQueryable();
                         }
 
-                        if (!IsCountOnlyExecution<TResult>(expression))
+                        if (!ShouldSkipBatchLoadOnExecute(expression, visitor))
                         {
                             entities.BatchLoadLazyQueries(this.BatchLoadConfig);
                         }
@@ -196,6 +196,31 @@ namespace MongoDB.Entities.Utilities
                 //}
             }
         }
+
+        private static bool ShouldSkipBatchLoadOnExecute<TResult>(
+            Expression expression,
+            QueryPartsExpressionVisitor<T, TResult> visitor)
+        {
+            if (IsScalarCountResult<TResult>())
+            {
+                return true;
+            }
+
+            if (ContainsCountMethod(expression))
+            {
+                return true;
+            }
+
+            if (visitor.ExecuteExpression != default && ContainsCountMethod(visitor.ExecuteExpression))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsScalarCountResult<TResult>() =>
+            typeof(TResult) == typeof(int) || typeof(TResult) == typeof(long);
 
         private static bool IsCountOnlyExecution<TResult>(Expression expression)
         {

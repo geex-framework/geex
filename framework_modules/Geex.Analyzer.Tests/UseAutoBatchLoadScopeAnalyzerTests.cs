@@ -1,8 +1,7 @@
 using System.Threading.Tasks;
 
 using Geex.Analyzer.Analyzer;
-
-using Microsoft.CodeAnalysis;
+using Geex.Analyzer.Tests;
 
 using Xunit;
 
@@ -13,23 +12,37 @@ namespace Geex.Analyzer.Tests
     public class UseAutoBatchLoadScopeAnalyzerTests
     {
         [Fact]
-        public async Task FieldLevel_UseAutoBatchLoad_ShouldReportError()
+        public async Task ValidFieldLevelUseAutoBatchLoad_ShouldNotReportDiagnostic()
         {
-            var expected = DiagnosticResultBuilder
-                .CreateError("GEEX006")
-                .WithSpan(15, 13, 15, 42);
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync(
+                "AutoBatchLoadTests/ValidFieldLevelUseAutoBatchLoad.cs");
+        }
+
+        [Fact]
+        public async Task ValidOperationLevelUseAutoBatchLoad_ShouldNotReportDiagnostic()
+        {
+            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync(
+                "AutoBatchLoadTests/ValidOperationLevelUseAutoBatchLoad.cs");
+        }
+
+        [Fact]
+        public async Task InvalidEntityFieldLevelUseAutoBatchLoad_ShouldReportDiagnostic()
+        {
+            var expected = DiagnosticResultBuilder.Create("GEEX006");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/InvalidFieldLevelUseAutoBatchLoad.cs",
-                includeTestCodeAssembly: false,
+                "AutoBatchLoadTests/InvalidEntityFieldLevelUseAutoBatchLoad.cs",
                 expected);
         }
 
         [Fact]
-        public async Task OperationLevel_UseAutoBatchLoad_ShouldNotReport()
+        public async Task InvalidEntityTypeLevelUseAutoBatchLoad_ShouldReportDiagnostic()
         {
-            await AnalyzerVerifier.VerifyNoAnalyzerDiagnosticsAsync(
-                "AutoBatchLoadTests/ValidOperationLevelUseAutoBatchLoad.cs");
+            var expected = DiagnosticResultBuilder.Create("GEEX006");
+
+            await AnalyzerVerifier.VerifyAnalyzerAsync(
+                "AutoBatchLoadTests/InvalidEntityTypeLevelUseAutoBatchLoad.cs",
+                expected);
         }
     }
 }
