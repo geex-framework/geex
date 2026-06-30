@@ -5,7 +5,7 @@
 //using Microsoft.CodeAnalysis.CSharp;
 //using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-//namespace Geex.Analyzer
+//namespace Geex.Analyzer.Analyzers
 //{
 //    [DiagnosticAnalyzer(LanguageNames.CSharp)]
 //    public class NullableAttributeAnalyzer : DiagnosticAnalyzer

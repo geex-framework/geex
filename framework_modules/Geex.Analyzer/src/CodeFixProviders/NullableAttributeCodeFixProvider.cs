@@ -9,7 +9,7 @@
 //using Microsoft.CodeAnalysis.Editing;
 //using Microsoft.CodeAnalysis.CodeActions;
 
-//namespace Geex.Analyzer
+//namespace Geex.Analyzer.CodeFixProviders
 //{
 //    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(NullableAttributeCodeFixProvider)), Shared]
 //    public class NullableAttributeCodeFixProvider : CodeFixProvider

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-using Geex.Analyzer.Analyzer;
+using Geex.Analyzer.Analyzers;
 
 using Xunit;
 

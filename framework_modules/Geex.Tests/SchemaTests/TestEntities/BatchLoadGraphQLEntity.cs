@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 
 using Geex.Storage;
 
+using HotChocolate.Types;
+
 using MongoDB.Entities;
 
 namespace Geex.Tests.SchemaTests.TestEntities
@@ -46,5 +48,14 @@ namespace Geex.Tests.SchemaTests.TestEntities
 
         public string ThisId { get; set; } = default!;
         public string ParentId { get; set; } = default!;
+
+        public class BatchLoadGraphQLEntityGqlConfig : GqlConfig.Object<BatchLoadGraphQLEntity>
+        {
+            protected override void Configure(IObjectTypeDescriptor<BatchLoadGraphQLEntity> descriptor)
+            {
+                descriptor.Implements<InterfaceType<IBatchLoadGraphQLEntity>>();
+                descriptor.Field(x => x.Children).Name("childNodes");
+            }
+        }
     }
 }

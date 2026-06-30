@@ -6,9 +6,12 @@ using MongoDB.Entities;
 
 namespace MongoDB.Entities.Utilities
 {
-    public static class BatchLoadNavigationValidator
+    public static class BatchLoadNavigationExtensions
     {
-        public static bool TryValidate(PropertyInfo property, Type entityType, out string? error)
+        public static bool TryValidateBatchLoadNavigation(
+            this PropertyInfo property,
+            Type entityType,
+            out string? error)
         {
             error = null;
             if (property == null)
@@ -23,7 +26,7 @@ namespace MongoDB.Entities.Utilities
                 return false;
             }
 
-            if (!IsLazyNavigationPropertyType(property.PropertyType))
+            if (!property.PropertyType.IsLazyBatchLoadNavigationPropertyType())
             {
                 error = $"属性类型 '{property.PropertyType.Name}' 不是 IQueryable<> 或 Lazy<>";
                 return false;
@@ -38,15 +41,15 @@ namespace MongoDB.Entities.Utilities
             return true;
         }
 
-        public static void Ensure(PropertyInfo property, Type entityType)
+        public static void EnsureBatchLoadNavigation(this PropertyInfo property, Type entityType)
         {
-            if (!TryValidate(property, entityType, out var error))
+            if (!property.TryValidateBatchLoadNavigation(entityType, out var error))
             {
                 throw BatchLoadException.NavigationNotBatchable(property, entityType, error!);
             }
         }
 
-        public static bool IsLazyNavigationPropertyType(Type propertyType)
+        public static bool IsLazyBatchLoadNavigationPropertyType(this Type propertyType)
         {
             if (propertyType.IsGenericType)
             {
@@ -66,10 +69,12 @@ namespace MongoDB.Entities.Utilities
             return false;
         }
 
-        public static bool TryGetRelatedEntityType(PropertyInfo property, out Type relatedEntityType)
+        public static bool TryGetBatchLoadRelatedEntityType(
+            this PropertyInfo property,
+            out Type relatedEntityType)
         {
             relatedEntityType = null!;
-            if (!IsLazyNavigationPropertyType(property.PropertyType))
+            if (!property.PropertyType.IsLazyBatchLoadNavigationPropertyType())
             {
                 return false;
             }
@@ -90,14 +95,16 @@ namespace MongoDB.Entities.Utilities
             return false;
         }
 
-        public static PropertyInfo? ResolveCanonicalProperty(Type declaringEntityType, string propertyName)
+        public static PropertyInfo? ResolveCanonicalBatchLoadProperty(
+            this Type declaringEntityType,
+            string propertyName)
         {
             for (var current = declaringEntityType; current != null; current = current.BaseType)
             {
                 var property = current.GetProperty(
                     propertyName,
                     BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.DeclaredOnly);
-                if (property != null && IsLazyNavigationPropertyType(property.PropertyType))
+                if (property != null && property.PropertyType.IsLazyBatchLoadNavigationPropertyType())
                 {
                     return property;
                 }
@@ -105,7 +112,7 @@ namespace MongoDB.Entities.Utilities
                 property = current.GetProperty(
                     propertyName,
                     BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
-                if (property != null && IsLazyNavigationPropertyType(property.PropertyType))
+                if (property != null && property.PropertyType.IsLazyBatchLoadNavigationPropertyType())
                 {
                     return property;
                 }

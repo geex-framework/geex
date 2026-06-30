@@ -92,10 +92,9 @@ namespace MongoDB.Entities.Utilities
             PropertyInfo property,
             Type declaringEntityType)
         {
-            BatchLoadNavigationValidator.Ensure(property, declaringEntityType);
+            property.EnsureBatchLoadNavigation(declaringEntityType);
 
-            var canonicalProperty = BatchLoadNavigationValidator.ResolveCanonicalProperty(
-                declaringEntityType,
+            var canonicalProperty = declaringEntityType.ResolveCanonicalBatchLoadProperty(
                 property.Name) ?? property;
             var key = new BatchLoadPathKey(declaringEntityType, property.Name);
 
@@ -137,7 +136,7 @@ namespace MongoDB.Entities.Utilities
 
         private static bool TryGetSubQueryEntityType(PropertyInfo propertyInfo, out Type subQueryEntityType)
         {
-            if (!BatchLoadNavigationValidator.TryGetRelatedEntityType(propertyInfo, out var relatedEntityType))
+            if (!propertyInfo.TryGetBatchLoadRelatedEntityType(out var relatedEntityType))
             {
                 subQueryEntityType = null!;
                 return false;

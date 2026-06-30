@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Analyzer.Analyzer;
+using Geex.Analyzer.Analyzers;
 using Geex.Analyzer.TestCode.QueryTests;
 using Geex.Gql.AutoBatchLoad;
 using Geex.Gql.Types;
