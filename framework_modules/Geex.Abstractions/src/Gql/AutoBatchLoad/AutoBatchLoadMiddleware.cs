@@ -15,6 +15,8 @@ namespace Geex.Gql.AutoBatchLoad
 {
     public class AutoBatchLoadMiddleware
     {
+        public const string MiddlewareKey = "Geex.AutoBatchLoad.Middleware";
+
         private readonly FieldDelegate _next;
 
         public AutoBatchLoadMiddleware(FieldDelegate next)
@@ -85,20 +87,6 @@ namespace Geex.Gql.AutoBatchLoad
             context.Selection.Field.IsIntrospectionField ||
             context.Selection.Field.Name is "_" ||
             context.Selection.Field.Name.StartsWith("__", StringComparison.Ordinal);
-    }
-
-    internal static class AutoBatchLoadMiddlewareFactory
-    {
-        public static FieldMiddlewareDefinition CreateDefinition()
-        {
-            FieldMiddleware middleware = next => async context =>
-            {
-                var autoBatchLoad = new AutoBatchLoadMiddleware(next);
-                await autoBatchLoad.InvokeAsync(context).ConfigureAwait(false);
-            };
-
-            return new FieldMiddlewareDefinition(middleware, key: AutoBatchLoadFeature.MiddlewareKey);
-        }
     }
 
     internal static class BatchLoadObservableAdapter

@@ -1,6 +1,5 @@
 using System;
 
-using Geex.Gql.AutoBatchLoad;
 using Geex.Gql.Types;
 
 using HotChocolate.Configuration;
@@ -18,8 +17,7 @@ public static class ObjectTypeDefinitionExtensions
         this ObjectTypeDefinition definition,
         ITypeCompletionContext completionContext)
     {
-        if (definition.ContextData.TryGetValue(AutoBatchLoadFeature.OperationContextDataKey, out var value) &&
-            value is bool enabled)
+        if (definition.GeexFeatures.AutoBatchLoad.Enabled is bool enabled)
         {
             return enabled;
         }

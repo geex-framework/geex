@@ -39,7 +39,7 @@ namespace Geex.Gql.AutoBatchLoad
                             .Build());
                 }
 
-                definition.ContextData[AutoBatchLoadFeature.OperationContextDataKey] = enabled;
+                definition.GeexFeatures.AutoBatchLoad.Enabled = enabled;
             });
 
             return descriptor;

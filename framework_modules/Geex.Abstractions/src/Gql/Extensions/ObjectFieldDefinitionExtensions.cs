@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 using Geex.Gql.AutoBatchLoad;
 
@@ -60,12 +61,18 @@ public static class ObjectFieldDefinitionExtensions
 
     public static void ApplyAutoBatchLoadMiddleware(this ObjectFieldDefinition definition)
     {
-        if (definition.MiddlewareDefinitions.Any(x => x.Key == AutoBatchLoadFeature.MiddlewareKey))
+        if (definition.MiddlewareDefinitions.Any(x => x.Key == AutoBatchLoadMiddleware.MiddlewareKey))
         {
             return;
         }
 
-        definition.MiddlewareDefinitions.Add(AutoBatchLoadMiddlewareFactory.CreateDefinition());
+        definition.MiddlewareDefinitions.Add(new FieldMiddlewareDefinition(
+            next => async context =>
+            {
+                var autoBatchLoad = new AutoBatchLoadMiddleware(next);
+                await autoBatchLoad.InvokeAsync(context).ConfigureAwait(false);
+            },
+            key: AutoBatchLoadMiddleware.MiddlewareKey));
     }
 
     private static IEnumerable<Type?> GetDeclaredReturnTypes(ObjectFieldDefinition field)
