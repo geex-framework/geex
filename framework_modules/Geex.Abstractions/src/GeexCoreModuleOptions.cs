@@ -33,6 +33,8 @@ namespace Geex
         /// </summary>
         public bool DisableIntrospection { get; set; } = false;
 
+        public bool AutoBatchLoad { get; set; } = true;
+
         public string CorsRegex { get; set; } = ".+";
         public RabbitMqConfiguration? RabbitMq { get; set; }
     }

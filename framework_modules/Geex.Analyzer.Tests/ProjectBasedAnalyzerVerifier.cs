@@ -6,9 +6,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Geex.Analyzer.Analyzer;
+using Geex.Analyzer.Analyzers;
 using Geex.Analyzer.TestCode.QueryTests;
+using Geex.Gql.AutoBatchLoad;
+using Geex.Gql.Types;
 using Geex.Validation;
+
+using HotChocolate.Types;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -34,31 +38,42 @@ namespace Geex.Analyzer.Tests
         /// <param name="expectedDiagnostics">期望的诊断结果</param>
         public static async Task VerifyAnalyzerAsync(
             string sourceFileName,
+            params DiagnosticResult[] expectedDiagnostics) =>
+            await VerifyAnalyzerAsync(sourceFileName, includeTestCodeAssembly: true, expectedDiagnostics);
+
+        public static async Task VerifyAnalyzerAsync(
+            string sourceFileName,
+            bool includeTestCodeAssembly,
             params DiagnosticResult[] expectedDiagnostics)
         {
+            var additionalReferences = new List<MetadataReference>
+            {
+                MetadataReference.CreateFromFile(typeof(ValidateRule).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(EntityBase<>).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(UseAutoBatchLoadExtensions).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(IObjectTypeDescriptor).Assembly.Location),
+            };
+
+            if (includeTestCodeAssembly)
+            {
+                additionalReferences.Add(MetadataReference.CreateFromFile(typeof(TestEntity).Assembly.Location));
+            }
+
             var test = new ProjectBasedAnalyzerTest<TAnalyzer>
             {
                 TestCode = await GetSourceCodeAsync(sourceFileName),
                 ReferenceAssemblies = ReferenceAssemblies.Net.Net90,
                 TestState =
                 {
-                    AdditionalReferences =
-                    {
-
-                        //// 添加基本的.NET Core引用
-                        MetadataReference.CreateFromFile(typeof(ValidateRule).Assembly.Location), // System.Runtime
-                        MetadataReference.CreateFromFile(typeof(TestEntity).Assembly.Location), // System.Runtime
-                        MetadataReference.CreateFromFile(typeof(EntityBase<>).Assembly.Location), // System.Runtime
-                        //MetadataReference.CreateFromFile(typeof(System.Linq.Queryable).Assembly.Location), // System.Linq.Queryable
-                        //MetadataReference.CreateFromFile(typeof(System.Collections.Generic.List<>).Assembly.Location), // System.Collections
-                        //MetadataReference.CreateFromFile(typeof(System.ComponentModel.DataAnnotations.ValidationAttribute).Assembly.Location), // System.ComponentModel.Annotations
-                        //MetadataReference.CreateFromFile(typeof(System.Threading.Tasks.Task).Assembly.Location), // System.Threading.Tasks
-                        //MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location), // System.Linq
-                    }
+                    AdditionalReferences = { }
                 }
             };
 
-            // 添加期望的诊断结果
+            foreach (var reference in additionalReferences)
+            {
+                test.TestState.AdditionalReferences.Add(reference);
+            }
+
             test.ExpectedDiagnostics.AddRange(expectedDiagnostics);
 
             await test.RunAsync(CancellationToken.None);
@@ -177,7 +192,7 @@ namespace Geex.Analyzer.Tests
     /// <summary>
     /// 基于项目的分析器测试类
     /// </summary>
-    internal class ProjectBasedAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer, GeexOnlyVerifier>
+    internal class ProjectBasedAnalyzerTest<TAnalyzer> : CSharpAnalyzerTest<TAnalyzer, GeexVerifier>
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
         public ProjectBasedAnalyzerTest()
@@ -239,6 +254,8 @@ namespace Geex.Analyzer.Tests
                 ["CS1503"] = ReportDiagnostic.Suppress, // 参数类型不匹配
                 ["CS1729"] = ReportDiagnostic.Suppress, // 不包含带有参数的构造函数
                 ["CS7036"] = ReportDiagnostic.Suppress, // 没有给出与所需正式参数对应的参数
+                ["CS0012"] = ReportDiagnostic.Suppress, // 类型在未引用的程序集中定义
+                ["CS0121"] = ReportDiagnostic.Suppress, // 调用歧义
             };
 
             return nullableWarnings.AddRange(additionalDiagnostics);
@@ -258,6 +275,11 @@ namespace Geex.Analyzer.Tests
         public static DiagnosticResult Create(string diagnosticId)
         {
             return new DiagnosticResult(diagnosticId, DiagnosticSeverity.Warning);
+        }
+
+        public static DiagnosticResult CreateError(string diagnosticId)
+        {
+            return new DiagnosticResult(diagnosticId, DiagnosticSeverity.Error);
         }
 
         /// <summary>

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+
+using Geex.Gql.AutoBatchLoad;
+
 using HotChocolate.Types.Descriptors;
 
 // ReSharper disable once CheckNamespace
@@ -39,6 +42,14 @@ public static class ObjectFieldDescriptorExtensions
         this IObjectFieldDescriptor<T, TValue> descriptor)
     {
         return new ObjectFieldDescriptor<T, TValue>((descriptor as IObjectFieldDescriptor).Authorize());
+    }
+
+    public static IObjectFieldDescriptor<T, TValue> UseAutoBatchLoad<T, TValue>(
+        this IObjectFieldDescriptor<T, TValue> descriptor,
+        bool enabled = true)
+    {
+        ((IObjectFieldDescriptor)descriptor).UseAutoBatchLoad(enabled);
+        return descriptor;
     }
     /// <summary>
     /// 为强类型字段描述符添加偏移分页支持，自动推断分页类型

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -22,7 +22,7 @@ namespace System.Linq
 
             BatchLoadConfig config = rootProvider.BatchLoadConfig;
             this.Provider = rootProvider;
-            config.SubBatchLoadConfigs.TryAdd(parentProp, new BatchLoadConfig());
+            config.RegisterBatchLoad(parentProp, parentProp.DeclaringType!);
             _sources = sources;
         }
         public BatchLoadQueryable(IQueryable<TSource> sources, PropertyInfo parentProp)
@@ -55,11 +55,11 @@ namespace System.Linq
                 propQueue = new Queue<PropertyInfo>(propQueue.Reverse());
                 while (propQueue.TryDequeue(out var prop))
                 {
-                    config = config.SubBatchLoadConfigs[prop];
+                    config = config.GetSubConfig(prop, prop.DeclaringType!);
                 }
             }
             this.Provider = rootProvider;
-            config.SubBatchLoadConfigs.TryAdd(parentProp, new BatchLoadConfig());
+            config.RegisterBatchLoad(parentProp, parentProp.DeclaringType!);
             _sources = sources;
         }
 

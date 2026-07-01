@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Geex.Bson;
 using Geex.Gql;
+using Geex.Gql.AutoBatchLoad;
 using Geex.Gql.Types;
 using Geex.Validation;
 using HotChocolate;
@@ -107,6 +108,7 @@ namespace Geex
                 .TryAddTypeInterceptor<ValidateAttributeTypeInterceptor>()
                 .TryAddTypeInterceptor<ValidateTypeInterceptor>()
                 .TryAddTypeInterceptor<LazyQueryTypeInterceptor>()
+                .TryAddTypeInterceptor<AutoBatchLoadTypeInterceptor>()
                 .AddTypeConverter((Type source, Type target, out ChangeType? converter) =>
                 {
                     converter = o => o;
