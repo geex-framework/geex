@@ -35,6 +35,24 @@ public static class OutputFieldExtensions
         return false;
     }
 
+    public static bool TryGetObservablePayloadType(this IOutputField field, out Type payloadType)
+    {
+        payloadType = null!;
+
+        if (field is IObjectField objectField)
+        {
+            foreach (var returnType in GetRuntimeReturnTypes(objectField))
+            {
+                if (returnType.TryGetObservablePayloadType(out payloadType))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return field.Type.ToRuntimeType().TryGetObservablePayloadType(out payloadType);
+    }
+
     public static PropertyInfo? ResolveNavigationProperty(this IOutputField field, Type entityType)
     {
         if (field is IObjectField objectField)

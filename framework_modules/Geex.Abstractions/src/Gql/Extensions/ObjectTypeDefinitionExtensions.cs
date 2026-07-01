@@ -1,12 +1,8 @@
 using System;
 
-using Geex;
 using Geex.Gql.Types;
 
-using HotChocolate.Configuration;
 using HotChocolate.Types;
-
-using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace HotChocolate.Types.Descriptors.Definitions;
@@ -17,16 +13,6 @@ public static class ObjectTypeDefinitionExtensions
     {
 	    public bool IsOperationExtensionType() =>
 		    IsOperationExtensionType(definition.RuntimeType, definition.Name);
-
-	    public bool IsAutoBatchLoadEnabled(ITypeCompletionContext completionContext)
-	    {
-		    if (definition.GeexFeatures.AutoBatchLoad.Enabled is bool enabled)
-		    {
-			    return enabled;
-		    }
-
-		    return completionContext.Services.GetRequiredService<GeexCoreModuleOptions>().AutoBatchLoad;
-	    }
     }
 
     private static bool IsOperationExtensionType(Type? runtimeType, string? typeName)

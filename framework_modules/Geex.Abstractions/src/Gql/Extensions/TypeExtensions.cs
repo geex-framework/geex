@@ -87,6 +87,18 @@ namespace HotChocolate.Types
             return false;
         }
 
+        public static bool TryGetObservablePayloadType(this Type? type, out Type payloadType)
+        {
+            payloadType = null!;
+            type = type.UnwrapAsyncReturnType();
+            if (type == null)
+            {
+                return false;
+            }
+
+            return TryGetObservableInnerType(type, out payloadType);
+        }
+
         private static bool TryGetObservableInnerType(Type type, out Type innerType)
         {
             innerType = null!;

@@ -1,48 +1,117 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+
+using Geex;
+
 using HotChocolate.Configuration;
 using HotChocolate.Types;
+using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
+
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Geex.Gql.AutoBatchLoad
 {
+    /// <summary>
+    /// Type interceptor for injecting AutoBatchLoad middleware on operation fields
+    /// </summary>
     public class AutoBatchLoadTypeInterceptor : TypeInterceptor
     {
+        // Single middleware instance reused for all fields
+        private static readonly AutoBatchLoadMiddleware _autoBatchLoadMiddleware = new();
+
+        /// <inheritdoc />
         public override void OnBeforeCompleteType(ITypeCompletionContext completionContext, DefinitionBase definition)
         {
             if (definition is ObjectTypeDefinition objectTypeDefinition)
             {
-                TryInjectOperationFieldMiddleware(completionContext, objectTypeDefinition);
+                ApplyAutoBatchLoad(objectTypeDefinition, completionContext);
             }
 
             base.OnBeforeCompleteType(completionContext, definition);
         }
 
-        private static void TryInjectOperationFieldMiddleware(
-            ITypeCompletionContext completionContext,
-            ObjectTypeDefinition objectTypeDefinition)
+        private void ApplyAutoBatchLoad(
+            ObjectTypeDefinition objectTypeDefinition,
+            ITypeCompletionContext completionContext)
         {
             if (!objectTypeDefinition.IsOperationExtensionType())
             {
                 return;
             }
 
-            if (!objectTypeDefinition.IsAutoBatchLoadEnabled(completionContext))
+            var globalAutoBatchLoad = completionContext.Services
+                .GetRequiredService<GeexCoreModuleOptions>()
+                .AutoBatchLoad;
+
+            foreach (var fieldDefinition in objectTypeDefinition.Fields)
             {
-                return;
+                if (IsSystemOrIntrospectionField(fieldDefinition))
+                {
+                    continue;
+                }
+
+                if (!IsEntityReturningField(fieldDefinition))
+                {
+                    continue;
+                }
+
+                UseAutoBatchLoadExtensions.EnsureAutoBatchLoadConfigured(fieldDefinition, globalAutoBatchLoad);
+
+                if (fieldDefinition.GeexFeatures.AutoBatchLoad?.IsEnabled != true)
+                {
+                    continue;
+                }
+
+                var descriptor = ObjectFieldDescriptor.From(completionContext.DescriptorContext, fieldDefinition);
+
+                descriptor.Use(next => async context =>
+                    await _autoBatchLoadMiddleware.InvokeAsync(context, next));
+            }
+        }
+
+        private static bool IsSystemOrIntrospectionField(ObjectFieldDefinition field) =>
+            field.Name is "_" ||
+            field.IsIntrospectionField ||
+            field.Name.StartsWith("__", StringComparison.Ordinal);
+
+        private static bool IsEntityReturningField(
+            ObjectFieldDefinition field,
+            EntityReturningKind kinds = EntityReturningKind.All) =>
+            TryGetEntityReturningKind(field, out var kind, out _) && (kind & kinds) != 0;
+
+        private static bool TryGetEntityReturningKind(
+            ObjectFieldDefinition field,
+            out EntityReturningKind kind,
+            out Type entityType)
+        {
+            kind = EntityReturningKind.None;
+            entityType = null!;
+
+            foreach (var returnType in GetDeclaredReturnTypes(field))
+            {
+                if (returnType.TryGetEntityReturningKind(out kind, out entityType))
+                {
+                    return true;
+                }
             }
 
-            foreach (var field in objectTypeDefinition.Fields)
+            return false;
+        }
+
+        private static IEnumerable<Type?> GetDeclaredReturnTypes(ObjectFieldDefinition field)
+        {
+            yield return field.ResultType;
+            if (field.ResolverMember is MethodInfo resolverMethod)
             {
-                if (field.IsSystemOrIntrospectionField())
-                {
-                    continue;
-                }
+                yield return resolverMethod.ReturnType;
+            }
 
-                if (!field.IsEntityReturningField())
-                {
-                    continue;
-                }
-
-                field.ApplyAutoBatchLoadMiddleware();
+            if (field.Member is MethodInfo memberMethod)
+            {
+                yield return memberMethod.ReturnType;
             }
         }
     }
