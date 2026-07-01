@@ -14,43 +14,22 @@ namespace HotChocolate.Types.Descriptors.Definitions;
 
 public static class ObjectFieldDefinitionExtensions
 {
-    public static bool IsQueryableEntityRootField(this ObjectFieldDefinition field) =>
-        field.TryGetEntityElementType(out _);
+    public static bool IsEntityReturningField(
+        this ObjectFieldDefinition field,
+        EntityReturningKind kinds = EntityReturningKind.All) =>
+        field.TryGetEntityReturningKind(out var kind, out _) && (kind & kinds) != 0;
 
-    public static bool IsObservableEntityRootField(this ObjectFieldDefinition field) =>
-        field.TryGetObservableEntityElementType(out _);
-
-    public static bool TryGetEntityElementType(this ObjectFieldDefinition field, out Type entityType)
+    public static bool TryGetEntityReturningKind(
+        this ObjectFieldDefinition field,
+        out EntityReturningKind kind,
+        out Type entityType)
     {
-        entityType = null!;
-
-        if (field.ResultType.TryGetEntityElementType(out entityType))
-        {
-            return true;
-        }
-
-        if (field.ResolverMember is MethodInfo resolverMethod &&
-            resolverMethod.ReturnType.TryGetEntityElementType(out entityType))
-        {
-            return true;
-        }
-
-        if (field.Member is MethodInfo memberMethod &&
-            memberMethod.ReturnType.TryGetEntityElementType(out entityType))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    public static bool TryGetObservableEntityElementType(this ObjectFieldDefinition field, out Type entityType)
-    {
+        kind = EntityReturningKind.None;
         entityType = null!;
 
         foreach (var returnType in GetDeclaredReturnTypes(field))
         {
-            if (returnType.TryGetObservableEntityElementType(out entityType))
+            if (returnType.TryGetEntityReturningKind(out kind, out entityType))
             {
                 return true;
             }

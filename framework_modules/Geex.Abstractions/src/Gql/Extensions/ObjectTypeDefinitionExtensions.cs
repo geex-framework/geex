@@ -1,9 +1,12 @@
 using System;
 
+using Geex;
 using Geex.Gql.Types;
 
 using HotChocolate.Configuration;
 using HotChocolate.Types;
+
+using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace HotChocolate.Types.Descriptors.Definitions;
@@ -22,7 +25,9 @@ public static class ObjectTypeDefinitionExtensions
             return enabled;
         }
 
-        return completionContext.IsAutoBatchLoadEnabled();
+        return completionContext.Services.GetService(typeof(GeexCoreModuleOptions)) is GeexCoreModuleOptions options
+            ? options.AutoBatchLoad
+            : true;
     }
 
     private static bool IsOperationObjectType(Type? runtimeType, string? typeName)

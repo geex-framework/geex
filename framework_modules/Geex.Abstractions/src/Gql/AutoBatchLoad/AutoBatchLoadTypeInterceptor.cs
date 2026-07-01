@@ -39,8 +39,7 @@ namespace Geex.Gql.AutoBatchLoad
                     continue;
                 }
 
-                if (!field.IsQueryableEntityRootField() &&
-                    !field.IsObservableEntityRootField())
+                if (!field.IsEntityReturningField())
                 {
                     continue;
                 }

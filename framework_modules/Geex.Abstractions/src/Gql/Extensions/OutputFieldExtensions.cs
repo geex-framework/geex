@@ -23,7 +23,8 @@ public static class OutputFieldExtensions
         {
             foreach (var returnType in GetRuntimeReturnTypes(objectField))
             {
-                if (returnType.TryGetObservableEntityElementType(out entityType))
+                if (returnType.TryGetEntityReturningKind(out var kind, out entityType) &&
+                    (kind & EntityReturningKind.Observable) != 0)
                 {
                     return true;
                 }
@@ -64,19 +65,19 @@ public static class OutputFieldExtensions
         if (field is IObjectField objectField)
         {
             if (objectField.Member is MethodInfo memberMethod &&
-                memberMethod.ReturnType.TryGetEntityElementType(out entityType))
+                memberMethod.ReturnType.TryGetEntityReturningKind(out _, out entityType))
             {
                 return true;
             }
 
             if (objectField.ResolverMember is MethodInfo resolverMethod &&
-                resolverMethod.ReturnType.TryGetEntityElementType(out entityType))
+                resolverMethod.ReturnType.TryGetEntityReturningKind(out _, out entityType))
             {
                 return true;
             }
         }
 
-        if (field.Type.ToRuntimeType().TryGetEntityElementType(out entityType))
+        if (field.Type.ToRuntimeType().TryGetEntityReturningKind(out _, out entityType))
         {
             return true;
         }
