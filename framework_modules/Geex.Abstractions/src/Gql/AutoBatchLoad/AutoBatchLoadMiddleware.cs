@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 
 using HotChocolate.Resolvers;
 using HotChocolate.Types;
-using HotChocolate.Types.Descriptors;
-using HotChocolate.Types.Descriptors.Definitions;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -32,7 +30,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            if (!AutoBatchLoadGraphQL.TryGetNavigationEntityType(context.Selection.Field, out var entityType))
+            if (!context.Selection.Field.TryGetNavigationEntityType(out var entityType))
             {
                 await _next(context).ConfigureAwait(false);
                 return;
@@ -100,16 +98,6 @@ namespace Geex.Gql.AutoBatchLoad
             };
 
             return new FieldMiddlewareDefinition(middleware, key: AutoBatchLoadFeature.MiddlewareKey);
-        }
-
-        public static void Apply(ObjectFieldDefinition definition)
-        {
-            if (definition.MiddlewareDefinitions.Any(x => x.Key == AutoBatchLoadFeature.MiddlewareKey))
-            {
-                return;
-            }
-
-            definition.MiddlewareDefinitions.Add(CreateDefinition());
         }
     }
 

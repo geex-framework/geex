@@ -1,5 +1,3 @@
-using Geex.Gql.Types;
-
 using HotChocolate;
 using HotChocolate.Configuration;
 using HotChocolate.Types;
@@ -18,7 +16,7 @@ namespace Geex.Gql.AutoBatchLoad
             {
                 descriptor.Extend().OnBeforeCreate((_, definition) =>
                 {
-                    AutoBatchLoadMiddlewareFactory.Apply(definition);
+                    definition.ApplyAutoBatchLoadMiddleware();
                 });
             }
 
@@ -33,7 +31,7 @@ namespace Geex.Gql.AutoBatchLoad
         {
             descriptor.Extend().OnBeforeCreate((_, definition) =>
             {
-                if (!AutoBatchLoadGraphQL.IsOperationObjectType(definition.RuntimeType, definition.Name))
+                if (!definition.IsOperationObjectType())
                 {
                     throw new SchemaException(
                         SchemaErrorBuilder.New()

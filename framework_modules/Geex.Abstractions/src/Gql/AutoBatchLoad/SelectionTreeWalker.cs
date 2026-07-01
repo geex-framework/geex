@@ -5,7 +5,6 @@ using System.Linq;
 using HotChocolate.Execution.Processing;
 using HotChocolate.Resolvers;
 using HotChocolate.Types;
-using HotChocolate.Types.Pagination;
 
 using MongoDB.Entities.Utilities;
 
@@ -23,7 +22,7 @@ namespace Geex.Gql.AutoBatchLoad
 
         public static BatchLoadConfig Analyze(IMiddlewareContext context, Type entityType)
         {
-            var navigationEntityType = AutoBatchLoadGraphQL.ResolveNavigationEntityType(context, entityType);
+            var navigationEntityType = entityType.ResolveNavigationEntityType(context);
             var config = new BatchLoadConfig();
             var selections = GetEntityFieldSelections(context, navigationEntityType);
 
@@ -46,7 +45,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            var property = AutoBatchLoadGraphQL.ResolveNavigationProperty(entityType, selection.Field);
+            var property = selection.Field.ResolveNavigationProperty(entityType);
             if (property == null ||
                 !property.TryGetRelatedEntityType(out var relatedType))
             {
@@ -65,7 +64,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            var nestedEntityType = AutoBatchLoadGraphQL.ResolveNavigationEntityType(context, relatedType);
+            var nestedEntityType = relatedType.ResolveNavigationEntityType(context);
             var nestedSelections = GetNestedEntityFieldSelections(context, nestedEntityType, selection);
             foreach (var nestedSelection in nestedSelections)
             {
@@ -82,7 +81,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return Array.Empty<ISelection>();
             }
 
-            if (IsPagedField(context.Selection.Field))
+            if (context.Selection.Field.IsOffsetPagingField())
             {
                 return GetEntitySelectionsUnderOffsetPaging(context, entityType, context.Selection, context.Selection.Field);
             }
@@ -95,12 +94,12 @@ namespace Geex.Gql.AutoBatchLoad
             Type entityType,
             ISelection selection)
         {
-            if (IsPagedField(selection.Field))
+            if (selection.Field.IsOffsetPagingField())
             {
                 return GetEntitySelectionsUnderOffsetPaging(context, entityType, selection, selection.Field);
             }
 
-            if (AutoBatchLoadGraphQL.TryResolveEntityObjectType(context, entityType, out var objectType))
+            if (entityType.TryResolveEntityObjectType(context, out var objectType))
             {
                 return context.GetSelections(objectType, selection, true).ToArray();
             }
@@ -126,15 +125,12 @@ namespace Geex.Gql.AutoBatchLoad
                 return Array.Empty<ISelection>();
             }
 
-            if (!AutoBatchLoadGraphQL.TryResolveEntityObjectType(context, entityType, out var entityObjectType))
+            if (!entityType.TryResolveEntityObjectType(context, out var entityObjectType))
             {
                 return Array.Empty<ISelection>();
             }
 
             return context.GetSelections(entityObjectType, itemsSelection, true).ToArray();
         }
-
-        private static bool IsPagedField(IOutputField field) =>
-            field.Type.NamedType().Name.EndsWith("CollectionSegment", StringComparison.Ordinal);
     }
 }

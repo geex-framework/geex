@@ -1,14 +1,8 @@
 using System;
-using System.Linq;
-using System.Threading.Tasks;
-
-using Geex.Gql.Types;
 
 using HotChocolate.Configuration;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors.Definitions;
-
-using MongoDB.Entities;
 
 namespace Geex.Gql.AutoBatchLoad
 {
@@ -28,12 +22,12 @@ namespace Geex.Gql.AutoBatchLoad
             ITypeCompletionContext completionContext,
             ObjectTypeDefinition objectTypeDefinition)
         {
-            if (!AutoBatchLoadGraphQL.IsOperationObjectType(objectTypeDefinition.RuntimeType, objectTypeDefinition.Name))
+            if (!objectTypeDefinition.IsOperationObjectType())
             {
                 return;
             }
 
-            if (!AutoBatchLoadFeature.IsAutoBatchLoadEnabled(completionContext, objectTypeDefinition))
+            if (!objectTypeDefinition.IsAutoBatchLoadEnabled(completionContext))
             {
                 return;
             }
@@ -45,13 +39,13 @@ namespace Geex.Gql.AutoBatchLoad
                     continue;
                 }
 
-                if (!AutoBatchLoadGraphQL.IsQueryableEntityRootField(field) &&
-                    !AutoBatchLoadGraphQL.IsObservableEntityRootField(field))
+                if (!field.IsQueryableEntityRootField() &&
+                    !field.IsObservableEntityRootField())
                 {
                     continue;
                 }
 
-                AutoBatchLoadMiddlewareFactory.Apply(field);
+                field.ApplyAutoBatchLoadMiddleware();
             }
         }
 
