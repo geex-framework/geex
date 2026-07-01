@@ -60,7 +60,7 @@ namespace Geex.Analyzer.Analyzers
                 return;
             }
 
-            if (IsInsideOperationExtensionConfigure(invocation, context.SemanticModel))
+            if (IsInsideOperationExtension(invocation, context.SemanticModel))
             {
                 return;
             }
@@ -70,32 +70,44 @@ namespace Geex.Analyzer.Analyzers
                 invocation.GetLocation()));
         }
 
-        private static bool IsFieldDescriptorType(ITypeSymbol receiverType)
-        {
-            var name = receiverType.Name;
-            return name is "IObjectFieldDescriptor" or "ObjectFieldDescriptor";
-        }
+        private static bool IsFieldDescriptorType(ITypeSymbol receiverType) =>
+            MatchesTypeDefinition(receiverType, "IObjectFieldDescriptor") ||
+            MatchesTypeDefinition(receiverType, "ObjectFieldDescriptor");
 
-        private static bool IsObjectTypeDescriptorType(ITypeSymbol receiverType)
-        {
-            var name = receiverType.Name;
-            return name.StartsWith("IObjectTypeDescriptor", StringComparison.Ordinal) ||
-                   name.StartsWith("ObjectTypeDescriptor", StringComparison.Ordinal);
-        }
+        private static bool IsObjectTypeDescriptorType(ITypeSymbol receiverType) =>
+            MatchesTypeDefinition(receiverType, "IObjectTypeDescriptor") ||
+            MatchesTypeDefinition(receiverType, "ObjectTypeDescriptor");
 
-        private static bool IsInsideOperationExtensionConfigure(SyntaxNode node, SemanticModel semanticModel)
+        private static bool MatchesTypeDefinition(ITypeSymbol type, string definitionName)
         {
-            var configureMethod = node.Ancestors()
-                .OfType<MethodDeclarationSyntax>()
-                .FirstOrDefault(m => m.Identifier.ValueText == "Configure");
-
-            if (configureMethod == null)
+            for (var current = type; current != null; current = current.BaseType)
             {
-                return false;
+                if (GetDefinitionName(current) == definitionName)
+                {
+                    return true;
+                }
             }
 
-            var containingClass = configureMethod.Ancestors()
-                .OfType<ClassDeclarationSyntax>()
+            foreach (var iface in type.AllInterfaces)
+            {
+                if (GetDefinitionName(iface) == definitionName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string GetDefinitionName(ITypeSymbol type) =>
+            type is INamedTypeSymbol namedType && namedType.IsGenericType
+                ? namedType.OriginalDefinition.Name
+                : type.Name;
+
+        private static bool IsInsideOperationExtension(SyntaxNode node, SemanticModel semanticModel)
+        {
+            var containingClass = node.Ancestors()
+                .OfType<TypeDeclarationSyntax>()
                 .FirstOrDefault();
 
             if (containingClass == null)

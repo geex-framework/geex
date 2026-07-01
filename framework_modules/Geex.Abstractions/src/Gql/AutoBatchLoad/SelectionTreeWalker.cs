@@ -6,6 +6,9 @@ using HotChocolate.Execution.Processing;
 using HotChocolate.Resolvers;
 using HotChocolate.Types;
 
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 using MongoDB.Entities.Utilities;
 
 namespace Geex.Gql.AutoBatchLoad
@@ -82,6 +85,12 @@ namespace Geex.Gql.AutoBatchLoad
                 return Array.Empty<ISelection>();
             }
 
+            if (context.Selection.Field.IsRelayPagingField())
+            {
+                LogRelayPagingUnsupported(context, context.Selection.Field);
+                return Array.Empty<ISelection>();
+            }
+
             if (context.Selection.Field.IsOffsetPagingField())
             {
                 return GetEntitySelectionsUnderOffsetPaging(context, entityType, context.Selection, context.Selection.Field);
@@ -95,6 +104,12 @@ namespace Geex.Gql.AutoBatchLoad
             Type entityType,
             ISelection selection)
         {
+            if (selection.Field.IsRelayPagingField())
+            {
+                LogRelayPagingUnsupported(context, selection.Field);
+                return Array.Empty<ISelection>();
+            }
+
             if (selection.Field.IsOffsetPagingField())
             {
                 return GetEntitySelectionsUnderOffsetPaging(context, entityType, selection, selection.Field);
@@ -132,6 +147,14 @@ namespace Geex.Gql.AutoBatchLoad
             }
 
             return context.GetSelections(entityObjectType, itemsSelection, true).ToArray();
+        }
+
+        private static void LogRelayPagingUnsupported(IMiddlewareContext context, IOutputField field)
+        {
+            context.Services.GetService<ILogger<AutoBatchLoadMiddleware>>()?.LogWarning(
+                "AutoBatchLoad 不支持 Relay/Cursor 分页字段 {FieldName}，嵌套导航无法自动 BatchLoad，可能发生 N+1 查询。\n {SyntaxNode}",
+                field.Name,
+                context.Selection.SyntaxNode.ToString());
         }
     }
 }

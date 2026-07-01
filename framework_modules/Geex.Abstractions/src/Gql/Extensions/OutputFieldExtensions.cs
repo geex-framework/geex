@@ -76,6 +76,40 @@ public static class OutputFieldExtensions
     public static bool IsOffsetPagingField(this IOutputField field) =>
         field.Type.NamedType().Name.EndsWith("CollectionSegment", StringComparison.Ordinal);
 
+    public static bool IsRelayPagingField(this IOutputField field)
+    {
+        if (field.IsOffsetPagingField())
+        {
+            return false;
+        }
+
+        if (field.Type.NamedType() is not IObjectType objectType)
+        {
+            return false;
+        }
+
+        var hasEdges = false;
+        var hasPageInfo = false;
+        foreach (var objectField in objectType.Fields)
+        {
+            if (objectField.Name == "edges")
+            {
+                hasEdges = true;
+            }
+            else if (objectField.Name == "pageInfo")
+            {
+                hasPageInfo = true;
+            }
+
+            if (hasEdges && hasPageInfo)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static bool TryGetEntityElementTypeFromOutputField(IOutputField field, out Type entityType)
     {
         entityType = null!;
