@@ -1,6 +1,6 @@
 using System;
 
-using Geex.Gql.GeexFeatures;
+using Geex.Gql;
 
 // ReSharper disable once CheckNamespace
 namespace HotChocolate.Types;
@@ -9,7 +9,7 @@ public static class ObjectFieldExtensions
 {
     extension(IOutputField outputField)
     {
-        public GeexFeaturesAccessor GeexFeatures => new(outputField);
+        public GeexFeatures GeexFeatures => new(outputField.ContextData);
     }
 
     public static bool IsSystemOrIntrospectionField(this IObjectField field) =>

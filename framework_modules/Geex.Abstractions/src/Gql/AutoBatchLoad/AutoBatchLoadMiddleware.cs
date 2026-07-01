@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-
+using Geex.Gql;
 using HotChocolate.Resolvers;
 using HotChocolate.Types;
 

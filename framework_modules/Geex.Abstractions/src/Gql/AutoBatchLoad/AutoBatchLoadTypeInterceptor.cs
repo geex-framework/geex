@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 
 using Geex;
-
+using Geex.Gql;
 using HotChocolate.Configuration;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors;

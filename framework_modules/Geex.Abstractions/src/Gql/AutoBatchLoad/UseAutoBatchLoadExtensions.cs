@@ -1,4 +1,4 @@
-using Geex.Gql.GeexFeatures;
+using Geex.Gql;
 
 using HotChocolate;
 using HotChocolate.Configuration;
