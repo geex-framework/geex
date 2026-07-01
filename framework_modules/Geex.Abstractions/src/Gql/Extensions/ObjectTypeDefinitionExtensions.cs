@@ -13,32 +13,24 @@ namespace HotChocolate.Types.Descriptors.Definitions;
 
 public static class ObjectTypeDefinitionExtensions
 {
-    public static bool IsOperationObjectType(this ObjectTypeDefinition definition) =>
-        IsOperationObjectType(definition.RuntimeType, definition.Name);
-
-    public static bool IsAutoBatchLoadEnabled(
-        this ObjectTypeDefinition definition,
-        ITypeCompletionContext completionContext)
+    extension(ObjectTypeDefinition definition)
     {
-        if (definition.GeexFeatures.AutoBatchLoad.Enabled is bool enabled)
-        {
-            return enabled;
-        }
+	    public bool IsOperationExtensionType() =>
+		    IsOperationExtensionType(definition.RuntimeType, definition.Name);
 
-        return completionContext.Services.GetService(typeof(GeexCoreModuleOptions)) is GeexCoreModuleOptions options
-            ? options.AutoBatchLoad
-            : true;
+	    public bool IsAutoBatchLoadEnabled(ITypeCompletionContext completionContext)
+	    {
+		    if (definition.GeexFeatures.AutoBatchLoad.Enabled is bool enabled)
+		    {
+			    return enabled;
+		    }
+
+		    return completionContext.Services.GetRequiredService<GeexCoreModuleOptions>().AutoBatchLoad;
+	    }
     }
 
-    private static bool IsOperationObjectType(Type? runtimeType, string? typeName)
+    private static bool IsOperationExtensionType(Type? runtimeType, string? typeName)
     {
-        if (runtimeType == typeof(Query) ||
-            runtimeType == typeof(Mutation) ||
-            runtimeType == typeof(Subscription))
-        {
-            return true;
-        }
-
         for (var current = runtimeType; current != null && current != typeof(object); current = current.BaseType)
         {
             if (!current.IsGenericType)

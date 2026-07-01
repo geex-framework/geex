@@ -1,5 +1,3 @@
-using System;
-
 using HotChocolate.Configuration;
 using HotChocolate.Types;
 using HotChocolate.Types.Descriptors.Definitions;
@@ -22,7 +20,7 @@ namespace Geex.Gql.AutoBatchLoad
             ITypeCompletionContext completionContext,
             ObjectTypeDefinition objectTypeDefinition)
         {
-            if (!objectTypeDefinition.IsOperationObjectType())
+            if (!objectTypeDefinition.IsOperationExtensionType())
             {
                 return;
             }
@@ -34,7 +32,7 @@ namespace Geex.Gql.AutoBatchLoad
 
             foreach (var field in objectTypeDefinition.Fields)
             {
-                if (ShouldSkipField(field))
+                if (field.IsSystemOrIntrospectionField())
                 {
                     continue;
                 }
@@ -47,10 +45,5 @@ namespace Geex.Gql.AutoBatchLoad
                 field.ApplyAutoBatchLoadMiddleware();
             }
         }
-
-        private static bool ShouldSkipField(ObjectFieldDefinition field) =>
-            field.Name is "_" ||
-            field.IsIntrospectionField ||
-            field.Name.StartsWith("__", StringComparison.Ordinal);
     }
 }

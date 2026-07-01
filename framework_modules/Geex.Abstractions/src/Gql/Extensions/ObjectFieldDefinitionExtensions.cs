@@ -14,6 +14,11 @@ namespace HotChocolate.Types.Descriptors.Definitions;
 
 public static class ObjectFieldDefinitionExtensions
 {
+    public static bool IsSystemOrIntrospectionField(this ObjectFieldDefinition field) =>
+        field.Name is "_" ||
+        field.IsIntrospectionField ||
+        field.Name.StartsWith("__", StringComparison.Ordinal);
+
     public static bool IsEntityReturningField(
         this ObjectFieldDefinition field,
         EntityReturningKind kinds = EntityReturningKind.All) =>

@@ -12,7 +12,7 @@ namespace HotChocolate.Types;
 
 public static class OutputFieldExtensions
 {
-    public static bool TryGetNavigationEntityType(this IOutputField field, out Type entityType)
+    public static bool TryGetReturningEntityType(this IOutputField field, out Type entityType)
     {
         if (TryGetEntityElementTypeFromOutputField(field, out entityType))
         {

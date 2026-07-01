@@ -76,7 +76,8 @@ namespace Geex.Gql.AutoBatchLoad
             IMiddlewareContext context,
             Type entityType)
         {
-            if (context.Selection.Field.IsIntrospectionField)
+            if (context.Selection.Field is IObjectField field &&
+                field.IsSystemOrIntrospectionField())
             {
                 return Array.Empty<ISelection>();
             }

@@ -31,7 +31,7 @@ namespace Geex.Gql.AutoBatchLoad
         {
             descriptor.Extend().OnBeforeCreate((_, definition) =>
             {
-                if (!definition.IsOperationObjectType())
+                if (!definition.IsOperationExtensionType())
                 {
                     throw new SchemaException(
                         SchemaErrorBuilder.New()
