@@ -73,6 +73,24 @@ public static class OutputFieldExtensions
         return FindNavigationPropertyByName(entityType, field.Name);
     }
 
+    public static PropertyInfo? ResolveEntityProperty(this IOutputField field, Type entityType)
+    {
+        if (field is IObjectField objectField)
+        {
+            if (objectField.ResolverMember is PropertyInfo resolverProperty)
+            {
+                return resolverProperty;
+            }
+
+            if (objectField.Member is PropertyInfo memberProperty)
+            {
+                return memberProperty;
+            }
+        }
+
+        return FindEntityPropertyByName(entityType, field.Name);
+    }
+
     public static bool IsOffsetPagingField(this IOutputField field) =>
         field.Type.NamedType().Name.EndsWith("CollectionSegment", StringComparison.Ordinal);
 
@@ -172,7 +190,16 @@ public static class OutputFieldExtensions
         property.PropertyType.IsLazyEntityNavigation() &&
         LazyQueryMetadataRegistry.IsRegistered(entityType, property.Name);
 
-    private static PropertyInfo? FindNavigationPropertyByName(Type entityType, string fieldName)
+    private static PropertyInfo? FindNavigationPropertyByName(Type entityType, string fieldName) =>
+        FindEntityPropertyByName(
+            entityType,
+            fieldName,
+            property => IsLazyQueryNavigation(entityType, property));
+
+    private static PropertyInfo? FindEntityPropertyByName(
+        Type entityType,
+        string fieldName,
+        Func<PropertyInfo, bool>? predicate = null)
     {
         var currentType = entityType;
         while (currentType != null)
@@ -183,7 +210,7 @@ public static class OutputFieldExtensions
                 if (string.Equals(property.Name, fieldName, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(ToCamelCase(property.Name), fieldName, StringComparison.Ordinal))
                 {
-                    if (IsLazyQueryNavigation(entityType, property))
+                    if (predicate == null || predicate(property))
                     {
                         return property;
                     }

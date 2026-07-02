@@ -18,10 +18,64 @@ namespace Geex.Tests.FeatureTests
     [Collection(nameof(TestsCollection))]
     public class CoreBatchLoadApiTests : TestsBase
     {
-        private const string ProfilerNamespace = "BatchLoadGraphQLEntity";
+        private const string ProfilerNamespace = nameof(BatchLoadTestEntity);
 
         public CoreBatchLoadApiTests(TestApplicationFactory factory) : base(factory)
         {
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadDependsOnShouldBatchLoadIndirectNavigation()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadEntities {
+                    thisId
+                    childCount
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            var entities = responseData["data"]!["batchLoadEntities"]!.AsArray();
+            entities.Count.ShouldBe(5);
+            entities.First(x => x!["thisId"]!.GetValue<string>() == "1")!["childCount"]!.GetValue<int>().ShouldBe(2);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(2);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
+        public async Task AutoBatchLoadDisabledDependsOnShouldNotBatchLoadIndirectNavigation()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                mutation {
+                  batchLoadEntitiesDisabled {
+                    thisId
+                    childCount
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            responseData["data"]!["batchLoadEntitiesDisabled"]!.AsArray().Count.ShouldBe(5);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBeGreaterThan(2);
+
+            DB.StopProfiler();
         }
 
         [Fact]
@@ -300,7 +354,7 @@ namespace Geex.Tests.FeatureTests
                     ...BatchLoadEntityFields
                   }
                 }
-                fragment BatchLoadEntityFields on BatchLoadGraphQLEntity {
+                fragment BatchLoadEntityFields on BatchLoadTestEntity {
                   thisId
                   childNodes {
                     thisId
@@ -490,17 +544,17 @@ namespace Geex.Tests.FeatureTests
         private async Task SeedBatchLoadDataAsync()
         {
             var uow = ScopedService.GetRequiredService<IUnitOfWork>();
-            await uow.DeleteAsync<BatchLoadGraphQLEntity>(_ => true);
+            await uow.DeleteAsync<BatchLoadTestEntity>(_ => true);
 
-            uow.Attach(new BatchLoadGraphQLEntity("1"));
-            uow.Attach(new BatchLoadGraphQLEntity("2"));
-            uow.Attach(new BatchLoadGraphQLEntity("3"));
-            uow.Attach(new BatchLoadGraphQLEntity("4"));
-            uow.Attach(new BatchLoadGraphQLEntity("5"));
-            uow.Attach(new BatchLoadGraphQLEntity("1.1", "1"));
-            uow.Attach(new BatchLoadGraphQLEntity("1.2", "1"));
-            uow.Attach(new BatchLoadGraphQLEntity("2.1", "2"));
-            uow.Attach(new BatchLoadGraphQLEntity("1.1.1", "1.1"));
+            uow.Attach(new BatchLoadTestEntity("1"));
+            uow.Attach(new BatchLoadTestEntity("2"));
+            uow.Attach(new BatchLoadTestEntity("3"));
+            uow.Attach(new BatchLoadTestEntity("4"));
+            uow.Attach(new BatchLoadTestEntity("5"));
+            uow.Attach(new BatchLoadTestEntity("1.1", "1"));
+            uow.Attach(new BatchLoadTestEntity("1.2", "1"));
+            uow.Attach(new BatchLoadTestEntity("2.1", "2"));
+            uow.Attach(new BatchLoadTestEntity("1.1.1", "1.1"));
             await uow.SaveChanges();
         }
     }

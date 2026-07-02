@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using Geex.Analyzer.Analyzers;
 using Geex.Analyzer.TestCode.QueryTests;
+using Geex.Gql.Attributes;
 using Geex.Gql.AutoBatchLoad;
 using Geex.Gql.Types;
 using Geex.Validation;
@@ -51,6 +52,7 @@ namespace Geex.Analyzer.Tests
                 MetadataReference.CreateFromFile(typeof(ValidateRule).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(EntityBase<>).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(UseAutoBatchLoadExtensions).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(BatchLoadDependsOnAttribute).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(IObjectTypeDescriptor).Assembly.Location),
             };
 
@@ -126,6 +128,9 @@ namespace Geex.Analyzer.Tests
         {
             await VerifyAnalyzerAsync<TTestClass>();
         }
+
+        public static async Task<string> GetSourceCodeForTestAsync(string sourceFileName) =>
+            await GetSourceCodeAsync(sourceFileName);
 
         private static async Task<string> GetSourceCodeAsync(string sourceFileName)
         {

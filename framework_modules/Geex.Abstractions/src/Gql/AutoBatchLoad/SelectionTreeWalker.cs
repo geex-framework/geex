@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 using HotChocolate.Execution.Processing;
 using HotChocolate.Resolvers;
@@ -49,29 +50,51 @@ namespace Geex.Gql.AutoBatchLoad
             }
 
             var property = selection.Field.ResolveNavigationProperty(entityType);
-            if (property == null ||
-                !property.TryGetRelatedEntityType(out var relatedType))
+            if (property != null &&
+                property.TryGetRelatedEntityType(out var relatedType) &&
+                property.TryValidateBatchLoadable(entityType, out _))
+            {
+                var subConfig = config.RegisterBatchLoad(property, entityType);
+
+                if (selection.SelectionSet == null)
+                {
+                    return;
+                }
+
+                var nestedEntityType = relatedType.ResolveNavigationEntityType(context);
+                var nestedSelections = GetNestedEntityFieldSelections(context, nestedEntityType, selection);
+                foreach (var nestedSelection in nestedSelections)
+                {
+                    AppendSelection(subConfig, context, nestedEntityType, nestedSelection);
+                }
+
+                return;
+            }
+
+            AppendBatchLoadDependsOn(config, entityType, selection);
+        }
+
+        private static void AppendBatchLoadDependsOn(
+            BatchLoadConfig config,
+            Type entityType,
+            ISelection selection)
+        {
+            var selectedProperty = selection.Field.ResolveEntityProperty(entityType);
+            if (selectedProperty == null)
             {
                 return;
             }
 
-            if (!property.TryValidateBatchLoadable(entityType, out _))
+            foreach (var navigationPropertyName in selectedProperty.GetBatchLoadDependsOnNavigationNames())
             {
-                return;
-            }
+                var navigationProperty = entityType.ResolveBatchLoadProperty(navigationPropertyName);
+                if (navigationProperty == null ||
+                    !navigationProperty.TryValidateBatchLoadable(entityType, out _))
+                {
+                    continue;
+                }
 
-            var subConfig = config.RegisterBatchLoad(property, entityType);
-
-            if (selection.SelectionSet == null)
-            {
-                return;
-            }
-
-            var nestedEntityType = relatedType.ResolveNavigationEntityType(context);
-            var nestedSelections = GetNestedEntityFieldSelections(context, nestedEntityType, selection);
-            foreach (var nestedSelection in nestedSelections)
-            {
-                AppendSelection(subConfig, context, nestedEntityType, nestedSelection);
+                config.RegisterBatchLoad(navigationProperty, entityType);
             }
         }
 
