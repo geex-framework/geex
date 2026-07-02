@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 
+using Geex.Gql.Attributes;
 using Geex.Storage;
 
 using HotChocolate.Types;
@@ -9,16 +10,16 @@ using MongoDB.Entities;
 
 namespace Geex.Tests.SchemaTests.TestEntities
 {
-    public interface IBatchLoadGraphQLEntity : IEntityBase
+    public interface IBatchLoadTestEntity : IEntityBase
     {
         string ThisId { get; }
         string ParentId { get; }
-        IQueryable<IBatchLoadGraphQLEntity> Children { get; }
+        IQueryable<IBatchLoadTestEntity> Children { get; }
     }
 
-    public class BatchLoadGraphQLEntity : Entity<BatchLoadGraphQLEntity>, IBatchLoadGraphQLEntity
+    public class BatchLoadTestEntity : Entity<BatchLoadTestEntity>, IBatchLoadTestEntity
     {
-        public BatchLoadGraphQLEntity()
+        public BatchLoadTestEntity()
         {
             ConfigLazyQuery(
                 x => x.Children,
@@ -30,30 +31,33 @@ namespace Geex.Tests.SchemaTests.TestEntities
                 children => parent => children.Select(y => y.ThisId).ToList().Contains(parent.ParentId));
         }
 
-        public BatchLoadGraphQLEntity(string thisId) : this()
+        public BatchLoadTestEntity(string thisId) : this()
         {
             ThisId = thisId;
         }
 
-        public BatchLoadGraphQLEntity(string thisId, string parentId) : this()
+        public BatchLoadTestEntity(string thisId, string parentId) : this()
         {
             ThisId = thisId;
             ParentId = parentId;
         }
 
-        IQueryable<IBatchLoadGraphQLEntity> IBatchLoadGraphQLEntity.Children => Children;
+        IQueryable<IBatchLoadTestEntity> IBatchLoadTestEntity.Children => Children;
 
-        public IQueryable<BatchLoadGraphQLEntity> Children => LazyQuery(() => Children);
-        public Lazy<BatchLoadGraphQLEntity> FirstChild => LazyQuery(() => FirstChild);
+        public IQueryable<BatchLoadTestEntity> Children => LazyQuery(() => Children);
+        public Lazy<BatchLoadTestEntity> FirstChild => LazyQuery(() => FirstChild);
+
+        [BatchLoadDependsOn(nameof(Children))]
+        public int ChildCount => Children.Count();
 
         public string ThisId { get; set; } = default!;
         public string ParentId { get; set; } = default!;
 
-        public class BatchLoadGraphQLEntityGqlConfig : GqlConfig.Object<BatchLoadGraphQLEntity>
+        public class BatchLoadTestEntityGqlConfig : GqlConfig.Object<BatchLoadTestEntity>
         {
-            protected override void Configure(IObjectTypeDescriptor<BatchLoadGraphQLEntity> descriptor)
+            protected override void Configure(IObjectTypeDescriptor<BatchLoadTestEntity> descriptor)
             {
-                descriptor.Implements<InterfaceType<IBatchLoadGraphQLEntity>>();
+                descriptor.Implements<InterfaceType<IBatchLoadTestEntity>>();
                 descriptor.Field(x => x.Children).Name("childNodes");
             }
         }

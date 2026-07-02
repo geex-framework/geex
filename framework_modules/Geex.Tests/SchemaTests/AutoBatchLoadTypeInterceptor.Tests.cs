@@ -30,47 +30,47 @@ namespace Geex.Tests.SchemaTests
             descriptor.Field(x => x.BatchLoadEntitiesFiltered(default)).UseAutoBatchLoad(true);
             descriptor.Field(x => x.BatchLoadEntitiesPaged(default))
                 .UseAutoBatchLoad(true)
-                .UseOffsetPaging<ObjectType<BatchLoadGraphQLEntity>>();
+                .UseOffsetPaging<ObjectType<BatchLoadTestEntity>>();
             descriptor.Field(x => x.BatchLoadInterfaceEntitiesPaged(default))
                 .UseAutoBatchLoad(true)
-                .UseOffsetPaging<InterfaceType<IBatchLoadGraphQLEntity>>();
+                .UseOffsetPaging<InterfaceType<IBatchLoadTestEntity>>();
 
             base.Configure(descriptor);
         }
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntities() =>
+        public IQueryable<BatchLoadTestEntity> BatchLoadEntities() =>
             RootEntities();
 
-        public IQueryable<IBatchLoadGraphQLEntity> BatchLoadInterfaceEntities() =>
+        public IQueryable<IBatchLoadTestEntity> BatchLoadInterfaceEntities() =>
             RootEntities();
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesPaged(string? thisId) =>
+        public IQueryable<BatchLoadTestEntity> BatchLoadEntitiesPaged(string? thisId) =>
             RootEntities()
                 .WhereIf(!string.IsNullOrEmpty(thisId), x => x.ThisId == thisId);
 
-        public IQueryable<IBatchLoadGraphQLEntity> BatchLoadInterfaceEntitiesPaged(string? thisId) =>
+        public IQueryable<IBatchLoadTestEntity> BatchLoadInterfaceEntitiesPaged(string? thisId) =>
             RootEntities()
                 .WhereIf(!string.IsNullOrEmpty(thisId), x => x.ThisId == thisId);
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesFiltered(string? thisId) =>
+        public IQueryable<BatchLoadTestEntity> BatchLoadEntitiesFiltered(string? thisId) =>
             RootEntities()
                 .WhereIf(!string.IsNullOrEmpty(thisId), x => x.ThisId == thisId);
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesManualOrphan() =>
+        public IQueryable<BatchLoadTestEntity> BatchLoadEntitiesManualOrphan() =>
             RootEntities()
                 .BatchLoad(x => x.Children)
                 .ThenBatchLoad(x => x.FirstChild);
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesManualPartial() =>
+        public IQueryable<BatchLoadTestEntity> BatchLoadEntitiesManualPartial() =>
             RootEntities()
                 .BatchLoad(x => x.Children);
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesManualOnly() =>
+        public IQueryable<BatchLoadTestEntity> BatchLoadEntitiesManualOnly() =>
             RootEntities()
                 .BatchLoad(x => x.FirstChild);
 
-        private IQueryable<BatchLoadGraphQLEntity> RootEntities() =>
-            _uow.Query<BatchLoadGraphQLEntity>()
+        private IQueryable<BatchLoadTestEntity> RootEntities() =>
+            _uow.Query<BatchLoadTestEntity>()
                 .Where(x => string.IsNullOrEmpty(x.ParentId));
     }
 
@@ -89,8 +89,8 @@ namespace Geex.Tests.SchemaTests
             base.Configure(descriptor);
         }
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesEnabled() =>
-            _uow.Query<BatchLoadGraphQLEntity>()
+        public IQueryable<BatchLoadTestEntity> BatchLoadEntitiesEnabled() =>
+            _uow.Query<BatchLoadTestEntity>()
                 .Where(x => string.IsNullOrEmpty(x.ParentId));
     }
 
@@ -109,8 +109,8 @@ namespace Geex.Tests.SchemaTests
             base.Configure(descriptor);
         }
 
-        public IQueryable<BatchLoadGraphQLEntity> BatchLoadEntitiesDisabled() =>
-            _uow.Query<BatchLoadGraphQLEntity>()
+        public IQueryable<BatchLoadTestEntity> BatchLoadEntitiesDisabled() =>
+            _uow.Query<BatchLoadTestEntity>()
                 .Where(x => string.IsNullOrEmpty(x.ParentId));
     }
 
@@ -130,11 +130,11 @@ namespace Geex.Tests.SchemaTests
         }
 
         [SubscribeAndResolve]
-        public IObservable<IQueryable<BatchLoadGraphQLEntity>> OnBatchLoadEntities()
+        public IObservable<IQueryable<BatchLoadTestEntity>> OnBatchLoadEntities()
         {
-            var queryable = _uow.Query<BatchLoadGraphQLEntity>()
+            var queryable = _uow.Query<BatchLoadTestEntity>()
                 .Where(x => string.IsNullOrEmpty(x.ParentId));
-            return new ImmediateObservable<IQueryable<BatchLoadGraphQLEntity>>(queryable);
+            return new ImmediateObservable<IQueryable<BatchLoadTestEntity>>(queryable);
         }
     }
 
