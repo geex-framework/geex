@@ -13,6 +13,9 @@ on:
 jobs:
   build-and-publish-nuget-package:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     env:
       PACKAGE_DESCRIPTION: "Geex - A modern dev-friendly framework for building scalable and maintainable applications"
       PACKAGE_AUTHOR: "Geex Team"
@@ -118,5 +121,11 @@ jobs:
           dotnet pack ./framework_modules/Geex.MediatX/MediatX/MediatX.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.MediatX/MediatX.RabbitMQ/MediatX.RabbitMQ.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
 
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Publish to NuGet
-        run: dotnet nuget push ./nupkg/*.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
