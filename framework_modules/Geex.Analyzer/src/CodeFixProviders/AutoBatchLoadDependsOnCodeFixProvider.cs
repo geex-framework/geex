@@ -15,11 +15,11 @@ using Microsoft.CodeAnalysis.Editing;
 
 namespace Geex.Analyzer.CodeFixProviders
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(BatchLoadDependsOnCodeFixProvider)), Shared]
-    public sealed class BatchLoadDependsOnCodeFixProvider : CodeFixProvider
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AutoBatchLoadDependsOnCodeFixProvider)), Shared]
+    public sealed class AutoBatchLoadDependsOnCodeFixProvider : CodeFixProvider
     {
         public override ImmutableArray<string> FixableDiagnosticIds { get; } =
-            ImmutableArray.Create(BatchLoadDependsOnAnalyzer.DiagnosticId);
+            ImmutableArray.Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId);
 
         public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
@@ -48,14 +48,14 @@ namespace Geex.Analyzer.CodeFixProviders
 
                 context.RegisterCodeFix(
                     CodeAction.Create(
-                        title: $"Add BatchLoadDependsOn for '{navigationPropertyName}'",
+                        title: $"Add AutoBatchLoadDependsOn for '{navigationPropertyName}'",
                         createChangedDocument: cancellationToken =>
-                            AddBatchLoadDependsOnAttributeAsync(
+                            AddAutoBatchLoadDependsOnAttributeAsync(
                                 context.Document,
                                 propertyDeclaration,
                                 navigationPropertyName,
                                 cancellationToken),
-                        equivalenceKey: $"{nameof(BatchLoadDependsOnCodeFixProvider)}_{navigationPropertyName}"),
+                        equivalenceKey: $"{nameof(AutoBatchLoadDependsOnCodeFixProvider)}_{navigationPropertyName}"),
                     diagnostic);
             }
         }
@@ -71,7 +71,7 @@ namespace Geex.Analyzer.CodeFixProviders
             return null;
         }
 
-        private static async Task<Document> AddBatchLoadDependsOnAttributeAsync(
+        private static async Task<Document> AddAutoBatchLoadDependsOnAttributeAsync(
             Document document,
             PropertyDeclarationSyntax propertyDeclaration,
             string navigationPropertyName,
@@ -79,7 +79,7 @@ namespace Geex.Analyzer.CodeFixProviders
         {
             if (propertyDeclaration.AttributeLists.Any(list =>
                     list.Attributes.Any(existing =>
-                        existing.Name.ToString() is "BatchLoadDependsOn" or "BatchLoadDependsOnAttribute" &&
+                        existing.Name.ToString() is "AutoBatchLoadDependsOn" or "AutoBatchLoadDependsOnAttribute" &&
                         existing.ArgumentList?.Arguments.FirstOrDefault()?.Expression.ToString() ==
                         $"nameof({navigationPropertyName})")))
             {
@@ -87,7 +87,7 @@ namespace Geex.Analyzer.CodeFixProviders
             }
 
             var attribute = SyntaxFactory.Attribute(
-                    SyntaxFactory.ParseName("Geex.Gql.Attributes.BatchLoadDependsOn"))
+                    SyntaxFactory.ParseName("Geex.Gql.Attributes.AutoBatchLoadDependsOn"))
                 .WithArgumentList(
                     SyntaxFactory.AttributeArgumentList(
                         SyntaxFactory.SingletonSeparatedList(

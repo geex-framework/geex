@@ -6,10 +6,10 @@ using Geex.Gql.Attributes;
 
 namespace Geex.Gql.AutoBatchLoad
 {
-    internal static class BatchLoadDependsOnExtensions
+    internal static class AutoBatchLoadDependsOnExtensions
     {
-        public static IReadOnlyList<string> GetBatchLoadDependsOnNavigationNames(this PropertyInfo property) =>
-            property.GetCustomAttributes<BatchLoadDependsOnAttribute>()
+        public static IReadOnlyList<string> GetAutoBatchLoadDependsOnNavigationNames(this PropertyInfo property) =>
+            property.GetCustomAttributes<AutoBatchLoadDependsOnAttribute>()
                 .Select(attribute => attribute.NavigationPropertyName)
                 .Where(name => !string.IsNullOrEmpty(name))
                 .Distinct()

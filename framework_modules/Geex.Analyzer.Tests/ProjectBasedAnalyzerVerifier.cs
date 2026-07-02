@@ -52,7 +52,7 @@ namespace Geex.Analyzer.Tests
                 MetadataReference.CreateFromFile(typeof(ValidateRule).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(EntityBase<>).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(UseAutoBatchLoadExtensions).Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(BatchLoadDependsOnAttribute).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(AutoBatchLoadDependsOnAttribute).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(IObjectTypeDescriptor).Assembly.Location),
             };
 

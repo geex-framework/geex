@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Geex.Analyzer.TestCode.AutoBatchLoadTests.BatchLoadDependsOnTests
+namespace Geex.Analyzer.TestCode.AutoBatchLoadTests.AutoBatchLoadDependsOnTests
 {
     public class NonEntitySummaryTestModel
     {

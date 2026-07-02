@@ -8,34 +8,34 @@ using Xunit;
 
 namespace Geex.Analyzer.Tests
 {
-    using AnalyzerVerifier = ProjectBasedAnalyzerVerifier<BatchLoadDependsOnAnalyzer>;
+    using AnalyzerVerifier = ProjectBasedAnalyzerVerifier<AutoBatchLoadDependsOnAnalyzer>;
 
-    public class BatchLoadDependsOnAnalyzerTests
+    public class AutoBatchLoadDependsOnAnalyzerTests
     {
         [Fact]
-        public async Task MissingBatchLoadDependsOn_ShouldReportDiagnostic()
+        public async Task MissingAutoBatchLoadDependsOn_ShouldReportDiagnostic()
         {
             var expected = DiagnosticResultBuilder
-                .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                 .WithArguments("TotalAmount", "Lines");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/MissingDependsOn.cs",
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/MissingDependsOn.cs",
                 expected);
         }
 
         [Fact]
-        public async Task ValidBatchLoadDependsOn_ShouldNotReportDiagnostic()
+        public async Task ValidAutoBatchLoadDependsOn_ShouldNotReportDiagnostic()
         {
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/ValidDependsOn.cs");
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/ValidDependsOn.cs");
         }
 
         [Fact]
         public async Task NonEntityType_ShouldNotReportDiagnostic()
         {
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/NonEntitySummary.cs");
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/NonEntitySummary.cs");
         }
 
         [Fact]
@@ -44,15 +44,15 @@ namespace Geex.Analyzer.Tests
             var expected = new[]
             {
                 DiagnosticResultBuilder
-                    .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                    .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                     .WithArguments("Summary", "ArchivedLines"),
                 DiagnosticResultBuilder
-                    .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                    .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                     .WithArguments("Summary", "Lines"),
             };
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/MissingMultipleDependsOn.cs",
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/MissingMultipleDependsOn.cs",
                 expected);
         }
 
@@ -60,11 +60,11 @@ namespace Geex.Analyzer.Tests
         public async Task InheritedLazyNavigation_ShouldReportDiagnostic()
         {
             var expected = DiagnosticResultBuilder
-                .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                 .WithArguments("TotalAmount", "Lines");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/InheritedMissingDependsOn.cs",
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/InheritedMissingDependsOn.cs",
                 expected);
         }
 
@@ -72,11 +72,11 @@ namespace Geex.Analyzer.Tests
         public async Task BaseAccessLazyNavigation_ShouldReportDiagnostic()
         {
             var expected = DiagnosticResultBuilder
-                .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                 .WithArguments("TotalAmount", "Lines");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/BaseAccessMissingDependsOn.cs",
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/BaseAccessMissingDependsOn.cs",
                 expected);
         }
 
@@ -84,11 +84,11 @@ namespace Geex.Analyzer.Tests
         public async Task ConditionalAccessLazyNavigation_ShouldReportDiagnostic()
         {
             var expected = DiagnosticResultBuilder
-                .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                 .WithArguments("LineCount", "Lines");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/ConditionalAccessMissingDependsOn.cs",
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/ConditionalAccessMissingDependsOn.cs",
                 expected);
         }
 
@@ -96,11 +96,11 @@ namespace Geex.Analyzer.Tests
         public async Task PrivateLazyNavigation_ShouldReportDiagnostic()
         {
             var expected = DiagnosticResultBuilder
-                .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                 .WithArguments("TotalAmount", "Lines");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/PrivateLazyNavMissingDependsOn.cs",
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/PrivateLazyNavMissingDependsOn.cs",
                 expected);
         }
 
@@ -108,11 +108,11 @@ namespace Geex.Analyzer.Tests
         public async Task PrivateMethodAccessLazyNavigation_ShouldReportDiagnostic()
         {
             var expected = DiagnosticResultBuilder
-                .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                 .WithArguments("TotalAmount", "Lines");
 
             await AnalyzerVerifier.VerifyAnalyzerAsync(
-                "AutoBatchLoadTests/BatchLoadDependsOnTests/PrivateMethodMissingDependsOn.cs",
+                "AutoBatchLoadTests/AutoBatchLoadDependsOnTests/PrivateMethodMissingDependsOn.cs",
                 expected);
         }
     }
