@@ -47,7 +47,7 @@ namespace Geex.Tests.SchemaTests.TestEntities
         public IQueryable<BatchLoadTestEntity> Children => LazyQuery(() => Children);
         public Lazy<BatchLoadTestEntity> FirstChild => LazyQuery(() => FirstChild);
 
-        [BatchLoadDependsOn(nameof(Children))]
+        [AutoBatchLoadDependsOn(nameof(Children))]
         public int ChildCount => Children.Count();
 
         public string ThisId { get; set; } = default!;

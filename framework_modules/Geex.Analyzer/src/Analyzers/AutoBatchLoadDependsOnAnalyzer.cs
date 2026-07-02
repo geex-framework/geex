@@ -11,21 +11,21 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Geex.Analyzer.Analyzers
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class BatchLoadDependsOnAnalyzer : DiagnosticAnalyzer
+    public class AutoBatchLoadDependsOnAnalyzer : DiagnosticAnalyzer
     {
         public const string DiagnosticId = "GEEX007";
 
-        public static readonly DiagnosticDescriptor MissingBatchLoadDependsOnRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor MissingAutoBatchLoadDependsOnRule = new DiagnosticDescriptor(
             DiagnosticId,
-            "缺少 BatchLoadDependsOn",
-            "计算属性 '{0}' 在 getter 中访问了 Lazy 导航 '{1}'，但未声明 [BatchLoadDependsOn]。",
+            "缺少 AutoBatchLoadDependsOn",
+            "计算属性 '{0}' 在 getter 中访问了 Lazy 导航 '{1}'，但未声明 [AutoBatchLoadDependsOn]。",
             "GraphQL",
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true,
-            description: "当计算属性间接访问已注册的 Lazy 导航时，应声明 BatchLoadDependsOn 以供 AutoBatchLoad 扩展 batch 路径。");
+            description: "当计算属性间接访问已注册的 Lazy 导航时，应声明 AutoBatchLoadDependsOn 以供 AutoBatchLoad 扩展 batch 路径。");
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(MissingBatchLoadDependsOnRule);
+            ImmutableArray.Create(MissingAutoBatchLoadDependsOnRule);
 
         public override void Initialize(AnalysisContext context)
         {
@@ -94,7 +94,7 @@ namespace Geex.Analyzer.Analyzers
                 }
 
                 context.ReportDiagnostic(Diagnostic.Create(
-                    MissingBatchLoadDependsOnRule,
+                    MissingAutoBatchLoadDependsOnRule,
                     propertyDeclaration.Identifier.GetLocation(),
                     CreateProperties(navigationName),
                     propertySymbol.Name,
@@ -516,7 +516,7 @@ namespace Geex.Analyzer.Analyzers
 
             foreach (var attribute in propertySymbol.GetAttributes())
             {
-                if (attribute.AttributeClass?.Name is not "BatchLoadDependsOnAttribute")
+                if (attribute.AttributeClass?.Name is not "AutoBatchLoadDependsOnAttribute")
                 {
                     continue;
                 }

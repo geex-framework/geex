@@ -13,9 +13,9 @@ namespace Geex.Gql.Attributes
     /// </list>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
-    public sealed class BatchLoadDependsOnAttribute : Attribute
+    public sealed class AutoBatchLoadDependsOnAttribute : Attribute
     {
-        public BatchLoadDependsOnAttribute(string navigationPropertyName)
+        public AutoBatchLoadDependsOnAttribute(string navigationPropertyName)
         {
             NavigationPropertyName = navigationPropertyName;
         }

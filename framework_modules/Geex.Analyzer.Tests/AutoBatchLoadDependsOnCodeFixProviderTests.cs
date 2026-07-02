@@ -12,13 +12,13 @@ using Xunit;
 
 namespace Geex.Analyzer.Tests
 {
-    public class BatchLoadDependsOnCodeFixProviderTests
+    public class AutoBatchLoadDependsOnCodeFixProviderTests
     {
         [Fact]
-        public async Task MissingDependsOn_ShouldAddBatchLoadDependsOnAttribute()
+        public async Task MissingDependsOn_ShouldAddAutoBatchLoadDependsOnAttribute()
         {
-            var source = await ProjectBasedAnalyzerVerifier<BatchLoadDependsOnAnalyzer>
-                .GetSourceCodeForTestAsync("AutoBatchLoadTests/BatchLoadDependsOnTests/MissingDependsOn.cs");
+            var source = await ProjectBasedAnalyzerVerifier<AutoBatchLoadDependsOnAnalyzer>
+                .GetSourceCodeForTestAsync("AutoBatchLoadTests/AutoBatchLoadDependsOnTests/MissingDependsOn.cs");
 
             const string fixedCode = """
                 using System.Linq;
@@ -27,16 +27,16 @@ namespace Geex.Analyzer.Tests
 
                 using MongoDB.Entities;
 
-                namespace Geex.Analyzer.TestCode.AutoBatchLoadTests.BatchLoadDependsOnTests
+                namespace Geex.Analyzer.TestCode.AutoBatchLoadTests.AutoBatchLoadDependsOnTests
                 {
-                    public class BatchLoadDependsOnTestLineEntity : Entity<BatchLoadDependsOnTestLineEntity>
+                    public class AutoBatchLoadDependsOnTestLineEntity : Entity<AutoBatchLoadDependsOnTestLineEntity>
                     {
                         public decimal Amount { get; set; }
                     }
 
-                    public class BatchLoadDependsOnMissingTestEntity : Entity<BatchLoadDependsOnMissingTestEntity>
+                    public class AutoBatchLoadDependsOnMissingTestEntity : Entity<AutoBatchLoadDependsOnMissingTestEntity>
                     {
-                        public BatchLoadDependsOnMissingTestEntity()
+                        public AutoBatchLoadDependsOnMissingTestEntity()
                         {
                             ConfigLazyQuery(
                                 x => x.Lines,
@@ -44,16 +44,16 @@ namespace Geex.Analyzer.Tests
                                 _ => _ => true);
                         }
 
-                        [Geex.Gql.Attributes.BatchLoadDependsOn(nameof(Lines))]
+                        [Geex.Gql.Attributes.AutoBatchLoadDependsOn(nameof(Lines))]
                         public decimal TotalAmount => Lines.Sum(x => x.Amount);
 
-                        public IQueryable<BatchLoadDependsOnTestLineEntity> Lines => LazyQuery(() => Lines);
+                        public IQueryable<AutoBatchLoadDependsOnTestLineEntity> Lines => LazyQuery(() => Lines);
                     }
                 }
 
                 """;
 
-            var test = new BatchLoadDependsOnCodeFixTest
+            var test = new AutoBatchLoadDependsOnCodeFixTest
             {
                 TestCode = source,
                 FixedCode = fixedCode,
@@ -61,22 +61,22 @@ namespace Geex.Analyzer.Tests
 
             test.ExpectedDiagnostics.Add(
                 DiagnosticResultBuilder
-                    .Create(BatchLoadDependsOnAnalyzer.DiagnosticId)
+                    .Create(AutoBatchLoadDependsOnAnalyzer.DiagnosticId)
                     .WithArguments("TotalAmount", "Lines"));
 
             await test.RunAsync();
         }
 
-        private sealed class BatchLoadDependsOnCodeFixTest
-            : CSharpCodeFixTest<BatchLoadDependsOnAnalyzer, BatchLoadDependsOnCodeFixProvider, GeexVerifier>
+        private sealed class AutoBatchLoadDependsOnCodeFixTest
+            : CSharpCodeFixTest<AutoBatchLoadDependsOnAnalyzer, AutoBatchLoadDependsOnCodeFixProvider, GeexVerifier>
         {
-            public BatchLoadDependsOnCodeFixTest()
+            public AutoBatchLoadDependsOnCodeFixTest()
             {
                 ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
                 TestState.AdditionalReferences.Add(
                     MetadataReference.CreateFromFile(typeof(EntityBase<>).Assembly.Location));
                 TestState.AdditionalReferences.Add(
-                    MetadataReference.CreateFromFile(typeof(Geex.Gql.Attributes.BatchLoadDependsOnAttribute).Assembly.Location));
+                    MetadataReference.CreateFromFile(typeof(Geex.Gql.Attributes.AutoBatchLoadDependsOnAttribute).Assembly.Location));
                 TestState.AdditionalReferences.Add(
                     MetadataReference.CreateFromFile(typeof(Geex.Storage.Entity<>).Assembly.Location));
             }

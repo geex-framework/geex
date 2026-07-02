@@ -71,10 +71,10 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            AppendBatchLoadDependsOn(config, entityType, selection);
+            AppendAutoBatchLoadDependsOn(config, entityType, selection);
         }
 
-        private static void AppendBatchLoadDependsOn(
+        private static void AppendAutoBatchLoadDependsOn(
             BatchLoadConfig config,
             Type entityType,
             ISelection selection)
@@ -85,7 +85,7 @@ namespace Geex.Gql.AutoBatchLoad
                 return;
             }
 
-            foreach (var navigationPropertyName in selectedProperty.GetBatchLoadDependsOnNavigationNames())
+            foreach (var navigationPropertyName in selectedProperty.GetAutoBatchLoadDependsOnNavigationNames())
             {
                 var navigationProperty = entityType.ResolveBatchLoadProperty(navigationPropertyName);
                 if (navigationProperty == null ||
