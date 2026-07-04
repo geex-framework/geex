@@ -1,6 +1,7 @@
 ﻿using Geex.Common;
 using Geex.Extensions.ApprovalFlows;
 using Geex.Extensions.MultiTenant;
+using Geex.Extensions.Payments;
 using Geex.Tests.FeatureTests;
 using HotChocolate;
 using HotChocolate.Execution;
@@ -14,7 +15,8 @@ namespace Geex.Tests;
 [DependsOn(typeof(GeexCoreModule),
     typeof(GeexCommonModule),
     typeof(MultiTenantModule),
-    typeof(ApprovalFlowModule))]
+    typeof(ApprovalFlowModule),
+    typeof(PaymentsModule))]
 public class TestModule : GeexEntryModule<TestModule>
 {
     /// <inheritdoc />
@@ -32,5 +34,10 @@ public class TestModule : GeexEntryModule<TestModule>
         context.Services.AddSingleton<ISchema>((sp) => builder.BuildSchemaAsync().GetAwaiter().GetResult());
         context.Services.AddJob<TestStatefulCronJob>("* * * * * *");
         base.ConfigureServices(context);
+
+        var paymentsOptions = context.Services.GetSingletonInstance<PaymentsModuleOptions>();
+        paymentsOptions.UseVirtualTransaction = true;
+        paymentsOptions.VirtualTransactionSimulateCallbacks = false;
+        paymentsOptions.PaymentExpireMinutes = 0;
     }
 }

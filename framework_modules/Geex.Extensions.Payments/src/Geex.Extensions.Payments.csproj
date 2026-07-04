@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Geex.Analyzer" Version="8.2.0.7" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+        <ProjectReference Include="..\..\Geex.Extensions.BackgroundJob\src\Geex.Extensions.BackgroundJob.csproj" />
+        <ProjectReference Include="..\..\Geex.Extensions.MultiTenant\src\Geex.Extensions.MultiTenant.csproj" />
+        <ProjectReference Include="..\..\Geex.Extensions.Settings\src\Geex.Extensions.Settings.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Gql\Types\" />
+    </ItemGroup>
+</Project>
