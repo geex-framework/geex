@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <RootNamespace>Geex.Extensions.Payment</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+    <ProjectReference Include="..\..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Geex.Extensions.Settings\src\Abstractions\Geex.Extensions.Settings.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

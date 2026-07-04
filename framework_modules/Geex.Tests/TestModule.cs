@@ -1,6 +1,7 @@
 ﻿using Geex.Common;
 using Geex.Extensions.ApprovalFlows;
 using Geex.Extensions.MultiTenant;
+using Geex.Extensions.Payment;
 using Geex.Tests.FeatureTests;
 using HotChocolate;
 using HotChocolate.Execution;
@@ -14,7 +15,8 @@ namespace Geex.Tests;
 [DependsOn(typeof(GeexCoreModule),
     typeof(GeexCommonModule),
     typeof(MultiTenantModule),
-    typeof(ApprovalFlowModule))]
+    typeof(ApprovalFlowModule),
+    typeof(PaymentModule))]
 public class TestModule : GeexEntryModule<TestModule>
 {
     /// <inheritdoc />
