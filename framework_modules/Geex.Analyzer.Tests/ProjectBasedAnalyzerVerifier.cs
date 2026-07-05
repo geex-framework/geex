@@ -64,7 +64,7 @@ namespace Geex.Analyzer.Tests
             var test = new ProjectBasedAnalyzerTest<TAnalyzer>
             {
                 TestCode = await GetSourceCodeAsync(sourceFileName),
-                ReferenceAssemblies = ReferenceAssemblies.Net.Net90,
+                ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
                 TestState =
                 {
                     AdditionalReferences = { }

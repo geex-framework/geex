@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <!-- 不生成编译错误，允许代码中存在故意的错误用于测试 -->
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
