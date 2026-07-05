@@ -48,6 +48,7 @@
         <ProjectReference Include="..\Geex.Extensions.Logging\src\Geex.Extensions.Logging.csproj" />
         <ProjectReference Include="..\Geex.Extensions.Messaging\src\Geex.Extensions.Messaging.csproj" />
         <ProjectReference Include="..\Geex.Extensions.MultiTenant\src\Geex.Extensions.MultiTenant.csproj" />
+        <ProjectReference Include="..\Geex.Extensions.Payments\src\Geex.Extensions.Payments.csproj" />
         <ProjectReference Include="..\Geex.Extensions.Settings\src\Geex.Extensions.Settings.csproj" />
         <ProjectReference Include="..\Geex.Common\src\Geex.Common.csproj" />
     </ItemGroup>
