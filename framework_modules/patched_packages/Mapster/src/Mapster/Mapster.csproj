@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>A fast, fun and stimulating object to object mapper.  Kind of like AutoMapper, just simpler and way, way faster.</Description>
     <Copyright>Copyright (c) 2016 Chaowlert Chaisrichalermpol, Eric Swann</Copyright>
     <Authors>chaowlert;eric_swann</Authors>
-    <TargetFrameworks>net9.0</TargetFrameworks>
+    <TargetFrameworks>net10.0</TargetFrameworks>
     <AssemblyName>Mapster</AssemblyName>
     <Description>A fast, fun and stimulating object to object mapper. Kind of like AutoMapper, just simpler and way, way faster.</Description>
     <PackageId>Mapster</PackageId>

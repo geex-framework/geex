@@ -16,7 +16,7 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <Deterministic>true</Deterministic>
     <RootNamespace>mediatx.kafka</RootNamespace>
-    <TargetFrameworks>net6.0</TargetFrameworks>
+    <TargetFrameworks>net10.0</TargetFrameworks>
     <RepositoryUrl>https://github.com/geex-framework/mediatx</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>

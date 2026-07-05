@@ -72,7 +72,7 @@ namespace Geex.Analyzer.Tests
         {
             public AutoBatchLoadDependsOnCodeFixTest()
             {
-                ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+                ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
                 TestState.AdditionalReferences.Add(
                     MetadataReference.CreateFromFile(typeof(EntityBase<>).Assembly.Location));
                 TestState.AdditionalReferences.Add(
