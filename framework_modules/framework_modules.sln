@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.8.11925.187 insiders
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Casbin", "Geex.Casbin\src\Geex.Casbin.csproj", "{4CF1C44D-1F60-42DC-86F8-537FEB86EDB2}"
 EndProject
@@ -16,6 +16,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.BackgroundJob", "Geex.Extensions.BackgroundJob\src\Geex.Extensions.BackgroundJob.csproj", "{68CFF1F4-E89D-41FB-A4C4-E38FB539D472}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.BlobStorage", "Geex.Extensions.BlobStorage\src\Geex.Extensions.BlobStorage.csproj", "{03BE59FF-24EB-46F9-A38B-DFA90660E712}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Payments", "Geex.Extensions.Payments\src\Geex.Extensions.Payments.csproj", "{5968C861-5636-4403-B64B-A09B3FAA88BA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Identity", "Geex.Extensions.Identity\src\Geex.Extensions.Identity.csproj", "{4922955D-02BA-4A04-B763-56247A8433FF}"
 EndProject
@@ -54,28 +56,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Analyzer.TestCode", "Geex.Analyzer.TestCode\Geex.Analyzer.TestCode.csproj", "{D9792CC6-6C82-539F-E661-CD20BCFC72D5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Tests.Benchmarks", "Geex.Tests.Benchmarks\Geex.Tests.Benchmarks.csproj", "{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Extensions.Payments", "Geex.Extensions.Payments", "{FDFC1242-6632-007F-7560-791377A34A0E}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{A07D7241-013B-5D8D-5537-F6DDD47129C4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Extensions.Payments", "Geex.Extensions.Payments\src\Geex.Extensions.Payments.csproj", "{5968C861-5636-4403-B64B-A09B3FAA88BA}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Abstractions", "Geex.Abstractions", "{5AC224DE-1844-AEF7-F433-41BDEA2FA899}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B6BCE82F-C452-ACF7-7D0B-3E00EDA6BAAE}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Extensions.BackgroundJob", "Geex.Extensions.BackgroundJob", "{D840041F-4D20-C7D2-C5EF-EAE299C05160}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F55BB712-83BE-B87F-300E-10D18A39BCE9}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Extensions.MultiTenant", "Geex.Extensions.MultiTenant", "{BC01C169-2976-9256-7BDD-2C66F9EAA59E}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CA685FC4-6384-81FB-C078-450C5595916C}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Geex.Extensions.Settings", "Geex.Extensions.Settings", "{9C1A72D9-26AD-943C-BD0B-A2DFBA8EF046}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3E0974B4-E809-D280-45CD-481561EF38D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -406,12 +386,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{FA32CF69-8DF5-457A-BE58-467A01C80C3B} = {8A44E7C5-AF56-4D4F-8A24-DD9BEF34925B}
 		{3B0A9854-B72A-41D0-B75A-1D87BF43794E} = {8A44E7C5-AF56-4D4F-8A24-DD9BEF34925B}
-		{A07D7241-013B-5D8D-5537-F6DDD47129C4} = {FDFC1242-6632-007F-7560-791377A34A0E}
-		{5968C861-5636-4403-B64B-A09B3FAA88BA} = {A07D7241-013B-5D8D-5537-F6DDD47129C4}
-		{B6BCE82F-C452-ACF7-7D0B-3E00EDA6BAAE} = {5AC224DE-1844-AEF7-F433-41BDEA2FA899}
-		{F55BB712-83BE-B87F-300E-10D18A39BCE9} = {D840041F-4D20-C7D2-C5EF-EAE299C05160}
-		{CA685FC4-6384-81FB-C078-450C5595916C} = {BC01C169-2976-9256-7BDD-2C66F9EAA59E}
-		{3E0974B4-E809-D280-45CD-481561EF38D0} = {9C1A72D9-26AD-943C-BD0B-A2DFBA8EF046}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {65E33D9A-23A7-46EA-9E8C-8B20AB9B6F0D}
