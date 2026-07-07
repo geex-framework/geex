@@ -1,29 +1,25 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using HotChocolate.Types;
-using Microsoft.AspNetCore.Identity;
 
 namespace Geex.Extensions.Authentication;
 
 public sealed record SupplementaryClaim(string Type, string Value);
 
-public class UserSession : IdentityUserToken<string>, IHasId
+public class UserSession : IHasId
 {
     private List<SupplementaryClaim> _supplementaryClaims = new();
 
+    public string UserId { get; set; } = string.Empty;
+    public string? Name { get; set; }
+    public LoginProviderEnum LoginProvider { get; set; }
+    public string Token { get; set; } = string.Empty;
     public IAuthUser User { get; set; } = default!;
     public DateTimeOffset LastUpdatedOn { get; set; }
     public long Version { get; private set; }
     public IReadOnlyList<SupplementaryClaim> SupplementaryClaims => _supplementaryClaims;
 
-    string IHasId.Id => UserId!;
-
-    public new LoginProviderEnum? LoginProvider
-    {
-        get => (LoginProviderEnum)base.LoginProvider!;
-        set => base.LoginProvider = value ?? throw new ArgumentNullException(nameof(value));
-    }
+    string IHasId.Id => UserId;
 
     public static UserSession New(
         IAuthUser user,
@@ -39,7 +35,7 @@ public class UserSession : IdentityUserToken<string>, IHasId
             User = user,
             Name = user.Username,
             LoginProvider = provider,
-            Value = token,
+            Token = token,
             LastUpdatedOn = lastUpdatedOn,
             Version = version,
         };
@@ -70,8 +66,6 @@ public class UserSession : IdentityUserToken<string>, IHasId
         protected override void Configure(IObjectTypeDescriptor<UserSession> descriptor)
         {
             descriptor.BindFieldsImplicitly();
-            descriptor.Ignore(x => x.Value);
-            descriptor.Field("token").Resolve(x => x.Parent<UserSession>().Value);
             base.Configure(descriptor);
         }
     }
