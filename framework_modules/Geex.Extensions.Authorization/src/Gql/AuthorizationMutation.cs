@@ -28,7 +28,7 @@ namespace Geex.Extensions.Authorization.Gql
             return true;
         }
 
-        public async Task<UserToken> GeneratePersonalAccessToken(GeneratePersonalAccessTokenRequest request)
+        public async Task<UserSession> GeneratePersonalAccessToken(GeneratePersonalAccessTokenRequest request)
         {
             return await _uow.Request(request);
         }

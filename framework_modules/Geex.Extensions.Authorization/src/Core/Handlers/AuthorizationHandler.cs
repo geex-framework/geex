@@ -18,20 +18,18 @@ namespace Geex.Extensions.Authorization.Core.Handlers
         IRequestHandler<AuthorizeRequest>
     {
         private IUnitOfWork _uow;
-        private readonly IUserSessionVersionService _sessionVersionService;
 
-        public AuthorizationHandler(IRbacEnforcer enforcer, IUnitOfWork uow, IUserSessionVersionService sessionVersionService)
+        public AuthorizationHandler(IRbacEnforcer enforcer, IUnitOfWork uow)
         {
             _enforcer = enforcer;
             _uow = uow;
-            _sessionVersionService = sessionVersionService;
         }
 
         private IRbacEnforcer _enforcer { get; init; }
         public async Task Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
             await _enforcer.SetRoles(notification.UserId, notification.RoleIds);
-            await _sessionVersionService.InvalidateSessionAsync(notification.UserId);
+            await _uow.InvalidateUserSessionAsync(notification.UserId, cancellationToken);
         }
 
         /// <summary>Handles a request</summary>
@@ -58,13 +56,13 @@ namespace Geex.Extensions.Authorization.Core.Handlers
             await _uow.Notify(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
             if (request.AuthorizeTargetType == AuthorizeTargetType.User)
             {
-                await _sessionVersionService.InvalidateSessionAsync(request.Target);
+                await _uow.InvalidateUserSessionAsync(request.Target, cancellationToken);
             }
             else if (request.AuthorizeTargetType == AuthorizeTargetType.Role)
             {
                 foreach (var userId in _enforcer.GetUsersForRole(request.Target))
                 {
-                    await _sessionVersionService.InvalidateSessionAsync(userId);
+                    await _uow.InvalidateUserSessionAsync(userId, cancellationToken);
                 }
             }
         }

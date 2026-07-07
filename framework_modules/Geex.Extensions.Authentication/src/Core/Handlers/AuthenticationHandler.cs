@@ -8,34 +8,26 @@ using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Authentication.Requests;
 
 using MediatX;
-using OpenIddict.Abstractions;
-
-using StackExchange.Redis.Extensions.Core;
-using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Extensions.Authentication.Core.Handlers
 {
-    public class AuthenticationHandler : IRequestHandler<AuthenticateRequest, UserToken>, IRequestHandler<FederateAuthenticateRequest, UserToken>, IRequestHandler<CancelAuthenticationRequest, bool>
+    public class AuthenticationHandler : IRequestHandler<AuthenticateRequest, UserSession>, IRequestHandler<FederateAuthenticateRequest, UserSession>
     {
         private IUnitOfWork _uow;
         private GeexJwtSecurityTokenHandler _tokenHandler;
         private UserTokenGenerateOptions _userTokenGenerateOptions;
         private readonly IEnumerable<IExternalLoginProvider> _externalLoginProviders;
-        private IRedisDatabase _redis;
-        private readonly IUserSessionVersionService _sessionVersionService;
 
-        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis, IOpenIddictTokenManager tokenManager, IUserSessionVersionService sessionVersionService)
+        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders)
         {
             _uow = uow;
             _tokenHandler = tokenHandler;
             _userTokenGenerateOptions = userTokenGenerateOptions;
             _externalLoginProviders = externalLoginProviders;
-            _redis = redis;
-            _sessionVersionService = sessionVersionService;
         }
 
         /// <inheritdoc />
-        public async Task<UserToken> Handle(AuthenticateRequest request, CancellationToken cancellationToken)
+        public async Task<UserSession> Handle(AuthenticateRequest request, CancellationToken cancellationToken)
         {
             if (request.UserIdentifier is GeexConstants.SuperAdminId or GeexConstants.SuperAdminName)
             {
@@ -51,12 +43,12 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "用户未激活无法登陆, 如有疑问, 请联系管理员.");
             }
-            await _sessionVersionService.BumpVersionAsync(user.Id);
-            return UserToken.New(user, LoginProviderEnum.Local, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
+            var lastUpdatedOn = await _uow.TouchUserSessionAsync(user.Id, cancellationToken);
+            return UserSession.New(user, LoginProviderEnum.Local, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)), lastUpdatedOn);
         }
 
         /// <inheritdoc />
-        public async Task<UserToken> Handle(FederateAuthenticateRequest request, CancellationToken cancellationToken)
+        public async Task<UserSession> Handle(FederateAuthenticateRequest request, CancellationToken cancellationToken)
         {
             request.LoginProvider ??= LoginProviderEnum.Local;
             if (request.LoginProvider == LoginProviderEnum.Local)
@@ -69,8 +61,8 @@ namespace Geex.Extensions.Authentication.Core.Handlers
                 }
                 var userQuery = _uow.Query<IAuthUser>();
                 var user = userQuery.MatchUserIdentifier(sub);
-                await _sessionVersionService.BumpVersionAsync(user.Id);
-                var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
+                var lastUpdatedOn = await _uow.TouchUserSessionAsync(user.Id, cancellationToken);
+                var token = UserSession.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)), lastUpdatedOn);
                 disableAllDataFilters?.Dispose();
                 return token;
             }
@@ -82,23 +74,10 @@ namespace Geex.Extensions.Authentication.Core.Handlers
                     throw new BusinessException(GeexExceptionType.NotFound, message: "不存在的登陆提供方.");
                 }
                 var user = await externalLoginProvider.ExternalLogin(request.Code);
-                await _sessionVersionService.BumpVersionAsync(user.Id);
-                var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, request.LoginProvider, _userTokenGenerateOptions)));
-                return token;
+                var lastUpdatedOn = await _uow.TouchUserSessionAsync(user.Id, cancellationToken);
+                return UserSession.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, request.LoginProvider, _userTokenGenerateOptions)), lastUpdatedOn);
             }
 
-        }
-
-        /// <inheritdoc />
-        public async Task<bool> Handle(CancelAuthenticationRequest request, CancellationToken cancellationToken)
-        {
-            var userId = request.UserId;
-            if (!userId.IsNullOrEmpty())
-            {
-                await _sessionVersionService.InvalidateSessionAsync(userId);
-                return true;
-            }
-            return false;
         }
     }
 }

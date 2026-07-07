@@ -14,6 +14,7 @@ namespace Geex.Extensions.Authentication
         private string? _userId;
         private IAuthUser? _user;
         public ClaimsIdentity? _claimsIdentity;
+        private IUserSession? _session;
 
         public CurrentUser(IUnitOfWork uow)
         {
@@ -27,6 +28,9 @@ namespace Geex.Extensions.Authentication
         public ClaimsIdentity? ClaimsIdentity => _claimsIdentity ??= _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.Identity as ClaimsIdentity;
 
         /// <inheritdoc />
+        public IUserSession? Session => UserId is { } userId ? _session ??= _uow.GetUserSession(userId) : null;
+
+        /// <inheritdoc />
         public IDisposable Change(string? userId)
         {
             return SetCurrent(userId);
@@ -36,11 +40,13 @@ namespace Geex.Extensions.Authentication
         {
             _parentScopes.Enqueue(UserId);
             _userId = userId;
-            _user = null; // Reset user to ensure it is fetched again if needed
-            _claimsIdentity = null; // Reset claims identity to ensure it is fetched again if needed
+            _user = null;
+            _claimsIdentity = null;
+            _session = null;
             return new DisposeAction(() =>
             {
                 _userId = _parentScopes.Dequeue();
+                _session = null;
             });
         }
     }

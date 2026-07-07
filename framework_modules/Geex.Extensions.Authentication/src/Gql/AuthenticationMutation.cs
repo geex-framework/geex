@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Geex.Extensions.Authentication.Requests;
 using Geex.Gql.Types;
 using HotChocolate.Types;
@@ -25,19 +24,19 @@ namespace Geex.Extensions.Authentication.Gql
             this._uow = uow;
         }
 
-        public async Task<UserToken> Authenticate(AuthenticateRequest request) => await _uow.Request(request);
+        public async Task<UserSession> Authenticate(AuthenticateRequest request) => await _uow.Request(request);
 
-        public async Task<UserToken> FederateAuthenticate(FederateAuthenticateRequest request) => await _uow.Request(request);
+        public async Task<UserSession> FederateAuthenticate(FederateAuthenticateRequest request) => await _uow.Request(request);
 
         public async Task<bool> CancelAuthentication()
         {
-            var currentUser = _uow.ServiceProvider.GetService<ICurrentUser>();
-            var userId = currentUser?.UserId;
-            if (!userId.IsNullOrEmpty())
+            var session = _uow.GetCurrentUser()?.Session;
+            if (session == null)
             {
-                return await _uow.Request(new CancelAuthenticationRequest(userId));
+                return false;
             }
-            return false;
+            await session.InvalidateAsync();
+            return true;
         }
     }
 }

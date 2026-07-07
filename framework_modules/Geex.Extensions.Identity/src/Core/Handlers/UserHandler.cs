@@ -29,15 +29,14 @@ namespace Geex.Extensions.Identity.Core.Handlers
         ICommonHandler<IUser, User>,
             IRequestHandler<CreateUserRequest, IUser>
     {
-        private readonly IUserSessionVersionService _sessionVersionService;
         public IUnitOfWork Uow { get; }
         public IUserCreationValidator UserCreationValidator { get; }
         public IPasswordHasher<IUser> PasswordHasher { get; }
+
         public UserHandler(IUnitOfWork uow,
-            IUserSessionVersionService sessionVersionService, IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher)
+            IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher)
         {
             Uow = uow;
-            _sessionVersionService = sessionVersionService;
             UserCreationValidator = userCreationValidator;
             PasswordHasher = passwordHasher;
         }
@@ -143,7 +142,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
         /// <exception cref="NotImplementedException"></exception>
         public virtual async Task Handle(UserOrgChangedEvent notification, CancellationToken cancellationToken)
         {
-            await _sessionVersionService.InvalidateSessionAsync(notification.UserId);
+            await Uow.InvalidateUserSessionAsync(notification.UserId, cancellationToken);
         }
 
         /// <summary>

@@ -2,7 +2,7 @@
 
 namespace Geex.Extensions.Authentication.Requests
 {
-    public record FederateAuthenticateRequest : IRequest<UserToken>
+    public record FederateAuthenticateRequest : IRequest<UserSession>
     {
         /// <summary>
         /// 登陆提供方

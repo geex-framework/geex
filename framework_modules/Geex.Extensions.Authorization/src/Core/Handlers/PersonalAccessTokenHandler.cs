@@ -6,12 +6,10 @@ using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization.Requests;
 using Geex.Extensions.Authentication.Core.Utils;
 using MediatX;
-using Microsoft.Extensions.DependencyInjection;
-using Geex;
 
 namespace Geex.Extensions.Authorization.Core.Handlers;
 
-public class PersonalAccessTokenHandler : IRequestHandler<GeneratePersonalAccessTokenRequest, UserToken>
+public class PersonalAccessTokenHandler : IRequestHandler<GeneratePersonalAccessTokenRequest, UserSession>
 {
     private readonly IUnitOfWork _uow;
     private readonly GeexJwtSecurityTokenHandler _tokenHandler;
@@ -24,13 +22,14 @@ public class PersonalAccessTokenHandler : IRequestHandler<GeneratePersonalAccess
         _tokenGenerateOptions = tokenGenerateOptions;
     }
 
-    public async Task<UserToken> Handle(GeneratePersonalAccessTokenRequest request, CancellationToken cancellationToken)
+    public async Task<UserSession> Handle(GeneratePersonalAccessTokenRequest request, CancellationToken cancellationToken)
     {
-        var currentUser = _uow.ServiceProvider.GetService<ICurrentUser>();
-        var user = currentUser?.User;
+        var currentUser = _uow.GetCurrentUser();
+        var user = currentUser?.User ?? throw new BusinessException(GeexExceptionType.ValidationFailed, message: "Current user is required.");
         var options = _tokenGenerateOptions.DeepClone();
         options.Expires = TimeSpan.FromSeconds(request.ExpireInSeconds);
         var token = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, options));
-        return UserToken.New(user, LoginProviderEnum.Local, token);
+        var lastUpdatedOn = await _uow.TouchUserSessionAsync(user.Id, cancellationToken);
+        return UserSession.New(user, LoginProviderEnum.Local, token, lastUpdatedOn);
     }
 }
