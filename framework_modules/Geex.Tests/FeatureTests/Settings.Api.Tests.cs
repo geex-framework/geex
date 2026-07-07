@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Bson;
 using Shouldly;
+using System.Text.Json.Nodes;
 
 namespace Geex.Tests.FeatureTests
 {
@@ -225,6 +226,44 @@ namespace Geex.Tests.FeatureTests
             {
                 ((string)item["scope"]).ShouldBe("Global");
             }
+        }
+
+        [Fact]
+        public async Task QuerySettingsByTenantScopeShouldWork()
+        {
+            var tenantCode = $"tenant_setting_{ObjectId.GenerateNewId()}";
+            var testValue = ObjectId.GenerateNewId().ToString();
+
+            using (var scope = ScopedService.CreateScope())
+            {
+                var setupUow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                await setupUow.Request(new EditSettingRequest
+                {
+                    Scope = SettingScopeEnumeration.Tenant,
+                    ScopedKey = tenantCode,
+                    Name = TestModuleSettings.TenantSetting,
+                    Value = JsonValue.Create(testValue)
+                });
+                await setupUow.SaveChanges();
+            }
+
+            var client = SuperAdminClient;
+            client.DefaultRequestHeaders.Remove("__tenant");
+            client.DefaultRequestHeaders.Add("__tenant", tenantCode);
+
+            var query = """
+                query {
+                    settings(request: { scope: Tenant }) {
+                        items { name scope scopedKey value }
+                        totalCount
+                    }
+                }
+                """;
+            var (responseData, responseString) = await client.PostGqlRequest(query);
+            responseString.ShouldNotContain("errors");
+            var items = responseData["data"]["settings"]["items"].AsArray();
+            items.Count.ShouldBeGreaterThan(0);
+            items.Any(x => (string)x["value"] == testValue).ShouldBeTrue();
         }
     }
 }

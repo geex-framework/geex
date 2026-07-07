@@ -1,9 +1,11 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Geex.Extensions.MultiTenant.Api;
 using Geex.Extensions.Requests.MultiTenant;
 using Geex.Gql.Types;
 using Geex.MultiTenant;
 using Geex.Requests;
+using HotChocolate.Types;
 
 namespace Geex.Extensions.MultiTenant.Gql.Schemas
 {
@@ -14,6 +16,12 @@ namespace Geex.Extensions.MultiTenant.Gql.Schemas
         public TenantMutation(IUnitOfWork uow)
         {
             this._uow = uow;
+        }
+
+        protected override void Configure(IObjectTypeDescriptor<TenantMutation> descriptor)
+        {
+            descriptor.Field(x => x.DeleteTenant(default)).Authorize(MultiTenantPermission.TenantPermission.Delete);
+            base.Configure(descriptor);
         }
 
         /// <summary>
@@ -53,5 +61,10 @@ namespace Geex.Extensions.MultiTenant.Gql.Schemas
             }
             return result;
         }
+
+        /// <summary>
+        /// 删除Tenant
+        /// </summary>
+        public async Task<bool> DeleteTenant(DeleteTenantRequest request) => await _uow.Request(request);
     }
 }

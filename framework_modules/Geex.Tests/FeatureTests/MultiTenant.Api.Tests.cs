@@ -4,6 +4,7 @@ using Shouldly;
 using Geex.Abstractions;
 using Geex.Extensions.MultiTenant.Core.Aggregates.Tenants;
 using MongoDB.Bson;
+using System.Text.Json.Nodes;
 
 namespace Geex.Tests.FeatureTests
 {
@@ -319,6 +320,80 @@ namespace Geex.Tests.FeatureTests
             // Act & Assert
             var (responseData, responseString) = await client.PostGqlRequest(query, ignoreError: true);
             responseData["errors"].ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task CheckTenantWithExternalInfoShouldWork()
+        {
+            var client = SuperAdminClient;
+            var testTenantCode = $"check_ext_{ObjectId.GenerateNewId()}";
+
+            using (var scope = ScopedService.CreateScope())
+            {
+                var setupUow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                await setupUow.DbContext.Query<Tenant>().Where(x => x.Code == testTenantCode).DeleteAsync();
+                await setupUow.Request(new CreateTenantRequest
+                {
+                    Code = testTenantCode,
+                    Name = "External Tenant",
+                    ExternalInfo = JsonNode.Parse("{\"source\":\"external\"}")
+                });
+                await setupUow.SaveChanges();
+            }
+
+            var mutation = """
+                mutation($code: String!) {
+                    checkTenant(code: $code) { code name isEnabled }
+                }
+                """;
+            var (responseData, responseString) = await client.PostGqlRequest(mutation, new { code = testTenantCode });
+            responseString.ShouldNotContain("errors");
+            ((string)responseData["data"]["checkTenant"]["code"]).ShouldBe(testTenantCode);
+        }
+
+        [Fact]
+        public async Task QueryTenantByCodeShouldWork()
+        {
+            var client = SuperAdminClient;
+            var testTenantCode = $"query_one_{ObjectId.GenerateNewId()}";
+
+            using (var scope = ScopedService.CreateScope())
+            {
+                var setupUow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                await setupUow.Request(new CreateTenantRequest { Code = testTenantCode, Name = "Single Tenant" });
+                await setupUow.SaveChanges();
+            }
+
+            var query = """
+                query($code: String!) {
+                    tenant(code: $code) { code name }
+                }
+                """;
+            var (responseData, _) = await client.PostGqlRequest(query, new { code = testTenantCode });
+            ((string)responseData["data"]["tenant"]["code"]).ShouldBe(testTenantCode);
+        }
+
+        [Fact]
+        public async Task DeleteTenantShouldWork()
+        {
+            var client = SuperAdminClient;
+            var testTenantCode = $"delete_{ObjectId.GenerateNewId()}";
+
+            using (var scope = ScopedService.CreateScope())
+            {
+                var setupUow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                await setupUow.Request(new CreateTenantRequest { Code = testTenantCode, Name = "Delete Tenant" });
+                await setupUow.SaveChanges();
+            }
+
+            var mutation = """
+                mutation($code: String!) {
+                    deleteTenant(request: { code: $code })
+                }
+                """;
+            var (responseData, responseString) = await client.PostGqlRequest(mutation, new { code = testTenantCode });
+            responseString.ShouldNotContain("errors");
+            ((bool)responseData["data"]["deleteTenant"]).ShouldBeTrue();
         }
     }
 }

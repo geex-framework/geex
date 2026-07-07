@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
+using Geex.Extensions.MultiTenant.Api;
 using Geex.Gql.Types;
 using Geex.MultiTenant;
 using Geex.Requests;
@@ -15,8 +16,7 @@ namespace Geex.Extensions.MultiTenant.Gql.Schemas
             descriptor.Field(x => x.Tenants())
                 .UseOffsetPaging()
                 .UseFiltering()
-                //.Authorize(MultiTenantPermissions.TenantPermissions.Query)
-                ;
+                .Authorize(MultiTenantPermission.TenantPermission.Query);
             base.Configure(descriptor);
         }
         private readonly IUnitOfWork _uow;
@@ -34,6 +34,14 @@ namespace Geex.Extensions.MultiTenant.Gql.Schemas
         {
             var result = await _uow.Request(new QueryRequest<ITenant>());
             return result;
+        }
+
+        /// <summary>
+        /// 按编码获取Tenant
+        /// </summary>
+        public async Task<ITenant?> Tenant(string code)
+        {
+            return (await _uow.Request(new QueryRequest<ITenant>(x => x.Code == code))).FirstOrDefault();
         }
     }
 }

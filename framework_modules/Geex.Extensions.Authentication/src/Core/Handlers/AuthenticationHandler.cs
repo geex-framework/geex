@@ -22,14 +22,16 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         private UserTokenGenerateOptions _userTokenGenerateOptions;
         private readonly IEnumerable<IExternalLoginProvider> _externalLoginProviders;
         private IRedisDatabase _redis;
+        private readonly IUserSessionVersionService _sessionVersionService;
 
-        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis, IOpenIddictTokenManager tokenManager)
+        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis, IOpenIddictTokenManager tokenManager, IUserSessionVersionService sessionVersionService)
         {
             _uow = uow;
             _tokenHandler = tokenHandler;
             _userTokenGenerateOptions = userTokenGenerateOptions;
             _externalLoginProviders = externalLoginProviders;
             _redis = redis;
+            _sessionVersionService = sessionVersionService;
         }
 
         /// <inheritdoc />
@@ -49,6 +51,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "用户未激活无法登陆, 如有疑问, 请联系管理员.");
             }
+            await _sessionVersionService.BumpVersionAsync(user.Id);
             return UserToken.New(user, LoginProviderEnum.Local, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
         }
 
@@ -66,6 +69,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
                 }
                 var userQuery = _uow.Query<IAuthUser>();
                 var user = userQuery.MatchUserIdentifier(sub);
+                await _sessionVersionService.BumpVersionAsync(user.Id);
                 var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
                 disableAllDataFilters?.Dispose();
                 return token;
@@ -78,6 +82,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
                     throw new BusinessException(GeexExceptionType.NotFound, message: "不存在的登陆提供方.");
                 }
                 var user = await externalLoginProvider.ExternalLogin(request.Code);
+                await _sessionVersionService.BumpVersionAsync(user.Id);
                 var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, request.LoginProvider, _userTokenGenerateOptions)));
                 return token;
             }
@@ -90,7 +95,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             var userId = request.UserId;
             if (!userId.IsNullOrEmpty())
             {
-                await _redis.RemoveNamedAsync<UserSessionCache>(userId);
+                await _sessionVersionService.InvalidateSessionAsync(userId);
                 return true;
             }
             return false;

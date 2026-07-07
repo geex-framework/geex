@@ -18,8 +18,9 @@ namespace Geex.Extensions.Messaging.Gql
             {
                 x.Field(y => y.MessageType);
                 x.Field(y => y.Id);
-            })
-            ;
+            });
+            descriptor.Field(x => x.UnreadMessages())
+                .UseOffsetPaging<ObjectType<Message>>();
             base.Configure(descriptor);
         }
         private readonly IUnitOfWork _uow;
@@ -29,26 +30,14 @@ namespace Geex.Extensions.Messaging.Gql
             this._uow = uow;
         }
 
-        /// <summary>
-        /// 列表获取message
-        /// </summary>
-        /// <param name="dto"></param>
-        /// <returns></returns>
         public async Task<IQueryable<IMessage>> Messages()
         {
-            var result = await this._uow.Request(new QueryRequest<IMessage>());
-            return result;
+            return await this._uow.Request(new QueryRequest<IMessage>());
         }
 
-        /// <summary>
-        /// 列表获取message
-        /// </summary>
-        /// <param name="dto"></param>
-        /// <returns></returns>
-        public async Task<IQueryable<IMessage>> UnreadMessages()
+        public async Task<IQueryable<Message>> UnreadMessages()
         {
-            var result = await _uow.Request(new GetUnreadMessagesRequest());
-            return result;
+            return await _uow.Request(new GetUnreadMessagesRequest());
         }
     }
 }

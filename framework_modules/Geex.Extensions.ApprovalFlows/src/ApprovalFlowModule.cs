@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Geex.Extensions.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -7,7 +8,8 @@ using Volo.Abp.Modularity;
 namespace Geex.Extensions.ApprovalFlows;
 
 [DependsOn(
-    typeof(GeexCoreModule)
+    typeof(GeexCoreModule),
+    typeof(IdentityModule)
 )]
 public class ApprovalFlowModule : GeexModule<ApprovalFlowModule, ApprovalFlowModuleOptions>
 {

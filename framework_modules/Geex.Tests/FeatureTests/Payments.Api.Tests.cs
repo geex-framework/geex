@@ -91,6 +91,23 @@ public class PaymentsApiTests : TestsBase
     }
 
     [Fact]
+    public async Task QueryPaymentRefundsShouldWork()
+    {
+        var client = SuperAdminClient;
+        var query = """
+            query {
+                paymentRefunds(take: 10) {
+                    items { refundRequestNo clientSn status amount }
+                    totalCount
+                }
+            }
+            """;
+        var (responseData, responseString) = await client.PostGqlRequest(query);
+        responseString.ShouldNotContain("errors");
+        responseData["data"]["paymentRefunds"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
+    }
+
+    [Fact]
     public async Task CreatePaymentRefundMutationShouldWork()
     {
         string clientSn;

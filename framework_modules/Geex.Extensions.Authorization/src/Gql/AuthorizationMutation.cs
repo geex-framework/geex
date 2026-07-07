@@ -16,7 +16,7 @@ namespace Geex.Extensions.Authorization.Gql
         }
         protected override void Configure(IObjectTypeDescriptor<AuthorizationMutation> descriptor)
         {
-            descriptor.Field(x=>x.Authorize(default));
+            descriptor.Field(x=>x.Authorize(default)).Authorize(AuthorizationPermission.Authorize);
             descriptor.Field(x=>x.GeneratePersonalAccessToken(default)).Authorize();
             base.Configure(descriptor);
         }

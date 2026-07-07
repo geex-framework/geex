@@ -201,6 +201,7 @@ namespace Geex.Extensions.Settings.Core.Handlers
                 settingValues = await request.Scope.Switch()
                     .Case(SettingScopeEnumeration.User, async () => await this.GetUserSettings())
                     .Case(SettingScopeEnumeration.Global, async () => await this.GetGlobalSettings())
+                    .Case(SettingScopeEnumeration.Tenant, async () => await this.GetTenantSettings())
                     .Default(async () => new List<Setting>());
             }
             else

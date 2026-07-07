@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,11 +13,12 @@ namespace Geex.Extensions.Messaging.Core.Handlers
     public class MessageHandler :
         ICommonHandler<IMessage, Message>,
         IRequestHandler<DeleteMessageDistributionsRequest>,
+        IRequestHandler<DeleteMessageRequest, bool>,
         IRequestHandler<MarkMessagesReadRequest>,
         IRequestHandler<SendNotificationMessageRequest>,
         IRequestHandler<CreateMessageRequest, IMessage>,
         IRequestHandler<EditMessageRequest>,
-    IRequestHandler<GetUnreadMessagesRequest, IEnumerable<IMessage>>
+        IRequestHandler<GetUnreadMessagesRequest, IQueryable<Message>>
     {
         public IUnitOfWork Uow { get; }
         public ICurrentUser CurrentUser { get; }
@@ -34,22 +33,28 @@ namespace Geex.Extensions.Messaging.Core.Handlers
 
         public async Task Handle(DeleteMessageDistributionsRequest request, CancellationToken cancellationToken)
         {
-            var res = await Uow.DeleteAsync<MessageDistribution>(x => request.UserIds.Contains(x.ToUserId) && request.MessageId == x.MessageId, cancellationToken);
-            return;
+            await Uow.DeleteAsync<MessageDistribution>(x => request.UserIds.Contains(x.ToUserId) && request.MessageId == request.MessageId, cancellationToken);
+        }
+
+        public async Task<bool> Handle(DeleteMessageRequest request, CancellationToken cancellationToken)
+        {
+            await Uow.DeleteAsync<MessageDistribution>(x => x.MessageId == request.MessageId, cancellationToken);
+            await Uow.DeleteAsync<Message>(x => x.Id == request.MessageId, cancellationToken);
+            return true;
         }
 
         public async Task Handle(MarkMessagesReadRequest request, CancellationToken cancellationToken)
         {
             await Uow.DbContext.Update<MessageDistribution>().Match(x => request.MessageIds.Contains(x.MessageId) && request.UserId == x.ToUserId).Modify(x => x.IsRead, true).ExecuteAsync(cancellationToken);
-            return;
         }
 
-        public async Task<IEnumerable<IMessage>> Handle(GetUnreadMessagesRequest request, CancellationToken cancellationToken)
+        public Task<IQueryable<Message>> Handle(GetUnreadMessagesRequest request, CancellationToken cancellationToken)
         {
-            var messageDistributions = Uow.Query<MessageDistribution>().Where(x => x.IsRead == false && x.ToUserId == CurrentUser.UserId).ToList();
-            var messageIds = messageDistributions.Select(x => x.MessageId);
-            var messages = Uow.Query<Message>().Where(x => messageIds.Contains(x.Id)).ToList();
-            return messages;
+            var messageIds = Uow.Query<MessageDistribution>()
+                .Where(x => x.IsRead == false && x.ToUserId == CurrentUser.UserId)
+                .Select(x => x.MessageId)
+                .ToList();
+            return Task.FromResult(Uow.Query<Message>().Where(x => messageIds.Contains(x.Id)));
         }
 
         public async Task Handle(SendNotificationMessageRequest request, CancellationToken cancellationToken)
@@ -70,7 +75,7 @@ namespace Geex.Extensions.Messaging.Core.Handlers
         public async Task Handle(EditMessageRequest request, CancellationToken cancellationToken)
         {
             var message = await Uow.Query<Message>().OneAsync(request.Id);
-            if (!request.Text.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(request.Text))
             {
                 message.Title = request.Text;
             }
@@ -82,7 +87,6 @@ namespace Geex.Extensions.Messaging.Core.Handlers
             {
                 message.MessageType = request.MessageType.Value;
             }
-            return;
         }
     }
 }

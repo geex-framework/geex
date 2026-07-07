@@ -10,9 +10,7 @@ using Geex.Extensions.Requests.Accounting;
 using MediatX;
 
 using Microsoft.AspNetCore.Identity;
-using StackExchange.Redis;
-using StackExchange.Redis.Extensions.Core;
-using StackExchange.Redis.Extensions.Core.Abstractions;
+using Geex.Extensions.Authentication;
 
 using Volo.Abp;
 
@@ -31,15 +29,15 @@ namespace Geex.Extensions.Identity.Core.Handlers
         ICommonHandler<IUser, User>,
             IRequestHandler<CreateUserRequest, IUser>
     {
-        private IRedisDatabase _redis;
+        private readonly IUserSessionVersionService _sessionVersionService;
         public IUnitOfWork Uow { get; }
         public IUserCreationValidator UserCreationValidator { get; }
         public IPasswordHasher<IUser> PasswordHasher { get; }
         public UserHandler(IUnitOfWork uow,
-            IRedisDatabase redis, IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher)
+            IUserSessionVersionService sessionVersionService, IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher)
         {
             Uow = uow;
-            _redis = redis;
+            _sessionVersionService = sessionVersionService;
             UserCreationValidator = userCreationValidator;
             PasswordHasher = passwordHasher;
         }
@@ -145,8 +143,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
         /// <exception cref="NotImplementedException"></exception>
         public virtual async Task Handle(UserOrgChangedEvent notification, CancellationToken cancellationToken)
         {
-            // 用户组织架构变化量通常比较大, 这里直接FireAndForget不等待
-            await this._redis.RemoveNamedAsync<UserSessionCache>(notification.UserId, command: CommandFlags.FireAndForget);
+            await _sessionVersionService.InvalidateSessionAsync(notification.UserId);
         }
 
         /// <summary>

@@ -3,8 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Extensions.Authorization.Core.Casbin;
 using Geex.Extensions.Authorization.Events;
+using Geex.Extensions.Authorization.Gql.Types;
 using Geex.Extensions.Authorization.Requests;
+using Geex.Extensions.Authentication;
 
 using MediatX;
 
@@ -15,18 +18,20 @@ namespace Geex.Extensions.Authorization.Core.Handlers
         IRequestHandler<AuthorizeRequest>
     {
         private IUnitOfWork _uow;
+        private readonly IUserSessionVersionService _sessionVersionService;
 
-        public AuthorizationHandler(IRbacEnforcer enforcer, IUnitOfWork uow)
+        public AuthorizationHandler(IRbacEnforcer enforcer, IUnitOfWork uow, IUserSessionVersionService sessionVersionService)
         {
             _enforcer = enforcer;
             _uow = uow;
+            _sessionVersionService = sessionVersionService;
         }
 
         private IRbacEnforcer _enforcer { get; init; }
         public async Task Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
             await _enforcer.SetRoles(notification.UserId, notification.RoleIds);
-            return;
+            await _sessionVersionService.InvalidateSessionAsync(notification.UserId);
         }
 
         /// <summary>Handles a request</summary>
@@ -51,7 +56,17 @@ namespace Geex.Extensions.Authorization.Core.Handlers
             var permissions = request.AllowedPermissions.Select(x => x.Value);
             await _enforcer.SetPermissionsAsync(request.Target, permissions);
             await _uow.Notify(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
-            return;
+            if (request.AuthorizeTargetType == AuthorizeTargetType.User)
+            {
+                await _sessionVersionService.InvalidateSessionAsync(request.Target);
+            }
+            else if (request.AuthorizeTargetType == AuthorizeTargetType.Role)
+            {
+                foreach (var userId in _enforcer.GetUsersForRole(request.Target))
+                {
+                    await _sessionVersionService.InvalidateSessionAsync(userId);
+                }
+            }
         }
     }
 }

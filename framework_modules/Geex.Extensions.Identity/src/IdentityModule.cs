@@ -5,6 +5,7 @@ using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Core;
 using Geex.Extensions.Identity.Core.Handlers;
 using Geex.Extensions.Identity.Utils;
+using Geex.Extensions.Messaging;
 using Geex.Extensions.Settings;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ using Volo.Abp.Modularity;
 
 namespace Geex.Extensions.Identity
 {
-    [DependsOn(typeof(AuthenticationModule), typeof(AuthorizationModule), typeof(BlobStorageModule), typeof(SettingsModule))]
+    [DependsOn(typeof(AuthenticationModule), typeof(AuthorizationModule), typeof(BlobStorageModule), typeof(SettingsModule), typeof(MessagingModule))]
     public class IdentityModule : GeexModule<IdentityModule>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)

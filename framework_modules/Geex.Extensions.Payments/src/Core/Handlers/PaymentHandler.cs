@@ -8,8 +8,10 @@ namespace Geex.Extensions.Payments.Core.Handlers;
 
 public class PaymentHandler :
     ICommonHandler<IPayment, Payment>,
+    ICommonHandler<IPaymentRefund, PaymentRefund>,
     IRequestHandler<CreatePaymentRequest, CreatePaymentResult>,
     IRequestHandler<GetPaymentRequest, IPayment?>,
+    IRequestHandler<GetPaymentRefundRequest, IPaymentRefund?>,
     IRequestHandler<ClosePaymentRequest, IPayment>,
     IRequestHandler<RevokePaymentRequest, IPayment>,
     IRequestHandler<SyncPaymentRequest, IPayment>,
@@ -60,9 +62,16 @@ public class PaymentHandler :
     public Task<IPayment?> Handle(GetPaymentRequest request, CancellationToken cancellationToken)
         => Task.FromResult(Uow.Query<Payment>().FirstOrDefault(x => x.ClientSn == request.ClientSn) as IPayment);
 
+    public Task<IPaymentRefund?> Handle(GetPaymentRefundRequest request, CancellationToken cancellationToken)
+        => Task.FromResult(Uow.Query<PaymentRefund>().FirstOrDefault(x => x.RefundRequestNo == request.RefundRequestNo) as IPaymentRefund);
+
     public async Task<IPayment> Handle(ClosePaymentRequest request, CancellationToken cancellationToken)
     {
         var payment = GetRequiredPayment(request.ClientSn);
+        var provider = ResolveProvider(payment.Provider);
+        var result = await provider.CancelPaymentAsync(payment, cancellationToken);
+        if (!result.Success)
+            throw new BusinessException(GeexExceptionType.OnPurpose, message: result.Message ?? "Cancel payment failed.");
         payment.MarkClosed();
         return payment;
     }

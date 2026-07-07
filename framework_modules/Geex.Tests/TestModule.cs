@@ -1,5 +1,6 @@
 ﻿using Geex.Common;
 using Geex.Extensions.ApprovalFlows;
+using Geex.Extensions.Messaging;
 using Geex.Extensions.MultiTenant;
 using Geex.Extensions.Payments;
 using Geex.Tests.FeatureTests;
@@ -39,5 +40,8 @@ public class TestModule : GeexEntryModule<TestModule>
         paymentsOptions.UseVirtualTransaction = true;
         paymentsOptions.VirtualTransactionSimulateCallbacks = false;
         paymentsOptions.PaymentExpireMinutes = 0;
+
+        var messagingOptions = context.Services.GetSingletonInstance<MessagingModuleOptions>();
+        messagingOptions.UseVirtualSms = true;
     }
 }

@@ -24,16 +24,6 @@ namespace Geex.Common.Captcha.Domain
 
     }
 
-    public class ImageCaptcha : Captcha
-    {
-        [JsonIgnore]
-        public MemoryStream Bitmap => CreateCaptchaBitmap(Code);
-        private static MemoryStream CreateCaptchaBitmap(string code)
-        {
-           throw new NotImplementedException();
-        }
-    }
-
     public abstract class Captcha
     {
         public string Code { get; init; }

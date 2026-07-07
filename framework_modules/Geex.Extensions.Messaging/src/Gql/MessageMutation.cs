@@ -66,5 +66,10 @@ namespace Geex.Extensions.Messaging.Gql
             return true;
         }
 
+        public async Task<bool> DeleteMessage(DeleteMessageRequest request)
+        {
+            return await _uow.Request(request);
+        }
+
     }
 }

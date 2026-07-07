@@ -7,6 +7,7 @@ using Geex.Extensions.Identity;
 using Geex.Extensions.Logging;
 using Geex.Extensions.Messaging;
 using Geex.Extensions.Settings;
+using Geex.Common.Captcha;
 using Volo.Abp.Modularity;
 
 namespace Geex.Common
@@ -21,7 +22,8 @@ namespace Geex.Common
         typeof(BlobStorageModule),
         typeof(BackgroundJobModule),
         typeof(SettingsModule),
-        typeof(AuditLogsModule)
+        typeof(AuditLogsModule),
+        typeof(CaptchaModule)
         )]
     public class GeexCommonModule : GeexModule<GeexCommonModule>
     {
