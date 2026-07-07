@@ -34,7 +34,7 @@ internal class UserSessionService
     public Task InvalidateAsync(string userId, CancellationToken cancellationToken = default)
         => BumpAsync(userId, cancellationToken);
 
-    public async Task SetClaimCacheAsync(string userId, long version, List<CachedClaimEntry> claims, CancellationToken cancellationToken = default)
+    public async Task SetClaimCacheAsync(string userId, long version, List<SupplementaryClaim> claims, CancellationToken cancellationToken = default)
     {
         var session = await GetCachedSessionAsync(userId, cancellationToken);
         if (session == null)

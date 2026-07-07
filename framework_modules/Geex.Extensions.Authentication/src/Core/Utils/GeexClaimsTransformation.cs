@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -65,7 +65,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
             await SessionService.SetClaimCacheAsync(
                 userId,
                 currentVersion,
-                supplementaryClaims.Select(x => new CachedClaimEntry { Type = x.Type, Value = x.Value }).ToList());
+                supplementaryClaims.Select(x => new SupplementaryClaim(x.Type, x.Value)).ToList());
 
             return principal;
         }

@@ -6,14 +6,16 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Geex.Extensions.Authentication;
 
+public sealed record SupplementaryClaim(string Type, string Value);
+
 public class UserSession : IdentityUserToken<string>, IHasId
 {
-    private List<CachedClaimEntry> _supplementaryClaims = new();
+    private List<SupplementaryClaim> _supplementaryClaims = new();
 
     public IAuthUser User { get; set; } = default!;
     public DateTimeOffset LastUpdatedOn { get; set; }
     public long Version { get; private set; }
-    public IReadOnlyList<CachedClaimEntry> SupplementaryClaims => _supplementaryClaims;
+    public IReadOnlyList<SupplementaryClaim> SupplementaryClaims => _supplementaryClaims;
 
     string IHasId.Id => UserId!;
 
@@ -29,7 +31,7 @@ public class UserSession : IdentityUserToken<string>, IHasId
         string token,
         DateTimeOffset lastUpdatedOn,
         long version = 0,
-        IEnumerable<CachedClaimEntry>? supplementaryClaims = null)
+        IEnumerable<SupplementaryClaim>? supplementaryClaims = null)
     {
         var session = new UserSession
         {
@@ -54,7 +56,7 @@ public class UserSession : IdentityUserToken<string>, IHasId
 
     internal void SetVersion(long version) => Version = version;
 
-    internal void ReplaceSupplementaryClaims(IEnumerable<CachedClaimEntry>? claims)
+    internal void ReplaceSupplementaryClaims(IEnumerable<SupplementaryClaim>? claims)
     {
         _supplementaryClaims.Clear();
         if (claims != null)
