@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -142,7 +142,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
         /// <exception cref="NotImplementedException"></exception>
         public virtual async Task Handle(UserOrgChangedEvent notification, CancellationToken cancellationToken)
         {
-            await Uow.InvalidateUserSessionAsync(notification.UserId, cancellationToken);
+            await Uow.GetUserSession(notification.UserId).InvalidateAsync(cancellationToken);
         }
 
         /// <summary>

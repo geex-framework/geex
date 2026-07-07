@@ -29,7 +29,6 @@ public class PersonalAccessTokenHandler : IRequestHandler<GeneratePersonalAccess
         var options = _tokenGenerateOptions.DeepClone();
         options.Expires = TimeSpan.FromSeconds(request.ExpireInSeconds);
         var token = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, options));
-        var lastUpdatedOn = await _uow.TouchUserSessionAsync(user.Id, cancellationToken);
-        return UserSession.New(user, LoginProviderEnum.Local, token, lastUpdatedOn);
+        return await currentUser.Session!.BeginAsync(LoginProviderEnum.Local, token, cancellationToken);
     }
 }

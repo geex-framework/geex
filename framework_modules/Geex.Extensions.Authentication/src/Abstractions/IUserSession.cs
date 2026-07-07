@@ -14,5 +14,7 @@ public interface IUserSession
 
     Task<DateTimeOffset> GetLastUpdatedOnAsync(CancellationToken cancellationToken = default);
 
+    Task<UserSession> BeginAsync(LoginProviderEnum provider, string token, CancellationToken cancellationToken = default);
+
     Task InvalidateAsync(CancellationToken cancellationToken = default);
 }

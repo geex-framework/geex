@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +29,7 @@ namespace Geex.Extensions.Authorization.Core.Handlers
         public async Task Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
             await _enforcer.SetRoles(notification.UserId, notification.RoleIds);
-            await _uow.InvalidateUserSessionAsync(notification.UserId, cancellationToken);
+            await _uow.GetUserSession(notification.UserId).InvalidateAsync(cancellationToken);
         }
 
         /// <summary>Handles a request</summary>
@@ -56,13 +56,13 @@ namespace Geex.Extensions.Authorization.Core.Handlers
             await _uow.Notify(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
             if (request.AuthorizeTargetType == AuthorizeTargetType.User)
             {
-                await _uow.InvalidateUserSessionAsync(request.Target, cancellationToken);
+                await _uow.GetUserSession(request.Target).InvalidateAsync(cancellationToken);
             }
             else if (request.AuthorizeTargetType == AuthorizeTargetType.Role)
             {
                 foreach (var userId in _enforcer.GetUsersForRole(request.Target))
                 {
-                    await _uow.InvalidateUserSessionAsync(userId, cancellationToken);
+                    await _uow.GetUserSession(userId).InvalidateAsync(cancellationToken);
                 }
             }
         }

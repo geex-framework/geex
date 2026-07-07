@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -37,7 +37,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 return principal;
             }
 
-            var cachedSession = await SessionService.GetStateAsync(userId);
+            var cachedSession = await SessionService.GetCachedSessionAsync(userId);
             var currentVersion = cachedSession?.Version ?? 0;
             var principalIdentity = principal.Identity as ClaimsIdentity;
             if (cachedSession?.SupplementaryClaims?.Count > 0 && cachedSession.Version == currentVersion)

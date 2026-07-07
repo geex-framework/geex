@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -13,12 +13,16 @@ namespace Geex.Extensions.Authentication.Core.Handlers
 {
     public class AuthenticationHandler : IRequestHandler<AuthenticateRequest, UserSession>, IRequestHandler<FederateAuthenticateRequest, UserSession>
     {
-        private IUnitOfWork _uow;
-        private GeexJwtSecurityTokenHandler _tokenHandler;
-        private UserTokenGenerateOptions _userTokenGenerateOptions;
+        private readonly IUnitOfWork _uow;
+        private readonly GeexJwtSecurityTokenHandler _tokenHandler;
+        private readonly UserTokenGenerateOptions _userTokenGenerateOptions;
         private readonly IEnumerable<IExternalLoginProvider> _externalLoginProviders;
 
-        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders)
+        public AuthenticationHandler(
+            IUnitOfWork uow,
+            GeexJwtSecurityTokenHandler tokenHandler,
+            UserTokenGenerateOptions userTokenGenerateOptions,
+            IEnumerable<IExternalLoginProvider> externalLoginProviders)
         {
             _uow = uow;
             _tokenHandler = tokenHandler;
@@ -43,8 +47,8 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "用户未激活无法登陆, 如有疑问, 请联系管理员.");
             }
-            var lastUpdatedOn = await _uow.TouchUserSessionAsync(user.Id, cancellationToken);
-            return UserSession.New(user, LoginProviderEnum.Local, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)), lastUpdatedOn);
+            var token = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions));
+            return await _uow.GetUserSession(user.Id).BeginAsync(LoginProviderEnum.Local, token, cancellationToken);
         }
 
         /// <inheritdoc />
@@ -61,23 +65,20 @@ namespace Geex.Extensions.Authentication.Core.Handlers
                 }
                 var userQuery = _uow.Query<IAuthUser>();
                 var user = userQuery.MatchUserIdentifier(sub);
-                var lastUpdatedOn = await _uow.TouchUserSessionAsync(user.Id, cancellationToken);
-                var token = UserSession.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)), lastUpdatedOn);
+                var token = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions));
+                var session = await _uow.GetUserSession(user.Id).BeginAsync(request.LoginProvider, token, cancellationToken);
                 disableAllDataFilters?.Dispose();
-                return token;
-            }
-            else
-            {
-                var externalLoginProvider = _externalLoginProviders.FirstOrDefault(x => x.Provider == request.LoginProvider);
-                if (externalLoginProvider == null)
-                {
-                    throw new BusinessException(GeexExceptionType.NotFound, message: "不存在的登陆提供方.");
-                }
-                var user = await externalLoginProvider.ExternalLogin(request.Code);
-                var lastUpdatedOn = await _uow.TouchUserSessionAsync(user.Id, cancellationToken);
-                return UserSession.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, request.LoginProvider, _userTokenGenerateOptions)), lastUpdatedOn);
+                return session;
             }
 
+            var externalLoginProvider = _externalLoginProviders.FirstOrDefault(x => x.Provider == request.LoginProvider);
+            if (externalLoginProvider == null)
+            {
+                throw new BusinessException(GeexExceptionType.NotFound, message: "不存在的登陆提供方.");
+            }
+            var externalUser = await externalLoginProvider.ExternalLogin(request.Code);
+            var externalToken = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(externalUser.Id, request.LoginProvider, _userTokenGenerateOptions));
+            return await _uow.GetUserSession(externalUser.Id).BeginAsync(request.LoginProvider, externalToken, cancellationToken);
         }
     }
 }
