@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using HotChocolate.Types;
 
 namespace Geex.Extensions.Authentication;
@@ -14,8 +15,10 @@ public class UserSession : IHasId
     public string? Name { get; set; }
     public LoginProviderEnum LoginProvider { get; set; }
     public string Token { get; set; } = string.Empty;
+    [JsonIgnore]
     public IAuthUser User { get; set; } = default!;
     public DateTimeOffset LastUpdatedOn { get; set; }
+    [JsonInclude]
     public long Version { get; private set; }
     public IReadOnlyList<SupplementaryClaim> SupplementaryClaims => _supplementaryClaims;
 
