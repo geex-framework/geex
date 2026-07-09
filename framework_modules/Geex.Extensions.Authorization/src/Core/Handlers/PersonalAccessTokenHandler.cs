@@ -3,8 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Force.DeepCloner;
 using Geex.Extensions.Authentication;
-using Geex.Extensions.Authorization.Requests;
+using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authentication.Core.Utils;
+using Geex.Extensions.Authorization.Requests;
 using MediatX;
 
 namespace Geex.Extensions.Authorization.Core.Handlers;
@@ -29,6 +30,6 @@ public class PersonalAccessTokenHandler : IRequestHandler<GeneratePersonalAccess
         var options = _tokenGenerateOptions.DeepClone();
         options.Expires = TimeSpan.FromSeconds(request.ExpireInSeconds);
         var token = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, options));
-        return await currentUser.Session!.BeginAsync(LoginProviderEnum.Local, token, cancellationToken);
+        return await user.BeginSessionAsync(LoginProviderEnum.Local, token, cancellationToken);
     }
 }

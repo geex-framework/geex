@@ -1,4 +1,5 @@
-﻿using MediatX;
+﻿using Geex.Extensions.Authentication.Core.Entities;
+using MediatX;
 
 namespace Geex.Extensions.Authentication.Requests
 {
@@ -7,7 +8,7 @@ namespace Geex.Extensions.Authentication.Requests
         /// <summary>
         /// 登陆提供方
         /// </summary>
-        public LoginProviderEnum? LoginProvider { get; set; } = LoginProviderEnum.Local;
+        public LoginProviderEnum LoginProvider { get; set; }
         /// <summary>
         /// OAuth Code
         /// </summary>

@@ -47,7 +47,6 @@ namespace Geex.Extensions.Authentication
             var moduleOptions = services.GetSingletonInstance<AuthenticationModuleOptions>();
 
             services.AddSingleton<GeexJwtSecurityTokenHandler>();
-            services.AddSingleton<UserSessionService>();
             var authenticationBuilder = services.AddAuthentication(AuthSchemeRoutingHandler.SchemeName);
 
             if (moduleOptions != default)

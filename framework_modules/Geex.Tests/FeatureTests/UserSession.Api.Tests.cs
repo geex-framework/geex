@@ -1,10 +1,13 @@
 using Geex.Abstractions;
 using Geex.Extensions.Authentication;
+using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Requests;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using Shouldly;
+using StackExchange.Redis.Extensions.Core;
+using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Tests.FeatureTests;
 
@@ -26,7 +29,7 @@ public class UserSessionApiTests : TestsBase
                 authenticate(request: { userIdentifier: $userIdentifier, password: $password }) {
                     token
                     userId
-                    version
+                    lastUpdatedOn
                     loginProvider
                 }
             }
@@ -36,40 +39,54 @@ public class UserSessionApiTests : TestsBase
         var session = responseData["data"]!["authenticate"]!;
         ((string)session["token"]!).ShouldNotBeNullOrEmpty();
         ((string)session["loginProvider"]!).ShouldBe(nameof(LoginProviderEnum.Local));
-        session["version"]!.GetValue<long>().ShouldBeGreaterThan(0);
+        session["lastUpdatedOn"]!.GetValue<DateTimeOffset>().ShouldBeGreaterThan(DateTimeOffset.MinValue);
     }
 
     [Fact]
-    public async Task Authenticate_RepeatedLogin_ShouldIncrementVersion()
+    public async Task Authenticate_RepeatedLogin_ShouldUpdateLastUpdatedOn()
     {
-        var (_, username, passwordMd5) = await CreateTestUserAsync();
+        var (userId, username, passwordMd5) = await CreateTestUserAsync();
         var mutation = """
             mutation($userIdentifier: String!, $password: String!) {
                 authenticate(request: { userIdentifier: $userIdentifier, password: $password }) {
-                    version
+                    token
+                    lastUpdatedOn
                 }
             }
             """;
         var variables = new { userIdentifier = username, password = passwordMd5 };
 
         var (firstResp, _) = await AnonymousClient.PostGqlRequest(mutation, variables);
-        var firstVersion = firstResp["data"]!["authenticate"]!["version"]!.GetValue<long>();
+        var firstToken = (string)firstResp["data"]!["authenticate"]!["token"]!;
+        var firstLastUpdatedOn = firstResp["data"]!["authenticate"]!["lastUpdatedOn"]!.GetValue<DateTimeOffset>();
+
+        await Task.Delay(10);
 
         var (secondResp, _) = await AnonymousClient.PostGqlRequest(mutation, variables);
-        var secondVersion = secondResp["data"]!["authenticate"]!["version"]!.GetValue<long>();
+        var secondToken = (string)secondResp["data"]!["authenticate"]!["token"]!;
+        var secondLastUpdatedOn = secondResp["data"]!["authenticate"]!["lastUpdatedOn"]!.GetValue<DateTimeOffset>();
 
-        secondVersion.ShouldBeGreaterThan(firstVersion);
+        secondLastUpdatedOn.ShouldBeGreaterThan(firstLastUpdatedOn);
+        secondToken.ShouldNotBe(firstToken);
+
+        using var scope = ScopedService.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var dbSession = uow.Query<UserSession>()
+            .FirstOrDefault(x => x.UserId == userId && x.LoginProvider == LoginProviderEnum.Local);
+        dbSession.ShouldNotBeNull();
+        dbSession.Token.ShouldBe(secondToken);
+        dbSession.LastUpdatedOn.ShouldBe(secondLastUpdatedOn);
     }
 
     [Fact]
-    public async Task CancelAuthentication_ShouldInvalidateSession()
+    public async Task CancelAuthentication_ShouldInvalidateSessionCache()
     {
         var (userId, username, passwordMd5) = await CreateTestUserAsync();
         var authenticateMutation = """
             mutation($userIdentifier: String!, $password: String!) {
                 authenticate(request: { userIdentifier: $userIdentifier, password: $password }) {
                     token
-                    version
+                    lastUpdatedOn
                 }
             }
             """;
@@ -78,7 +95,7 @@ public class UserSessionApiTests : TestsBase
             authenticateMutation,
             new { userIdentifier = username, password = passwordMd5 });
         var token = (string)loginResp["data"]!["authenticate"]!["token"]!;
-        var versionBeforeLogout = loginResp["data"]!["authenticate"]!["version"]!.GetValue<long>();
+        var lastUpdatedOnBeforeLogout = loginResp["data"]!["authenticate"]!["lastUpdatedOn"]!.GetValue<DateTimeOffset>();
 
         var authedClient = AnonymousClient;
         authedClient.DefaultRequestHeaders.Add("Authorization", $"Local {token}");
@@ -93,16 +110,23 @@ public class UserSessionApiTests : TestsBase
 
         using (var scope = ScopedService.CreateScope())
         {
+            var redis = scope.ServiceProvider.GetRequiredService<IRedisDatabase>();
+            var cacheKey = UserSession.GetCacheKey(userId, LoginProviderEnum.Local);
+            var cached = await redis.GetNamedAsync<UserSession>(cacheKey);
+            cached.ShouldBeNull();
+
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var lastUpdatedOn = await uow.GetUserSession(userId).GetLastUpdatedOnAsync();
-            lastUpdatedOn.ShouldBeGreaterThan(DateTimeOffset.MinValue);
+            var dbSession = uow.Query<UserSession>()
+                .FirstOrDefault(x => x.UserId == userId && x.LoginProvider == LoginProviderEnum.Local);
+            dbSession.ShouldNotBeNull();
+            dbSession.LastUpdatedOn.ShouldBe(lastUpdatedOnBeforeLogout);
         }
 
         var (reloginResp, _) = await AnonymousClient.PostGqlRequest(
             authenticateMutation,
             new { userIdentifier = username, password = passwordMd5 });
-        var versionAfterRelogin = reloginResp["data"]!["authenticate"]!["version"]!.GetValue<long>();
-        versionAfterRelogin.ShouldBeGreaterThan(versionBeforeLogout);
+        var lastUpdatedOnAfterRelogin = reloginResp["data"]!["authenticate"]!["lastUpdatedOn"]!.GetValue<DateTimeOffset>();
+        lastUpdatedOnAfterRelogin.ShouldBeGreaterThan(lastUpdatedOnBeforeLogout);
     }
 
     [Fact]
@@ -143,21 +167,23 @@ public class UserSessionApiTests : TestsBase
     }
 
     [Fact]
-    public async Task RoleChange_ShouldInvalidateSession()
+    public async Task RoleChange_ShouldInvalidateSessionCache()
     {
         var (userId, username, passwordMd5) = await CreateTestUserAsync();
         var roleId = await CreateTestRoleAsync();
         var authenticateMutation = """
             mutation($userIdentifier: String!, $password: String!) {
                 authenticate(request: { userIdentifier: $userIdentifier, password: $password }) {
-                    version
+                    token
+                    lastUpdatedOn
                 }
             }
             """;
         var loginVariables = new { userIdentifier = username, password = passwordMd5 };
 
         var (loginResp, _) = await AnonymousClient.PostGqlRequest(authenticateMutation, loginVariables);
-        var versionBeforeRoleChange = loginResp["data"]!["authenticate"]!["version"]!.GetValue<long>();
+        var token = (string)loginResp["data"]!["authenticate"]!["token"]!;
+        var lastUpdatedOnBeforeRoleChange = loginResp["data"]!["authenticate"]!["lastUpdatedOn"]!.GetValue<DateTimeOffset>();
 
         await SuperAdminClient.PostGqlRequest(
             """
@@ -169,9 +195,17 @@ public class UserSessionApiTests : TestsBase
             """,
             new { id = userId, roleIds = new[] { roleId } });
 
+        using (var scope = ScopedService.CreateScope())
+        {
+            var redis = scope.ServiceProvider.GetRequiredService<IRedisDatabase>();
+            var cacheKey = UserSession.GetCacheKey(userId, LoginProviderEnum.Local);
+            var cached = await redis.GetNamedAsync<UserSession>(cacheKey);
+            cached.ShouldBeNull();
+        }
+
         var (reloginResp, _) = await AnonymousClient.PostGqlRequest(authenticateMutation, loginVariables);
-        var versionAfterRoleChange = reloginResp["data"]!["authenticate"]!["version"]!.GetValue<long>();
-        versionAfterRoleChange.ShouldBeGreaterThan(versionBeforeRoleChange);
+        var lastUpdatedOnAfterRoleChange = reloginResp["data"]!["authenticate"]!["lastUpdatedOn"]!.GetValue<DateTimeOffset>();
+        lastUpdatedOnAfterRoleChange.ShouldBeGreaterThan(lastUpdatedOnBeforeRoleChange);
     }
 
     private async Task<(string userId, string username, string passwordMd5)> CreateTestUserAsync()

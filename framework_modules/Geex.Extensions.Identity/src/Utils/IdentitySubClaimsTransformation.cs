@@ -1,4 +1,5 @@
-﻿using System.Security.Claims;
+﻿using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Authentication.Core.Utils;
@@ -11,7 +12,6 @@ namespace Geex.Extensions.Identity.Utils
         public async Task<ClaimsPrincipal> TransformAsync(IUser user, ClaimsPrincipal claimsPrincipal)
         {
             var claimsIdentity = claimsPrincipal.Identity as ClaimsIdentity;
-            //var ownedOrgCodes = DB.Queryable<User>().Select(x => new { x.Id, x.OrgCodes }).First(x => x.Id == principal.FindUserId()).OrgCodes;
             var ownedOrgCodes = user.OrgCodes ?? [];
             foreach (var ownedOrgCode in ownedOrgCodes)
             {
@@ -22,6 +22,21 @@ namespace Geex.Extensions.Identity.Utils
             {
                 claimsIdentity.AppendClaims(new Claim(GeexClaimType.Role, role, valueType: "array"));
             }
+
+            var provider = claimsIdentity.GetLoginProvider();
+            if (provider != LoginProviderEnum.Local)
+            {
+                var externalLogin = user.ExternalLogins
+                    .FirstOrDefault(x => x.LoginProvider == provider);
+                if (externalLogin?.LoginProviderClaims?.Count > 0)
+                {
+                    foreach (var claim in externalLogin.LoginProviderClaims)
+                    {
+                        claimsIdentity.AppendClaims(new Claim(claim.ClaimType, claim.ClaimValue));
+                    }
+                }
+            }
+
             return claimsPrincipal;
         }
         /// <inheritdoc />

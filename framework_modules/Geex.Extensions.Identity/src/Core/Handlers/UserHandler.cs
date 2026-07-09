@@ -128,9 +128,10 @@ namespace Geex.Extensions.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public virtual async Task<IUser> Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
-            var user = Uow.Query<IUser>().FirstOrDefault(x => request.UserId == x.Id);
+            var user = Uow.Query<User>().FirstOrDefault(x => request.UserId == x.Id);
             Check.NotNull(user, nameof(user), "用户不存在.");
             user.SetPassword(request.Password);
+            await user.InvalidateSessionsCacheAsync(cancellationToken);
             return user;
         }
         /// <summary>
@@ -142,7 +143,11 @@ namespace Geex.Extensions.Identity.Core.Handlers
         /// <exception cref="NotImplementedException"></exception>
         public virtual async Task Handle(UserOrgChangedEvent notification, CancellationToken cancellationToken)
         {
-            await Uow.GetUserSession(notification.UserId).InvalidateAsync(cancellationToken);
+            var user = Uow.Query<User>().GetById(notification.UserId);
+            if (user != null)
+            {
+                await user.InvalidateSessionsCacheAsync(cancellationToken);
+            }
         }
 
         /// <summary>
@@ -189,8 +194,9 @@ namespace Geex.Extensions.Identity.Core.Handlers
             {
                 return default;
             }
-            var user = this.Uow.Query<IUser>().GetById(currentUser.UserId);
+            var user = this.Uow.Query<User>().GetById(currentUser.UserId);
             user.ChangePassword(request.OriginPassword, request.NewPassword);
+            await user.InvalidateSessionsCacheAsync(cancellationToken);
             return user;
         }
 

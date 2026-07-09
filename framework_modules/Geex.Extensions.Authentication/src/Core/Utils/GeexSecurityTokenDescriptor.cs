@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson;
 using OpenIddict.Abstractions;
 
 namespace Geex.Extensions.Authentication.Core.Utils
@@ -23,6 +24,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
             {
                 new GeexClaim(GeexClaimType.Sub, sub),
                 new GeexClaim(GeexClaimType.Provider, provider),
+                new Claim(OpenIddictConstants.Claims.JwtId, ObjectId.GenerateNewId().ToString()),
             });
             if (customClaims?.Any() == true)
             {

@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+
+using Geex.Extensions.Authentication.Core.Entities;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis.Extensions.Core;
+using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Extensions.Authentication.Core.Utils
 {
@@ -22,8 +26,6 @@ namespace Geex.Extensions.Authentication.Core.Utils
             _uow = uow;
         }
 
-        private UserSessionService SessionService => _uow.ServiceProvider.GetRequiredService<UserSessionService>();
-
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
             var userId = principal.FindUserId();
@@ -32,17 +34,15 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 return principal;
             }
 
-            if (principal.HasClaim(x => x.Type == GeexClaimType.Provider))
-            {
-                return principal;
-            }
-
-            var cachedSession = await SessionService.GetCachedSessionAsync(userId);
-            var currentVersion = cachedSession?.Version ?? 0;
+            var provider = principal.Identity is ClaimsIdentity identity
+                ? identity.GetLoginProvider()
+                : LoginProviderEnum.Local;
+            var redis = _uow.ServiceProvider.GetRequiredService<IRedisDatabase>();
+            var cached = await redis.GetNamedAsync<UserSession>(UserSession.GetCacheKey(userId, provider));
             var principalIdentity = principal.Identity as ClaimsIdentity;
-            if (cachedSession?.SupplementaryClaims?.Count > 0 && cachedSession.Version == currentVersion)
+            if (cached?.SupplementaryClaims?.Count > 0)
             {
-                principalIdentity.AppendClaims(cachedSession.SupplementaryClaims.Select(x => new Claim(x.Type, x.Value)));
+                principalIdentity!.AppendClaims(cached.SupplementaryClaims.Select(x => new Claim(x.Type, x.Value)));
                 return principal;
             }
 
@@ -59,13 +59,16 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 var claimsPrincipal = await transformation.TransformAsync(user, principal);
                 supplementaryClaims.AddRange(claimsPrincipal.Claims);
             }
-            supplementaryClaims.Add(new GeexClaim(GeexClaimType.Provider, user.LoginProvider));
-            principalIdentity.AppendClaims(supplementaryClaims);
+            supplementaryClaims.Add(new GeexClaim(GeexClaimType.Provider, provider));
+            principalIdentity!.AppendClaims(supplementaryClaims);
 
-            await SessionService.SetClaimCacheAsync(
-                userId,
-                currentVersion,
-                supplementaryClaims.Select(x => new SupplementaryClaim(x.Type, x.Value)).ToList());
+            var session = user.GetSession(provider);
+            if (session != null)
+            {
+                await session.RefreshCacheAsync(
+                    supplementaryClaims.Select(x => new SupplementaryClaim(x.Type, x.Value)).ToList(),
+                    TimeSpan.FromMinutes(10));
+            }
 
             return principal;
         }

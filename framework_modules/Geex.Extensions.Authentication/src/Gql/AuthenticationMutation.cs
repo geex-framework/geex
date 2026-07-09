@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authentication.Requests;
 using Geex.Gql.Types;
 using HotChocolate.Types;
@@ -35,8 +36,8 @@ namespace Geex.Extensions.Authentication.Gql
             {
                 return false;
             }
-            await session.InvalidateAsync();
-            return true;
+
+            return await session.InvalidateCacheAsync();
         }
     }
 }

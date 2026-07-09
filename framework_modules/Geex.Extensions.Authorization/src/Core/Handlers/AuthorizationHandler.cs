@@ -29,7 +29,11 @@ namespace Geex.Extensions.Authorization.Core.Handlers
         public async Task Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
             await _enforcer.SetRoles(notification.UserId, notification.RoleIds);
-            await _uow.GetUserSession(notification.UserId).InvalidateAsync(cancellationToken);
+            var user = _uow.Query<IAuthUser>().GetById(notification.UserId);
+            if (user != null)
+            {
+                await user.InvalidateSessionsCacheAsync(cancellationToken);
+            }
         }
 
         /// <summary>Handles a request</summary>
@@ -56,13 +60,21 @@ namespace Geex.Extensions.Authorization.Core.Handlers
             await _uow.Notify(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
             if (request.AuthorizeTargetType == AuthorizeTargetType.User)
             {
-                await _uow.GetUserSession(request.Target).InvalidateAsync(cancellationToken);
+                var user = _uow.Query<IAuthUser>().GetById(request.Target);
+                if (user != null)
+                {
+                    await user.InvalidateSessionsCacheAsync(cancellationToken);
+                }
             }
             else if (request.AuthorizeTargetType == AuthorizeTargetType.Role)
             {
                 foreach (var userId in _enforcer.GetUsersForRole(request.Target))
                 {
-                    await _uow.GetUserSession(userId).InvalidateAsync(cancellationToken);
+                    var user = _uow.Query<IAuthUser>().GetById(userId);
+                    if (user != null)
+                    {
+                        await user.InvalidateSessionsCacheAsync(cancellationToken);
+                    }
                 }
             }
         }

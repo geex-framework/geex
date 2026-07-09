@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Geex.Extensions.Authorization.Requests;
 using Geex.Extensions.Authentication;
+using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Gql.Types;
 using HotChocolate.Types;
 

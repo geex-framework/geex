@@ -1,5 +1,5 @@
+using Geex.Extensions.Authentication.Core.Entities;
 using MediatX;
-using Geex.Extensions.Authentication;
 
 namespace Geex.Extensions.Authorization.Requests;
 
