@@ -13,8 +13,8 @@ namespace Geex.Extensions.Settings
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             // Register SettingHandler as both concrete implementation and service interface
-            context.Services.AddTransient<SettingHandler>();
-            context.Services.AddTransient<ISettingService>(sp => sp.GetRequiredService<SettingHandler>());
+            context.Services.AddScoped<SettingHandler>();
+            context.Services.AddScoped<ISettingService>(sp => sp.GetRequiredService<SettingHandler>());
 
             base.ConfigureServices(context);
         }

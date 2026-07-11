@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Extensions.Authentication;
+using Geex.Extensions.Settings.Core;
 using Geex.Extensions.Settings.Requests;
 using Geex.MultiTenant;
 
@@ -24,15 +25,14 @@ namespace Geex.Extensions.Settings.Core.Handlers
     public class SettingHandler : ISettingService,
         IRequestHandler<EditSettingRequest, ISetting>,
         IRequestHandler<GetSettingsRequest, IQueryable<ISetting>>,
-        IRequestHandler<GetInitSettingsRequest, List<ISetting>>
+        IRequestHandler<GetActiveSettingsRequest, List<ISetting>>
     {
-        private static IReadOnlyList<Setting>? _settingDefaults;
         private static IReadOnlyList<SettingDefinition> _settingDefinitions;
         private readonly LazyService<ICurrentTenant> _currentTenant;
         private readonly ICurrentUser _currentUser;
         private readonly DbContext _dbContext;
-        private IRedisDatabase _redisClient;
-
+        private readonly IRedisDatabase _redisClient;
+        private readonly Dictionary<string, Setting> _pendingRedisSync = new();
 
         public SettingHandler(IRedisDatabase redisClient, IEnumerable<GeexModule> modules, DbContext dbContext, ICurrentUser currentUser, ILogger<SettingHandler> logger, LazyService<ICurrentTenant> currentTenant)
         {
@@ -41,49 +41,38 @@ namespace Geex.Extensions.Settings.Core.Handlers
             _dbContext = dbContext;
             _currentUser = currentUser;
             _currentTenant = currentTenant;
+            _dbContext.PostSaveChanges += FlushPendingRedisSyncAsync;
             if (_settingDefinitions == default)
             {
                 _settingDefinitions = new ReadOnlyCollection<SettingDefinition>(SettingDefinition.List.ToArray());
             }
-
         }
 
-        private static IReadOnlyList<Setting> SettingDefaults => _settingDefaults ??= _settingDefinitions?.Select(x => new Setting(x, x.DefaultValue, SettingScopeEnumeration.Global)).ToList();
         public ILogger<SettingHandler> Logger { get; }
 
         public async Task<List<Setting>> GetActiveSettings()
         {
-            var globalSettings = await this.GetGlobalSettings();
-            var tenantSettings = await this.GetTenantSettings();
-            var userSettings = await this.GetUserSettings();
+            var globalSettings = await FetchScopeSettings(SettingScopeEnumeration.Global, null);
+            var tenantSettings = await FetchScopeSettings(SettingScopeEnumeration.Tenant, _currentTenant?.Value?.Code);
+            var userSettings = await FetchScopeSettings(SettingScopeEnumeration.User, _currentUser.UserId);
 
-            return userSettings
+            var merged = userSettings
                 .Union(tenantSettings, new GenericEqualityComparer<Setting>().With(x => x.Name))
-                .Union(globalSettings, new GenericEqualityComparer<Setting>().With(x => x.Name))
-                .ToList();
+                .Union(globalSettings, new GenericEqualityComparer<Setting>().With(x => x.Name));
+
+            return ApplySharedDefaults(merged, SettingScopeEnumeration.Global, null);
         }
 
         public async Task<List<Setting>> GetGlobalSettings()
         {
-            var globalSettings = await _redisClient.GetAllNamedByKeyAsync<Setting>($"{SettingScopeEnumeration.Global}:*");
-            IEnumerable<Setting> result;
-            if (SettingDefinitions.Except(globalSettings.Select(x => x.Value.Name)).Any())
-            {
-                var dbSettings = _dbContext.Query<Setting>().Where(x => x.Scope == SettingScopeEnumeration.Global).ToList();
-                await TrySyncSettings(globalSettings, dbSettings);
-                result = dbSettings;
-            }
-            else
-            {
-                result = globalSettings.Values;
-            }
-            return result.Union(SettingDefaults.Where(x => x.Scope == SettingScopeEnumeration.Global), new GenericEqualityComparer<Setting>().With(x => x.Name)).ToList();
+            var result = await FetchScopeSettings(SettingScopeEnumeration.Global, null);
+            return ApplySharedDefaults(result, SettingScopeEnumeration.Global, null);
         }
 
-        public async Task<Setting> GetSetting(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope = default,
+        public async Task<Setting?> GetSetting(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope = default,
             string? scopedKey = default)
         {
-            return await _redisClient.GetNamedAsync<Setting>(new Setting(settingDefinition, default, settingScope, scopedKey).GetRedisKey());
+            return await ResolveSettingAsync(settingDefinition, settingScope, scopedKey);
         }
 
         public async Task<List<Setting>> GetTenantSettings()
@@ -93,19 +82,9 @@ namespace Geex.Extensions.Settings.Core.Handlers
             {
                 return new List<Setting>();
             }
-            IEnumerable<Setting> result;
-            var tenantSettings = await _redisClient.GetAllNamedByKeyAsync<Setting>($"{SettingScopeEnumeration.Tenant}:{tenantCode}:*");
-            if (SettingDefinitions.Except(tenantSettings.Select(x => x.Value.Name)).Any())
-            {
-                var dbSettings = _dbContext.Query<Setting>().Where(x => x.Scope == SettingScopeEnumeration.Tenant && x.ScopedKey == tenantCode).ToList();
-                await TrySyncSettings(tenantSettings, dbSettings);
-                result = dbSettings;
-            }
-            else
-            {
-                result = tenantSettings.Values;
-            }
-            return result.Union(SettingDefaults.Where(x => x.Scope == SettingScopeEnumeration.Tenant), new GenericEqualityComparer<Setting>().With(x => x.Name)).ToList();
+
+            var result = await FetchScopeSettings(SettingScopeEnumeration.Tenant, tenantCode);
+            return ApplySharedDefaults(result, SettingScopeEnumeration.Tenant, tenantCode);
         }
 
         public async Task<List<Setting>> GetUserSettings()
@@ -115,27 +94,22 @@ namespace Geex.Extensions.Settings.Core.Handlers
             {
                 return new List<Setting>();
             }
-            IEnumerable<Setting> result;
-            var userSettings = await _redisClient.GetAllNamedByKeyAsync<Setting>($"{SettingScopeEnumeration.User}:{userId}:*");
-            if (SettingDefinitions.Except(userSettings.Select(x => x.Value.Name)).Any())
-            {
-                var dbSettings = _dbContext.Query<Setting>().Where(x => x.Scope == SettingScopeEnumeration.User && x.ScopedKey == userId).ToList();
-                await TrySyncSettings(userSettings, dbSettings);
-                result = dbSettings;
-            }
-            else
-            {
-                result = userSettings.Values;
-            }
-            return result.Union(SettingDefaults.Where(x => x.Scope == SettingScopeEnumeration.User), new GenericEqualityComparer<Setting>().With(x => x.Name)).ToList();
+
+            var result = await FetchScopeSettings(SettingScopeEnumeration.User, userId);
+            return ApplySharedDefaults(result, SettingScopeEnumeration.User, userId);
         }
 
         public async Task<Setting> SetAsync(SettingDefinition settingDefinition, SettingScopeEnumeration scope, string? scopedKey, JsonNode? value)
         {
-            var definition = this.SettingDefinitions.FirstOrDefault(x => x.Name == settingDefinition);
+            var definition = SettingDefinitions.FirstOrDefault(x => x.Name == settingDefinition);
             if (definition == default)
             {
                 throw new BusinessException(GeexExceptionType.NotFound, message: "setting name not exists.");
+            }
+
+            if (!definition.ValidScopes.Contains(scope))
+            {
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: $"scope [{scope}] is not valid for setting [{settingDefinition}].");
             }
 
             var isEmptyTenant = string.IsNullOrEmpty(_currentTenant.Value?.Code);
@@ -143,6 +117,7 @@ namespace Geex.Extensions.Settings.Core.Handlers
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "cannot update global setting in tenant.");
             }
+
             var setting = _dbContext.Query<Setting>().SingleOrDefault(x => x.Name == settingDefinition && x.Scope == scope && x.ScopedKey == scopedKey);
             if (setting == default)
             {
@@ -152,30 +127,198 @@ namespace Geex.Extensions.Settings.Core.Handlers
             {
                 setting.SetValue(value);
             }
-            try
-            {
-                // bug: 这里挂载事件会导致生命周期延长, 先同步执行
-                await _redisClient.SetNamedAsync(setting.GetRedisKey());
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e, "Failed to update redis cache for settings. {settings}", new { setting.Scope, setting.Name, setting.ScopedKey, setting.Value }.ToJsonSafe());
-            }
-            //_dbContext.OnCommitted += async (sender) =>
-            // {
-            //     await _redisClient.SetNamedAsync(setting.GetRedisKey());
-            // };
+
+            _pendingRedisSync[setting.GetRedisKey()] = setting;
             return setting;
+        }
+
+        private async Task FlushPendingRedisSyncAsync()
+        {
+            if (_pendingRedisSync.Count == 0)
+            {
+                return;
+            }
+
+            var pending = _pendingRedisSync.Values.ToList();
+            _pendingRedisSync.Clear();
+
+            foreach (var setting in pending)
+            {
+                try
+                {
+                    await _redisClient.SetToRedisAsync(setting);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(e, "Failed to update redis cache for settings. {settings}", new { setting.Scope, setting.Name, setting.ScopedKey, setting.Value }.ToJsonSafe());
+                }
+            }
+        }
+
+        private async Task<List<Setting>> FetchScopeSettings(SettingScopeEnumeration scope, string? scopedKey)
+        {
+            if (scope == SettingScopeEnumeration.Tenant && scopedKey.IsNullOrEmpty())
+            {
+                return new List<Setting>();
+            }
+
+            if (scope == SettingScopeEnumeration.User && scopedKey.IsNullOrEmpty())
+            {
+                return new List<Setting>();
+            }
+
+            var searchPattern = scopedKey.IsNullOrEmpty()
+                ? $"Setting:{scope}:*"
+                : $"Setting:{scope}:{scopedKey}:*";
+            var cachedSettings = await _redisClient.GetAllFromRedisByPatternAsync(searchPattern);
+            if (SettingDefinitions.Except(cachedSettings.Select(x => x.Value.Name)).Any())
+            {
+                var dbSettings = _dbContext.Query<Setting>()
+                    .Where(x => x.Scope == scope && x.ScopedKey == scopedKey)
+                    .ToList();
+                await TrySyncSettings(cachedSettings, dbSettings);
+                return dbSettings;
+            }
+
+            return cachedSettings.Values.ToList();
         }
 
         private async Task TrySyncSettings(IDictionary<string, Setting> cachedSettings, List<Setting> dbSettings)
         {
-            if (cachedSettings.Values.OrderBy(x => x.Name).SequenceEqual(dbSettings.OrderBy(x => x.Name), new GenericEqualityComparer<Setting>().With(x => x.Name)))
+            var cachedByName = cachedSettings.Values.ToDictionary(x => x.Name, x => x);
+            var needsSync = dbSettings.Any(db => !cachedByName.TryGetValue(db.Name, out var cached) || !SettingValuesEqual(cached, db))
+                || cachedSettings.Values.Any(cached => dbSettings.All(db => db.Name != cached.Name));
+
+            if (!needsSync)
             {
                 return;
             }
-            await _redisClient.RemoveAllAsync(cachedSettings.Keys.ToArray());
-            _ = await _redisClient.AddAllAsync(dbSettings.Select(x => new Tuple<string, Setting>(x.GetRedisKey(), x)).ToArray());
+
+            if (cachedSettings.Keys.Count > 0)
+            {
+                await _redisClient.RemoveAllAsync(cachedSettings.Keys.ToArray());
+            }
+
+            foreach (var setting in dbSettings)
+            {
+                await _redisClient.SetToRedisAsync(setting);
+            }
+        }
+
+        private async Task<Setting?> ResolveSettingAsync(SettingDefinition settingDefinition, SettingScopeEnumeration settingScope, string? scopedKey)
+        {
+            var userId = _currentUser.UserId;
+            var tenantCode = scopedKey ?? _currentTenant?.Value?.Code;
+
+            if (!userId.IsNullOrEmpty())
+            {
+                var userSetting = await TryGetStoredSettingAsync(settingDefinition, SettingScopeEnumeration.User, userId);
+                if (userSetting != null)
+                {
+                    return userSetting;
+                }
+            }
+
+            if (!tenantCode.IsNullOrEmpty())
+            {
+                var tenantSetting = await TryGetStoredSettingAsync(settingDefinition, SettingScopeEnumeration.Tenant, tenantCode);
+                if (tenantSetting != null)
+                {
+                    return tenantSetting;
+                }
+            }
+
+            var globalSetting = await TryGetStoredSettingAsync(settingDefinition, SettingScopeEnumeration.Global, null);
+            if (globalSetting != null)
+            {
+                return globalSetting;
+            }
+
+            return CreateDefaultSetting(settingDefinition, settingScope, scopedKey, userId, tenantCode);
+        }
+
+        private async Task<Setting?> TryGetStoredSettingAsync(SettingDefinition settingDefinition, SettingScopeEnumeration scope, string? scopedKey)
+        {
+            var redisSetting = await _redisClient.GetFromRedisAsync(new Setting(settingDefinition, default, scope, scopedKey));
+            if (redisSetting != null)
+            {
+                return redisSetting;
+            }
+
+            var dbSetting = _dbContext.Query<Setting>().SingleOrDefault(x => x.Name == settingDefinition && x.Scope == scope && x.ScopedKey == scopedKey);
+            if (dbSetting == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                await _redisClient.SetToRedisAsync(dbSetting);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "Failed to warm redis cache for setting. {settings}", new { dbSetting.Scope, dbSetting.Name, dbSetting.ScopedKey, dbSetting.Value }.ToJsonSafe());
+            }
+
+            return dbSetting;
+        }
+
+        private static Setting CreateDefaultSetting(
+            SettingDefinition settingDefinition,
+            SettingScopeEnumeration settingScope,
+            string? scopedKey,
+            string? userId,
+            string? tenantCode)
+        {
+            var fallbackScope = settingScope ?? SettingScopeEnumeration.Global;
+            var fallbackScopedKey = fallbackScope.Switch()
+                .Case(SettingScopeEnumeration.User, () => scopedKey ?? userId)
+                .Case(SettingScopeEnumeration.Tenant, () => scopedKey ?? tenantCode)
+                .Default(() => scopedKey);
+
+            return new Setting(settingDefinition, settingDefinition.DefaultValue, fallbackScope, fallbackScopedKey);
+        }
+
+        private static List<Setting> ApplySharedDefaults(IEnumerable<Setting> settings, SettingScopeEnumeration scope, string? scopedKey)
+        {
+            var result = settings.ToList();
+            var existingNames = result.Select(x => x.Name).ToHashSet();
+            foreach (var definition in _settingDefinitions)
+            {
+                if (existingNames.Contains(definition))
+                {
+                    continue;
+                }
+
+                if (definition.DefaultValue == null)
+                {
+                    continue;
+                }
+
+                result.Add(new Setting(definition, definition.DefaultValue, scope, scopedKey));
+            }
+
+            return result;
+        }
+
+        private static bool SettingValuesEqual(Setting left, Setting right)
+        {
+            if (left.Value == null && right.Value == null)
+            {
+                return true;
+            }
+
+            if (left.Value == null || right.Value == null)
+            {
+                return false;
+            }
+
+            return left.Value.ToJsonString() == right.Value.ToJsonString();
+        }
+
+        private static IEnumerable<Setting> ExcludeHiddenForClients(IEnumerable<Setting> settings)
+        {
+            return settings.Where(x => !x.Name.IsHiddenForClients);
         }
 
         public virtual async Task<ISetting> Handle(EditSettingRequest request, CancellationToken cancellationToken)
@@ -183,13 +326,9 @@ namespace Geex.Extensions.Settings.Core.Handlers
             return await SetAsync(request.Name, request.Scope, request.ScopedKey, request.Value);
         }
 
-        /// <summary>Handles a request</summary>
-        /// <param name="request">The request</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Response from the request</returns>
-        public async Task<List<ISetting>> Handle(GetInitSettingsRequest request, CancellationToken cancellationToken)
+        public async Task<List<ISetting>> Handle(GetActiveSettingsRequest request, CancellationToken cancellationToken)
         {
-            var settingValues = await this.GetActiveSettings();
+            var settingValues = ExcludeHiddenForClients(await GetActiveSettings());
             return settingValues.Cast<ISetting>().ToList();
         }
 
@@ -199,39 +338,36 @@ namespace Geex.Extensions.Settings.Core.Handlers
             if (request.Scope != default)
             {
                 settingValues = await request.Scope.Switch()
-                    .Case(SettingScopeEnumeration.User, async () => await this.GetUserSettings())
-                    .Case(SettingScopeEnumeration.Global, async () => await this.GetGlobalSettings())
-                    .Case(SettingScopeEnumeration.Tenant, async () => await this.GetTenantSettings())
+                    .Case(SettingScopeEnumeration.User, async () => await GetUserSettings())
+                    .Case(SettingScopeEnumeration.Global, async () => await GetGlobalSettings())
+                    .Case(SettingScopeEnumeration.Tenant, async () => await GetTenantSettings())
                     .Default(async () => new List<Setting>());
             }
             else
             {
-                settingValues = await this.GetActiveSettings();
+                settingValues = await GetActiveSettings();
             }
+
             settingValues = settingValues.WhereIf(!request.SettingDefinitions.IsNullOrEmpty(), x => request.SettingDefinitions.Contains(x.Name));
             settingValues = settingValues.WhereIf(!request.FilterByName.IsNullOrEmpty(), x => x.Name.Name.Contains(request.FilterByName, StringComparison.InvariantCultureIgnoreCase));
-            var result = settingValues/*.Join(settingDefinitions, setting => setting.Name, settingDefinition => settingDefinition.Name, (settingValue, _) => settingValue)*/;
-            return result.AsQueryable();
+            settingValues = ExcludeHiddenForClients(settingValues);
+            return settingValues.AsQueryable();
         }
 
         async Task<List<ISetting>> ISettingService.GetActiveSettings() => (await GetActiveSettings()).Cast<ISetting>().ToList();
 
-        async Task<List<ISetting>> ISettingService.GetGlobalSettings() => (await this.GetGlobalSettings()).Cast<ISetting>().ToList();
+        async Task<List<ISetting>> ISettingService.GetGlobalSettings() => (await GetGlobalSettings()).Cast<ISetting>().ToList();
 
         async Task<ISetting> ISettingService.GetSetting(SettingDefinition settingDefinition,
             SettingScopeEnumeration settingScope, string? scopedKey)
         {
-            var redisSetting = await GetSetting(settingDefinition, settingScope, scopedKey);
-            if (redisSetting != default)
-            {
-                return redisSetting;
-            }
-            return new Setting(settingDefinition, settingDefinition.DefaultValue, SettingScopeEnumeration.Global, null);
+            var setting = await ResolveSettingAsync(settingDefinition, settingScope, scopedKey);
+            return setting ?? CreateDefaultSetting(settingDefinition, settingScope, scopedKey, _currentUser.UserId, _currentTenant?.Value?.Code);
         }
 
-        async Task<List<ISetting>> ISettingService.GetTenantSettings() => (await this.GetTenantSettings()).Cast<ISetting>().ToList();
+        async Task<List<ISetting>> ISettingService.GetTenantSettings() => (await GetTenantSettings()).Cast<ISetting>().ToList();
 
-        async Task<List<ISetting>> ISettingService.GetUserSettings() => (await this.GetUserSettings()).Cast<ISetting>().ToList();
+        async Task<List<ISetting>> ISettingService.GetUserSettings() => (await GetUserSettings()).Cast<ISetting>().ToList();
 
         async Task<ISetting> ISettingService.SetAsync(SettingDefinition settingDefinition, SettingScopeEnumeration scope, string? scopedKey, JsonNode? value) => await SetAsync(settingDefinition, scope, scopedKey, value);
 

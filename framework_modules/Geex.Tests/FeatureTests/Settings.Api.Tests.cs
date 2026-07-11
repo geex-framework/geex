@@ -37,13 +37,13 @@ namespace Geex.Tests.FeatureTests
         }
 
         [Fact]
-        public async Task QueryInitSettingsShouldWork()
+        public async Task QueryActiveSettingsShouldWork()
         {
             // Arrange & Act & Assert - GraphQL queries don't need separate scopes
             var client = this.SuperAdminClient;
             var query = """
                 query {
-                    initSettings {
+                    activeSettings {
                         id name scope scopedKey value __typename
                     }
                 }
@@ -51,8 +51,8 @@ namespace Geex.Tests.FeatureTests
 
             var (responseData, responseString) = await client.PostGqlRequest( query);
 
-            var initSettings = responseData["data"]["initSettings"].AsArray();
-            int settingsCount = initSettings.Count;
+            var activeSettings = responseData["data"]["activeSettings"].AsArray();
+            int settingsCount = activeSettings.Count;
             settingsCount.ShouldBeGreaterThan(0);
         }
 
