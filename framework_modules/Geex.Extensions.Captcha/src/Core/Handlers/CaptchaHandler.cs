@@ -1,7 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Geex.Extensions.Captcha.Abstractions;
 using Geex.Extensions.Captcha.Abstractions.Requests;
-using Geex.Extensions.Captcha.Core.Entities;
+using Geex.Extensions.Captcha.Core;
 using Geex.Extensions.Messaging.Requests;
 using MediatX;
 using StackExchange.Redis.Extensions.Core;
@@ -10,7 +11,7 @@ using StackExchange.Redis.Extensions.Core.Abstractions;
 namespace Geex.Extensions.Captcha.Core.Handlers;
 
 public class CaptchaHandler :
-    IRequestHandler<SendCaptchaRequest, Core.Entities.Captcha>,
+    IRequestHandler<SendCaptchaRequest, Captcha>,
     IRequestHandler<ValidateCaptchaRequest, bool>
 {
     private readonly IRedisDatabase _cache;
@@ -22,7 +23,7 @@ public class CaptchaHandler :
         _uow = uow;
     }
 
-    public async Task<Core.Entities.Captcha> Handle(SendCaptchaRequest request, CancellationToken cancellationToken)
+    public async Task<Captcha> Handle(SendCaptchaRequest request, CancellationToken cancellationToken)
     {
         if (request.CaptchaProvider == CaptchaProvider.Sms)
         {

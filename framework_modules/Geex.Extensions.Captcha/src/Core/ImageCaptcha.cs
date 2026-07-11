@@ -7,7 +7,7 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace Geex.Extensions.Captcha.Core.Entities;
+namespace Geex.Extensions.Captcha.Core;
 
 public class ImageCaptcha : Captcha
 {

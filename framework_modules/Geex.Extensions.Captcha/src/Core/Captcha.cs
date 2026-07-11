@@ -7,7 +7,7 @@ using HotChocolate.Types;
 using MongoDB.Bson;
 using Volo.Abp;
 
-namespace Geex.Extensions.Captcha.Core.Entities;
+namespace Geex.Extensions.Captcha.Core;
 
 public enum CaptchaType
 {

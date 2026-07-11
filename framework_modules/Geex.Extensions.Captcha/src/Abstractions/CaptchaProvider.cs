@@ -1,4 +1,4 @@
-namespace Geex.Extensions.Captcha.Core.Entities;
+namespace Geex.Extensions.Captcha.Abstractions;
 
 public class CaptchaProvider : Enumeration<CaptchaProvider>
 {

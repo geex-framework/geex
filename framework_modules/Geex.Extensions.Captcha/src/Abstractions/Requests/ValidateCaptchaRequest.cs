@@ -1,4 +1,4 @@
-using Geex.Extensions.Captcha.Core.Entities;
+using Geex.Extensions.Captcha.Abstractions;
 using MediatX;
 
 namespace Geex.Extensions.Captcha.Abstractions.Requests;

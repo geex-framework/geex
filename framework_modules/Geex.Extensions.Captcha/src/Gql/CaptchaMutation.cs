@@ -19,7 +19,7 @@ public sealed class CaptchaMutation : MutationExtension<CaptchaMutation>
         base.Configure(descriptor);
     }
 
-    public async Task<Core.Entities.Captcha> GenerateCaptcha(SendCaptchaRequest request) => await _uow.Request(request);
+    public async Task<Core.Captcha> GenerateCaptcha(SendCaptchaRequest request) => await _uow.Request(request);
 
     public async Task<bool> ValidateCaptcha(ValidateCaptchaRequest request) => await _uow.Request(request);
 }
