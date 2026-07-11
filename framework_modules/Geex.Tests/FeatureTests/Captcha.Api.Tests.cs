@@ -1,5 +1,5 @@
-using Geex.Common.Captcha.Domain;
-using Geex.Common.Requests.Captcha;
+using Geex.Extensions.Captcha.Abstractions.Requests;
+using Geex.Extensions.Captcha.Core.Entities;
 using Geex.Extensions.Messaging.Core.Sms;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;

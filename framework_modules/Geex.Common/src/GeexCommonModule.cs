@@ -3,11 +3,11 @@ using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization;
 using Geex.Extensions.BackgroundJob;
 using Geex.Extensions.BlobStorage;
+using Geex.Extensions.Captcha;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Logging;
 using Geex.Extensions.Messaging;
 using Geex.Extensions.Settings;
-using Geex.Common.Captcha;
 using Volo.Abp.Modularity;
 
 namespace Geex.Common

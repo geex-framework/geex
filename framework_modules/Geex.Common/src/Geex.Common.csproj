@@ -16,12 +16,10 @@
     <PackageReference Include="ImpromptuInterface" Version="8.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
     <PackageReference Include="Microsoft.Extensions.DiagnosticAdapter" Version="3.1.32" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
-    <PackageReference Include="SixLabors.Fonts" Version="2.1.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Extensions.AuditLogs\src\Geex.Extensions.AuditLogs.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Captcha\src\Geex.Extensions.Captcha.csproj" />
     <ProjectReference Include="..\..\Geex.Extensions.Identity\src\Geex.Extensions.Identity.csproj" />
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
