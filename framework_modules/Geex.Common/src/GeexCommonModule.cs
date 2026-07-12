@@ -3,7 +3,6 @@ using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization;
 using Geex.Extensions.BackgroundJob;
 using Geex.Extensions.BlobStorage;
-using Geex.Extensions.Captcha;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Logging;
 using Geex.Extensions.Messaging;
@@ -22,8 +21,7 @@ namespace Geex.Common
         typeof(BlobStorageModule),
         typeof(BackgroundJobModule),
         typeof(SettingsModule),
-        typeof(AuditLogsModule),
-        typeof(CaptchaModule)
+        typeof(AuditLogsModule)
         )]
     public class GeexCommonModule : GeexModule<GeexCommonModule>
     {

@@ -19,7 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Geex.Extensions.AuditLogs\src\Geex.Extensions.AuditLogs.csproj" />
-    <ProjectReference Include="..\..\Geex.Extensions.Captcha\src\Geex.Extensions.Captcha.csproj" />
     <ProjectReference Include="..\..\Geex.Extensions.Identity\src\Geex.Extensions.Identity.csproj" />
     <ProjectReference Include="..\..\Geex.MongoDB.Entities\src\Geex.MongoDB.Entities.csproj" />
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />

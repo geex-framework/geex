@@ -1,5 +1,6 @@
 ﻿using Geex.Common;
 using Geex.Extensions.ApprovalFlows;
+using Geex.Extensions.Captcha;
 using Geex.Extensions.Messaging;
 using Geex.Extensions.MultiTenant;
 using Geex.Extensions.Payments;
@@ -17,7 +18,8 @@ namespace Geex.Tests;
     typeof(GeexCommonModule),
     typeof(MultiTenantModule),
     typeof(ApprovalFlowModule),
-    typeof(PaymentsModule))]
+    typeof(PaymentsModule),
+    typeof(CaptchaModule))]
 public class TestModule : GeexEntryModule<TestModule>
 {
     /// <inheritdoc />
