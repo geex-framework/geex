@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Geex.Extensions.Authorization.Requests;
 using Geex.Gql.Types;
 using HotChocolate.Types;

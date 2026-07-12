@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Linq;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests
 {
     public class Genre : EntityBase<Genre>
     {
         public string Name { get; set; }
-        public Guid GuidId { get; set; }
+        public ObjectId ObjectId { get; set; }
         public int Position { get; set; }
         public double SortScore { get; set; }
         public Review Review { get; set; }

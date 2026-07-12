@@ -3,6 +3,7 @@ using MongoDB.Driver;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests
 {
@@ -17,7 +18,7 @@ namespace MongoDB.Entities.Tests
               .Option(x => x.Background = false)
               .CreateAsync();
 
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
 
             await new[]
             {
@@ -45,7 +46,7 @@ namespace MongoDB.Entities.Tests
                 .Option(x => x.Background = false)
                 .CreateAsync();
 
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
 
             await new[]
             {
@@ -74,7 +75,7 @@ namespace MongoDB.Entities.Tests
                 .Option(x => x.Background = false)
                 .CreateAsync();
 
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
 
             using var TN = new DbContext();
 

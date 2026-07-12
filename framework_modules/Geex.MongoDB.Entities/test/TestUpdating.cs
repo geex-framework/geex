@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests
 {
@@ -12,7 +13,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task updating_modifies_correct_documents()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "bumcda1", Surname = "surname1" }; await author1.SaveAsync();
             var author2 = new Author { Name = "bumcda2", Surname = guid }; await author2.SaveAsync();
             var author3 = new Author { Name = "bumcda3", Surname = guid }; await author3.SaveAsync();
@@ -37,7 +38,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task updating_returns_correct_result()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "bumcda1", Surname = "surname1" }; await author1.SaveAsync();
             var author2 = new Author { Name = "bumcda2", Surname = guid }; await author2.SaveAsync();
             var author3 = new Author { Name = "bumcda3", Surname = guid }; await author3.SaveAsync();
@@ -56,7 +57,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task update_by_def_builder_mods_correct_docs()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "bumcda1", Surname = "surname1" }; await author1.SaveAsync();
             var author2 = new Author { Name = "bumcda2", Surname = guid }; await author2.SaveAsync();
             var author3 = new Author { Name = "bumcda3", Surname = guid }; await author3.SaveAsync();
@@ -77,7 +78,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task nested_properties_update_correctly()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
 
             var book = new Book
             {
@@ -99,7 +100,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task bulk_update_modifies_correct_documents()
         {
-            var title = "bumcd " + Guid.NewGuid().ToString();
+            var title = "bumcd " + ObjectId.GenerateNewId().ToString();
             var books = new List<Book>();
 
             for (int i = 1; i <= 5; i++)

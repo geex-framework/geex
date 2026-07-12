@@ -5,6 +5,7 @@ using MongoDB.Driver;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests
 {
@@ -18,7 +19,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task not_commiting_and_aborting_update_transaction_doesnt_modify_docs()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "uwtrcd1", Surname = guid }; await author1.SaveAsync();
             var author2 = new Author { Name = "uwtrcd2", Surname = guid }; await author2.SaveAsync();
             var author3 = new Author { Name = "uwtrcd3", Surname = guid }; await author3.SaveAsync();
@@ -44,7 +45,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task commiting_update_transaction_modifies_docs()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "uwtrcd1", Surname = guid }; await author1.SaveAsync();
             var author2 = new Author { Name = "uwtrcd2", Surname = guid }; await author2.SaveAsync();
             var author3 = new Author { Name = "uwtrcd3", Surname = guid }; await author3.SaveAsync();
@@ -119,8 +120,8 @@ namespace MongoDB.Entities.Tests
               .Key(a => a.Surname, KeyType.Text)
               .CreateAsync();
 
-            var author1 = new Author { Name = "Name", Surname = Guid.NewGuid().ToString() };
-            var author2 = new Author { Name = "Name", Surname = Guid.NewGuid().ToString() };
+            var author1 = new Author { Name = "Name", Surname = ObjectId.GenerateNewId().ToString() };
+            var author2 = new Author { Name = "Name", Surname = ObjectId.GenerateNewId().ToString() };
             await DB.SaveAsync(author1);
             await DB.SaveAsync(author2);
 
@@ -135,7 +136,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task bulk_save_entities_transaction_returns_correct_results()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
 
             var entities = new[] {
                 new Book{Title="one "+guid},
@@ -167,8 +168,8 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_outcome_entities_are_attached_to_session()
         {
-            var guid = Guid.NewGuid().ToString();
-            var guid1 = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
+            var guid1 = ObjectId.GenerateNewId().ToString();
 
             var entities = new[] {
                 new Book{Title="one "+guid},
@@ -224,7 +225,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task commit_event_should_work()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var triggered = false;
 
             var entities = new[] {
@@ -251,7 +252,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task explicit_transaction_commit_modifies_docs()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "explicit_test1", Surname = guid }; 
             await author1.SaveAsync();
 
@@ -279,7 +280,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task explicit_transaction_rollback_on_dispose_doesnt_modify_docs()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "explicit_rollback_test", Surname = guid }; 
             await author1.SaveAsync();
 
@@ -323,7 +324,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task explicit_transaction_multiple_operations_work()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "multi_op_test1", Surname = guid };
             var author2 = new Author { Name = "multi_op_test2", Surname = guid };
             var book1 = new Book { Title = "multi_op_book1" };
@@ -397,7 +398,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task explicit_transaction_prevents_auto_transaction()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = "prevent_auto_test", Surname = guid };
 
             using (var TN = new DbContext())

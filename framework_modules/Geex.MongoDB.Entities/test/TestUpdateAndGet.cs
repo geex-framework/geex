@@ -11,7 +11,7 @@
 //        [TestMethod]
 //        public async Task updating_modifies_correct_documents()
 //        {
-//            var guid = Guid.NewGuid().ToString();
+//            var guid = ObjectId.GenerateNewId().ToString();
 //            var author1 = new Author { Name = "bumcda1", Surname = "surname1" }; await author1.SaveAsync();
 //            var author2 = new Author { Name = "bumcda2", Surname = guid }; await author2.SaveAsync();
 //            var author3 = new Author { Name = "bumcda3", Surname = guid }; await author3.SaveAsync();
@@ -30,7 +30,7 @@
 //        [TestMethod]
 //        public async Task update_by_def_builder_mods_correct_docs()
 //        {
-//            var guid = Guid.NewGuid().ToString();
+//            var guid = ObjectId.GenerateNewId().ToString();
 //            var author1 = new Author { Name = "bumcda1", Surname = "surname1", Age = 1 }; await author1.SaveAsync();
 //            var author2 = new Author { Name = "bumcda2", Surname = guid, Age = 1 }; await author2.SaveAsync();
 //            var author3 = new Author { Name = "bumcda3", Surname = guid, Age = 1 }; await author3.SaveAsync();
@@ -48,7 +48,7 @@
 //        [TestMethod]
 //        public async Task update_with_pipeline_using_template()
 //        {
-//            var guid = Guid.NewGuid().ToString();
+//            var guid = ObjectId.GenerateNewId().ToString();
 
 //            var author = new Author { Name = "uwput", Surname = guid, Age = 666 };
 //            await author.SaveAsync();
@@ -74,7 +74,7 @@
 //        [TestMethod]
 //        public async Task update_with_aggregation_pipeline_works()
 //        {
-//            var guid = Guid.NewGuid().ToString();
+//            var guid = ObjectId.GenerateNewId().ToString();
 
 //            var author = new Author { Name = "uwapw", Surname = guid };
 //            await author.SaveAsync();
@@ -96,7 +96,7 @@
 //        [TestMethod]
 //        public async Task update_with_array_filters_using_templates_work()
 //        {
-//            var guid = Guid.NewGuid().ToString();
+//            var guid = ObjectId.GenerateNewId().ToString();
 //            var book = new Book
 //            {
 //                Title = "uwafw " + guid,
@@ -153,7 +153,7 @@
 //        [TestMethod]
 //        public async Task update_with_array_filters_work()
 //        {
-//            var guid = Guid.NewGuid().ToString();
+//            var guid = ObjectId.GenerateNewId().ToString();
 //            var book = new Book
 //            {
 //                Title = "uwafw " + guid,
