@@ -15,7 +15,7 @@ namespace Geex.Extensions.Authentication
     public static ICurrentUser? GetCurrentUser(this IUnitOfWork uow)
         => uow.ServiceProvider.GetService<ICurrentUser>();
 
-    public static UserSession? GetSession(this IAuthUser user, LoginProviderEnum provider)
+    public static UserSession? GetSessionFromDb(this IAuthUser user, LoginProviderEnum provider)
     {
       return user.DbContext.Query<UserSession>()
            .FirstOrDefault(x => x.UserId == user.Id && x.LoginProvider == provider);
@@ -27,7 +27,7 @@ namespace Geex.Extensions.Authentication
         string token,
         CancellationToken cancellationToken = default)
     {
-      var session = user.GetSession(provider);
+      var session = user.GetSessionFromDb(provider);
       if (session == null)
       {
         session = user.DbContext.As<IUnitOfWork>().Create(user.Id, provider, token);

@@ -62,7 +62,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
             supplementaryClaims.Add(new GeexClaim(GeexClaimType.Provider, provider));
             principalIdentity!.AppendClaims(supplementaryClaims);
 
-            var session = user.GetSession(provider);
+            var session = user.GetSessionFromDb(provider);
             if (session != null)
             {
                 await session.RefreshCacheAsync(
