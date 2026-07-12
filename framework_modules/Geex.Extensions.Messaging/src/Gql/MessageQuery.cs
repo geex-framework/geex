@@ -20,7 +20,8 @@ namespace Geex.Extensions.Messaging.Gql
                 x.Field(y => y.Id);
             });
             descriptor.Field(x => x.UnreadMessages())
-                .UseOffsetPaging<ObjectType<Message>>();
+                .UseOffsetPaging<ObjectType<Message>>()
+                .Authorize();
             base.Configure(descriptor);
         }
         private readonly IUnitOfWork _uow;

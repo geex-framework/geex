@@ -11,6 +11,17 @@ namespace Geex.Extensions.Captcha.Core;
 
 public class ImageCaptcha : Captcha
 {
+    private static readonly string[] PreferredFontFamilies =
+    [
+        "Arial",
+        "DejaVu Sans",
+        "Liberation Sans",
+        "FreeSans",
+        "Noto Sans",
+        "Segoe UI",
+        "Helvetica"
+    ];
+
     [Newtonsoft.Json.JsonIgnore]
     [System.Text.Json.Serialization.JsonIgnore]
     public MemoryStream Bitmap => CreateCaptchaBitmap(Code);
@@ -23,7 +34,7 @@ public class ImageCaptcha : Captcha
         image.Mutate(ctx =>
         {
             ctx.BackgroundColor(Color.White);
-            var font = SystemFonts.CreateFont(SystemFonts.Families.First().Name, 24, FontStyle.Bold);
+            var font = ResolveCaptchaFont(24);
             var random = new Random();
             for (var i = 0; i < 6; i++)
             {
@@ -41,5 +52,26 @@ public class ImageCaptcha : Captcha
         image.SaveAsPng(stream);
         stream.Position = 0;
         return stream;
+    }
+
+    private static Font ResolveCaptchaFont(float size)
+    {
+        foreach (var name in PreferredFontFamilies)
+        {
+            if (SystemFonts.TryGet(name, out var family))
+            {
+                return family.CreateFont(size, FontStyle.Bold);
+            }
+        }
+
+        var fallback = SystemFonts.Families.FirstOrDefault();
+        if (!Equals(fallback, default(FontFamily)))
+        {
+            return fallback.CreateFont(size, FontStyle.Bold);
+        }
+
+        throw new BusinessException(
+            GeexExceptionType.OnPurpose,
+            message: "No system fonts available for image captcha generation.");
     }
 }

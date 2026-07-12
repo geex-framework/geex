@@ -27,8 +27,9 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
     {
         var node = _uow.Query<ApprovalFlowNode>().GetById(eventData.ApprovalFlowNodeId);
         var userIdsToNotify = _uow.Query<IUser>()
-            .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable();
-        userIdsToNotify = userIdsToNotify.Concat(new[] { node.AuditUserId });
+            .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable()
+            .Append(node.AuditUserId)
+            .Where(x => !x.IsNullOrEmpty());
         var messageEntity = await _uow.Request(new CreateMessageRequest()
         {
             Severity = MessageSeverityType.Success,
@@ -49,9 +50,11 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
         var flowName = (await _uow.DbContext.Find<ApprovalFlow>().OneAsync(eventData.ApprovalFlowId, cancellationToken))?.Name
             ?? "工作流";
         var carbonCopyUserIds = node.CarbonCopyUserIds;
-        IEnumerable<string> userIdsToNotify = carbonCopyUserIds.Count == 0
-            ? [node.AuditUserId!]
-            : _uow.Query<IUser>().Where(x => carbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable().Append(node.AuditUserId!);
+        var userIdsToNotify = (carbonCopyUserIds.Count == 0
+                ? Enumerable.Empty<string>()
+                : _uow.Query<IUser>().Where(x => carbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable())
+            .Append(node.AuditUserId)
+            .Where(x => !x.IsNullOrEmpty());
 
         var messageEntity = await _uow.Request(new CreateMessageRequest()
         {
@@ -88,8 +91,9 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
         foreach (var node in eventData.NodesToReject)
         {
             var userIdsToNotify = _uow.Query<IUser>()
-                .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable();
-            userIdsToNotify = userIdsToNotify.Concat(new[] { node.AuditUserId });
+                .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable()
+                .Append(node.AuditUserId)
+                .Where(x => !x.IsNullOrEmpty());
 
             var messageEntity = await _uow.Request(new CreateMessageRequest()
             {

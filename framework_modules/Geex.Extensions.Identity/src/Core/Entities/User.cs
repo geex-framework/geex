@@ -150,6 +150,16 @@ namespace Geex.Extensions.Identity.Core.Entities
             }
         }
 
+        public async Task RevokeSessionsAsync(CancellationToken cancellationToken = default)
+        {
+            var sessions = DbContext.Query<UserSession>().Where(x => x.UserId == Id).ToList();
+            foreach (var session in sessions)
+            {
+                await session.InvalidateCacheAsync(cancellationToken);
+                await session.DeleteAsync(cancellationToken);
+            }
+        }
+
         /// <inheritdoc />
         public void SetTenant(string? code)
         {

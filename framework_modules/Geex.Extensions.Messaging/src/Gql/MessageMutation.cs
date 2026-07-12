@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Geex.Extensions.Messaging.Requests;
 using Geex.Gql.Types;
+using HotChocolate.Types;
 
 namespace Geex.Extensions.Messaging.Gql
 {
@@ -11,6 +12,12 @@ namespace Geex.Extensions.Messaging.Gql
         public MessageMutation(IUnitOfWork uow)
         {
             this._uow = uow;
+        }
+
+        protected override void Configure(IObjectTypeDescriptor<MessageMutation> descriptor)
+        {
+            descriptor.Field(x => x.DeleteMessage(default)).Authorize();
+            base.Configure(descriptor);
         }
 
         /// <summary>

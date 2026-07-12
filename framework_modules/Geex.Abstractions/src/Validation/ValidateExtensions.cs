@@ -21,6 +21,25 @@ namespace HotChocolate.Types
             return new InputFieldDescriptor<T, TValue>(field);
         }
 
+        public static IInputObjectTypeDescriptor<T> Validate<T>(
+            this IInputObjectTypeDescriptor<T> descriptor,
+            Expression<Func<T, bool>> predicate,
+            string message = null)
+        {
+            var compiledPredicate = predicate.CompileFast();
+            var validatorName = typeof(T).Name + ":" + predicate;
+            var rule = ValidateRule<T>.Create(compiledPredicate, validatorName);
+            return descriptor.Directive(new ValidateDirective(rule, message));
+        }
+
+        public static IInputObjectTypeDescriptor<T> Validate<T>(
+            this IInputObjectTypeDescriptor<T> descriptor,
+            ValidateRule<T> rule,
+            string message = null)
+        {
+            return descriptor.Directive(new ValidateDirective(rule, message));
+        }
+
         // Input Object Field Descriptor extensions (for input object fields)
         public static IInputFieldDescriptor<T, TValue> Validate<T, TValue>(this IInputFieldDescriptor<T, TValue> descriptor,
             ValidateRule<TValue> rule, string message = null)

@@ -38,6 +38,11 @@ namespace Geex.Extensions.Messaging.Core.Handlers
 
         public async Task<bool> Handle(DeleteMessageRequest request, CancellationToken cancellationToken)
         {
+            _ = Uow.Query<Message>().FirstOrDefault(x => x.Id == request.MessageId
+                    && (x.FromUserId == CurrentUser.UserId
+                        || Uow.Query<MessageDistribution>().Any(d => d.MessageId == request.MessageId && d.ToUserId == CurrentUser.UserId)))
+                ?? throw new BusinessException(GeexExceptionType.NotFound, message: "Message not found.");
+
             await Uow.DeleteAsync<MessageDistribution>(x => x.MessageId == request.MessageId, cancellationToken);
             await Uow.DeleteAsync<Message>(x => x.Id == request.MessageId, cancellationToken);
             return true;

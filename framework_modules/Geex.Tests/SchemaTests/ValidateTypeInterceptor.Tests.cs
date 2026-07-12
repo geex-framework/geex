@@ -263,7 +263,7 @@ namespace Geex.Tests.SchemaTests
             validateDirectiveType.ShouldNotBeNull("ValidateDirective should be registered in the schema");
 
             // Check directive locations
-            var expectedLocations = DirectiveLocation.ArgumentDefinition | DirectiveLocation.InputFieldDefinition;
+            var expectedLocations = DirectiveLocation.ArgumentDefinition | DirectiveLocation.InputFieldDefinition | DirectiveLocation.InputObject;
             validateDirectiveType.Locations.ShouldBe(expectedLocations);
 
             // Check if directive is repeatable

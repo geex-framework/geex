@@ -15,5 +15,6 @@ namespace Geex.Extensions.Authentication
         IAuthUser SetPassword(string? password);
         bool CheckPassword(string password);
         Task InvalidateSessionsCacheAsync(CancellationToken cancellationToken = default);
+        Task RevokeSessionsAsync(CancellationToken cancellationToken = default);
     }
 }

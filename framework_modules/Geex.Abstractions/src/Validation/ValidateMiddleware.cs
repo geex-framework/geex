@@ -105,6 +105,16 @@ namespace Geex.Validation
 
         private async Task ValidateInputObject(IMiddlewareContext context, object inputObject, InputObjectType inputObjectType, string parentPath)
         {
+            var inputObjectValidateDirectives = inputObjectType.Directives
+                .Where(d => d.Type.Name == ValidateDirective.DirectiveName)
+                .Select(d => d.AsValue<ValidateDirective>())
+                .Where(d => d != null);
+
+            foreach (var validationDirective in inputObjectValidateDirectives)
+            {
+                await ValidateValue(context, inputObject, validationDirective, parentPath);
+            }
+
             var inputFields = inputObjectType.Fields;
 
             foreach (var inputField in inputFields)

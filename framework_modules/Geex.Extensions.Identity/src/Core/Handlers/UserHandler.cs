@@ -131,7 +131,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
             var user = Uow.Query<User>().FirstOrDefault(x => request.UserId == x.Id);
             Check.NotNull(user, nameof(user), "用户不存在.");
             user.SetPassword(request.Password);
-            await user.InvalidateSessionsCacheAsync(cancellationToken);
+            await user.RevokeSessionsAsync(cancellationToken);
             return user;
         }
         /// <summary>
@@ -196,7 +196,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
             }
             var user = this.Uow.Query<User>().GetById(currentUser.UserId);
             user.ChangePassword(request.OriginPassword, request.NewPassword);
-            await user.InvalidateSessionsCacheAsync(cancellationToken);
+            await user.RevokeSessionsAsync(cancellationToken);
             return user;
         }
 
