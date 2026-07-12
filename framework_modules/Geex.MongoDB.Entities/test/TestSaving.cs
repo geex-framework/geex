@@ -209,7 +209,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_by_lambda_returns_correct_documents()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = guid }; await author1.SaveAsync();
             var author2 = new Author { Name = guid }; await author2.SaveAsync();
 
@@ -234,7 +234,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_by_filter_basic_returns_correct_documents()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author1 = new Author { Name = guid }; await author1.SaveAsync();
             var author2 = new Author { Name = guid }; await author2.SaveAsync();
 
@@ -246,7 +246,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_by_multiple_match_methods()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var one = new Author { Name = "a", Age = 10, Surname = guid }; await one.SaveAsync();
             var two = new Author { Name = "b", Age = 20, Surname = guid }; await two.SaveAsync();
             var three = new Author { Name = "c", Age = 30, Surname = guid }; await three.SaveAsync();
@@ -264,7 +264,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_by_filter_returns_correct_documents()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var one = new Author { Name = "a", Age = 10, Surname = guid }; await one.SaveAsync();
             var two = new Author { Name = "b", Age = 20, Surname = guid }; await two.SaveAsync();
             var three = new Author { Name = "c", Age = 30, Surname = guid }; await three.SaveAsync();
@@ -287,7 +287,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_with_projection_to_custom_type_works()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var one = new Author { Name = "a", Age = 10, Surname = guid }; await one.SaveAsync();
             var two = new Author { Name = "b", Age = 20, Surname = guid }; await two.SaveAsync();
             var three = new Author { Name = "c", Age = 30, Surname = guid }; await three.SaveAsync();
@@ -334,7 +334,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_with_aggregation_pipeline_returns_correct_docs()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var one = new Author { Name = "a", Age = 10, Surname = guid }; await one.SaveAsync();
             var two = new Author { Name = "b", Age = 20, Surname = guid }; await two.SaveAsync();
             var three = new Author { Name = "c", Age = 30, Surname = guid }; await three.SaveAsync();
@@ -355,7 +355,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_with_aggregation_expression_works()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author = new Author { Name = "a", Age = 10, Age2 = 11, Surname = guid }; await author.SaveAsync();
 
             var res = (await DB.Find<Author>()
@@ -369,7 +369,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task find_fluent_with_aggregation_expression_works()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var author = new Author { Name = "a", Age = 10, Age2 = 11, Surname = guid }; await author.SaveAsync();
 
             var res = await DB.Fluent<Author>()
@@ -383,7 +383,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task decimal_properties_work_correctly()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             var book1 = new Book { Title = guid, Price = 100.123m }; await book1.SaveAsync();
             var book2 = new Book { Title = guid, Price = 100.123m }; await book2.SaveAsync();
 
@@ -421,7 +421,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.DeleteTypedAsync<TableData>();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var tempName = Guid.NewGuid().ToString();
+            var tempName = ObjectId.GenerateNewId().ToString();
             var data = new TableData()
             {
                 DataType = "object",

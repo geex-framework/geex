@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MongoDB.Bson;
 using Shouldly;
 
 namespace MongoDB.Entities.Tests
@@ -15,7 +16,7 @@ namespace MongoDB.Entities.Tests
         //public async Task create_anonymous_object_should_work()
         //{
         //    var dbContext = new DbContext();
-        //    var tempName = Guid.NewGuid().ToString();
+        //    var tempName = ObjectId.GenerateNewId().ToString();
         //    var data = new TableAnonymousData()
         //    {
         //        TableType = tempName,
@@ -35,7 +36,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.DeleteTypedAsync<TableData>();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var tempName = Guid.NewGuid().ToString();
+            var tempName = ObjectId.GenerateNewId().ToString();
             var data = new TableData()
             {
                 DataType = "object",
@@ -86,7 +87,7 @@ namespace MongoDB.Entities.Tests
             await dbContext.DeleteTypedAsync<TableData>();
             dbContext.Dispose();
             dbContext = new DbContext();
-            var tempName = Guid.NewGuid().ToString();
+            var tempName = ObjectId.GenerateNewId().ToString();
             var now = DateTime.Now;
             var data = new TableData()
             {

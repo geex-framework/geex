@@ -45,13 +45,12 @@ namespace Geex.Extensions.Settings.Gql
         }
 
         /// <summary>
-        /// 获取初始化应用所需的settings
+        /// 获取对当前用户/租户正生效的全量settings
         /// </summary>
-        /// <param name="dto"></param>
         /// <returns></returns>
-        public async Task<List<ISetting>> InitSettings()
+        public async Task<List<ISetting>> ActiveSettings()
         {
-            return await _uow.Request(new GetInitSettingsRequest());
+            return await _uow.Request(new GetActiveSettingsRequest());
         }
     }
 }

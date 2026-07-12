@@ -23,7 +23,7 @@ namespace MongoDB.Entities.Tests
             var cover = new BookCover
             {
                 BookId = ObjectId.GenerateNewId(),
-                BookName = "test book " + Guid.NewGuid().ToString()
+                BookName = "test book " + ObjectId.GenerateNewId().ToString()
             };
 
             await cover.SaveAsync();

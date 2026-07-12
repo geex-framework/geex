@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests
 {
@@ -24,7 +25,7 @@ namespace MongoDB.Entities.Tests
         public async Task count_estimated_works()
         {
 
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             await Init(guid);
 
             var count = await DB.CountEstimatedAsync<Author>();
@@ -35,7 +36,7 @@ namespace MongoDB.Entities.Tests
         //[TestMethod]
         public async Task count_with_lambda()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             await Init(guid);
 
             var count = await DB.CountAsync<Author>(a => a.Name == guid);
@@ -46,7 +47,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task count_with_filter_definition()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             await Init(guid);
 
             var filter = DB.Filter<Author>()
@@ -60,7 +61,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task count_with_filter_builder()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
             await Init(guid);
 
             var count = await DB.CountAsync<Author>(b => b.Eq(a => a.Name, guid));

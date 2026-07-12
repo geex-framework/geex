@@ -1,4 +1,4 @@
-﻿using Geex.Extensions.Authentication;
+using Geex.Extensions.Authentication;
 using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Identity;
 
@@ -41,8 +41,11 @@ namespace Geex.Tests
         {
             var tokenHandler = this.ScopedService.GetService<GeexJwtSecurityTokenHandler>();
             var tokenGenerateOptions = this.ScopedService.GetService<UserTokenGenerateOptions>();
-            var user = GeexCommonAbstractionEntitiesIUserExtensions.MatchUserIdentifier(this.ScopedService.GetService<IUnitOfWork>().Query<IUser>(), userIdentifier);
+            var uow = this.ScopedService.GetService<IUnitOfWork>();
+            var user = GeexCommonAbstractionEntitiesIUserExtensions.MatchUserIdentifier(uow.Query<IUser>(), userIdentifier);
             var token = tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, tokenGenerateOptions));
+            user.BeginSessionAsync(LoginProviderEnum.Local, token).GetAwaiter().GetResult();
+            uow.SaveChanges().GetAwaiter().GetResult();
             var client = this.Factory.CreateClient();
             client.DefaultRequestHeaders.Add("Authorization", $"Local {token}");
             return client;

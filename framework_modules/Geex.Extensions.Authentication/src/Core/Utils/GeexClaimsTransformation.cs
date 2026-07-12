@@ -1,11 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+using Geex.Extensions.Authentication.Core.Entities;
+
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis.Extensions.Core;
+using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Extensions.Authentication.Core.Utils
 {
@@ -13,17 +17,13 @@ namespace Geex.Extensions.Authentication.Core.Utils
     {
         private readonly IEnumerable<ISubClaimsTransformation> _transformations;
         private readonly IUnitOfWork _uow;
-        private UserTokenGenerateOptions _options;
-        private readonly GeexJwtSecurityTokenHandler _tokenHandler;
-        private TokenValidationParameters _validationParams;
 
-        public GeexClaimsTransformation(IEnumerable<ISubClaimsTransformation> transformations, IUnitOfWork uow, UserTokenGenerateOptions options, GeexJwtSecurityTokenHandler tokenHandler, TokenValidationParameters validationParams)
+        public GeexClaimsTransformation(
+            IEnumerable<ISubClaimsTransformation> transformations,
+            IUnitOfWork uow)
         {
             _transformations = transformations;
             _uow = uow;
-            _options = options;
-            _tokenHandler = tokenHandler;
-            _validationParams = validationParams;
         }
 
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
@@ -34,39 +34,41 @@ namespace Geex.Extensions.Authentication.Core.Utils
                 return principal;
             }
 
-            // todo:单点直接登陆会导致缓存未清理, 暂时没找到方案, 这里临时禁用
-            //var cachedSession = await this._redis.GetNamedAsync<UserSessionCache>(userId);
-            //if (cachedSession != default)
-            //{
-            //    claimsIdentity.AppendClaims((_tokenHandler.ReadToken(cachedSession.token) as JwtSecurityToken).Claims);
-            //    principal.AddIdentity(claimsIdentity);
-            //    return principal;
-            //}
-
-            if (principal.HasClaim(x=>x.Type == GeexClaimType.Provider))
+            var provider = principal.Identity is ClaimsIdentity identity
+                ? identity.GetLoginProvider()
+                : LoginProviderEnum.Local;
+            var redis = _uow.ServiceProvider.GetRequiredService<IRedisDatabase>();
+            var cached = await redis.GetNamedAsync<UserSession>(UserSession.GetCacheKey(userId, provider));
+            var principalIdentity = principal.Identity as ClaimsIdentity;
+            if (cached?.SupplementaryClaims?.Count > 0)
             {
+                principalIdentity!.AppendClaims(cached.SupplementaryClaims.Select(x => new Claim(x.Type, x.Value)));
                 return principal;
             }
 
-            var disableAllDataFilters = _uow.DbContext.DisableAllDataFilters(); // 禁用所有数据过滤器, 以便获取用户信息
+            using var disableAllDataFilters = _uow.DbContext.DisableAllDataFilters();
             var user = _uow.Query<IAuthUser>().GetById(userId);
-            disableAllDataFilters.Dispose(); // 确保禁用数据过滤器被释放
             if (user == null)
             {
                 return principal;
             }
 
-            var principalIdentity = (principal.Identity as ClaimsIdentity);
-            foreach (var transformation in this._transformations)
+            var supplementaryClaims = new List<Claim>();
+            foreach (var transformation in _transformations)
             {
                 var claimsPrincipal = await transformation.TransformAsync(user, principal);
-                principalIdentity.AppendClaims(claimsPrincipal.Claims.ToList());
+                supplementaryClaims.AddRange(claimsPrincipal.Claims);
             }
-            principalIdentity.AppendClaims(new GeexClaim(GeexClaimType.Provider, user.LoginProvider));
+            supplementaryClaims.Add(new GeexClaim(GeexClaimType.Provider, provider));
+            principalIdentity!.AppendClaims(supplementaryClaims);
 
-            //var tokenDescriptor = new GeexSecurityTokenDescriptor(userId, LoginProviderEnum.Local, _options, principalIdentity.Claims);
-            // 设置用户session, 缓存数据10分钟, 避免大量的组织架构和权限查询
-            //await this._redis.SetNamedAsync(new UserSessionCache { userId = userId, token = _tokenHandler.CreateEncodedJwt(tokenDescriptor) }, expireIn: TimeSpan.FromMinutes(10));
+            var session = user.GetSessionFromDb(provider);
+            if (session != null)
+            {
+                await session.RefreshCacheAsync(
+                    supplementaryClaims.Select(x => new SupplementaryClaim(x.Type, x.Value)).ToList(),
+                    TimeSpan.FromMinutes(10));
+            }
 
             return principal;
         }

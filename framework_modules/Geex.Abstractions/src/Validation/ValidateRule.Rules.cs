@@ -196,6 +196,12 @@ public abstract partial class ValidateRule
         return CreateRule<string>(value => string.IsNullOrEmpty(value) || System.Guid.TryParse(value, out _));
     }
 
+    public static ValidateRule<string> ObjectId()
+    {
+        return CreateRule<string>(value =>
+            string.IsNullOrEmpty(value) || global::MongoDB.Bson.ObjectId.TryParse(value, out _));
+    }
+
     public static ValidateRule<DateTime?> DateMin(DateTime minDate)
     {
         return CreateRule<DateTime?>(value => !value.HasValue || value.Value >= minDate, [minDate]);

@@ -148,7 +148,7 @@ m = (p.sub == ""*"" || g(r.sub, p.sub) || r.sub == p.sub) && r.obj == p.obj && (
         /// <inheritdoc />
         public List<string> GetUsersForRole(string sub)
         {
-            return this._innerEnforcer.GetRolesForUser(sub);
+            return this._innerEnforcer.GetUsersForRole(sub);
         }
 
         /// <inheritdoc />

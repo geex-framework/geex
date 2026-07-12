@@ -91,7 +91,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SettingWithDifferentScopesShouldWork()
         {
             // Arrange
-            var testSettingName = TestModuleSettings.GlobalSetting;
+            var testSettingName = TestModuleSettings.MultiScopeSetting;
             var globalValue = "GlobalValue_" + ObjectId.GenerateNewId();
             var tenantValue = "TenantValue_" + ObjectId.GenerateNewId();
             var userValue = "UserValue_" + ObjectId.GenerateNewId();
@@ -199,7 +199,7 @@ namespace Geex.Tests.FeatureTests
                 var currentTenant = tenantTestUow.ServiceProvider.GetService<ICurrentTenant>();
                 currentTenant?.Change(tenantCode);
 
-                var activeSettings = await tenantTestUow.Request(new GetInitSettingsRequest());
+                var activeSettings = await tenantTestUow.Request(new GetActiveSettingsRequest());
                 var activeSetting = activeSettings.FirstOrDefault(x => x.Name == testSettingName);
                 activeSetting.ShouldNotBeNull();
                 // Should get tenant value since it has higher priority than global
@@ -223,7 +223,7 @@ namespace Geex.Tests.FeatureTests
                 var currentTenant = anotherTenantUow.ServiceProvider.GetService<ICurrentTenant>();
                 currentTenant?.Change(anotherTenantCode);
 
-                var activeSettings = await anotherTenantUow.Request(new GetInitSettingsRequest());
+                var activeSettings = await anotherTenantUow.Request(new GetActiveSettingsRequest());
                 var activeSetting = activeSettings.FirstOrDefault(x => x.Name == testSettingName);
                 activeSetting.ShouldNotBeNull();
                 // Should get global value since no tenant-specific setting exists

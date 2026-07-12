@@ -11,5 +11,6 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
     <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
     <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.BackgroundJob\src\Geex.Extensions.BackgroundJob.csproj" />
   </ItemGroup>
 </Project>

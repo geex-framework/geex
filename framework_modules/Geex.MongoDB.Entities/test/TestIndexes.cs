@@ -5,6 +5,7 @@ using MongoDB.Driver;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests
 {
@@ -20,10 +21,10 @@ namespace MongoDB.Entities.Tests
               .Key(a => a.Surname, KeyType.Text)
               .CreateAsync();
 
-            var author1 = new Author { Name = "Name", Surname = Guid.NewGuid().ToString() };
+            var author1 = new Author { Name = "Name", Surname = ObjectId.GenerateNewId().ToString() };
             await author1.SaveAsync();
 
-            var author2 = new Author { Name = "Name", Surname = Guid.NewGuid().ToString() };
+            var author2 = new Author { Name = "Name", Surname = ObjectId.GenerateNewId().ToString() };
             await author2.SaveAsync();
 
             var res = DB.FluentTextSearch<Author>(FindSearchType.Full, author1.Surname).ToList();
@@ -43,10 +44,10 @@ namespace MongoDB.Entities.Tests
               .Key(a => a, KeyType.Text)
               .CreateAsync();
 
-            var author1 = new Author { Name = "Name", Surname = Guid.NewGuid().ToString() };
+            var author1 = new Author { Name = "Name", Surname = ObjectId.GenerateNewId().ToString() };
             await author1.SaveAsync();
 
-            var author2 = new Author { Name = "Name", Surname = Guid.NewGuid().ToString() };
+            var author2 = new Author { Name = "Name", Surname = ObjectId.GenerateNewId().ToString() };
             await author2.SaveAsync();
 
             var res = await DB.FluentTextSearch<Author>(FindSearchType.Full, author1.Surname).ToListAsync();
@@ -95,14 +96,14 @@ namespace MongoDB.Entities.Tests
               .Option(o => o.Background = false)
               .CreateAsync();
 
-            var guid = Guid.NewGuid();
+            var guid = ObjectId.GenerateNewId();
 
             var list = new[] {
-                new Genre{ GuidId = guid, Position = 0, Name = "this should not match"},
-                new Genre{ GuidId = guid, Position = 3, Name = "one two three four five six"},
-                new Genre{ GuidId = guid, Position = 4, Name = "one two three four five six seven"},
-                new Genre{ GuidId = guid, Position = 2, Name = "one two three four five six seven eight"},
-                new Genre{ GuidId = guid, Position = 1, Name = "one two three four five six seven eight nine"}
+                new Genre{ ObjectId = guid, Position = 0, Name = "this should not match"},
+                new Genre{ ObjectId = guid, Position = 3, Name = "one two three four five six"},
+                new Genre{ ObjectId = guid, Position = 4, Name = "one two three four five six seven"},
+                new Genre{ ObjectId = guid, Position = 2, Name = "one two three four five six seven eight"},
+                new Genre{ ObjectId = guid, Position = 1, Name = "one two three four five six seven eight nine"}
             }.ToList();
 
             await list.SaveAsync();
@@ -130,14 +131,14 @@ namespace MongoDB.Entities.Tests
               .Option(o => o.Background = false)
               .CreateAsync();
 
-            var guid = Guid.NewGuid();
+            var guid = ObjectId.GenerateNewId();
 
             var list = new[] {
-                new Genre{ GuidId = guid, Position = 0, Name = "this should not match"},
-                new Genre{ GuidId = guid, Position = 3, Name = "one two three four five six"},
-                new Genre{ GuidId = guid, Position = 4, Name = "one two three four five six seven"},
-                new Genre{ GuidId = guid, Position = 2, Name = "one two three four five six seven eight"},
-                new Genre{ GuidId = guid, Position = 1, Name = "one two three four five six seven eight nine"}
+                new Genre{ ObjectId = guid, Position = 0, Name = "this should not match"},
+                new Genre{ ObjectId = guid, Position = 3, Name = "one two three four five six"},
+                new Genre{ ObjectId = guid, Position = 4, Name = "one two three four five six seven"},
+                new Genre{ ObjectId = guid, Position = 2, Name = "one two three four five six seven eight"},
+                new Genre{ ObjectId = guid, Position = 1, Name = "one two three four five six seven eight nine"}
             }.ToList();
 
             await list.SaveAsync();

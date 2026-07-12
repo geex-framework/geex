@@ -263,7 +263,7 @@ namespace Geex.Tests.SchemaTests
             validateDirectiveType.ShouldNotBeNull("ValidateDirective should be registered in the schema");
 
             // Check directive locations
-            var expectedLocations = DirectiveLocation.ArgumentDefinition | DirectiveLocation.InputFieldDefinition;
+            var expectedLocations = DirectiveLocation.ArgumentDefinition | DirectiveLocation.InputFieldDefinition | DirectiveLocation.InputObject;
             validateDirectiveType.Locations.ShouldBe(expectedLocations);
 
             // Check if directive is repeatable
@@ -484,6 +484,14 @@ namespace Geex.Tests.SchemaTests
             var guidRule = ValidateRule.Guid();
             guidRule.Validate(Guid.NewGuid().ToString()).ShouldBeEquivalentTo(ValidationResult.Success);
             guidRule.Validate("not-a-guid").ErrorMessage.ShouldNotBeNullOrEmpty();
+
+            // Test ObjectId
+            var objectIdRule = ValidateRule.ObjectId();
+            objectIdRule.Validate(ObjectId.GenerateNewId().ToString()).ShouldBeEquivalentTo(ValidationResult.Success);
+            objectIdRule.Validate("000000000000000000000001").ShouldBeEquivalentTo(ValidationResult.Success);
+            objectIdRule.Validate("not-an-objectid").ErrorMessage.ShouldNotBeNullOrEmpty();
+            objectIdRule.Validate("123").ErrorMessage.ShouldNotBeNullOrEmpty();
+            objectIdRule.Validate("zzzzzzzzzzzzzzzzzzzzzzzz").ErrorMessage.ShouldNotBeNullOrEmpty();
 
             // Test ChineseIdCard
             var idCardRule = ValidateRule.ChineseIdCard();
@@ -709,6 +717,10 @@ namespace Geex.Tests.SchemaTests
             var guidRule = ValidateRule.Guid();
             guidRule.Validate(null).ShouldBeEquivalentTo(ValidationResult.Success); // GUID rule allows null/empty
             guidRule.Validate("").ShouldBeEquivalentTo(ValidationResult.Success);
+
+            var objectIdRule = ValidateRule.ObjectId();
+            objectIdRule.Validate(null).ShouldBeEquivalentTo(ValidationResult.Success); // ObjectId rule allows null/empty
+            objectIdRule.Validate("").ShouldBeEquivalentTo(ValidationResult.Success);
 
             // Test boundary values for numeric rules
             var rangeRule = ValidateRule.Range(0, 100);

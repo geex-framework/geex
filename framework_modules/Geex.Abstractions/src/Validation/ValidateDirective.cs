@@ -41,7 +41,7 @@ namespace Geex.Validation
             protected override void Configure(IDirectiveTypeDescriptor<ValidateDirective> descriptor)
             {
                 descriptor.Name(ValidateDirective.DirectiveName);
-                descriptor.Location(DirectiveLocation.ArgumentDefinition | DirectiveLocation.InputFieldDefinition);
+                descriptor.Location(DirectiveLocation.ArgumentDefinition | DirectiveLocation.InputFieldDefinition | DirectiveLocation.InputObject);
                 descriptor.Repeatable();
 
                 descriptor.Argument(t => t.RuleKey).Type<StringType>();

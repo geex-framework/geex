@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,9 +10,7 @@ using Geex.Extensions.Requests.Accounting;
 using MediatX;
 
 using Microsoft.AspNetCore.Identity;
-using StackExchange.Redis;
-using StackExchange.Redis.Extensions.Core;
-using StackExchange.Redis.Extensions.Core.Abstractions;
+using Geex.Extensions.Authentication;
 
 using Volo.Abp;
 
@@ -31,15 +29,14 @@ namespace Geex.Extensions.Identity.Core.Handlers
         ICommonHandler<IUser, User>,
             IRequestHandler<CreateUserRequest, IUser>
     {
-        private IRedisDatabase _redis;
         public IUnitOfWork Uow { get; }
         public IUserCreationValidator UserCreationValidator { get; }
         public IPasswordHasher<IUser> PasswordHasher { get; }
+
         public UserHandler(IUnitOfWork uow,
-            IRedisDatabase redis, IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher)
+            IUserCreationValidator userCreationValidator, IPasswordHasher<IUser> passwordHasher)
         {
             Uow = uow;
-            _redis = redis;
             UserCreationValidator = userCreationValidator;
             PasswordHasher = passwordHasher;
         }
@@ -83,6 +80,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
             if (request.IsEnable != default)
             {
                 user.IsEnable = request.IsEnable.Value;
+                await user.RevokeSessionsAsync(cancellationToken);
             }
 
             if (request.OrgCodes != default)
@@ -131,9 +129,10 @@ namespace Geex.Extensions.Identity.Core.Handlers
         /// <returns>Response from the request</returns>
         public virtual async Task<IUser> Handle(ResetUserPasswordRequest request, CancellationToken cancellationToken)
         {
-            var user = Uow.Query<IUser>().FirstOrDefault(x => request.UserId == x.Id);
+            var user = Uow.Query<User>().FirstOrDefault(x => request.UserId == x.Id);
             Check.NotNull(user, nameof(user), "用户不存在.");
             user.SetPassword(request.Password);
+            await user.RevokeSessionsAsync(cancellationToken);
             return user;
         }
         /// <summary>
@@ -145,8 +144,11 @@ namespace Geex.Extensions.Identity.Core.Handlers
         /// <exception cref="NotImplementedException"></exception>
         public virtual async Task Handle(UserOrgChangedEvent notification, CancellationToken cancellationToken)
         {
-            // 用户组织架构变化量通常比较大, 这里直接FireAndForget不等待
-            await this._redis.RemoveNamedAsync<UserSessionCache>(notification.UserId, command: CommandFlags.FireAndForget);
+            var user = Uow.Query<User>().GetById(notification.UserId);
+            if (user != null)
+            {
+                await user.InvalidateSessionsCacheAsync(cancellationToken);
+            }
         }
 
         /// <summary>
@@ -193,8 +195,9 @@ namespace Geex.Extensions.Identity.Core.Handlers
             {
                 return default;
             }
-            var user = this.Uow.Query<IUser>().GetById(currentUser.UserId);
+            var user = this.Uow.Query<User>().GetById(currentUser.UserId);
             user.ChangePassword(request.OriginPassword, request.NewPassword);
+            await user.RevokeSessionsAsync(cancellationToken);
             return user;
         }
 

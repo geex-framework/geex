@@ -6,6 +6,9 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="TencentCloudSDK.Sms" Version="3.0.1258" />
     <ProjectReference Include="..\..\Geex.Extensions.Settings\src\Geex.Extensions.Settings.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.MultiTenant\src\Abstractions\Geex.Extensions.MultiTenant.Abstractions.csproj" />
   </ItemGroup>
 </Project>

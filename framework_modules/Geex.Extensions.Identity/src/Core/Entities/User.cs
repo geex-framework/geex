@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Geex.Extensions.Authentication;
+using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authorization.Requests;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Requests;
@@ -22,15 +24,15 @@ namespace Geex.Extensions.Identity.Core.Entities
         {
             IsEnable = true;
             ConfigLazyQuery(x => x.AvatarFile, blob => blob.Id == AvatarFileId, users => blob => users.SelectList(x => x.AvatarFileId).Contains(blob.Id));
+            ConfigLazyQuery(x => x.ExternalLogins, el => el.UserId == Id, users => el => users.SelectList(x => x.Id).Contains(el.UserId));
+            ConfigLazyQuery(x => x.Orgs, org => OrgCodes.Contains(org.Code), users => org => users.SelectMany(x => x.OrgCodes).Contains(org.Code));
         }
 
         public User(ICreateUserRequest request, IUnitOfWork? uow = default) : this()
         {
             this.Username = request.Username;
-            this.OpenId = request.OpenId;
             this.Email = request.Email ?? request.Username + "@geexorggeex.com";
             this.PhoneNumber = request.PhoneNumber;
-            this.LoginProvider = request.Provider ?? LoginProviderEnum.Local;
             this.Nickname = request.Nickname;
             this.AvatarFileId = request.AvatarFileId;
             this.IsEnable = request.IsEnable;
@@ -106,12 +108,14 @@ namespace Geex.Extensions.Identity.Core.Entities
         public string? Email { get; set; }
         public bool IsEnable { get; set; }
 
-        public LoginProviderEnum LoginProvider { get; set; }
         public string? Nickname { get; set; }
 
-        public string? OpenId { get; set; }
+        public IQueryable<UserExternalLogin> ExternalLogins => LazyQuery(() => ExternalLogins);
+        IQueryable<IUserExternalLogin> IUser.ExternalLogins => ExternalLogins;
+
         public List<string> OrgCodes { get; set; } = new List<string>();
-        public IQueryable<IOrg> Orgs => DbContext.Query<IOrg>().Where(x => this.OrgCodes.Contains(x.Code));
+        IQueryable<IOrg> IUser.Orgs => Orgs;
+        public IQueryable<Org> Orgs => LazyQuery(() => Orgs);
         public List<string> Permissions => DbContext.ServiceProvider.GetService<IUnitOfWork>().Request(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
         public string? PhoneNumber { get; set; }
 
@@ -136,6 +140,25 @@ namespace Geex.Extensions.Identity.Core.Entities
         }
 
         public string Username { get; set; }
+
+        public async Task InvalidateSessionsCacheAsync(CancellationToken cancellationToken = default)
+        {
+            var sessions = DbContext.Query<UserSession>().Where(x => x.UserId == Id).ToList();
+            foreach (var session in sessions)
+            {
+                await session.InvalidateCacheAsync(cancellationToken);
+            }
+        }
+
+        public async Task RevokeSessionsAsync(CancellationToken cancellationToken = default)
+        {
+            var sessions = DbContext.Query<UserSession>().Where(x => x.UserId == Id).ToList();
+            foreach (var session in sessions)
+            {
+                await session.InvalidateCacheAsync(cancellationToken);
+                await session.DeleteAsync(cancellationToken);
+            }
+        }
 
         /// <inheritdoc />
         public void SetTenant(string? code)

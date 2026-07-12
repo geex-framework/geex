@@ -15,6 +15,7 @@ namespace Geex.Extensions.Identity
         List<string> OrgCodes { get; set; }
         public List<string> Permissions { get; }
         List<UserClaim> Claims { get; set; }
+        IQueryable<IUserExternalLogin> ExternalLogins { get; }
         IQueryable<IOrg> Orgs { get; }
         Lazy<IBlobObject?> AvatarFile { get; }
         string? AvatarFileId { get; set; }

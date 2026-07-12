@@ -1,6 +1,5 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Geex.Extensions.Authorization.Requests;
-using Geex.Extensions.Authentication;
 using Geex.Gql.Types;
 using HotChocolate.Types;
 
@@ -16,8 +15,7 @@ namespace Geex.Extensions.Authorization.Gql
         }
         protected override void Configure(IObjectTypeDescriptor<AuthorizationMutation> descriptor)
         {
-            descriptor.Field(x=>x.Authorize(default));
-            descriptor.Field(x=>x.GeneratePersonalAccessToken(default)).Authorize();
+            descriptor.Field(x=>x.Authorize(default)).Authorize(AuthorizationPermission.Authorize);
             base.Configure(descriptor);
         }
 
@@ -26,11 +24,6 @@ namespace Geex.Extensions.Authorization.Gql
         {
             await _uow.Request(request);
             return true;
-        }
-
-        public async Task<UserToken> GeneratePersonalAccessToken(GeneratePersonalAccessTokenRequest request)
-        {
-            return await _uow.Request(request);
         }
     }
 }

@@ -20,8 +20,6 @@ namespace Geex.Extensions.Identity.Requests
         /// </summary>
         string? Password { get; set; }
         string? Nickname { get; set; }
-        string? OpenId { get; set; }
-        LoginProviderEnum? Provider { get; set; }
     }
 
     public record CreateUserRequest : CreateUserRequest<User>
@@ -41,7 +39,5 @@ namespace Geex.Extensions.Identity.Requests
         /// <inheritdoc />
         public string? Password { get; set; }
         public string? Nickname { get; set; } = "";
-        public string? OpenId { get; set; } = "";
-        public LoginProviderEnum? Provider { get; set; } = LoginProviderEnum.Local;
     }
 }

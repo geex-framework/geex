@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Force.DeepCloner;
 using Geex.Json;
+using Geex.Utilities;
 
 namespace Geex
 {
@@ -209,7 +210,7 @@ namespace Geex
         public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var data = reader.GetString();
-            return typeof(Enumeration<>).MakeGenericType(classEnumRealType).GetMethod(nameof(Enumeration.FromValue), types: new[] { typeof(string) })?.Invoke(null, new[] { data }) as T;
+            return EnumerationReflectionCache.FromValue(classEnumRealType, data) as T;
         }
 
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)

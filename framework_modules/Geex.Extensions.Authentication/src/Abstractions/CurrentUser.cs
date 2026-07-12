@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using Geex.Extensions.Authentication.Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 
@@ -14,33 +15,52 @@ namespace Geex.Extensions.Authentication
         private string? _userId;
         private IAuthUser? _user;
         public ClaimsIdentity? _claimsIdentity;
+        private UserSession? _session;
 
         public CurrentUser(IUnitOfWork uow)
         {
             _uow = uow;
         }
-        /// <inheritdoc />
+
         public IAuthUser? User => _user ??= _uow.Query<IAuthUser>().FirstOrDefault(x => x.Id == UserId);
         public string? UserId => _userId ??= _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.FindUserId();
 
-        /// <inheritdoc />
         public ClaimsIdentity? ClaimsIdentity => _claimsIdentity ??= _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.Identity as ClaimsIdentity;
 
-        /// <inheritdoc />
-        public IDisposable Change(string? userId)
+        public UserSession? Session
         {
-            return SetCurrent(userId);
+            get
+            {
+                if (UserId.IsNullOrEmpty())
+                {
+                    return null;
+                }
+
+                var provider = ClaimsIdentity.GetLoginProvider();
+                if (_session != null)
+                {
+                    return _session;
+                }
+
+                var session = _uow.Query<UserSession>()
+                    .FirstOrDefault(x => x.UserId == UserId && x.LoginProvider == provider);
+                return _session = session == null ? null : _uow.Attach(session);
+            }
         }
+
+        public IDisposable Change(string? userId) => SetCurrent(userId);
 
         private IDisposable SetCurrent(string? userId)
         {
             _parentScopes.Enqueue(UserId);
             _userId = userId;
-            _user = null; // Reset user to ensure it is fetched again if needed
-            _claimsIdentity = null; // Reset claims identity to ensure it is fetched again if needed
+            _user = null;
+            _claimsIdentity = null;
+            _session = null;
             return new DisposeAction(() =>
             {
                 _userId = _parentScopes.Dequeue();
+                _session = null;
             });
         }
     }

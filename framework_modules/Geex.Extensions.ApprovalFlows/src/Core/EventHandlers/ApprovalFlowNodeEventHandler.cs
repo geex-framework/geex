@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,8 +27,9 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
     {
         var node = _uow.Query<ApprovalFlowNode>().GetById(eventData.ApprovalFlowNodeId);
         var userIdsToNotify = _uow.Query<IUser>()
-            .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable();
-        userIdsToNotify = userIdsToNotify.Concat(new[] { node.AuditUserId });
+            .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable()
+            .Append(node.AuditUserId)
+            .Where(x => !x.IsNullOrEmpty());
         var messageEntity = await _uow.Request(new CreateMessageRequest()
         {
             Severity = MessageSeverityType.Success,
@@ -43,7 +45,28 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
 
     public async Task Handle(ApprovalFlowNodeRejectedEvent eventData, CancellationToken cancellationToken)
     {
+        var node = _uow.Query<ApprovalFlowNode>().GetById(eventData.ApprovalFlowNodeId)
+            ?? throw new BusinessException(GeexExceptionType.OnPurpose, message: "Approval flow node not found.");
+        var flowName = _uow.Query<ApprovalFlow>().GetById(eventData.ApprovalFlowId)?.Name
+            ?? "工作流";
+        var carbonCopyUserIds = node.CarbonCopyUserIds;
+        var userIdsToNotify = (carbonCopyUserIds.Count == 0
+                ? Enumerable.Empty<string>()
+                : _uow.Query<IUser>().Where(x => carbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable())
+            .Append(node.AuditUserId)
+            .Where(x => !x.IsNullOrEmpty());
 
+        var messageEntity = await _uow.Request(new CreateMessageRequest()
+        {
+            Severity = MessageSeverityType.Warn,
+            Text = $"【工作流】:{flowName} 的审批被驳回.",
+            Meta = new JsonObject([new("ApprovalFlowId", node.ApprovalFlowId)]),
+        });
+        await _uow.Request(new SendNotificationMessageRequest()
+        {
+            MessageId = messageEntity.Id,
+            ToUserIds = [.. userIdsToNotify]
+        });
     }
 
     public async Task Handle(ApprovalFlowNodeTransferredEvent eventData, CancellationToken cancellationToken)
@@ -68,8 +91,9 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
         foreach (var node in eventData.NodesToReject)
         {
             var userIdsToNotify = _uow.Query<IUser>()
-                .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable();
-            userIdsToNotify = userIdsToNotify.Concat(new[] { node.AuditUserId });
+                .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable()
+                .Append(node.AuditUserId)
+                .Where(x => !x.IsNullOrEmpty());
 
             var messageEntity = await _uow.Request(new CreateMessageRequest()
             {

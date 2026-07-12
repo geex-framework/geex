@@ -13,6 +13,7 @@ namespace Geex.Tests
         public static TestModuleSettings GlobalSetting { get; } = new(nameof(GlobalSetting), new[] { SettingScopeEnumeration.Global, }, "Global");
         public static TestModuleSettings TenantSetting { get; } = new(nameof(TenantSetting), new[] { SettingScopeEnumeration.Tenant, }, "Tenant");
         public static TestModuleSettings UserSetting { get; } = new(nameof(UserSetting), new[] { SettingScopeEnumeration.User, }, "User");
+        public static TestModuleSettings MultiScopeSetting { get; } = new(nameof(MultiScopeSetting), new[] { SettingScopeEnumeration.Global, SettingScopeEnumeration.Tenant, SettingScopeEnumeration.User, }, "MultiScope");
 
     }
 }

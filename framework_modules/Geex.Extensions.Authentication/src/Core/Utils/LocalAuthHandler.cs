@@ -1,17 +1,24 @@
-﻿using System;
+using System;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+
+using Geex.Extensions.Authentication.Core.Entities;
 
 using JetBrains.Annotations;
 
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+
+using StackExchange.Redis.Extensions.Core;
+using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Extensions.Authentication.Core.Utils
 {
@@ -65,8 +72,38 @@ namespace Geex.Extensions.Authentication.Core.Utils
             {
                 return AuthenticateResult.Fail(result.Exception);
             }
+
             var principal = new ClaimsPrincipal(result.ClaimsIdentity);
+            var userId = principal.FindUserId();
+            if (userId.IsNullOrEmpty())
+            {
+                return AuthenticateResult.Fail("Token subject is missing.");
+            }
+
+            var provider = result.ClaimsIdentity.GetLoginProvider();
+            var session = await ResolveSessionAsync(userId, provider, accessToken);
+            if (session == null || !string.Equals(session.Token, accessToken, StringComparison.Ordinal))
+            {
+                return AuthenticateResult.Fail("Session is invalid or expired.");
+            }
+
             return AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));
+        }
+
+        private async Task<UserSession?> ResolveSessionAsync(string userId, LoginProviderEnum provider, string accessToken)
+        {
+            var services = Context.RequestServices;
+            var cacheKey = UserSession.GetCacheKey(userId, provider);
+            var redis = services.GetRequiredService<IRedisDatabase>();
+            var cached = await redis.GetNamedAsync<UserSession>(cacheKey);
+            if (cached != null && string.Equals(cached.Token, accessToken, StringComparison.Ordinal))
+            {
+                return cached;
+            }
+
+            var uow = services.GetRequiredService<IUnitOfWork>();
+            return uow.Query<UserSession>()
+                .FirstOrDefault(x => x.UserId == userId && x.LoginProvider == provider);
         }
 
         /// <inheritdoc />

@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace MongoDB.Entities.Tests
 {
@@ -11,7 +12,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task fuzzystring_type_saving_and_retrieval_worksAsync()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
 
             await new Book { Title = "fstsarw", Review = new Review { Fuzzy = guid } }.SaveAsync();
 
@@ -25,7 +26,7 @@ namespace MongoDB.Entities.Tests
         [TestMethod]
         public async Task fuzzystring_type_with_nulls_workAsync()
         {
-            var guid = Guid.NewGuid().ToString();
+            var guid = ObjectId.GenerateNewId().ToString();
 
             await new Book { Title = guid, Review = new Review { Fuzzy = null } }.SaveAsync();
 

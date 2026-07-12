@@ -1,39 +1,38 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Authentication.Requests;
 
 using MediatX;
-using OpenIddict.Abstractions;
-
-using StackExchange.Redis.Extensions.Core;
-using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Extensions.Authentication.Core.Handlers
 {
-    public class AuthenticationHandler : IRequestHandler<AuthenticateRequest, UserToken>, IRequestHandler<FederateAuthenticateRequest, UserToken>, IRequestHandler<CancelAuthenticationRequest, bool>
+    public class AuthenticationHandler : IRequestHandler<AuthenticateRequest, UserSession>, IRequestHandler<FederateAuthenticateRequest, UserSession>
     {
-        private IUnitOfWork _uow;
-        private GeexJwtSecurityTokenHandler _tokenHandler;
-        private UserTokenGenerateOptions _userTokenGenerateOptions;
+        private readonly IUnitOfWork _uow;
+        private readonly GeexJwtSecurityTokenHandler _tokenHandler;
+        private readonly UserTokenGenerateOptions _userTokenGenerateOptions;
         private readonly IEnumerable<IExternalLoginProvider> _externalLoginProviders;
-        private IRedisDatabase _redis;
 
-        public AuthenticationHandler(IUnitOfWork uow, GeexJwtSecurityTokenHandler tokenHandler, UserTokenGenerateOptions userTokenGenerateOptions, IEnumerable<IExternalLoginProvider> externalLoginProviders, IRedisDatabase redis, IOpenIddictTokenManager tokenManager)
+        public AuthenticationHandler(
+            IUnitOfWork uow,
+            GeexJwtSecurityTokenHandler tokenHandler,
+            UserTokenGenerateOptions userTokenGenerateOptions,
+            IEnumerable<IExternalLoginProvider> externalLoginProviders)
         {
             _uow = uow;
             _tokenHandler = tokenHandler;
             _userTokenGenerateOptions = userTokenGenerateOptions;
             _externalLoginProviders = externalLoginProviders;
-            _redis = redis;
         }
 
         /// <inheritdoc />
-        public async Task<UserToken> Handle(AuthenticateRequest request, CancellationToken cancellationToken)
+        public async Task<UserSession> Handle(AuthenticateRequest request, CancellationToken cancellationToken)
         {
             if (request.UserIdentifier is GeexConstants.SuperAdminId or GeexConstants.SuperAdminName)
             {
@@ -45,55 +44,37 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             {
                 throw new BusinessException(GeexExceptionType.NotFound, message: "用户名或者密码不正确");
             }
+
+            return await BeginSessionAsync(user, LoginProviderEnum.Local, cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task<UserSession> Handle(FederateAuthenticateRequest request, CancellationToken cancellationToken)
+        {
+            if (request.LoginProvider == LoginProviderEnum.Local)
+            {
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "联合登录不支持本地登录提供方, 请使用 authenticate.");
+            }
+
+            var externalLoginProvider = _externalLoginProviders.FirstOrDefault(x => x.Provider == request.LoginProvider);
+            if (externalLoginProvider == null)
+            {
+                throw new BusinessException(GeexExceptionType.NotFound, message: "不存在的登陆提供方.");
+            }
+
+            var externalUser = await externalLoginProvider.ExternalLogin(request.Code);
+            return await BeginSessionAsync(externalUser, request.LoginProvider, cancellationToken);
+        }
+
+        private async Task<UserSession> BeginSessionAsync(IAuthUser user, LoginProviderEnum provider, CancellationToken cancellationToken)
+        {
             if (!user.IsEnable)
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "用户未激活无法登陆, 如有疑问, 请联系管理员.");
             }
-            return UserToken.New(user, LoginProviderEnum.Local, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
-        }
 
-        /// <inheritdoc />
-        public async Task<UserToken> Handle(FederateAuthenticateRequest request, CancellationToken cancellationToken)
-        {
-            request.LoginProvider ??= LoginProviderEnum.Local;
-            if (request.LoginProvider == LoginProviderEnum.Local)
-            {
-                var sub = _tokenHandler.ReadJwtToken(request.Code).Subject;
-                IDisposable disableAllDataFilters = default;
-                if (sub is GeexConstants.SuperAdminId)
-                {
-                    disableAllDataFilters = _uow.DbContext.DisableAllDataFilters();
-                }
-                var userQuery = _uow.Query<IAuthUser>();
-                var user = userQuery.MatchUserIdentifier(sub);
-                var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, _userTokenGenerateOptions)));
-                disableAllDataFilters?.Dispose();
-                return token;
-            }
-            else
-            {
-                var externalLoginProvider = _externalLoginProviders.FirstOrDefault(x => x.Provider == request.LoginProvider);
-                if (externalLoginProvider == null)
-                {
-                    throw new BusinessException(GeexExceptionType.NotFound, message: "不存在的登陆提供方.");
-                }
-                var user = await externalLoginProvider.ExternalLogin(request.Code);
-                var token = UserToken.New(user, request.LoginProvider, _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, request.LoginProvider, _userTokenGenerateOptions)));
-                return token;
-            }
-
-        }
-
-        /// <inheritdoc />
-        public async Task<bool> Handle(CancelAuthenticationRequest request, CancellationToken cancellationToken)
-        {
-            var userId = request.UserId;
-            if (!userId.IsNullOrEmpty())
-            {
-                await _redis.RemoveNamedAsync<UserSessionCache>(userId);
-                return true;
-            }
-            return false;
+            var token = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, provider, _userTokenGenerateOptions));
+            return await user.BeginSessionAsync(provider, token, cancellationToken);
         }
     }
 }

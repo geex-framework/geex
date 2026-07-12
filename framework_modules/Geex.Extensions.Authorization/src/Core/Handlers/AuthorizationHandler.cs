@@ -1,10 +1,13 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Geex.Extensions.Authorization.Core.Casbin;
 using Geex.Extensions.Authorization.Events;
+using Geex.Extensions.Authorization.Gql.Types;
 using Geex.Extensions.Authorization.Requests;
+using Geex.Extensions.Authentication;
 
 using MediatX;
 
@@ -26,7 +29,11 @@ namespace Geex.Extensions.Authorization.Core.Handlers
         public async Task Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
             await _enforcer.SetRoles(notification.UserId, notification.RoleIds);
-            return;
+            var user = _uow.Query<IAuthUser>().GetById(notification.UserId);
+            if (user != null)
+            {
+                await user.InvalidateSessionsCacheAsync(cancellationToken);
+            }
         }
 
         /// <summary>Handles a request</summary>
@@ -51,7 +58,25 @@ namespace Geex.Extensions.Authorization.Core.Handlers
             var permissions = request.AllowedPermissions.Select(x => x.Value);
             await _enforcer.SetPermissionsAsync(request.Target, permissions);
             await _uow.Notify(new PermissionChangedEvent(request.Target, permissions.ToArray()), cancellationToken);
-            return;
+            if (request.AuthorizeTargetType == AuthorizeTargetType.User)
+            {
+                var user = _uow.Query<IAuthUser>().GetById(request.Target);
+                if (user != null)
+                {
+                    await user.InvalidateSessionsCacheAsync(cancellationToken);
+                }
+            }
+            else if (request.AuthorizeTargetType == AuthorizeTargetType.Role)
+            {
+                foreach (var userId in _enforcer.GetUsersForRole(request.Target))
+                {
+                    var user = _uow.Query<IAuthUser>().GetById(userId);
+                    if (user != null)
+                    {
+                        await user.InvalidateSessionsCacheAsync(cancellationToken);
+                    }
+                }
+            }
         }
     }
 }
