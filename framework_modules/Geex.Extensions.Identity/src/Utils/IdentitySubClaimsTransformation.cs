@@ -24,7 +24,7 @@ namespace Geex.Extensions.Identity.Utils
             }
 
             var provider = claimsIdentity.GetLoginProvider();
-            if (provider != LoginProviderEnum.Local)
+            if (provider != LoginProviderEnum.Local && provider != LoginProviderEnum.PersonalAccessToken)
             {
                 var externalLogin = user.ExternalLogins
                     .FirstOrDefault(x => x.LoginProvider == provider);

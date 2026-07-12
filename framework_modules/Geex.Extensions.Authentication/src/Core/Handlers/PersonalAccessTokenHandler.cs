@@ -28,7 +28,7 @@ public class PersonalAccessTokenHandler : IRequestHandler<GeneratePersonalAccess
         var user = currentUser?.User ?? throw new BusinessException(GeexExceptionType.ValidationFailed, message: "Current user is required.");
         var options = _tokenGenerateOptions.DeepClone();
         options.Expires = TimeSpan.FromSeconds(request.ExpireInSeconds);
-        var token = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.Local, options));
-        return await user.BeginSessionAsync(LoginProviderEnum.Local, token, cancellationToken);
+        var token = _tokenHandler.CreateEncodedJwt(new GeexSecurityTokenDescriptor(user.Id, LoginProviderEnum.PersonalAccessToken, options));
+        return await user.BeginSessionAsync(LoginProviderEnum.PersonalAccessToken, token, cancellationToken);
     }
 }

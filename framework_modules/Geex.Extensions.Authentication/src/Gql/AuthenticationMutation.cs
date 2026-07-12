@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authentication.Requests;
 using Geex.Gql.Types;
@@ -38,7 +38,9 @@ namespace Geex.Extensions.Authentication.Gql
                 return false;
             }
 
-            return await session.InvalidateCacheAsync();
+            await session.InvalidateCacheAsync();
+            await session.DeleteAsync();
+            return true;
         }
 
         public async Task<UserSession> GeneratePersonalAccessToken(GeneratePersonalAccessTokenRequest request) =>
