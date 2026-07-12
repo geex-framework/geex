@@ -45,9 +45,9 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
 
     public async Task Handle(ApprovalFlowNodeRejectedEvent eventData, CancellationToken cancellationToken)
     {
-        var node = await _uow.DbContext.Find<ApprovalFlowNode>().OneAsync(eventData.ApprovalFlowNodeId, cancellationToken)
+        var node = _uow.Query<ApprovalFlowNode>().GetById(eventData.ApprovalFlowNodeId)
             ?? throw new BusinessException(GeexExceptionType.OnPurpose, message: "Approval flow node not found.");
-        var flowName = (await _uow.DbContext.Find<ApprovalFlow>().OneAsync(eventData.ApprovalFlowId, cancellationToken))?.Name
+        var flowName = _uow.Query<ApprovalFlow>().GetById(eventData.ApprovalFlowId)?.Name
             ?? "工作流";
         var carbonCopyUserIds = node.CarbonCopyUserIds;
         var userIdsToNotify = (carbonCopyUserIds.Count == 0
