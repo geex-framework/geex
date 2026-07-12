@@ -91,7 +91,7 @@ namespace Geex.Tests.FeatureTests
         public async Task SettingWithDifferentScopesShouldWork()
         {
             // Arrange
-            var testSettingName = TestModuleSettings.GlobalSetting;
+            var testSettingName = TestModuleSettings.MultiScopeSetting;
             var globalValue = "GlobalValue_" + ObjectId.GenerateNewId();
             var tenantValue = "TenantValue_" + ObjectId.GenerateNewId();
             var userValue = "UserValue_" + ObjectId.GenerateNewId();
