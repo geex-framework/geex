@@ -21,7 +21,10 @@ public partial class UserSession : Entity<UserSession>
     [JsonConstructor]
     protected UserSession()
     {
+        ConfigLazyQuery(x => x.User, user => user.Id == UserId, sessions => user => sessions.SelectList(x => x.UserId).Contains(user.Id));
     }
+
+    public Lazy<IAuthUser> User => LazyQuery(() => User);
 
     public UserSession(string userId, LoginProviderEnum provider, string token, IUnitOfWork? uow = null) : this()
     {

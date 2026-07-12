@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Extensions.Captcha.Abstractions;
@@ -14,6 +15,7 @@ public class CaptchaHandler :
     IRequestHandler<SendCaptchaRequest, Captcha>,
     IRequestHandler<ValidateCaptchaRequest, bool>
 {
+    private static readonly TimeSpan CaptchaLifetime = TimeSpan.FromMinutes(5);
     private readonly IRedisDatabase _cache;
     private readonly IUnitOfWork _uow;
 
@@ -28,7 +30,7 @@ public class CaptchaHandler :
         if (request.CaptchaProvider == CaptchaProvider.Sms)
         {
             var captcha = new SmsCaptcha();
-            await _cache.SetNamedAsync(captcha, token: cancellationToken);
+            await _cache.SetNamedAsync(captcha, keyOverride: captcha.Key, expireIn: CaptchaLifetime, token: cancellationToken);
             await _uow.Request(new SendSmsRequest(request.SmsCaptchaPhoneNumber!, [captcha.Code]), cancellationToken);
             return captcha;
         }
@@ -36,7 +38,7 @@ public class CaptchaHandler :
         if (request.CaptchaProvider == CaptchaProvider.Image)
         {
             var captcha = new ImageCaptcha();
-            await _cache.SetNamedAsync(captcha, token: cancellationToken);
+            await _cache.SetNamedAsync(captcha, keyOverride: captcha.Key, expireIn: CaptchaLifetime, token: cancellationToken);
             return captcha;
         }
 
@@ -47,16 +49,26 @@ public class CaptchaHandler :
     {
         if (request.CaptchaProvider == CaptchaProvider.Sms)
         {
-            var captcha = await _cache.GetAsync<SmsCaptcha>(request.CaptchaKey);
-            return captcha?.Code == request.CaptchaCode;
+            return await ValidateCaptcha<SmsCaptcha>(request);
         }
 
         if (request.CaptchaProvider == CaptchaProvider.Image)
         {
-            var captcha = await _cache.GetAsync<ImageCaptcha>(request.CaptchaKey);
-            return captcha?.Code == request.CaptchaCode;
+            return await ValidateCaptcha<ImageCaptcha>(request);
         }
 
         throw new System.ArgumentOutOfRangeException(nameof(request.CaptchaProvider));
+    }
+
+    private async Task<bool> ValidateCaptcha<TCaptcha>(ValidateCaptchaRequest request) where TCaptcha : Captcha
+    {
+        var captcha = await _cache.GetNamedAsync<TCaptcha>(request.CaptchaKey);
+        if (captcha?.Code != request.CaptchaCode)
+        {
+            return false;
+        }
+
+        await _cache.RemoveNamedAsync<TCaptcha>(request.CaptchaKey);
+        return true;
     }
 }

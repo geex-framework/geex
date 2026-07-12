@@ -16,6 +16,7 @@ namespace Geex.Extensions.Authentication.Gql
             descriptor.Field(x => x.Authenticate(default));
             descriptor.Field(x => x.FederateAuthenticate(default));
             descriptor.Field(x => x.CancelAuthentication());
+            descriptor.Field(x => x.GeneratePersonalAccessToken(default)).Authorize();
         }
 
         private readonly IUnitOfWork _uow;
@@ -39,5 +40,8 @@ namespace Geex.Extensions.Authentication.Gql
 
             return await session.InvalidateCacheAsync();
         }
+
+        public async Task<UserSession> GeneratePersonalAccessToken(GeneratePersonalAccessTokenRequest request) =>
+            await _uow.Request(request);
     }
 }

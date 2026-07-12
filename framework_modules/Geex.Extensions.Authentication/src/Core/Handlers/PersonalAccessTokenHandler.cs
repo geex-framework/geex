@@ -2,13 +2,12 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Force.DeepCloner;
-using Geex.Extensions.Authentication;
 using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authentication.Core.Utils;
-using Geex.Extensions.Authorization.Requests;
+using Geex.Extensions.Authentication.Requests;
 using MediatX;
 
-namespace Geex.Extensions.Authorization.Core.Handlers;
+namespace Geex.Extensions.Authentication.Core.Handlers;
 
 public class PersonalAccessTokenHandler : IRequestHandler<GeneratePersonalAccessTokenRequest, UserSession>
 {
