@@ -2,11 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using Geex.Extensions.Authentication;
+using Geex.MultiTenant;
 using Geex.Storage;
 
 namespace Geex.Extensions.Identity.Core.Entities
 {
-    public partial class UserExternalLogin : Entity<UserExternalLogin>, IUserExternalLogin
+    public partial class UserExternalLogin : Entity<UserExternalLogin>, ITenantFilteredEntity
     {
         protected UserExternalLogin()
         {
@@ -30,6 +31,7 @@ namespace Geex.Extensions.Identity.Core.Entities
         public LoginProviderEnum LoginProvider { get; private set; }
         public string LoginProviderId { get; private set; } = string.Empty;
         public List<UserClaim> LoginProviderClaims { get; private set; } = [];
+        public string? TenantCode { get; set; }
 
         public void UpdateClaims(IEnumerable<Claim> providerClaims)
         {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;
+using Geex.Extensions.Identity.Core.Entities;
 using Geex.MultiTenant;
 using Geex.Storage;
 
@@ -15,7 +16,7 @@ namespace Geex.Extensions.Identity
         List<string> OrgCodes { get; set; }
         public List<string> Permissions { get; }
         List<UserClaim> Claims { get; set; }
-        IQueryable<IUserExternalLogin> ExternalLogins { get; }
+        IQueryable<UserExternalLogin> ExternalLogins { get; }
         IQueryable<IOrg> Orgs { get; }
         Lazy<IBlobObject?> AvatarFile { get; }
         string? AvatarFileId { get; set; }

@@ -111,7 +111,6 @@ namespace Geex.Extensions.Identity.Core.Entities
         public string? Nickname { get; set; }
 
         public IQueryable<UserExternalLogin> ExternalLogins => LazyQuery(() => ExternalLogins);
-        IQueryable<IUserExternalLogin> IUser.ExternalLogins => ExternalLogins;
 
         public List<string> OrgCodes { get; set; } = new List<string>();
         IQueryable<IOrg> IUser.Orgs => Orgs;

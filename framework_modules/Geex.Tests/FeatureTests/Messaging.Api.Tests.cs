@@ -51,6 +51,7 @@ public class MessagingApiTests : TestsBase
             var message = await uow.Request(new CreateMessageRequest { Text = "delete me" });
             await uow.SaveChanges();
             messageId = message.Id;
+            messageId.ShouldNotBeNull();
         }
 
         var client = SuperAdminClient;
@@ -61,6 +62,6 @@ public class MessagingApiTests : TestsBase
             """;
         var (responseData, responseString) = await client.PostGqlRequest(mutation, new { id = messageId });
         responseString.ShouldNotContain("errors");
-        ((bool)responseData["data"]["deleteMessage"]).ShouldBeTrue();
+        ((bool)responseData["data"]!["deleteMessage"]!).ShouldBeTrue();
     }
 }

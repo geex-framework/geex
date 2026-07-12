@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Geex.Abstractions;
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.Migrations;
+using Geex.MultiTenant;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Entities;
@@ -30,7 +31,17 @@ public class _638975042000000000_migrate_user_external_login : DbMigration
             var userId = doc["_id"].AsString;
             var openId = doc["OpenId"].AsString;
             var loginProvider = LoginProviderEnum.FromValue(doc["LoginProvider"].AsString);
-            uow.Attach(new UserExternalLogin(userId, loginProvider, openId, uow: uow));
+            var externalLogin = new UserExternalLogin(userId, loginProvider, openId, uow: uow);
+            if (doc.TryGetValue("TenantCode", out var tenantCode) && tenantCode != BsonNull.Value)
+            {
+                var tenantCodeValue = tenantCode.AsString;
+                if (!string.IsNullOrEmpty(tenantCodeValue))
+                {
+#pragma warning disable CS0618
+                    externalLogin.As<ITenantFilteredEntity>().SetTenant(tenantCodeValue);
+#pragma warning restore CS0618
+                }
+            }
         }
 
         if (docs.Count > 0)

@@ -1,4 +1,5 @@
 using Geex.Extensions.Authentication;
+using Geex.Extensions.Identity;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
 
@@ -10,11 +11,11 @@ public partial class UserExternalLogin
     {
         protected override void Map(BsonClassMap<UserExternalLogin> map, BsonIndexConfig<UserExternalLogin> indexConfig)
         {
-            map.Inherit<IUserExternalLogin>();
             map.AutoMap();
             indexConfig.MapEntityDefaultIndex();
             indexConfig.MapIndex(
                 builder => builder.Combine(
+                    builder.Ascending(x => x.TenantCode),
                     builder.Ascending(x => x.LoginProvider),
                     builder.Ascending(x => x.LoginProviderId)),
                 options =>
@@ -30,7 +31,6 @@ public partial class UserExternalLogin
     {
         protected override void Configure(IObjectTypeDescriptor<UserExternalLogin> descriptor)
         {
-            descriptor.Implements<InterfaceType<IUserExternalLogin>>();
             descriptor.BindFieldsImplicitly();
         }
     }

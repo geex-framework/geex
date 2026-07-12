@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity.Core.Entities;
+using Geex.MultiTenant;
 using MongoDB.Entities;
 using MongoDB.Entities.Utilities;
 
@@ -31,22 +32,30 @@ namespace Geex.Extensions.Identity
             this IQueryable<User> users,
             LoginProviderEnum provider,
             string loginProviderId)
-            => users.Cast<IUser>().FindByExternalLogin(provider, loginProviderId) as User;
+            => FindByExternalLogin((IQueryable<IUser>)users, provider, loginProviderId) as User;
 
         public static UserExternalLogin UpsertExternalLogin(
-            this User user,
+            this IUser user,
             LoginProviderEnum provider,
             string loginProviderId,
             IEnumerable<Claim>? providerClaims = null,
             IUnitOfWork? uow = null)
         {
-            var unitOfWork = uow ?? (user as IEntityBase)?.DbContext as IUnitOfWork
+            var unitOfWork = uow ?? user?.DbContext as IUnitOfWork
                 ?? throw new InvalidOperationException("User must be attached to a UnitOfWork.");
             var externalLogin = unitOfWork.Query<UserExternalLogin>()
                 .FirstOrDefault(x => x.LoginProvider == provider && x.LoginProviderId == loginProviderId);
             if (externalLogin == null)
             {
-                return new UserExternalLogin(user.Id, provider, loginProviderId, providerClaims, unitOfWork);
+                externalLogin = new UserExternalLogin(user.Id, provider, loginProviderId, providerClaims, unitOfWork);
+                if (string.IsNullOrEmpty(externalLogin.TenantCode) && !string.IsNullOrEmpty(user.TenantCode))
+                {
+#pragma warning disable CS0618
+                    externalLogin.As<ITenantFilteredEntity>().SetTenant(user.TenantCode);
+#pragma warning restore CS0618
+                }
+
+                return externalLogin;
             }
 
             if (externalLogin.UserId != user.Id)
