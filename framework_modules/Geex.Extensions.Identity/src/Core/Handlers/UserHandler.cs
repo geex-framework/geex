@@ -80,6 +80,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
             if (request.IsEnable != default)
             {
                 user.IsEnable = request.IsEnable.Value;
+                await user.RevokeSessionsAsync(cancellationToken);
             }
 
             if (request.OrgCodes != default)
