@@ -1,5 +1,5 @@
 ﻿namespace Geex.Extensions.ApprovalFlows;
 
-public class ApprovalFlowModuleOptions : GeexModuleOption<ApprovalFlowModule>
+public class ApprovalFlowModuleOptions : GeexModuleOptions<ApprovalFlowModule>
 {
 }

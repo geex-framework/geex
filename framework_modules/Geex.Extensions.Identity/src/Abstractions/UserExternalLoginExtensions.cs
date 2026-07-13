@@ -50,9 +50,7 @@ namespace Geex.Extensions.Identity
                 externalLogin = new UserExternalLogin(user.Id, provider, loginProviderId, providerClaims, unitOfWork);
                 if (string.IsNullOrEmpty(externalLogin.TenantCode) && !string.IsNullOrEmpty(user.TenantCode))
                 {
-#pragma warning disable CS0618
-                    externalLogin.As<ITenantFilteredEntity>().SetTenant(user.TenantCode);
-#pragma warning restore CS0618
+                    externalLogin.TenantCode = user.TenantCode;
                 }
 
                 return externalLogin;

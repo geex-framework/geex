@@ -1,6 +1,6 @@
 ﻿namespace Geex.Extensions.BlobStorage
 {
-    public class BlobStorageModuleOptions : GeexModuleOption<BlobStorageModule>
+    public class BlobStorageModuleOptions : GeexModuleOptions<BlobStorageModule>
     {
         /// <summary>
         /// File download path, default is "/download",

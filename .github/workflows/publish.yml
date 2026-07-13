@@ -81,6 +81,7 @@ jobs:
           dotnet pack ./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.ApprovalFlows/src/Geex.Extensions.ApprovalFlows.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Authentication/src/Geex.Extensions.Authentication.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
+          dotnet pack ./framework_modules/Geex.Extensions.Authentication.Wechat/src/Geex.Extensions.Authentication.Wechat.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:PackageLicenseUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
@@ -109,6 +110,7 @@ jobs:
           dotnet pack ./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.ApprovalFlows/src/Geex.Extensions.ApprovalFlows.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Authentication/src/Geex.Extensions.Authentication.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
+          dotnet pack ./framework_modules/Geex.Extensions.Authentication.Wechat/src/Geex.Extensions.Authentication.Wechat.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
@@ -131,3 +133,70 @@ jobs:
 
       - name: Publish to NuGet
         run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  build-and-publish-npm-package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: extract-version-from-input
+        if: ${{ '$GITHUB_REF' == '' }}
+        run: |
+            echo "ref=$VERSION" >> $GITHUB_ENV
+
+      - name: extract-version-from-ref
+        if: ${{ '$GITHUB_REF' != '' }}
+        run: |
+            echo "ref=$GITHUB_REF" >> $GITHUB_ENV
+
+      - name: Extract version number
+        id: version
+        run: |
+          REF=${{env.ref}}
+          echo "Ref name is $REF"
+          if [[ "${REF#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            SUFFIX="${BASH_REMATCH[2]}"
+            if [ -n "$SUFFIX" ]; then
+              NPM_VERSION="${VERSION}-${SUFFIX}"
+            else
+              NPM_VERSION="${VERSION}"
+            fi
+            echo "version=$VERSION"
+            echo "suffix=$SUFFIX"
+            echo "npm_version=$NPM_VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
+            echo "npm_version=$NPM_VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Publish @geexcode/geex-angular
+        working-directory: ./frontend_libs/geex-angular
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_VERSION: ${{ steps.version.outputs.npm_version }}
+        run: |
+          npm version "$NPM_VERSION" --no-git-tag-version --allow-same-version
+          npm install
+          npm run build
+          npm publish --access public
+
+      - name: Publish @geexcode/geex-extensions-authentication-wechat
+        working-directory: ./frontend_libs/geex-extensions-authentication-wechat
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_VERSION: ${{ steps.version.outputs.npm_version }}
+        run: |
+          npm version "$NPM_VERSION" --no-git-tag-version --allow-same-version
+          npm install
+          npm run build
+          npm publish --access public

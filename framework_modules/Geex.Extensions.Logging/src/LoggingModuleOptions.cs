@@ -7,7 +7,7 @@ using HotChocolate.Execution.Options;
 
 namespace Geex.Extensions.Logging
 {
-    public class LoggingModuleOptions : GeexModuleOption<LoggingModule>
+    public class LoggingModuleOptions : GeexModuleOptions<LoggingModule>
     {
         public TracingPreference TracingPreference { get; set; } = TracingPreference.OnDemand;
         public GeexApmConfig ElasticApm { get; set; }

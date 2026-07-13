@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.Configuration
             return configuration.GetValue<string>("App:HostAddress");
         }
 
-        public static TModuleOption GetModuleOptions<TModuleOption>(this IConfiguration configuration) where TModuleOption : GeexModuleOption
+        public static TModuleOption GetModuleOptions<TModuleOption>(this IConfiguration configuration) where TModuleOption : GeexModuleOptions
         {
             var configurationSection = configuration.GetSection(typeof(TModuleOption).Name);
             var moduleOptions = configurationSection.Get<TModuleOption>();

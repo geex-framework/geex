@@ -1,6 +1,6 @@
 namespace Geex.Extensions.Payments;
 
-public class PaymentsModuleOptions : GeexModuleOption<PaymentsModule>
+public class PaymentsModuleOptions : GeexModuleOptions<PaymentsModule>
 {
     public string ApiDomain { get; set; } = "https://api.shouqianba.com";
     public string ShouqianbaNotifyPath { get; set; } = "/payments/notify/shouqianba";

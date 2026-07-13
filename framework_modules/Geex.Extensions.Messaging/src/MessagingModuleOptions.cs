@@ -1,6 +1,6 @@
 namespace Geex.Extensions.Messaging;
 
-public class MessagingModuleOptions : GeexModuleOption<MessagingModule>
+public class MessagingModuleOptions : GeexModuleOptions<MessagingModule>
 {
     public bool UseVirtualSms { get; set; }
 }

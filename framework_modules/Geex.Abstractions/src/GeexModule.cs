@@ -3,10 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
 using Geex.Migrations;
 using Geex.Storage;
+
 using HotChocolate.AspNetCore;
 using HotChocolate.Execution.Configuration;
+
 using MediatX;
 
 using Microsoft.AspNetCore.Builder;
@@ -30,189 +33,189 @@ using Volo.Abp.Modularity;
 
 namespace Geex
 {
-    public abstract class GeexModule<TModule, TModuleOptions> : GeexModule<TModule> where TModule : GeexModule where TModuleOptions : GeexModuleOption
+  public abstract class GeexModule<TModule, TModuleOptions> : GeexModule<TModule> where TModule : GeexModule where TModuleOptions : GeexModuleOptions
+  {
+    private TModuleOptions? _moduleOptions;
+    protected new TModuleOptions ModuleOptions => this._moduleOptions ??= this.ServiceConfigurationContext.Services.GetSingletonInstance<TModuleOptions>();
+    internal static IInitLoggerFactory? ConfigStageLoggerFactory { get; set; }
+    public ILogger<TModule> Logger => ConfigStageLoggerFactory?.Create<TModule>() ?? (NullLogger<TModule>.Instance as ILogger<TModule>);
+    public virtual void ConfigureModuleOptions(Action<GeexModuleOptions> optionsAction)
     {
-        private TModuleOptions? _moduleOptions;
-        protected new TModuleOptions ModuleOptions => this._moduleOptions ??= this.ServiceConfigurationContext.Services.GetSingletonInstance<TModuleOptions>();
-        internal static IInitLoggerFactory? ConfigStageLoggerFactory { get; set; }
-        public ILogger<TModule> Logger => ConfigStageLoggerFactory?.Create<TModule>() ?? (NullLogger<TModule>.Instance as ILogger<TModule>);
-        public virtual void ConfigureModuleOptions(Action<GeexModuleOption> optionsAction)
-        {
-            optionsAction.Invoke(_moduleOptions);
-        }
-        public override void PreConfigureServices(ServiceConfigurationContext context)
-        {
-            ConfigStageLoggerFactory ??= context.Services.GetSingletonInstance<IInitLoggerFactory>();
-            base.PreConfigureServices(context);
-            context.Services.Add(new ServiceDescriptor(typeof(GeexModule), this));
-            context.Services.Add(new ServiceDescriptor(this.GetType(), this));
-            this.InitModuleOptions();
-        }
-
-        private void InitModuleOptions()
-        {
-            var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<TModuleOptions>());
-            if (type == default)
-            {
-                return;
-            }
-            var options = Activator.CreateInstance(type) as TModuleOptions;
-            Configuration.GetSection(type.Name).Bind(options);
-            this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(type, options));
-            this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(typeof(TModuleOptions), options));
-            this._moduleOptions = options;
-            //this.ServiceConfigurationContext.Services.GetRequiredServiceLazy<ILogger<GeexModule>>().Value.LogInformation($"Module loaded with options:{Environment.NewLine}{options.ToJson()}");
-        }
-
+      optionsAction.Invoke(_moduleOptions);
     }
-    public abstract class GeexModule<TModule> : GeexModule where TModule : GeexModule
+    public override void PreConfigureServices(ServiceConfigurationContext context)
     {
-        /// <summary>
-        /// module name in simple display format
-        /// XxxModule => xxx
-        /// </summary>
-        public new static string ModuleDisplayName { get; } = typeof(TModule).Name.RemovePostFix("Module").ToCamelCase();
-        public IConfiguration Configuration { get; protected set; }
-        public IWebHostEnvironment Env { get; protected set; }
-
-        public virtual void ConfigureModuleEntityMaps(IServiceProvider serviceProvider)
-        {
-            foreach (var entityMapConfig in serviceProvider.GetServices<IBsonConfig>())
-            {
-                entityMapConfig.Map();
-            }
-        }
-
-        public override void ConfigureServices(ServiceConfigurationContext context)
-        {
-            var assembly = typeof(TModule).Assembly;
-            context.Services.AddMediatR(x =>
-            {
-                x.RegisterServicesFromAssembly(assembly);
-                x.AutoRegisterRequestProcessors = true;
-            });
-            this.SchemaBuilder.TryAddGeexAssembly(assembly);
-            GeexModule.LoadedModules.AddIfNotContains(this);
-            base.ConfigureServices(context);
-        }
-
-        /// <inheritdoc />
-        public override void PreConfigureServices(ServiceConfigurationContext context)
-        {
-            Configuration = context.Services.GetConfiguration();
-            Env = context.Services.GetSingletonInstanceOrNull<IWebHostEnvironment>();
-            base.PreConfigureServices(context);
-        }
-    }
-    public class GeexModule : AbpModule
-    {
-        /// <summary>
-        /// module name in simple display format
-        /// XxxModule => xxx
-        /// </summary>
-        public virtual string ModuleName => this.GetType().Name;
-        public virtual string ModuleDisplayName => this.ModuleName.RemovePostFix("Module").ToCamelCase();
-        public IRequestExecutorBuilder SchemaBuilder => this.ServiceConfigurationContext.Services.GetSingletonInstance<IRequestExecutorBuilder>();
-        public static ConcurrentHashSet<Assembly> KnownModuleAssembly { get; } = new ConcurrentHashSet<Assembly>();
-        public static ConcurrentHashSet<Type> RootTypes { get; } = new ConcurrentHashSet<Type>();
-        public static ConcurrentHashSet<GeexModule> LoadedModules { get; } = new ConcurrentHashSet<GeexModule>();
-        public static ConcurrentHashSet<Type> ModuleTypes { get; } = new ConcurrentHashSet<Type>();
-        public static ConcurrentHashSet<Type> ClassEnumTypes { get; } = new ConcurrentHashSet<Type>();
-        public static ConcurrentHashSet<Type> DirectiveTypes { get; } = new ConcurrentHashSet<Type>();
-        public static ConcurrentHashSet<Type> ObjectTypes { get; } = new ConcurrentHashSet<Type>();
-        public static ConcurrentDictionary<Type, Type[]> DistributedEventHandlerTypes { get; } = new ConcurrentDictionary<Type, Type[]>();
-        public static ConcurrentHashSet<Type> RequestHandlerTypes { get; } = new ConcurrentHashSet<Type>();
+      ConfigStageLoggerFactory ??= context.Services.GetSingletonInstance<IInitLoggerFactory>();
+      base.PreConfigureServices(context);
+      context.Services.Add(new ServiceDescriptor(typeof(GeexModule), this));
+      context.Services.Add(new ServiceDescriptor(this.GetType(), this));
+      this.InitModuleOptions();
     }
 
-    public abstract class GeexEntryModule<T> : GeexModule<T> where T : GeexModule
+    private void InitModuleOptions()
     {
-        public override void ConfigureServices(ServiceConfigurationContext context)
+      var type = this.GetType().Assembly.ExportedTypes.FirstOrDefault(x => x.IsAssignableTo<TModuleOptions>());
+      if (type == default)
+      {
+        return;
+      }
+      var options = Activator.CreateInstance(type) as TModuleOptions;
+      Configuration.GetSection(options.BindSection).Bind(options);
+      this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(type, options));
+      this.ServiceConfigurationContext.Services.TryAdd(new ServiceDescriptor(typeof(TModuleOptions), options));
+      this._moduleOptions = options;
+      //this.ServiceConfigurationContext.Services.GetRequiredServiceLazy<ILogger<GeexModule>>().Value.LogInformation($"Module loaded with options:{Environment.NewLine}{options.ToJson()}");
+    }
+
+  }
+  public abstract class GeexModule<TModule> : GeexModule where TModule : GeexModule
+  {
+    /// <summary>
+    /// module name in simple display format
+    /// XxxModule => xxx
+    /// </summary>
+    public new static string ModuleDisplayName { get; } = typeof(TModule).Name.RemovePostFix("Module").ToCamelCase();
+    public IConfiguration Configuration { get; protected set; }
+    public IWebHostEnvironment Env { get; protected set; }
+
+    public virtual void ConfigureModuleEntityMaps(IServiceProvider serviceProvider)
+    {
+      foreach (var entityMapConfig in serviceProvider.GetServices<IBsonConfig>())
+      {
+        entityMapConfig.Map();
+      }
+    }
+
+    public override void ConfigureServices(ServiceConfigurationContext context)
+    {
+      var assembly = typeof(TModule).Assembly;
+      context.Services.AddMediatR(x =>
+      {
+        x.RegisterServicesFromAssembly(assembly);
+        x.AutoRegisterRequestProcessors = true;
+      });
+      this.SchemaBuilder.TryAddGeexAssembly(assembly);
+      GeexModule.LoadedModules.AddIfNotContains(this);
+      base.ConfigureServices(context);
+    }
+
+    /// <inheritdoc />
+    public override void PreConfigureServices(ServiceConfigurationContext context)
+    {
+      Configuration = context.Services.GetConfiguration();
+      Env = context.Services.GetSingletonInstanceOrNull<IWebHostEnvironment>();
+      base.PreConfigureServices(context);
+    }
+  }
+  public class GeexModule : AbpModule
+  {
+    /// <summary>
+    /// module name in simple display format
+    /// XxxModule => xxx
+    /// </summary>
+    public virtual string ModuleName => this.GetType().Name;
+    public virtual string ModuleDisplayName => this.ModuleName.RemovePostFix("Module").ToCamelCase();
+    public IRequestExecutorBuilder SchemaBuilder => this.ServiceConfigurationContext.Services.GetSingletonInstance<IRequestExecutorBuilder>();
+    public static ConcurrentHashSet<Assembly> KnownModuleAssembly { get; } = new ConcurrentHashSet<Assembly>();
+    public static ConcurrentHashSet<Type> RootTypes { get; } = new ConcurrentHashSet<Type>();
+    public static ConcurrentHashSet<GeexModule> LoadedModules { get; } = new ConcurrentHashSet<GeexModule>();
+    public static ConcurrentHashSet<Type> ModuleTypes { get; } = new ConcurrentHashSet<Type>();
+    public static ConcurrentHashSet<Type> ClassEnumTypes { get; } = new ConcurrentHashSet<Type>();
+    public static ConcurrentHashSet<Type> DirectiveTypes { get; } = new ConcurrentHashSet<Type>();
+    public static ConcurrentHashSet<Type> ObjectTypes { get; } = new ConcurrentHashSet<Type>();
+    public static ConcurrentDictionary<Type, Type[]> DistributedEventHandlerTypes { get; } = new ConcurrentDictionary<Type, Type[]>();
+    public static ConcurrentHashSet<Type> RequestHandlerTypes { get; } = new ConcurrentHashSet<Type>();
+  }
+
+  public abstract class GeexEntryModule<T> : GeexModule<T> where T : GeexModule
+  {
+    public override void ConfigureServices(ServiceConfigurationContext context)
+    {
+      var env = context.Services.GetSingletonInstance<IWebHostEnvironment>();
+      var coreModuleOptions = context.Services.GetSingletonInstanceOrNull<GeexCoreModuleOptions>();
+
+      if (coreModuleOptions.RabbitMq != null)
+      {
+        context.Services.AddMediatX(true);
+        var options = coreModuleOptions.RabbitMq;
+        context.Services.AddMediatXRabbitMQ(x =>
         {
-            var env = context.Services.GetSingletonInstance<IWebHostEnvironment>();
-            var coreModuleOptions = context.Services.GetSingletonInstanceOrNull<GeexCoreModuleOptions>();
+          x.HostName = options.HostName;
+          x.Port = options.Port;
+          x.Password = options.Password;
+          x.Username = options.Username;
+          x.VirtualHost = options.VirtualHost;
+          x.Durable = true;
+          x.AutoDelete = false;
+          x.QueueName = coreModuleOptions.AppName;
+          x.DeDuplicationEnabled = true;
+          x.SerializerSettings = JsonExtension.InternalSerializeSettings;
+          x.EventHandlerTypes = DistributedEventHandlerTypes;
+        });
+      }
+      else
+      {
+        context.Services.AddMediatX();
+      }
 
-            if (coreModuleOptions.RabbitMq != null)
-            {
-                context.Services.AddMediatX(true);
-                var options = coreModuleOptions.RabbitMq;
-                context.Services.AddMediatXRabbitMQ(x =>
-                {
-                    x.HostName = options.HostName;
-                    x.Port = options.Port;
-                    x.Password = options.Password;
-                    x.Username = options.Username;
-                    x.VirtualHost = options.VirtualHost;
-                    x.Durable = true;
-                    x.AutoDelete = false;
-                    x.QueueName = coreModuleOptions.AppName;
-                    x.DeDuplicationEnabled = true;
-                    x.SerializerSettings = JsonExtension.InternalSerializeSettings;
-                    x.EventHandlerTypes = DistributedEventHandlerTypes;
-                });
-            }
-            else
-            {
-                context.Services.AddMediatX();
-            }
+      context.Services.AddWebSockets(x => { });
 
-            context.Services.AddWebSockets(x => { });
+      base.ConfigureServices(context);
+      this.SchemaBuilder.EnsureGqlTypes();
+    }
 
-            base.ConfigureServices(context);
-            this.SchemaBuilder.EnsureGqlTypes();
-        }
+    /// <inheritdoc />
+    public override void PostConfigureServices(ServiceConfigurationContext context)
+    {
+      base.PostConfigureServices(context);
+    }
 
-        /// <inheritdoc />
-        public override void PostConfigureServices(ServiceConfigurationContext context)
+    public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
+    {
+      var app = context.GetApplicationBuilder();
+      //var _env = context.GetEnvironment();
+      //var _configuration = context.GetConfiguration();
+    }
+
+    /// <inheritdoc />
+    public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
+    {
+      var coreModuleOptions = context.ServiceProvider.GetService<GeexCoreModuleOptions>();
+      var app = context.GetApplicationBuilder();
+      app.UseEndpoints(endpoints =>
+      {
+        endpoints.MapHealthChecks("/health");
+        endpoints.MapGraphQL().WithOptions(new GraphQLServerOptions()
         {
-            base.PostConfigureServices(context);
-        }
-
-        public override void OnPreApplicationInitialization(ApplicationInitializationContext context)
-        {
-            var app = context.GetApplicationBuilder();
-            //var _env = context.GetEnvironment();
-            //var _configuration = context.GetConfiguration();
-        }
-
-        /// <inheritdoc />
-        public override void OnPostApplicationInitialization(ApplicationInitializationContext context)
-        {
-            var coreModuleOptions = context.ServiceProvider.GetService<GeexCoreModuleOptions>();
-            var app = context.GetApplicationBuilder();
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapHealthChecks("/health");
-                endpoints.MapGraphQL().WithOptions(new GraphQLServerOptions()
-                {
-                    EnableSchemaRequests = !coreModuleOptions.DisableIntrospection,
-                    EnforceMultipartRequestsPreflightHeader = false,
-                    EnableGetRequests = false,
-                    Tool =
-                    {
+          EnableSchemaRequests = !coreModuleOptions.DisableIntrospection,
+          EnforceMultipartRequestsPreflightHeader = false,
+          EnableGetRequests = false,
+          Tool =
+              {
                         Enable = !coreModuleOptions.DisableIntrospection
-                    },
-                });
-            });
-            coreModuleOptions.AutoMigration ??= !Env.IsProduction();
-            if (coreModuleOptions.AutoMigration.Value)
-            {
-                var migrations = context.ServiceProvider.GetServices<DbMigration>();
-                var appliedMigrations = DB.Find<Migration>().Project(x => x.Number).ExecuteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+              },
+        });
+      });
+      coreModuleOptions.AutoMigration ??= !Env.IsProduction();
+      if (coreModuleOptions.AutoMigration.Value)
+      {
+        var migrations = context.ServiceProvider.GetServices<DbMigration>();
+        var appliedMigrations = DB.Find<Migration>().Project(x => x.Number).ExecuteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
-                var sortedMigrations = migrations.OrderBy(x => x.Number);
+        var sortedMigrations = migrations.OrderBy(x => x.Number);
 
-                foreach (var migration in sortedMigrations)
-                {
-                    if (!appliedMigrations.Contains(migration.Number))
-                    {
-                        using var scope = context.ServiceProvider.CreateScope();
-                        var dbContext = scope.ServiceProvider.GetRequiredService<IUnitOfWork>().As<GeexDbContext>();
-                        using var _ = dbContext.DisableAllDataFilters();
-                        dbContext.MigrateAsync(migration).ConfigureAwait(false).GetAwaiter().GetResult();
-                    }
-                }
-            }
-            base.OnPostApplicationInitialization(context);
+        foreach (var migration in sortedMigrations)
+        {
+          if (!appliedMigrations.Contains(migration.Number))
+          {
+            using var scope = context.ServiceProvider.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<IUnitOfWork>().As<GeexDbContext>();
+            using var _ = dbContext.DisableAllDataFilters();
+            dbContext.MigrateAsync(migration).ConfigureAwait(false).GetAwaiter().GetResult();
+          }
         }
+      }
+      base.OnPostApplicationInitialization(context);
     }
+  }
 }

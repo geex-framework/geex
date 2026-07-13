@@ -1,6 +1,6 @@
 ﻿namespace Geex.Extensions.MultiTenant.Core
 {
-    public class MultiTenantModuleOptions : GeexModuleOption<MultiTenantModule>
+    public class MultiTenantModuleOptions : GeexModuleOptions<MultiTenantModule>
     {
         /// <summary>
         /// !未实现!<br></br>

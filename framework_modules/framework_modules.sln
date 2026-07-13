@@ -59,6 +59,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Analyzer.TestCode", "G
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geex.Tests.Benchmarks", "Geex.Tests.Benchmarks\Geex.Tests.Benchmarks.csproj", "{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geex.Extensions.Authentication.Wechat", "Geex.Extensions.Authentication.Wechat\src\Geex.Extensions.Authentication.Wechat.csproj", "{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -393,6 +395,18 @@ Global
 		{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}.Release|x64.Build.0 = Release|Any CPU
 		{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}.Release|x86.ActiveCfg = Release|Any CPU
 		{4CA2AE3C-F50A-4B0A-B0BF-769396AF1E72}.Release|x86.Build.0 = Release|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Debug|x64.Build.0 = Debug|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Debug|x86.Build.0 = Debug|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Release|x64.ActiveCfg = Release|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Release|x64.Build.0 = Release|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Release|x86.ActiveCfg = Release|Any CPU
+		{EFC97AC1-6F58-4DE4-AFEC-DE3EDC4963AE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

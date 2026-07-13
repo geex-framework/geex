@@ -6,6 +6,7 @@ using Geex.MultiTenant;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Entities;
+using MongoDB.Entities.Utilities;
 
 namespace Geex.Extensions.Identity.Migrations;
 
@@ -37,9 +38,7 @@ public class _638975042000000000_migrate_user_external_login : DbMigration
                 var tenantCodeValue = tenantCode.AsString;
                 if (!string.IsNullOrEmpty(tenantCodeValue))
                 {
-#pragma warning disable CS0618
-                    externalLogin.As<ITenantFilteredEntity>().SetTenant(tenantCodeValue);
-#pragma warning restore CS0618
+                    externalLogin.TenantCode = tenantCodeValue;
                 }
             }
         }

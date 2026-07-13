@@ -3,18 +3,19 @@ using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authentication.Requests;
 using Geex.Gql.Types;
 using HotChocolate.Types;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Geex.Extensions.Authentication.Gql
 {
     public sealed class AuthenticationMutation : MutationExtension<AuthenticationMutation>
     {
-        /// <inheritdoc />
         protected override void Configure(IObjectTypeDescriptor<AuthenticationMutation> descriptor)
         {
             base.Configure(descriptor);
             descriptor.Field(x => x.Authenticate(default));
             descriptor.Field(x => x.FederateAuthenticate(default));
+            descriptor.Field(x => x.ResolveExternalLogin(default));
+            descriptor.Field(x => x.LinkExternalLogin(default)).Authorize();
+            descriptor.Field(x => x.RegisterAndLinkExternalLogin(default));
             descriptor.Field(x => x.CancelAuthentication());
             descriptor.Field(x => x.GeneratePersonalAccessToken(default)).Authorize();
         }
@@ -29,6 +30,15 @@ namespace Geex.Extensions.Authentication.Gql
         public async Task<UserSession> Authenticate(AuthenticateRequest request) => await _uow.Request(request);
 
         public async Task<UserSession> FederateAuthenticate(FederateAuthenticateRequest request) => await _uow.Request(request);
+
+        public async Task<ResolveExternalLoginResult> ResolveExternalLogin(ResolveExternalLoginRequest request) =>
+            await _uow.Request(request);
+
+        public async Task<UserSession> LinkExternalLogin(LinkExternalLoginRequest request) =>
+            await _uow.Request(request);
+
+        public async Task<UserSession> RegisterAndLinkExternalLogin(RegisterAndLinkExternalLoginRequest request) =>
+            await _uow.Request(request);
 
         public async Task<bool> CancelAuthentication()
         {
