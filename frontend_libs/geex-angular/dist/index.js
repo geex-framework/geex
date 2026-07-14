@@ -31,6 +31,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var index_exports = {};
 __export(index_exports, {
   ExtensionModule: () => ExtensionModule,
+  GEEX_MENU_CONTRIBUTIONS: () => GEEX_MENU_CONTRIBUTIONS,
   Geex: () => Geex,
   LoginProviderEnum: () => LoginProviderEnum,
   OrgTypeEnum: () => OrgTypeEnum,
@@ -87,8 +88,6 @@ var GQL_FEDERATE_AUTH = import_graphql_tag.default`mutation federateAuthenticate
       phoneNumber
       email
       isEnable
-      openId
-      loginProvider
       createdOn
       ... on IUser {
         roleNames
@@ -125,7 +124,7 @@ var GQL_FEDERATE_AUTH = import_graphql_tag.default`mutation federateAuthenticate
 `;
 var GQL_ON_PUBLIC_NOTIFY = import_graphql_tag.default`subscription onPublicNotify { onPublicNotify { __typename ... on DataChangeClientNotify { dataChangeType } } }`;
 var GQL_ORGS_CACHE = import_graphql_tag.default`query orgsCache { orgs(take: 999) { items { id orgType code name parentOrgCode } } }`;
-var GQL_INIT_SETTINGS = import_graphql_tag.default`query initSettings { initSettings { id name value } }`;
+var GQL_ACTIVE_SETTINGS = import_graphql_tag.default`query activeSettings { activeSettings { id name value } }`;
 function guardedSignal(innerSignal, isInitialized) {
   const guard = (() => {
     if (!isInitialized()) {
@@ -263,32 +262,22 @@ function createIdentityModule(injector) {
           try {
             await geex.tenant.init();
             await geex.auth.init();
-            await new Promise((resolve, reject) => {
-              const orgs$ = injector.get(import_apollo_angular.Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe((0, import_rxjs.map)((res) => (0, import_util.deepCopy)(res.data.orgs.items)));
-              orgs$.subscribe({
-                next: (orgs) => {
-                  (0, import_core.runInInjectionContext)(injector, () => {
-                    _orgsSignal.set(orgs);
-                    const userData = geex.auth.user();
-                    let allOwned = [];
-                    if (orgs?.length && userData) {
-                      if (userData.id === "000000000000000000000001") {
-                        allOwned = (0, import_util.deepCopy)(orgs);
-                      } else {
-                        const ownedCodes = userData.orgs.map((x) => x.code);
-                        allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
-                      }
-                    }
-                    _userOwnedOrgsSignal.set(allOwned);
-                    resolve();
-                  });
-                },
-                error: (err) => {
-                  console.error(err);
-                  reject(err);
-                }
-              });
-            });
+            const res = await (0, import_rxjs.firstValueFrom)(
+              injector.get(import_apollo_angular.Apollo).query({ query: GQL_ORGS_CACHE })
+            );
+            const orgs = (0, import_util.deepCopy)(res.data?.orgs?.items ?? []);
+            _orgsSignal.set(orgs);
+            const userData = geex.auth.user();
+            let allOwned = [];
+            if (orgs?.length && userData) {
+              if (userData.id === "000000000000000000000001") {
+                allOwned = (0, import_util.deepCopy)(orgs);
+              } else {
+                const ownedCodes = userData.orgs.map((x) => x.code);
+                allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
+              }
+            }
+            _userOwnedOrgsSignal.set(allOwned);
             _initialized = true;
           } catch (error) {
             console.error(error);
@@ -348,9 +337,9 @@ function createSettingsModule(injector) {
         _initPromise = (async () => {
           try {
             const res = await (0, import_rxjs.firstValueFrom)(
-              injector.get(import_apollo_angular.Apollo).query({ query: GQL_INIT_SETTINGS })
+              injector.get(import_apollo_angular.Apollo).query({ query: GQL_ACTIVE_SETTINGS })
             );
-            const settings = res.data.initSettings;
+            const settings = res.data.activeSettings;
             _settingsSignal.set(settings);
             _initialized = true;
           } catch (err) {
@@ -449,9 +438,14 @@ function provideGeex(overrides = {}, extensions = {}) {
     }
   ];
 }
+
+// src/menu-contribution.ts
+var import_core4 = require("@angular/core");
+var GEEX_MENU_CONTRIBUTIONS = new import_core4.InjectionToken("GEEX_MENU_CONTRIBUTIONS");
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ExtensionModule,
+  GEEX_MENU_CONTRIBUTIONS,
   Geex,
   LoginProviderEnum,
   OrgTypeEnum,

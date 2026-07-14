@@ -40,6 +40,8 @@ public partial class UserSession : Entity<UserSession>
     public string Token { get; private set; } = string.Empty;
     public DateTimeOffset LastUpdatedOn { get; private set; }
     public List<SupplementaryClaim> SupplementaryClaims { get; private set; } = [];
+    [JsonIgnore]
+    public string Name => User.Value?.Username ?? string.Empty;
 
     public void Renew(string token)
     {

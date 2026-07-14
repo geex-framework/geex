@@ -16,7 +16,7 @@ public class _638975042000000000_migrate_user_external_login : DbMigration
 
     public override async Task UpgradeAsync(IUnitOfWork uow)
     {
-        _ = DB.Collection<UserExternalLogin>();
+        _ = DB.Collection<UserLogin>();
 
         var users = uow.DbContext.DefaultDb.GetCollection<BsonDocument>("User");
         var filter = Builders<BsonDocument>.Filter.And(
@@ -32,13 +32,13 @@ public class _638975042000000000_migrate_user_external_login : DbMigration
             var userId = doc["_id"].AsString;
             var openId = doc["OpenId"].AsString;
             var loginProvider = LoginProviderEnum.FromValue(doc["LoginProvider"].AsString);
-            var externalLogin = new UserExternalLogin(userId, loginProvider, openId, uow: uow);
+            var login = new UserLogin(userId, loginProvider, openId, uow: uow);
             if (doc.TryGetValue("TenantCode", out var tenantCode) && tenantCode != BsonNull.Value)
             {
                 var tenantCodeValue = tenantCode.AsString;
                 if (!string.IsNullOrEmpty(tenantCodeValue))
                 {
-                    externalLogin.TenantCode = tenantCodeValue;
+                    login.TenantCode = tenantCodeValue;
                 }
             }
         }

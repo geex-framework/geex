@@ -3,10 +3,10 @@ import * as Types from './graphql/schema.gql';
 import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 import gql from 'graphql-tag';
 import { SettingInfo } from './graphql/fragments.gql';
-export type GetInitialSettingsVariables = Types.Exact<{ [key: string]: never; }>;
+export type GetActiveSettingsVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type GetInitialSettingsResult = { __typename?: 'Query', initSettings: Array<{ __typename?: 'Setting', id: string, name: Types.SettingDefinition, value?: any | null }> };
+export type GetActiveSettingsResult = { __typename?: 'Query', activeSettings: Array<{ __typename?: 'Setting', id: string, name: Types.SettingDefinition, value?: any | null }> };
 
 export type OrgCountVariables = Types.Exact<{
   orgName: Types.Scalars['String']['input'];
@@ -24,13 +24,13 @@ export type editSettingVariables = Types.Exact<{
 export type editSettingResult = { __typename?: 'Mutation', editSetting: { __typename?: 'Setting', id: string, name: Types.SettingDefinition, value?: any | null } };
 
 
-export const GetInitialSettings = gql`
-    query GetInitialSettings {
-  initSettings {
+export const GetActiveSettings = gql`
+    query GetActiveSettings {
+  activeSettings {
     ...SettingInfo
   }
 }
-    ${SettingInfo}` as unknown as DocumentNode<GetInitialSettingsResult, GetInitialSettingsVariables>;
+    ${SettingInfo}` as unknown as DocumentNode<GetActiveSettingsResult, GetActiveSettingsVariables>;
 export const OrgCount = gql`
     query OrgCount($orgName: String!) {
   orgs(filter: {name: {eq: $orgName}}) {

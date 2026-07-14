@@ -1,6 +1,6 @@
-# Query to get initial settings
-query GetInitialSettings {
-  initSettings {
+# Query to get active settings
+query GetActiveSettings {
+  activeSettings {
     ...SettingInfo
   }
 }

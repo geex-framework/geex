@@ -1,19 +1,19 @@
-import { ApolloClient, NormalizedCacheObject } from "@apollo/client/core";
+import { ApolloClient } from "@apollo/client/core";
 import { Apollo } from "apollo-angular";
 import { OAuthService } from "angular-oauth2-oidc";
 import { firstValueFrom, isObservable } from "rxjs";
 import {
-  LINK_EXTERNAL_LOGIN,
-  REGISTER_AND_LINK_EXTERNAL_LOGIN,
-  RESOLVE_EXTERNAL_LOGIN,
+  LINK_LOGIN,
+  REGISTER_AND_LINK_LOGIN,
+  RESOLVE_LOGIN,
 } from "./graphql";
 import {
   EstablishSessionOptions,
-  ResolveExternalLoginResult,
+  ResolveLoginResult,
   WechatLoginProvider,
 } from "./types";
 
-type ApolloLike = Apollo | ApolloClient<NormalizedCacheObject>;
+type ApolloLike = Apollo | ApolloClient;
 
 async function mutate<T>(
   client: ApolloLike,
@@ -31,36 +31,36 @@ async function mutate<T>(
 export async function resolveWechatLogin(
   apollo: ApolloLike,
   params: { loginProvider: WechatLoginProvider; code: string },
-): Promise<ResolveExternalLoginResult> {
-  const data = await mutate<{ resolveExternalLogin: ResolveExternalLoginResult }>(apollo, {
-    mutation: RESOLVE_EXTERNAL_LOGIN,
+): Promise<ResolveLoginResult> {
+  const data = await mutate<{ resolveLogin: ResolveLoginResult }>(apollo, {
+    mutation: RESOLVE_LOGIN,
     variables: {
       loginProvider: params.loginProvider,
       code: params.code,
     },
   });
-  return data.resolveExternalLogin;
+  return data.resolveLogin;
 }
 
-export async function linkExternalLogin(
+export async function linkLogin(
   apollo: ApolloLike,
-  accountLinkToken: string,
+  userLoginLinkToken: string,
   context?: { headers?: Record<string, string> },
 ): Promise<{ token?: string | null; userId: string; loginProvider: string }> {
   const data = await mutate<{
-    linkExternalLogin: { token?: string | null; userId: string; loginProvider: string };
+    linkLogin: { token?: string | null; userId: string; loginProvider: string };
   }>(apollo, {
-    mutation: LINK_EXTERNAL_LOGIN,
-    variables: { accountLinkToken },
+    mutation: LINK_LOGIN,
+    variables: { userLoginLinkToken },
     context,
   });
-  return data.linkExternalLogin;
+  return data.linkLogin;
 }
 
-export async function registerAndLinkExternalLogin(
+export async function registerAndLinkLogin(
   apollo: ApolloLike,
   params: {
-    accountLinkToken: string;
+    userLoginLinkToken: string;
     username: string;
     password: string;
     phoneNumber?: string;
@@ -69,12 +69,12 @@ export async function registerAndLinkExternalLogin(
   },
 ): Promise<{ token?: string | null; userId: string; loginProvider: string }> {
   const data = await mutate<{
-    registerAndLinkExternalLogin: { token?: string | null; userId: string; loginProvider: string };
+    registerAndLinkLogin: { token?: string | null; userId: string; loginProvider: string };
   }>(apollo, {
-    mutation: REGISTER_AND_LINK_EXTERNAL_LOGIN,
+    mutation: REGISTER_AND_LINK_LOGIN,
     variables: params,
   });
-  return data.registerAndLinkExternalLogin;
+  return data.registerAndLinkLogin;
 }
 
 export function establishGeexSession(
@@ -89,7 +89,7 @@ export async function loginWithMiniProgramCode(
   code: string,
   oauthService?: OAuthService,
   redirectUri?: string,
-): Promise<ResolveExternalLoginResult> {
+): Promise<ResolveLoginResult> {
   const result = await resolveWechatLogin(client, {
     loginProvider: "WechatMiniProgram",
     code,

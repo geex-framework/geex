@@ -13,7 +13,7 @@ public class _638980000000000000_tenant_filter_user_external_login : DbMigration
 
     public override async Task UpgradeAsync(IUnitOfWork uow)
     {
-        var collection = DB.Collection<UserExternalLogin>();
+        var collection = DB.Collection<UserLogin>();
         var indexCursor = await collection.Indexes.ListAsync(uow.DbContext.Session, new ListIndexesOptions());
         var indexes = await indexCursor.ToListAsync();
         foreach (var index in indexes)
@@ -44,14 +44,14 @@ public class _638980000000000000_tenant_filter_user_external_login : DbMigration
             }
         }
 
-        var externalLogins = uow.DbContext.DefaultDb.GetCollection<BsonDocument>("UserExternalLogin");
+        var logins = uow.DbContext.DefaultDb.GetCollection<BsonDocument>("UserLogin");
         var users = uow.DbContext.DefaultDb.GetCollection<BsonDocument>("User");
         var filter = Builders<BsonDocument>.Filter.Or(
             Builders<BsonDocument>.Filter.Exists("TenantCode", false),
             Builders<BsonDocument>.Filter.Eq("TenantCode", BsonNull.Value),
             Builders<BsonDocument>.Filter.Eq("TenantCode", ""));
 
-        var docs = await externalLogins.Find(uow.DbContext.Session, filter).ToListAsync();
+        var docs = await logins.Find(uow.DbContext.Session, filter).ToListAsync();
         foreach (var doc in docs)
         {
             var userId = doc.GetValue("UserId", default(BsonValue))?.AsString;
@@ -73,7 +73,7 @@ public class _638980000000000000_tenant_filter_user_external_login : DbMigration
                 continue;
             }
 
-            await externalLogins.UpdateOneAsync(
+            await logins.UpdateOneAsync(
                 uow.DbContext.Session,
                 Builders<BsonDocument>.Filter.Eq("_id", doc["_id"]),
                 Builders<BsonDocument>.Update.Set("TenantCode", tenantCode));

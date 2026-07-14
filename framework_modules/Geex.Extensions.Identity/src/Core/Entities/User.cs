@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authorization.Requests;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Requests;
+using Geex.MultiTenant;
 using Geex.Storage;
 
 using Microsoft.AspNetCore.Identity;
@@ -24,7 +26,7 @@ namespace Geex.Extensions.Identity.Core.Entities
         {
             IsEnable = true;
             ConfigLazyQuery(x => x.AvatarFile, blob => blob.Id == AvatarFileId, users => blob => users.SelectList(x => x.AvatarFileId).Contains(blob.Id));
-            ConfigLazyQuery(x => x.ExternalLogins, el => el.UserId == Id, users => el => users.SelectList(x => x.Id).Contains(el.UserId));
+            ConfigLazyQuery(x => x.Logins, el => el.UserId == Id, users => el => users.SelectList(x => x.Id).Contains(el.UserId));
             ConfigLazyQuery(x => x.Orgs, org => OrgCodes.Contains(org.Code), users => org => users.SelectMany(x => x.OrgCodes).Contains(org.Code));
         }
 
@@ -110,7 +112,42 @@ namespace Geex.Extensions.Identity.Core.Entities
 
         public string? Nickname { get; set; }
 
-        public IQueryable<UserExternalLogin> ExternalLogins => LazyQuery(() => ExternalLogins);
+        public IQueryable<UserLogin> Logins => LazyQuery(() => Logins);
+
+        public virtual UserLogin UpsertLogin(
+            LoginProviderEnum provider,
+            string loginProviderId,
+            IEnumerable<Claim>? providerClaims = null)
+        {
+            var unitOfWork = DbContext as IUnitOfWork
+                ?? throw new InvalidOperationException("User must be attached to a UnitOfWork.");
+            var login = UserLogin.Find(unitOfWork, provider, loginProviderId);
+            if (login == null)
+            {
+                login = new UserLogin(Id, provider, loginProviderId, providerClaims, unitOfWork);
+                if (string.IsNullOrEmpty(login.TenantCode) && !string.IsNullOrEmpty(TenantCode))
+                {
+                    login.TenantCode = TenantCode;
+                }
+
+                return login;
+            }
+
+            if (login.UserId != Id)
+            {
+                throw new BusinessException(
+                    GeexExceptionType.ValidationFailed,
+                    message: "该登录已绑定其他用户.");
+            }
+
+            unitOfWork.Attach(login);
+            if (providerClaims != null)
+            {
+                login.UpdateClaims(providerClaims);
+            }
+
+            return login;
+        }
 
         public List<string> OrgCodes { get; set; } = new List<string>();
         IQueryable<IOrg> IUser.Orgs => Orgs;

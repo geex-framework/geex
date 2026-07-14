@@ -1,10 +1,11 @@
-﻿using MongoDB.Entities;
+﻿using Geex.MultiTenant;
+using MongoDB.Entities;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Geex.Extensions.Authentication
 {
-    public interface IAuthUser : IEntityBase
+    public interface IAuthUser : IEntityBase, ITenantFilteredEntity
     {
         string? PhoneNumber { get; set; }
         string Username { get; set; }

@@ -26,11 +26,11 @@ namespace Geex.Extensions.Identity.Utils
             var provider = claimsIdentity.GetLoginProvider();
             if (provider != LoginProviderEnum.Local && provider != LoginProviderEnum.PersonalAccessToken)
             {
-                var externalLogin = user.ExternalLogins
+                var login = user.Logins
                     .FirstOrDefault(x => x.LoginProvider == provider);
-                if (externalLogin?.LoginProviderClaims?.Count > 0)
+                if (login?.LoginProviderClaims?.Count > 0)
                 {
-                    foreach (var claim in externalLogin.LoginProviderClaims)
+                    foreach (var claim in login.LoginProviderClaims)
                     {
                         claimsIdentity.AppendClaims(new Claim(claim.ClaimType, claim.ClaimValue));
                     }

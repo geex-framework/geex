@@ -3,15 +3,14 @@ using Geex.Extensions.Authentication.Wechat.Core;
 
 namespace Geex.Extensions.Authentication.Wechat
 {
-    public class WechatWebLoginProvider : ExternalLoginProviderBase
+    public class WechatWebLoginProvider : LoginProviderBase
     {
         private readonly AuthenticationWechatModuleOptions _options;
         private readonly IWechatApiClient _wechatApiClient;
 
         public WechatWebLoginProvider(
-            IExternalAccountLinker externalAccountLinker,
             AuthenticationWechatModuleOptions options,
-            IWechatApiClient wechatApiClient) : base(externalAccountLinker)
+            IWechatApiClient wechatApiClient)
         {
             _options = options;
             _wechatApiClient = wechatApiClient;
@@ -20,7 +19,7 @@ namespace Geex.Extensions.Authentication.Wechat
 
         public override LoginProviderEnum Provider => WechatLoginProviders.WechatWeb;
 
-        public override async Task<ExternalLoginIdentity> ResolveIdentity(string code)
+        public override async Task<UserLoginIdentity> ResolveUserLoginIdentity(string code)
         {
             var credentials = _options.Web
                 ?? throw new BusinessException(GeexExceptionType.ValidationFailed, message: "未配置 AuthenticationModuleOptions:Wechat:Web.");
@@ -44,6 +43,11 @@ namespace Geex.Extensions.Authentication.Wechat
                 {
                     foreach (var pair in userInfo)
                     {
+                        if (claims.Exists(c => string.Equals(c.Type, pair.Key, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            continue;
+                        }
+
                         claims.Add(new Claim(pair.Key, pair.Value));
                     }
                     userInfo.TryGetValue("nickname", out displayName);
@@ -54,12 +58,13 @@ namespace Geex.Extensions.Authentication.Wechat
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(session.UnionId))
+            if (!string.IsNullOrWhiteSpace(session.UnionId)
+                && !claims.Exists(c => string.Equals(c.Type, "unionid", StringComparison.OrdinalIgnoreCase)))
             {
                 claims.Add(new Claim("unionid", session.UnionId));
             }
 
-            return new ExternalLoginIdentity
+            return new UserLoginIdentity
             {
                 Provider = Provider,
                 LoginProviderId = string.IsNullOrWhiteSpace(session.UnionId) ? session.OpenId : session.UnionId,

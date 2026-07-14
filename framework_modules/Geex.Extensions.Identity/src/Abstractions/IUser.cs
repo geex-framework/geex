@@ -1,22 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity.Core.Entities;
-using Geex.MultiTenant;
 using Geex.Storage;
 
 namespace Geex.Extensions.Identity
 {
-    public interface IUser : IAuthUser, IEntity, ITenantFilteredEntity
+    public interface IUser : IAuthUser, IEntity
     {
         List<string> RoleIds { get; }
         List<string> OrgCodes { get; set; }
         public List<string> Permissions { get; }
         List<UserClaim> Claims { get; set; }
-        IQueryable<UserExternalLogin> ExternalLogins { get; }
+        IQueryable<UserLogin> Logins { get; }
         IQueryable<IOrg> Orgs { get; }
         Lazy<IBlobObject?> AvatarFile { get; }
         string? AvatarFileId { get; set; }
@@ -28,6 +28,10 @@ namespace Geex.Extensions.Identity
         Task AssignOrgs(IEnumerable<string> orgs);
         Task AssignRoles(params string[] roles);
         Task AddOrg(IOrg entity);
+        UserLogin UpsertLogin(
+            LoginProviderEnum provider,
+            string loginProviderId,
+            IEnumerable<Claim>? providerClaims = null);
         new IUser SetPassword(string? password);
         // 显式实现父接口方法，委托给子接口的实现
         IAuthUser IAuthUser.SetPassword(string? password)

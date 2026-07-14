@@ -4,7 +4,7 @@ import { ApolloProvider, useQuery, useMutation } from "@apollo/client";
 import client from "./graphql/client";
 
 import { 
-  GetInitialSettings, 
+  GetActiveSettings, 
   OrgCount,
   editSetting,
 } from "./queries.gql";
@@ -23,8 +23,7 @@ const App: React.FC = () => {
   const [editingSettingName, setEditingSettingName] = useState<SettingDefinition>(SettingDefinition.AppAppName);
   const [editingSettingValue, setEditingSettingValue] = useState<string>("dark");
   
-  // 使用 GetInitialSettings 查询
-  const { loading: settingsLoading, error: settingsError, data: settingsData } = useQuery(GetInitialSettings);
+  const { loading: settingsLoading, error: settingsError, data: settingsData } = useQuery(GetActiveSettings);
   
   // 使用 OrgCount 查询（带变量）
   const { loading: orgLoading, error: orgError, data: orgData } = useQuery(OrgCount, {
@@ -58,9 +57,9 @@ const App: React.FC = () => {
       <h1>GraphQL Multi-Operation Demo</h1>
       
       <section>
-        <h2>Initial Settings</h2>
+        <h2>Active Settings</h2>
         <ul>
-          {settingsData?.initSettings?.map((setting: SettingInfo) => (
+          {settingsData?.activeSettings?.map((setting: SettingInfo) => (
             <li key={setting.name}>
               <strong>{setting.name}:</strong> {JSON.stringify(setting.value)}
             </li>

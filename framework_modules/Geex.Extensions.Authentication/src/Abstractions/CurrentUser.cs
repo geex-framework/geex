@@ -22,7 +22,20 @@ namespace Geex.Extensions.Authentication
             _uow = uow;
         }
 
-        public IAuthUser? User => _user ??= _uow.Query<IAuthUser>().FirstOrDefault(x => x.Id == UserId);
+        public IAuthUser? User
+        {
+            get
+            {
+                if (_user != null)
+                {
+                    return _user;
+                }
+
+                // Lookup by authenticated user id must ignore tenant filter (same as GeexClaimsTransformation).
+                using var _ = _uow.DbContext.DisableAllDataFilters();
+                return _user = _uow.Query<IAuthUser>().FirstOrDefault(x => x.Id == UserId);
+            }
+        }
         public string? UserId => _userId ??= _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.FindUserId();
 
         public ClaimsIdentity? ClaimsIdentity => _claimsIdentity ??= _uow.ServiceProvider.GetService<ClaimsPrincipal>()?.Identity as ClaimsIdentity;

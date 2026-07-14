@@ -56,8 +56,16 @@ namespace Geex.Extensions.Authentication.Core.Utils
             var supplementaryClaims = new List<Claim>();
             foreach (var transformation in _transformations)
             {
+                var existingClaims = new HashSet<(string Type, string Value)>(
+                    principal.Claims.Select(c => (c.Type, c.Value)));
                 var claimsPrincipal = await transformation.TransformAsync(user, principal);
-                supplementaryClaims.AddRange(claimsPrincipal.Claims);
+                foreach (var claim in claimsPrincipal.Claims)
+                {
+                    if (!existingClaims.Contains((claim.Type, claim.Value)))
+                    {
+                        supplementaryClaims.Add(claim);
+                    }
+                }
             }
             supplementaryClaims.Add(new GeexClaim(GeexClaimType.Provider, provider));
             principalIdentity!.AppendClaims(supplementaryClaims);

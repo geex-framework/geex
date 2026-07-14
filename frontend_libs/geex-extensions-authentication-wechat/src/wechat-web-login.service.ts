@@ -5,7 +5,7 @@ export const WECHAT_AUTH_CONFIG = new InjectionToken<WechatAuthConfig>("WECHAT_A
 
 const WX_LOGIN_SCRIPT = "https://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js";
 
-@Injectable({ providedIn: "root" })
+@Injectable()
 export class WechatWebLoginService {
   constructor(@Optional() @Inject(WECHAT_AUTH_CONFIG) private readonly config: WechatAuthConfig | null) {}
 

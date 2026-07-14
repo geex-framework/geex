@@ -170,7 +170,7 @@ namespace Geex.Extensions.Settings.Core.Handlers
             var searchPattern = scopedKey.IsNullOrEmpty()
                 ? $"Setting:{scope}:*"
                 : $"Setting:{scope}:{scopedKey}:*";
-            var cachedSettings = await _redisClient.GetAllFromRedisByPatternAsync(searchPattern);
+            var cachedSettings = await _redisClient.GetAllFromRedisByPatternAsync(searchPattern, Logger);
             if (SettingDefinitions.Except(cachedSettings.Select(x => x.Value.Name)).Any())
             {
                 var dbSettings = _dbContext.Query<Setting>()

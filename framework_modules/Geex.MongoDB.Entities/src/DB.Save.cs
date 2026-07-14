@@ -194,8 +194,10 @@ namespace MongoDB.Entities
                     updateDefs.Add(Builders<T>.Update.Set(propName, value));
                 }
 
-                var discriminators = typeCache.Discriminators;
-                updateDefs.Add(Builders<T>.Update.Set("_t", discriminators));
+                if (InheritanceCache.ContainsKey(typeof(T)))
+                {
+                    updateDefs.Add(Builders<T>.Update.Set("_t", typeCache.Discriminators));
+                }
                 updateDefs.Add(Builders<T>.Update.Set(nameof(IEntityBase.ModifiedOn), DateTimeOffset.Now));
                 return new UpdateOneModel<T>(
                     filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
@@ -272,8 +274,10 @@ namespace MongoDB.Entities
                         updateDefs.Add(Builders<T>.Update.Set(propName, value));
                     }
 
-                    var discriminators = typeCache.Discriminators;
-                    updateDefs.Add(Builders<T>.Update.Set("_t", discriminators));
+                    if (InheritanceCache.ContainsKey(typeof(T)))
+                    {
+                        updateDefs.Add(Builders<T>.Update.Set("_t", typeCache.Discriminators));
+                    }
                     updateDefs.Add(Builders<T>.Update.Set(nameof(IEntityBase.ModifiedOn), DateTimeOffset.Now));
                     var updateOneModel = new UpdateOneModel<T>(
                         filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
@@ -360,8 +364,10 @@ namespace MongoDB.Entities
                     updateDefs.Add(Builders<T>.Update.Set(propName, value));
                 }
 
-                var discriminators = typeCache.Discriminators;
-                updateDefs.Add(Builders<T>.Update.Set("_t", discriminators));
+                if (InheritanceCache.ContainsKey(typeof(T)))
+                {
+                    updateDefs.Add(Builders<T>.Update.Set("_t", typeCache.Discriminators));
+                }
                 updateDefs.Add(Builders<T>.Update.Set(nameof(IEntityBase.ModifiedOn), DateTimeOffset.Now));
                 return new UpdateOneModel<T>(
                     filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),
@@ -473,8 +479,10 @@ namespace MongoDB.Entities
                         updateDefs.Add(Builders<T>.Update.Set(propName, value));
                     }
 
-                    var discriminators = typeCache.Discriminators;
-                    updateDefs.Add(Builders<T>.Update.Set("_t", discriminators));
+                    if (InheritanceCache.ContainsKey(typeof(T)))
+                    {
+                        updateDefs.Add(Builders<T>.Update.Set("_t", typeCache.Discriminators));
+                    }
                     updateDefs.Add(Builders<T>.Update.Set(nameof(IEntityBase.ModifiedOn), DateTimeOffset.Now));
                     var updateOneModel = new UpdateOneModel<T>(
                         filter: Builders<T>.Filter.Eq(e => e.Id, entity.Id),

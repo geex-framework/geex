@@ -4,11 +4,11 @@ import "./chunk-EBO3CZXG.mjs";
 import { Injector as Injector3 } from "@angular/core";
 
 // src/geex.ts
-import { InjectionToken, runInInjectionContext as runInInjectionContext2 } from "@angular/core";
+import { InjectionToken, runInInjectionContext } from "@angular/core";
 
 // src/modules.ts
 import { Apollo } from "apollo-angular";
-import { runInInjectionContext, signal } from "@angular/core";
+import { signal } from "@angular/core";
 import { OAuthService } from "angular-oauth2-oidc";
 import { CookieService, deepCopy } from "@delon/util";
 import gql from "graphql-tag";
@@ -41,8 +41,6 @@ var GQL_FEDERATE_AUTH = gql`mutation federateAuthenticate(
       phoneNumber
       email
       isEnable
-      openId
-      loginProvider
       createdOn
       ... on IUser {
         roleNames
@@ -79,7 +77,7 @@ var GQL_FEDERATE_AUTH = gql`mutation federateAuthenticate(
 `;
 var GQL_ON_PUBLIC_NOTIFY = gql`subscription onPublicNotify { onPublicNotify { __typename ... on DataChangeClientNotify { dataChangeType } } }`;
 var GQL_ORGS_CACHE = gql`query orgsCache { orgs(take: 999) { items { id orgType code name parentOrgCode } } }`;
-var GQL_INIT_SETTINGS = gql`query initSettings { initSettings { id name value } }`;
+var GQL_ACTIVE_SETTINGS = gql`query activeSettings { activeSettings { id name value } }`;
 function guardedSignal(innerSignal, isInitialized) {
   const guard = (() => {
     if (!isInitialized()) {
@@ -217,32 +215,22 @@ function createIdentityModule(injector) {
           try {
             await geex.tenant.init();
             await geex.auth.init();
-            await new Promise((resolve, reject) => {
-              const orgs$ = injector.get(Apollo).watchQuery({ query: GQL_ORGS_CACHE }).valueChanges.pipe(map((res) => deepCopy(res.data.orgs.items)));
-              orgs$.subscribe({
-                next: (orgs) => {
-                  runInInjectionContext(injector, () => {
-                    _orgsSignal.set(orgs);
-                    const userData = geex.auth.user();
-                    let allOwned = [];
-                    if (orgs?.length && userData) {
-                      if (userData.id === "000000000000000000000001") {
-                        allOwned = deepCopy(orgs);
-                      } else {
-                        const ownedCodes = userData.orgs.map((x) => x.code);
-                        allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
-                      }
-                    }
-                    _userOwnedOrgsSignal.set(allOwned);
-                    resolve();
-                  });
-                },
-                error: (err) => {
-                  console.error(err);
-                  reject(err);
-                }
-              });
-            });
+            const res = await firstValueFrom(
+              injector.get(Apollo).query({ query: GQL_ORGS_CACHE })
+            );
+            const orgs = deepCopy(res.data?.orgs?.items ?? []);
+            _orgsSignal.set(orgs);
+            const userData = geex.auth.user();
+            let allOwned = [];
+            if (orgs?.length && userData) {
+              if (userData.id === "000000000000000000000001") {
+                allOwned = deepCopy(orgs);
+              } else {
+                const ownedCodes = userData.orgs.map((x) => x.code);
+                allOwned = orgs.filter((o) => ownedCodes.some((code) => o.code.startsWith(code)));
+              }
+            }
+            _userOwnedOrgsSignal.set(allOwned);
             _initialized = true;
           } catch (error) {
             console.error(error);
@@ -302,9 +290,9 @@ function createSettingsModule(injector) {
         _initPromise = (async () => {
           try {
             const res = await firstValueFrom(
-              injector.get(Apollo).query({ query: GQL_INIT_SETTINGS })
+              injector.get(Apollo).query({ query: GQL_ACTIVE_SETTINGS })
             );
-            const settings = res.data.initSettings;
+            const settings = res.data.activeSettings;
             _settingsSignal.set(settings);
             _initialized = true;
           } catch (err) {
@@ -349,7 +337,7 @@ function createUiModule(injector) {
 var geex;
 var Geex = new InjectionToken("Geex");
 function configGeex(injector, overrides = {}) {
-  runInInjectionContext2(injector, () => {
+  runInInjectionContext(injector, () => {
     const modules = {
       ...overrides
     };
@@ -403,8 +391,13 @@ function provideGeex(overrides = {}, extensions = {}) {
     }
   ];
 }
+
+// src/menu-contribution.ts
+import { InjectionToken as InjectionToken2 } from "@angular/core";
+var GEEX_MENU_CONTRIBUTIONS = new InjectionToken2("GEEX_MENU_CONTRIBUTIONS");
 export {
   ExtensionModule,
+  GEEX_MENU_CONTRIBUTIONS,
   Geex,
   LoginProviderEnum,
   OrgTypeEnum,

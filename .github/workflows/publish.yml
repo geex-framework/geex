@@ -200,3 +200,14 @@ jobs:
           npm install
           npm run build
           npm publish --access public
+
+      - name: Publish @geexcode/geex-extensions-mocking
+        working-directory: ./frontend_libs/geex-extensions-mocking
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_VERSION: ${{ steps.version.outputs.npm_version }}
+        run: |
+          npm version "$NPM_VERSION" --no-git-tag-version --allow-same-version
+          npm install
+          npm run build
+          npm publish ./dist --access public

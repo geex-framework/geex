@@ -13,9 +13,9 @@ namespace Geex.Extensions.Authentication.Gql
             base.Configure(descriptor);
             descriptor.Field(x => x.Authenticate(default));
             descriptor.Field(x => x.FederateAuthenticate(default));
-            descriptor.Field(x => x.ResolveExternalLogin(default));
-            descriptor.Field(x => x.LinkExternalLogin(default)).Authorize();
-            descriptor.Field(x => x.RegisterAndLinkExternalLogin(default));
+            descriptor.Field(x => x.ResolveLogin(default));
+            descriptor.Field(x => x.LinkLogin(default)).Authorize();
+            descriptor.Field(x => x.RegisterAndLinkLogin(default));
             descriptor.Field(x => x.CancelAuthentication());
             descriptor.Field(x => x.GeneratePersonalAccessToken(default)).Authorize();
         }
@@ -31,13 +31,13 @@ namespace Geex.Extensions.Authentication.Gql
 
         public async Task<UserSession> FederateAuthenticate(FederateAuthenticateRequest request) => await _uow.Request(request);
 
-        public async Task<ResolveExternalLoginResult> ResolveExternalLogin(ResolveExternalLoginRequest request) =>
+        public async Task<ResolveLoginResult> ResolveLogin(ResolveLoginRequest request) =>
             await _uow.Request(request);
 
-        public async Task<UserSession> LinkExternalLogin(LinkExternalLoginRequest request) =>
+        public async Task<UserSession> LinkLogin(LinkLoginRequest request) =>
             await _uow.Request(request);
 
-        public async Task<UserSession> RegisterAndLinkExternalLogin(RegisterAndLinkExternalLoginRequest request) =>
+        public async Task<UserSession> RegisterAndLinkLogin(RegisterAndLinkLoginRequest request) =>
             await _uow.Request(request);
 
         public async Task<bool> CancelAuthentication()

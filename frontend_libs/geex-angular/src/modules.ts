@@ -1,5 +1,5 @@
 import { Apollo } from "apollo-angular";
-import { Injector, Signal, WritableSignal, runInInjectionContext, signal } from "@angular/core";
+import { Injector, Signal, WritableSignal, signal } from "@angular/core";
 import { OAuthService } from "angular-oauth2-oidc";
 import { CookieService, deepCopy } from "@delon/util";
 import gql from "graphql-tag";
@@ -185,8 +185,6 @@ const GQL_FEDERATE_AUTH = gql`mutation federateAuthenticate(
       phoneNumber
       email
       isEnable
-      openId
-      loginProvider
       createdOn
       ... on IUser {
         roleNames
@@ -223,7 +221,7 @@ const GQL_FEDERATE_AUTH = gql`mutation federateAuthenticate(
 `;
 const GQL_ON_PUBLIC_NOTIFY = gql`subscription onPublicNotify { onPublicNotify { __typename ... on DataChangeClientNotify { dataChangeType } } }`;
 const GQL_ORGS_CACHE = gql`query orgsCache { orgs(take: 999) { items { id orgType code name parentOrgCode } } }`;
-const GQL_INIT_SETTINGS = gql`query initSettings { initSettings { id name value } }`;
+const GQL_ACTIVE_SETTINGS = gql`query activeSettings { activeSettings { id name value } }`;
 
 // Default GraphQL documents are defined inside each module. Consumers can override by providing
 // custom module implementations via the `overrides` parameter in `initGeex`.
@@ -394,36 +392,23 @@ export function createIdentityModule(injector: Injector): IdentityModule {
           try {
             await geex.tenant.init();
             await geex.auth.init();
-            // 创建一个 Promise 用于等待第一次订阅回调完成
-            await new Promise<void>((resolve, reject) => {
-              const orgs$ = injector.get(Apollo)
-                .watchQuery<{ orgs: { items: Org[] } }>({ query: GQL_ORGS_CACHE })
-                .valueChanges.pipe(map(res => deepCopy(res.data.orgs.items) as Org[]));
-              
-              orgs$.subscribe({
-                next: (orgs: Org[]) => {
-                  runInInjectionContext(injector, () => {
-                    _orgsSignal.set(orgs);
-                    const userData = geex.auth.user();
-                    let allOwned: Org[] = [];
-                    if (orgs?.length && userData) {
-                      if (userData.id === "000000000000000000000001") {
-                        allOwned = deepCopy(orgs);
-                      } else {
-                        const ownedCodes = userData.orgs.map((x: any) => x.code);
-                        allOwned = orgs.filter(o => ownedCodes.some(code => o.code.startsWith(code)));
-                      }
-                    }
-                    _userOwnedOrgsSignal.set(allOwned);
-                    resolve();
-                  });
-                },
-                error: (err) => {
-                  console.error(err);
-                  reject(err);
-                }
-              });
-            });
+            type OrgsCacheResponse = { data?: { orgs?: { items?: Org[] | null } | null } | null };
+            const res = (await firstValueFrom(
+              injector.get(Apollo).query<OrgsCacheResponse>({ query: GQL_ORGS_CACHE })
+            )) as unknown as OrgsCacheResponse;
+            const orgs = deepCopy(res.data?.orgs?.items ?? []) as Org[];
+            _orgsSignal.set(orgs);
+            const userData = geex.auth.user();
+            let allOwned: Org[] = [];
+            if (orgs?.length && userData) {
+              if (userData.id === "000000000000000000000001") {
+                allOwned = deepCopy(orgs);
+              } else {
+                const ownedCodes = userData.orgs.map((x: any) => x.code);
+                allOwned = orgs.filter(o => ownedCodes.some(code => o.code.startsWith(code)));
+              }
+            }
+            _userOwnedOrgsSignal.set(allOwned);
             _initialized = true;
           } catch (error) {
             console.error(error);
@@ -487,11 +472,11 @@ export function createSettingsModule(injector: Injector): SettingsModule {
       if (!_initPromise) {
         _initPromise = (async () => {
           try {
-            type InitSettingsResponse = { data: { initSettings: SettingItem[] } };
+            type ActiveSettingsResponse = { data: { activeSettings: SettingItem[] } };
             const res = (await firstValueFrom(
-              injector.get(Apollo).query<InitSettingsResponse>({ query: GQL_INIT_SETTINGS })
-            )) as unknown as InitSettingsResponse;
-            const settings = res.data.initSettings;
+              injector.get(Apollo).query<ActiveSettingsResponse>({ query: GQL_ACTIVE_SETTINGS })
+            )) as unknown as ActiveSettingsResponse;
+            const settings = res.data.activeSettings;
             _settingsSignal.set(settings);
             _initialized = true;
           } catch (err) {

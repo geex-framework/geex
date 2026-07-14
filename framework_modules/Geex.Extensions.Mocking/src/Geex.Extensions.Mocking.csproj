@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Geex.Analyzer" Version="*" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Authentication\src\Geex.Extensions.Authentication.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Authentication.Wechat\src\Geex.Extensions.Authentication.Wechat.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Messaging\src\Geex.Extensions.Messaging.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.MultiTenant\src\Geex.Extensions.MultiTenant.csproj" />
+    <ProjectReference Include="..\..\Geex.Extensions.Payments\src\Geex.Extensions.Payments.csproj" />
+  </ItemGroup>
+</Project>

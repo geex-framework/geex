@@ -3,15 +3,14 @@ using Geex.Extensions.Authentication.Wechat.Core;
 
 namespace Geex.Extensions.Authentication.Wechat
 {
-    public class WechatMiniProgramLoginProvider : ExternalLoginProviderBase
+    public class WechatMiniProgramLoginProvider : LoginProviderBase
     {
         private readonly AuthenticationWechatModuleOptions _options;
         private readonly IWechatApiClient _wechatApiClient;
 
         public WechatMiniProgramLoginProvider(
-            IExternalAccountLinker externalAccountLinker,
             AuthenticationWechatModuleOptions options,
-            IWechatApiClient wechatApiClient) : base(externalAccountLinker)
+            IWechatApiClient wechatApiClient)
         {
             _options = options;
             _wechatApiClient = wechatApiClient;
@@ -20,7 +19,7 @@ namespace Geex.Extensions.Authentication.Wechat
 
         public override LoginProviderEnum Provider => WechatLoginProviders.WechatMiniProgram;
 
-        public override async Task<ExternalLoginIdentity> ResolveIdentity(string code)
+        public override async Task<UserLoginIdentity> ResolveUserLoginIdentity(string code)
         {
             var credentials = _options.MiniProgram
                 ?? throw new BusinessException(GeexExceptionType.ValidationFailed, message: "未配置 AuthenticationModuleOptions:Wechat:MiniProgram.");
@@ -41,7 +40,7 @@ namespace Geex.Extensions.Authentication.Wechat
                 claims.Add(new Claim("unionid", session.UnionId));
             }
 
-            return new ExternalLoginIdentity
+            return new UserLoginIdentity
             {
                 Provider = Provider,
                 LoginProviderId = string.IsNullOrWhiteSpace(session.UnionId) ? session.OpenId : session.UnionId,

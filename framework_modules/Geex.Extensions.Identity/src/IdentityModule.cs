@@ -23,7 +23,6 @@ namespace Geex.Extensions.Identity
             context.Services.AddScoped<IDataFilter<IOrgFilteredEntity>, OrgDataFilter>(x => new OrgDataFilter(x.GetService<ICurrentUser>()));
             context.Services.AddTransient<IPasswordHasher<IUser>, PasswordHasher<IUser>>();
             context.Services.AddTransient<IUserCreationValidator, UserCreationValidator>();
-            context.Services.AddScoped<IExternalAccountLinker, ExternalAccountLinker>();
             context.Services.AddTransient<UserHandler>();
             context.Services.AddTransient<OrgHandler>();
             context.Services.AddTransient<RoleHandler>();

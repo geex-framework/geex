@@ -145,4 +145,27 @@ declare let Geex: InjectionToken<GeexModules>;
  */
 declare function configGeex<TExtensionModules extends Record<string, GeexModule> = ExtensionModule>(injector: Injector, overrides?: GeexOverrides<TExtensionModules>): void;
 
-export { type AuthModule, ExtensionModule, Geex, type GeexExtensions, type GeexModule, type GeexModules, type GeexOverrides, type IdentityModule, LoginProviderEnum, type MessagingModule, type Org, OrgTypeEnum, type SettingItem, type SettingsModule, type Tenant, type TenantModule, type UiModule, type User, type UserOrgMembership, configGeex, createAuthModule, createIdentityModule, createMessagingModule, createSettingsModule, createTenantModule, createUiModule, geex, provideGeex };
+/** Minimal menu shape shared by host Delon menus and extension plugins. */
+interface GeexMenuItem {
+    text?: string;
+    link?: string;
+    icon?: string | object;
+    group?: boolean;
+    hideInBreadcrumb?: boolean;
+    open?: boolean;
+    children?: GeexMenuItem[];
+    [key: string]: unknown;
+}
+interface GeexMenuContributionContext {
+    id: string;
+}
+/**
+ * Multi-provider token for additive menu contributions.
+ * Host should merge contributions into app menus with a single MenuService.add([...app, ...extras]).
+ */
+interface GeexMenuContribution {
+    resolve(user: GeexMenuContributionContext): Promise<GeexMenuItem[]>;
+}
+declare const GEEX_MENU_CONTRIBUTIONS: InjectionToken<GeexMenuContribution[]>;
+
+export { type AuthModule, ExtensionModule, GEEX_MENU_CONTRIBUTIONS, Geex, type GeexExtensions, type GeexMenuContribution, type GeexMenuContributionContext, type GeexMenuItem, type GeexModule, type GeexModules, type GeexOverrides, type IdentityModule, LoginProviderEnum, type MessagingModule, type Org, OrgTypeEnum, type SettingItem, type SettingsModule, type Tenant, type TenantModule, type UiModule, type User, type UserOrgMembership, configGeex, createAuthModule, createIdentityModule, createMessagingModule, createSettingsModule, createTenantModule, createUiModule, geex, provideGeex };

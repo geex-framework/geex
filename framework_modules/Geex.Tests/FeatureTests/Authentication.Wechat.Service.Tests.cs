@@ -19,7 +19,7 @@ namespace Geex.Tests.FeatureTests
         }
 
         [Fact]
-        public async Task WechatWeb_Resolve_WhenUnlinked_ShouldReturnAccountLinkToken()
+        public async Task WechatWeb_Resolve_WhenUnlinked_ShouldReturnUserLoginLinkToken()
         {
             var openId = $"wx_openid_{ObjectId.GenerateNewId()}";
             var code = FakeWechatApiClient.RegisterWeb(openId);
@@ -28,34 +28,34 @@ namespace Geex.Tests.FeatureTests
             using var scope = ScopedService.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             userCountBefore = uow.Query<User>().Count();
-            var result = await uow.Request(new ResolveExternalLoginRequest
+            var result = await uow.Request(new ResolveLoginRequest
             {
                 LoginProvider = WechatLoginProviders.WechatWeb,
                 Code = code,
             });
 
             result.IsLinked.ShouldBeFalse();
-            result.AccountLinkToken.ShouldNotBeNullOrWhiteSpace();
+            result.UserLoginLinkToken.ShouldNotBeNullOrWhiteSpace();
             result.DisplayName.ShouldBe($"wx_{openId}");
             uow.Query<User>().Count().ShouldBe(userCountBefore);
         }
 
         [Fact]
-        public async Task WechatMiniProgram_Resolve_WhenUnlinked_ShouldReturnAccountLinkToken()
+        public async Task WechatMiniProgram_Resolve_WhenUnlinked_ShouldReturnUserLoginLinkToken()
         {
             var openId = $"mp_openid_{ObjectId.GenerateNewId()}";
             var code = FakeWechatApiClient.RegisterMiniProgram(openId);
 
             using var scope = ScopedService.CreateScope();
             var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-            var result = await uow.Request(new ResolveExternalLoginRequest
+            var result = await uow.Request(new ResolveLoginRequest
             {
                 LoginProvider = WechatLoginProviders.WechatMiniProgram,
                 Code = code,
             });
 
             result.IsLinked.ShouldBeFalse();
-            result.AccountLinkToken.ShouldNotBeNullOrWhiteSpace();
+            result.UserLoginLinkToken.ShouldNotBeNullOrWhiteSpace();
         }
 
         [Fact]
@@ -76,7 +76,7 @@ namespace Geex.Tests.FeatureTests
                     RoleIds = [],
                     OrgCodes = [],
                 });
-                user.UpsertExternalLogin(WechatLoginProviders.WechatWeb, openId, [new Claim("openid", openId)], uow);
+                user.UpsertLogin(WechatLoginProviders.WechatWeb, openId, [new Claim("openid", openId)]);
                 await uow.SaveChanges();
                 userId = user.Id;
             }
@@ -85,7 +85,7 @@ namespace Geex.Tests.FeatureTests
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var result = await uow.Request(new ResolveExternalLoginRequest
+                var result = await uow.Request(new ResolveLoginRequest
                 {
                     LoginProvider = WechatLoginProviders.WechatWeb,
                     Code = code,
@@ -100,16 +100,16 @@ namespace Geex.Tests.FeatureTests
         {
             var openId = $"wx_openid_{ObjectId.GenerateNewId()}";
             var code = FakeWechatApiClient.RegisterWeb(openId);
-            string accountLinkToken;
+            string UserLoginLinkToken;
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var resolve = await uow.Request(new ResolveExternalLoginRequest
+                var resolve = await uow.Request(new ResolveLoginRequest
                 {
                     LoginProvider = WechatLoginProviders.WechatWeb,
                     Code = code,
                 });
-                accountLinkToken = resolve.AccountLinkToken!;
+                UserLoginLinkToken = resolve.UserLoginLinkToken!;
             }
 
             string userId;
@@ -131,9 +131,9 @@ namespace Geex.Tests.FeatureTests
                 var currentUser = scope.ServiceProvider.GetRequiredService<ICurrentUser>();
                 using (currentUser.Change(userId))
                 {
-                    var session = await uow.Request(new LinkExternalLoginRequest
+                    var session = await uow.Request(new LinkLoginRequest
                     {
-                        AccountLinkToken = accountLinkToken,
+                        UserLoginLinkToken = UserLoginLinkToken,
                     });
                     session.LoginProvider.ShouldBe(WechatLoginProviders.WechatWeb);
                 }
@@ -143,7 +143,7 @@ namespace Geex.Tests.FeatureTests
             using (var scope = ScopedService.CreateScope())
             {
                 var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var result = await uow.Request(new ResolveExternalLoginRequest
+                var result = await uow.Request(new ResolveLoginRequest
                 {
                     LoginProvider = WechatLoginProviders.WechatWeb,
                     Code = code2,

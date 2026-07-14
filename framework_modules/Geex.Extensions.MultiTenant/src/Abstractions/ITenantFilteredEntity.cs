@@ -17,7 +17,7 @@ namespace Geex.MultiTenant
         /// <summary>
         /// 租户编码, 为null时为宿主数据
         /// </summary>
-        public string TenantCode { get; [Obsolete(message: "框架会自动维护租户编码, 请勿直接set.", error: true)] set; }
+        public string? TenantCode { get; [Obsolete(message: "框架会自动维护租户编码, 请勿直接set.", error: true)] set; }
 
         void IAttachIntercepted.InterceptOnAttached()
         {

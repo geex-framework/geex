@@ -510,7 +510,7 @@ export type OrgsCollectionSegmentFieldPolicy = {
 	pageInfo?: FieldPolicy<any> | FieldReadFunction<any>,
 	totalCount?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type QueryKeySpecifier = ('_' | 'approvalFlow' | 'approvalFlowById' | 'approvalFlowTemplate' | 'approvalFlowTemplateById' | 'blobObjects' | 'currentUser' | 'deviceAuthorizationStatus' | 'deviceById' | 'geexEntityGeex' | 'geexEntityGeexById' | 'initSettings' | 'jobState' | 'messages' | 'myDevices' | 'myPermissions' | 'mySquad' | 'orgs' | 'roles' | 'settings' | 'squad' | 'squadById' | 'squadInviteCode' | 'templateUpdateDate' | 'tenants' | 'unreadMessages' | 'users' | QueryKeySpecifier)[];
+export type QueryKeySpecifier = ('_' | 'approvalFlow' | 'approvalFlowById' | 'approvalFlowTemplate' | 'approvalFlowTemplateById' | 'blobObjects' | 'currentUser' | 'deviceAuthorizationStatus' | 'deviceById' | 'geexEntityGeex' | 'geexEntityGeexById' | 'activeSettings' | 'jobState' | 'messages' | 'myDevices' | 'myPermissions' | 'mySquad' | 'orgs' | 'roles' | 'settings' | 'squad' | 'squadById' | 'squadInviteCode' | 'templateUpdateDate' | 'tenants' | 'unreadMessages' | 'users' | QueryKeySpecifier)[];
 export type QueryFieldPolicy = {
 	_?: FieldPolicy<any> | FieldReadFunction<any>,
 	approvalFlow?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -523,7 +523,7 @@ export type QueryFieldPolicy = {
 	deviceById?: FieldPolicy<any> | FieldReadFunction<any>,
 	geexEntityGeex?: FieldPolicy<any> | FieldReadFunction<any>,
 	geexEntityGeexById?: FieldPolicy<any> | FieldReadFunction<any>,
-	initSettings?: FieldPolicy<any> | FieldReadFunction<any>,
+	activeSettings?: FieldPolicy<any> | FieldReadFunction<any>,
 	jobState?: FieldPolicy<any> | FieldReadFunction<any>,
 	messages?: FieldPolicy<any> | FieldReadFunction<any>,
 	myDevices?: FieldPolicy<any> | FieldReadFunction<any>,

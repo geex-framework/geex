@@ -1,4 +1,4 @@
-﻿using Geex.Common;
+using Geex.Common;
 using Geex.Extensions.ApprovalFlows;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Authentication.Wechat;
@@ -38,7 +38,7 @@ public class TestModule : GeexEntryModule<TestModule>
         context.Services.AddSingleton<IRequestExecutorBuilder>((sp) => builder);
         context.Services.AddSingleton<ISchema>((sp) => builder.BuildSchemaAsync().GetAwaiter().GetResult());
         context.Services.AddJob<TestStatefulCronJob>("* * * * * *");
-        context.Services.AddScoped<IExternalLoginProvider, TestExternalLoginProvider>();
+        context.Services.AddScoped<ILoginProvider, TestLoginProvider>();
         _ = TestLoginProviders.TestExternal;
 
         context.Services.RemoveAll<IWechatApiClient>();

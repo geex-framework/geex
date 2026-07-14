@@ -15,8 +15,8 @@ namespace Geex.Extensions.Authentication.Wechat
                 client.BaseAddress = new Uri("https://api.weixin.qq.com/");
             });
 
-            context.Services.AddScoped<IExternalLoginProvider, WechatWebLoginProvider>();
-            context.Services.AddScoped<IExternalLoginProvider, WechatMiniProgramLoginProvider>();
+            context.Services.AddScoped<ILoginProvider, WechatWebLoginProvider>();
+            context.Services.AddScoped<ILoginProvider, WechatMiniProgramLoginProvider>();
 
             _ = WechatLoginProviders.WechatWeb;
             _ = WechatLoginProviders.WechatMiniProgram;

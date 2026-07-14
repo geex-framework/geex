@@ -32,6 +32,7 @@ namespace Geex.Tests.FeatureTests
         {
             return Task.FromResult<Dictionary<string, string>?>(new Dictionary<string, string>
             {
+                ["openid"] = openId,
                 ["nickname"] = $"wx_{openId}",
             });
         }

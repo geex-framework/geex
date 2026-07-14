@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
+using Geex.Extensions.Authentication.Core.Providers;
 using Geex.Extensions.Authentication.Core.Utils;
 
 using HotChocolate.AspNetCore;
@@ -383,6 +384,7 @@ namespace Geex.Extensions.Authentication
         {
             services.AddScoped<ICurrentUser, CurrentUser>();
             services.AddScoped<IClaimsTransformation, GeexClaimsTransformation>();
+            services.AddTransient<ILoginProvider, LocalLoginProvider>();
 
             var tokenValidationParameters = new TokenValidationParameters();
             ConfigTokenValidationParameters(tokenValidationParameters, cert, moduleOptions, geexCoreModuleOptions);

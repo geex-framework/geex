@@ -485,8 +485,8 @@ namespace MongoDB.Entities
             catch
             {
                 var classMap = new BsonClassMap(typeof(T));
-                classMap.SetDiscriminatorIsRequired(true);
                 classMap.AutoMap();
+                classMap.SetDiscriminatorIsRequired(DB.InheritanceCache.ContainsKey(typeof(T)));
                 return classMap.AllMemberMaps.ToArray();
             }
         }
@@ -513,8 +513,10 @@ namespace MongoDB.Entities
         /// <inheritdoc />
         public void Apply(BsonClassMap classMap)
         {
-            classMap.SetDiscriminatorIsRequired(true);
             classMap.MapInheritance();
+            classMap.SetDiscriminatorIsRequired(
+                typeof(IEntityBase).IsAssignableFrom(classMap.ClassType)
+                && DB.InheritanceCache.ContainsKey(classMap.ClassType));
         }
     }
 

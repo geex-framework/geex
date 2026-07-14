@@ -9,14 +9,14 @@ export interface WechatAuthConfig {
   href?: string;
 }
 
-export interface ResolveExternalLoginResult {
+export interface ResolveLoginResult {
   isLinked: boolean;
   session?: {
     token?: string | null;
     userId: string;
     loginProvider: string;
   } | null;
-  accountLinkToken?: string | null;
+  userLoginLinkToken?: string | null;
   displayName?: string | null;
 }
 

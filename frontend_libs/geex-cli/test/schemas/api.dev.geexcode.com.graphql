@@ -52,8 +52,8 @@ type Query {
   """
   deviceById(deviceId: String!): QuicollabDevice!
 
-  """获取初始化应用所需的settings"""
-  initSettings: [ISetting!]!
+  """获取当前生效的 settings"""
+  activeSettings: [ISetting!]!
 
   """Query job states with filtering and pagination"""
   jobState(filter: JobStateFilterInput, request: QueryJobStatesRequest, skip: Int, sort: [JobStateSortInput!], take: Int): JobStateCollectionSegment

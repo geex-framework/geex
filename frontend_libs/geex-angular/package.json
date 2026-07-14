@@ -8,10 +8,10 @@
   "peerDependencies": {
     "@angular/core": "^20.0.0",
     "@angular/router": "^20.0.0",
-    "@apollo/client": "^3.9.0",
+    "@apollo/client": "^4.0.1",
     "@delon/util": "^15.0.0",
     "angular-oauth2-oidc": "^15.0.0",
-    "apollo-angular": "11.0.0",
+    "apollo-angular": "^14.0.0",
     "graphql": "^16.8.0",
     "rxjs": "^7.8.0",
     "json5": "^2.2.3",

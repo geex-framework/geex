@@ -25,13 +25,13 @@ public partial class User
             descriptor.Field(x => x.OrgCodes);
             descriptor.Field(x => x.Permissions);
             descriptor.Field(x => x.Claims);
-            descriptor.Field(x => x.ExternalLogins);
+            descriptor.Field(x => x.Logins);
             descriptor.Field(x => x.Orgs);
             descriptor.Field(x => x.AvatarFile).Type<InterfaceType<IBlobObject>>();
             descriptor.Field(x => x.AvatarFileId);
             descriptor.Field(x => x.Roles);
             descriptor.Field(x => x.RoleNames);
-            descriptor.Field(x => x.TenantCode);
+            descriptor.Field(x => x.TenantCode).Type<StringType>();
             descriptor.IgnoreMethods();
         }
     }
@@ -67,7 +67,7 @@ public partial class User
             //descriptor.Field(x => x.Roles);
             //descriptor.Field(x => x.Orgs);
             descriptor.Field(x => x.Claims).UseFiltering<UserClaim>(x => { x.Field(y => y.ClaimType); });
-            descriptor.Field(x => x.ExternalLogins);
+            descriptor.Field(x => x.Logins);
             descriptor.Field(x => x.Orgs);
             //descriptor.Ignore(x => x.Claims);
             //descriptor.Ignore(x => x.AuthorizedPermissions);
