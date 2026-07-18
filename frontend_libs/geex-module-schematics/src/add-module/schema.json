@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "GeexAddModule",
+  "title": "Add Geex UI Module",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Module short name (aligned with backend capability, e.g. identity)",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "Module name"
+    },
+    "path": {
+      "type": "string",
+      "description": "Target modules root",
+      "default": "src/app/modules"
+    },
+    "force": {
+      "type": "boolean",
+      "default": false,
+      "description": "Overwrite existing module directory"
+    },
+    "overwrite": {
+      "type": "boolean",
+      "default": false,
+      "visible": false,
+      "description": "Internal CLI alias for force"
+    }
+  },
+  "required": ["name"]
+}

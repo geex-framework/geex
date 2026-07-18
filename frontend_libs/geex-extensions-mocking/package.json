@@ -4,12 +4,9 @@
   "description": "Mocking extension for Geex Angular apps.",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": "^20.0.0",
     "@angular/core": "^20.0.0",
-    "@angular/forms": "^20.0.0",
     "@angular/router": "^20.0.0",
     "@apollo/client": "^4.0.1",
-    "@geexcode/geex-angular": ">=0.0.39",
     "@geexcode/geex-extensions-authentication-wechat": ">=0.0.1",
     "angular-oauth2-oidc": "^20.0.0",
     "apollo-angular": "^14.0.0",
@@ -26,24 +23,30 @@
   ],
   "module": "dist/fesm2022/geexcode-geex-extensions-mocking.mjs",
   "typings": "dist/index.d.ts",
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fesm2022/geexcode-geex-extensions-mocking.mjs",
+      "default": "./dist/fesm2022/geexcode-geex-extensions-mocking.mjs"
+    }
+  },
   "scripts": {
     "clean": "rimraf dist",
-    "test": "node --test src/mocking.routes.node-test.mjs src/mock-wechat-authorize.page.node-test.mjs src/mocking-pages.zoneless.node-test.mjs src/mocking-menu.contribution.node-test.mjs",
-    "prebuild": "npm test",
+    "test": "node --test src/provide-geex-mocking.node-test.mjs",
     "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
     "prepublishOnly": "npm run build",
     "publish:public": "npm publish ./dist --access public"
   },
   "devDependencies": {
-    "@angular/common": "^20.0.0",
     "@angular/compiler": "^20.0.0",
     "@angular/compiler-cli": "^20.0.0",
     "@angular/core": "^20.0.0",
-    "@angular/forms": "^20.0.0",
-    "@angular/platform-browser": "^20.0.0",
     "@angular/router": "^20.0.0",
     "@apollo/client": "^4.2.7",
-    "@geexcode/geex-extensions-authentication-wechat": "file:../geex-extensions-authentication-wechat",
+    "@geexcode/geex-extensions-authentication-wechat": "workspace:*",
     "angular-oauth2-oidc": "^20.0.2",
     "apollo-angular": "^14.1.0",
     "graphql": "^16.9.0",

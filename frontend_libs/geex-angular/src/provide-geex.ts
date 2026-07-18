@@ -1,5 +1,6 @@
-import { Injector, Provider } from "@angular/core";
+import { inject, Injector, Provider } from "@angular/core";
 import { configGeex, GeexOverrides, Geex, geex } from "./geex";
+import { GEEX_MODULE_CONTRIBUTIONS } from "./module-contribution";
 import { GeexModule, GeexModules } from "./modules";
 
 export function provideGeex<TExtensionModules extends Record<string, GeexModule> = {}>(
@@ -10,13 +11,13 @@ export function provideGeex<TExtensionModules extends Record<string, GeexModule>
     {
       provide: Geex,
       useFactory: (injector: Injector) => {
-        // Merge extensions first so that overrides take precedence when there are conflicts
+        const contributions = inject(GEEX_MODULE_CONTRIBUTIONS, { optional: true }) ?? [];
         const mergedModules = {
           ...(extensions as Record<string, GeexModule>),
-          ...(overrides as Record<string, GeexModule>),
+          ...(overrides as unknown as Record<string, GeexModule>),
         } as GeexOverrides<TExtensionModules>;
 
-        configGeex<TExtensionModules>(injector, mergedModules);
+        configGeex<TExtensionModules>(injector, mergedModules, contributions);
         return geex;
       },
       deps: [Injector],

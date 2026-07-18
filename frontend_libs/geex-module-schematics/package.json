@@ -1,0 +1,24 @@
+{
+  "name": "@geexcode/geex-module-schematics",
+  "version": "0.0.1",
+  "description": "Install Geex admin UI modules as source under src/app/modules/<name>",
+  "schematics": "./src/collection.json",
+  "bin": {
+    "geex": "./bin/geex.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "files"
+  ],
+  "scripts": {
+    "test": "node --test src/add-module/add-module.node-test.cjs src/sync-module/sync-module.node-test.cjs test/geex-cli.node-test.mjs"
+  },
+  "dependencies": {
+    "@angular-devkit/core": "^20.0.0",
+    "@angular-devkit/schematics": "^20.0.0",
+    "@angular-devkit/schematics-cli": "^20.0.0"
+  },
+  "peerDependencies": {},
+  "license": "MIT"
+}

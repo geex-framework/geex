@@ -1,13 +1,16 @@
 export type WechatLoginProvider = "WechatWeb" | "WechatMiniProgram";
 
-export interface WechatAuthConfig {
-  webAppId: string;
-  redirectUri: string;
+export interface GeexAuthenticationWechatOptions {
+  readonly webAppId: string;
+  readonly redirectUri: string;
   /** WxLogin container element id. Default: wechat_login_container */
-  containerId?: string;
-  style?: string;
-  href?: string;
+  readonly containerId?: string;
+  readonly style?: string;
+  readonly href?: string;
 }
+
+/** @deprecated Use `GeexAuthenticationWechatOptions`. */
+export type WechatAuthConfig = GeexAuthenticationWechatOptions;
 
 export interface ResolveLoginResult {
   isLinked: boolean;

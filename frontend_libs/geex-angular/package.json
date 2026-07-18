@@ -1,40 +1,110 @@
 {
   "name": "@geexcode/geex-angular",
-  "version": "0.0.39",
-  "description": "Angular adapter for Geex core.",
+  "version": "0.0.41",
+  "description": "Geex Angular core: HTTP, Apollo, i18n, Delon page bases, startup, headless platform modules.",
   "module": "dist/index.js",
-  "main": "dist/index.cjs",
-  "types": "dist/index.d.ts",
+  "typings": "dist/index.d.ts",
+  "sideEffects": [
+    "**/extensions/**/*.js",
+    "**/fesm2022/**"
+  ],
   "peerDependencies": {
+    "@angular/animations": "^20.0.0",
+    "@angular/common": "^20.0.0",
     "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
     "@angular/router": "^20.0.0",
     "@apollo/client": "^4.0.1",
-    "@delon/util": "^15.0.0",
-    "angular-oauth2-oidc": "^15.0.0",
+    "@delon/abc": "^20.0.0",
+    "@delon/acl": "^20.0.0",
+    "@delon/form": "^20.0.0",
+    "@delon/theme": "^20.0.0",
+    "@delon/util": "^20.0.0",
+    "@ngx-translate/core": "^17.0.0",
+    "angular-oauth2-oidc": ">=15.0.0 <21.0.0",
     "apollo-angular": "^14.0.0",
+    "date-fns": "^2.30.0 || ^4.0.0",
+    "echarts": "^5.5.0",
+    "extract-files": "^13.0.0",
+    "glob": "^11.0.3",
     "graphql": "^16.8.0",
-    "rxjs": "^7.8.0",
+    "graphql-ws": "^6.0.0",
     "json5": "^2.2.3",
-    "yaml": "^2.8.1",
-    "glob": "^11.0.3"
+    "kiwi-intl": "^1.2.5",
+    "linqts-camelcase": "^1.12.0",
+    "lodash-es": "^4.17.21",
+    "ng-zorro-antd": "^20.0.0",
+    "ngx-echarts": "^20.0.0",
+    "rxjs": "^7.8.0",
+    "screenfull": "^6.0.0",
+    "spark-md5": "^3.0.0",
+    "ts-pattern": "^5.0.0",
+    "yaml": "^2.8.1"
   },
   "files": [
     "dist"
   ],
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./esbuild/gql-redirect.plugin": {
+      "default": "./dist/esbuild/gql-redirect.plugin.js"
+    }
+  },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "tsup src/index.ts src/esbuild/gql-redirect.plugin.js --dts --format esm,cjs --out-dir dist",
+    "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json && node scripts/copy-plugin.cjs",
+    "test": "node --test src/module-contribution.node-test.mjs src/provide-geex-common.node-test.mjs src/provide-geex-apollo.node-test.mjs src/startup/geex-startup.service.node-test.mjs src/i18n/geex-i18n.node-test.mjs src/environment-overrides.node-test.mjs src/http/geex-http.interceptor.node-test.mjs src/delon/delon-boundary.node-test.mjs src/rison/rison.node-test.mjs",
     "prepublishOnly": "npm run build",
-    "publish:public": "npm publish --access public",
+    "publish:public": "npm publish ./dist --access public",
     "release": "standard-version"
   },
   "devDependencies": {
-    "typescript": "^5.6.3",
-    "tsup": "^8.0.0",
+    "@angular/animations": "^20.3.26",
+    "@angular/common": "^20.0.0",
+    "@angular/compiler": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@apollo/client": "^4.0.1",
+    "@delon/abc": "^20.0.1",
+    "@delon/acl": "^20.0.1",
+    "@delon/form": "^20.0.1",
+    "@delon/theme": "^20.0.1",
+    "@delon/util": "^20.0.1",
+    "@ngx-translate/core": "^17.0.0",
+    "@types/lodash-es": "^4.17.12",
+    "angular-oauth2-oidc": "^20.0.2",
+    "apollo-angular": "^14.0.0",
+    "date-fns": "^4.1.0",
+    "echarts": "^5.5.1",
+    "extract-files": "^13.0.0",
+    "graphql": "^16.9.0",
+    "graphql-ws": "^6.0.6",
+    "json5": "^2.2.3",
+    "kiwi-intl": "^1.2.5",
+    "linqts-camelcase": "^1.12.4",
+    "lodash-es": "^4.17.21",
+    "ng-packagr": "^20.0.0",
+    "ng-zorro-antd": "^20.1.0",
+    "ngx-echarts": "^20.0.1",
     "rimraf": "^5.0.5",
-    "standard-version": "^9.5.0"
+    "rxjs": "^7.8.2",
+    "screenfull": "^6.0.2",
+    "spark-md5": "^3.0.1",
+    "standard-version": "^9.5.0",
+    "ts-pattern": "^5.3.1",
+    "typescript": "~5.8.3"
   },
   "dependencies": {
-    "graphql-tag": "^2.12.6"
+    "graphql-tag": "^2.12.6",
+    "tslib": "^2.6.3"
   }
 }

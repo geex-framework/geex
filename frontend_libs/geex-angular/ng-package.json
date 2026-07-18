@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/ng-packagr/ng-package.schema.json",
+  "dest": "dist",
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  },
+  "allowedNonPeerDependencies": [
+    "tslib",
+    "graphql-tag"
+  ],
+  "assets": [
+    "src/esbuild/**/*",
+    "src/rison/rison.js"
+  ]
+}

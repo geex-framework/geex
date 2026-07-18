@@ -1,10 +1,16 @@
-import { Provider } from "@angular/core";
-import { WECHAT_AUTH_CONFIG, WechatWebLoginService } from "./wechat-web-login.service";
-import { WechatAuthConfig } from "./types";
+import { EnvironmentProviders, makeEnvironmentProviders } from "@angular/core";
+import { GEEX_AUTHENTICATION_WECHAT_OPTIONS } from "./authentication-wechat.tokens";
+import { GeexAuthenticationWechatOptions } from "./types";
+import { WechatWebLoginService } from "./wechat-web-login.service";
 
-export function provideWechatAuth(config: WechatAuthConfig): Provider[] {
-  return [
-    { provide: WECHAT_AUTH_CONFIG, useValue: config },
+export function provideGeexAuthenticationWechat(
+  options: Readonly<GeexAuthenticationWechatOptions>,
+): EnvironmentProviders {
+  return makeEnvironmentProviders([
+    { provide: GEEX_AUTHENTICATION_WECHAT_OPTIONS, useValue: options },
     WechatWebLoginService,
-  ];
+  ]);
 }
+
+/** @deprecated Use `provideGeexAuthenticationWechat`. */
+export const provideWechatAuth = provideGeexAuthenticationWechat;

@@ -1,0 +1,52 @@
+{
+  "name": "@geexcode/geex-extensions-authorization",
+  "version": "0.0.1",
+  "description": "Authorization extension for Geex Angular apps (AuthorizeGuard, ACL bridge). Aligns with Geex.Extensions.Authorization.",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/core": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@delon/acl": "^20.0.0",
+    "@geexcode/geex-angular": ">=0.0.41",
+    "angular-oauth2-oidc": ">=15.0.0 <21.0.0",
+    "json5": "^2.2.3"
+  },
+  "dependencies": {
+    "tslib": "^2.6.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "module": "dist/fesm2022/geexcode-geex-extensions-authorization.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fesm2022/geexcode-geex-extensions-authorization.mjs",
+      "default": "./dist/fesm2022/geexcode-geex-extensions-authorization.mjs"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "test": "node --test src/provide-geex-authorization.node-test.mjs",
+    "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
+    "prepublishOnly": "npm run build",
+    "publish:public": "npm publish ./dist --access public"
+  },
+  "devDependencies": {
+    "@angular/compiler": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@delon/acl": "^20.0.1",
+    "@geexcode/geex-angular": "workspace:*",
+    "angular-oauth2-oidc": "^20.0.2",
+    "json5": "^2.2.3",
+    "ng-packagr": "^20.0.0",
+    "rimraf": "^5.0.5",
+    "typescript": "~5.8.3"
+  }
+}

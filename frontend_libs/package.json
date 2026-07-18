@@ -1,0 +1,16 @@
+{
+  "name": "@geexcode/frontend-libs",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "pnpm": {
+    "overrides": {
+      "@angular/animations": "20.3.0",
+      "@angular/common": "20.3.0",
+      "@angular/compiler": "20.3.0",
+      "@angular/core": "20.3.0",
+      "@angular/forms": "20.3.0",
+      "@angular/router": "20.3.0",
+      "ng-zorro-antd": "20.1.0"
+    }
+  }
+}

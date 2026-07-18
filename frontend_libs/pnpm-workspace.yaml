@@ -1,0 +1,8 @@
+packages:
+  - geex-angular
+  - geex-extensions-identity
+  - geex-extensions-authorization
+  - geex-extensions-authentication-wechat
+  - geex-extensions-mocking
+  - geex-extensions-blob-storage
+  - geex-extensions-approval-flows

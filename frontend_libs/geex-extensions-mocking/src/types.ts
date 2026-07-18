@@ -10,5 +10,5 @@ export interface GeexMockingCapabilities {
 
 export interface GeexMockingOptions {
   /** Optional override for GraphQL path. Default: /graphql */
-  graphqlPath?: string;
+  readonly graphqlPath?: string;
 }

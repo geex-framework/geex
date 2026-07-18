@@ -1,7 +1,7 @@
-import { Inject, Injectable, InjectionToken, Optional } from "@angular/core";
+import { Inject, Injectable, Optional } from "@angular/core";
+import { WECHAT_AUTH_CONFIG } from "./authentication-wechat.tokens";
 import { WechatAuthConfig } from "./types";
-
-export const WECHAT_AUTH_CONFIG = new InjectionToken<WechatAuthConfig>("WECHAT_AUTH_CONFIG");
+export { WECHAT_AUTH_CONFIG } from "./authentication-wechat.tokens";
 
 const WX_LOGIN_SCRIPT = "https://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js";
 

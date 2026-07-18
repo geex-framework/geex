@@ -1,0 +1,40 @@
+{
+  "name": "@geexcode/geex-extensions-blob-storage",
+  "version": "0.0.1",
+  "description": "Blob storage extension tokens for Geex Angular apps. Aligns with Geex.Extensions.BlobStorage.",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/core": "^20.0.0",
+    "graphql": "^16.8.0"
+  },
+  "dependencies": {
+    "tslib": "^2.6.3"
+  },
+  "files": ["dist"],
+  "module": "dist/fesm2022/geexcode-geex-extensions-blob-storage.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    "./package.json": { "default": "./package.json" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fesm2022/geexcode-geex-extensions-blob-storage.mjs",
+      "default": "./dist/fesm2022/geexcode-geex-extensions-blob-storage.mjs"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
+    "test": "node --test src/provide-geex-blob-storage.node-test.mjs",
+    "prepublishOnly": "npm run build",
+    "publish:public": "npm publish ./dist --access public"
+  },
+  "devDependencies": {
+    "@angular/compiler": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "graphql": "^16.9.0",
+    "ng-packagr": "^20.0.0",
+    "rimraf": "^5.0.5",
+    "typescript": "~5.8.3"
+  }
+}

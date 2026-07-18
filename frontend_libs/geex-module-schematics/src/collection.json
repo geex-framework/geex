@@ -1,0 +1,15 @@
+{
+  "$schema": "../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "add-module": {
+      "description": "Install a Geex UI module into src/app/modules/<name>",
+      "factory": "./add-module/index#addModule",
+      "schema": "./add-module/schema.json"
+    },
+    "sync-module": {
+      "description": "Sync an installed Geex UI module from templates (skips existing files by default)",
+      "factory": "./sync-module/index#syncModule",
+      "schema": "./sync-module/schema.json"
+    }
+  }
+}

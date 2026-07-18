@@ -1,0 +1,16 @@
+<page-header [title]="id ? 'Edit approval flow template' : 'Create approval flow template'" />
+<nz-card>
+  <form nz-form [formGroup]="form">
+    <nz-form-item><nz-form-label nzRequired>Name</nz-form-label><nz-form-control><input nz-input [formControl]="form.controls.name" /></nz-form-control></nz-form-item>
+    <nz-form-item><nz-form-label nzRequired>Description</nz-form-label><nz-form-control><textarea nz-input rows="3" [formControl]="form.controls.description"></textarea></nz-form-control></nz-form-item>
+    <nz-form-item><nz-form-label nzRequired>Organization code</nz-form-label><nz-form-control><input nz-input [formControl]="form.controls.orgCode" /></nz-form-control></nz-form-item>
+    <nz-form-item>
+      <nz-form-label nzRequired>Approval nodes JSON</nz-form-label>
+      <nz-form-control nzExtra="Each node uses the schema fields id, name, auditRole, index, carbonCopyUserIds and optional associatedEntityType.">
+        <textarea nz-input rows="14" [formControl]="form.controls.nodesJson"></textarea>
+      </nz-form-control>
+    </nz-form-item>
+    <button nz-button type="button" (click)="router.navigate(['/approval-flows'])">Cancel</button>
+    <button nz-button nzType="primary" type="button" [disabled]="form.invalid" (click)="submit()">Save</button>
+  </form>
+</nz-card>

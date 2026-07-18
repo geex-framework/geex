@@ -1,37 +1,48 @@
-import { InjectionToken, Injector, runInInjectionContext, signal } from "@angular/core";
-import type { GeexModule, GeexModules, ExtensionModule } from "./modules";
-import {
-  createTenantModule,
-  createAuthModule,
-  createIdentityModule,
-  createMessagingModule,
-  createSettingsModule,
-  createUiModule,
-} from "./modules";
+import { InjectionToken, Injector, runInInjectionContext } from "@angular/core";
+import type { GeexModuleContribution } from "./module-contribution";
+import type { GeexModule } from "./modules";
+import type { GeexModules } from "./modules";
+import { createMessagingModule, createSettingsModule, createUiModule } from "./modules";
 
-export type GeexOverrides<TExtensionModules extends Record<string, GeexModule> = {}> = Partial<Omit<GeexModules<TExtensionModules>, "init">>;
+export type GeexOverrides<TExtensionModules extends Record<string, GeexModule> = Record<string, GeexModule>> = Partial<
+  Omit<GeexModules<TExtensionModules>, "init">
+>;
 
-export type GeexExtensions<TExtensionModules extends Record<string, GeexModule> = {}> = Partial<TExtensionModules>;
+export type GeexExtensions<TExtensionModules extends Record<string, GeexModule> = Record<string, GeexModule>> =
+  Partial<TExtensionModules>;
 
 export let geex: GeexModules;
 export let Geex = new InjectionToken<GeexModules>("Geex");
 
-/**
- * Initialize geex singleton with concrete dependencies
- * @param deps   Required runtime services
- * @param overrides  Custom module overrides – properties will be merged into generated modules
- */
-export function configGeex<TExtensionModules extends Record<string, GeexModule> = ExtensionModule>(
+export function configGeex<TExtensionModules extends Record<string, GeexModule> = Record<string, never>>(
   injector: Injector,
   overrides: GeexOverrides<TExtensionModules> = {} as GeexOverrides<TExtensionModules>,
+  contributions: readonly GeexModuleContribution[] = [],
 ) {
   runInInjectionContext(injector, () => {
-    // Start with an empty collection and merge in overrides later (overrides have higher priority)
-    const modules: GeexModules<TExtensionModules> = {
-      ...(overrides as Partial<GeexModules<TExtensionModules>>) as any,
+    const modules = {
+      settings: createSettingsModule(injector),
+      ui: createUiModule(injector),
     } as GeexModules<TExtensionModules>;
-    
-    let _initPromise: Promise<any> | null = null;
+    const moduleRecord = modules as unknown as Record<string, GeexModule>;
+    modules.messaging = createMessagingModule(injector, () => modules["auth"]);
+
+    for (const contribution of contributions) {
+      const contributedModules = contribution.createModules({
+        injector,
+        modules,
+      });
+      for (const [name, module] of Object.entries(contributedModules)) {
+        if (name === "init" || name in modules) {
+          throw new Error(`Geex module "${name}" is already registered.`);
+        }
+        moduleRecord[name] = module;
+      }
+    }
+
+    Object.assign(modules, overrides);
+
+    let _initPromise: Promise<{ [K in keyof GeexModules<TExtensionModules>]: unknown }> | null = null;
     modules.init ??= (force = false) => {
       if (force) {
         _initPromise = null;
@@ -39,28 +50,23 @@ export function configGeex<TExtensionModules extends Record<string, GeexModule> 
       if (!_initPromise) {
         _initPromise = (async () => {
           const entries = Object.entries(modules).filter(([key]) => key !== "init");
-          return Object.fromEntries(await Promise.all(
-            entries.map(async ([key, mod]) => {
-              const maybeInit = (mod as GeexModule).init;
-              try {
-                return [key, await maybeInit(force)]
-              } catch (err) {
-                console.error(err);
-                return [key, null];
-              }
-            })
-          ));
+          return Object.fromEntries(
+            await Promise.all(
+              entries.map(async ([key, mod]) => {
+                const maybeInit = (mod as GeexModule).init;
+                try {
+                  return [key, await maybeInit(force)];
+                } catch (err) {
+                  console.error(err);
+                  return [key, null];
+                }
+              }),
+            ),
+          ) as { [K in keyof GeexModules<TExtensionModules>]: unknown };
         })();
       }
       return _initPromise;
     };
-    
-    modules.tenant ??= createTenantModule(injector);
-    modules.auth ??= createAuthModule(injector);
-    modules.identity ??= createIdentityModule(injector);
-    modules.messaging ??= createMessagingModule(injector);
-    modules.settings ??= createSettingsModule(injector);
-    modules.ui ??= createUiModule(injector);
 
     geex = modules;
   });

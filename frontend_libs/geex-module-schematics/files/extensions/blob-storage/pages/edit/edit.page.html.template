@@ -1,0 +1,19 @@
+<page-header title="Upload file" />
+<nz-card>
+  <form nz-form [formGroup]="form">
+    <nz-form-item>
+      <nz-form-label nzRequired>File</nz-form-label>
+      <nz-form-control><input type="file" (change)="selectFile($event)" /></nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <nz-form-label nzRequired>Storage type</nz-form-label>
+      <nz-form-control>
+        <nz-select [formControl]="form.controls.storageType">
+          @for (storageType of storageTypes; track storageType) { <nz-option [nzValue]="storageType" [nzLabel]="storageType" /> }
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+    <button nz-button type="button" (click)="router.navigate(['/blob-storage'])">Cancel</button>
+    <button nz-button nzType="primary" type="button" [disabled]="form.invalid" (click)="submit()">Upload</button>
+  </form>
+</nz-card>

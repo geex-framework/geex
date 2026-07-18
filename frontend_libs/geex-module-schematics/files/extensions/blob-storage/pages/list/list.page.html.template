@@ -1,0 +1,9 @@
+<page-header title="Blob storage" />
+<nz-card>
+  <div style="display:flex; gap:8px; margin-bottom:16px">
+    <input nz-input [(ngModel)]="filterText" placeholder="File name" (keyup.enter)="load()" />
+    <button nz-button nzType="default" (click)="load()">Search</button>
+    <button nz-button nzType="primary" (click)="add()">Upload</button>
+  </div>
+  <st [data]="data()" [columns]="columns" [loading]="loading()" [total]="total()" [page]="{ front: false }" />
+</nz-card>

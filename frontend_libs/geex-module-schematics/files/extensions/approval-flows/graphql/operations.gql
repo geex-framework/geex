@@ -1,0 +1,31 @@
+query approvalFlows($filter: ApprovalFlowFilterInput, $request: QueryApprovalFlowRequest, $skip: Int = 0, $take: Int = 10, $sort: [ApprovalFlowSortInput!]) {
+  approvalFlow(filter: $filter, request: $request, skip: $skip, take: $take, sort: $sort) {
+    items { id name description status orgCode activeIndex createdOn modifiedOn }
+    pageInfo { hasPreviousPage hasNextPage }
+    totalCount
+  }
+}
+
+query approvalFlowTemplates($filter: ApprovalFlowTemplateFilterInput, $request: QueryApprovalFlowTemplateRequest, $skip: Int = 0, $take: Int = 10, $sort: [ApprovalFlowTemplateSortInput!]) {
+  approvalFlowTemplate(filter: $filter, request: $request, skip: $skip, take: $take, sort: $sort) {
+    items { id name description orgCode createdOn modifiedOn nodes { id name index auditRole carbonCopyUserIds } }
+    pageInfo { hasPreviousPage hasNextPage }
+    totalCount
+  }
+}
+
+query approvalFlowTemplateById($id: String!) {
+  approvalFlowTemplateById(id: $id) { id name description orgCode createdOn modifiedOn nodes { id name index auditRole carbonCopyUserIds } }
+}
+
+mutation createApprovalFlowTemplate($request: CreateApprovalFlowTemplateRequest!) {
+  createApprovalFlowTemplate(request: $request) { id }
+}
+
+mutation editApprovalFlowTemplate($request: EditApprovalFlowTemplateRequest!) {
+  editApprovalFlowTemplate(request: $request) { id }
+}
+
+mutation deleteApprovalFlowTemplate($ids: [String!]!) {
+  deleteApprovalFlowTemplate(ids: $ids)
+}

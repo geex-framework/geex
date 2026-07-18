@@ -1,0 +1,64 @@
+{
+  "name": "@geexcode/geex-angular",
+  "version": "0.0.41",
+  "description": "Geex Angular core: HTTP, Apollo, i18n, Delon page bases, startup, headless platform modules.",
+  "module": "fesm2022/geexcode-geex-angular.mjs",
+  "typings": "index.d.ts",
+  "sideEffects": [
+    "**/extensions/**/*.js",
+    "**/fesm2022/**"
+  ],
+  "peerDependencies": {
+    "@angular/animations": "^20.0.0",
+    "@angular/common": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@apollo/client": "^4.0.1",
+    "@delon/abc": "^20.0.0",
+    "@delon/acl": "^20.0.0",
+    "@delon/form": "^20.0.0",
+    "@delon/theme": "^20.0.0",
+    "@delon/util": "^20.0.0",
+    "@ngx-translate/core": "^17.0.0",
+    "angular-oauth2-oidc": ">=15.0.0 <21.0.0",
+    "apollo-angular": "^14.0.0",
+    "date-fns": "^2.30.0 || ^4.0.0",
+    "echarts": "^5.5.0",
+    "extract-files": "^13.0.0",
+    "glob": "^11.0.3",
+    "graphql": "^16.8.0",
+    "graphql-ws": "^6.0.0",
+    "json5": "^2.2.3",
+    "kiwi-intl": "^1.2.5",
+    "linqts-camelcase": "^1.12.0",
+    "lodash-es": "^4.17.21",
+    "ng-zorro-antd": "^20.0.0",
+    "ngx-echarts": "^20.0.0",
+    "rxjs": "^7.8.0",
+    "screenfull": "^6.0.0",
+    "spark-md5": "^3.0.0",
+    "ts-pattern": "^5.0.0",
+    "yaml": "^2.8.1"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./fesm2022/geexcode-geex-angular.mjs"
+    },
+    "./esbuild/gql-redirect.plugin": {
+      "default": "./dist/esbuild/gql-redirect.plugin.js"
+    }
+  },
+  "dependencies": {
+    "graphql-tag": "^2.12.6",
+    "tslib": "^2.6.3"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "GeexSyncModule",
+  "title": "Sync Geex UI Module",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Module short name",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "Module name"
+    },
+    "path": {
+      "type": "string",
+      "default": "src/app/modules"
+    },
+    "force": {
+      "type": "boolean",
+      "default": false,
+      "description": "Overwrite existing files"
+    },
+    "overwrite": {
+      "type": "boolean",
+      "default": false,
+      "visible": false,
+      "description": "Internal CLI alias for force"
+    }
+  },
+  "required": ["name"]
+}

@@ -5,7 +5,8 @@ import { catchError, map } from "rxjs/operators";
 import { MOCKING_CAPABILITIES } from "./graphql";
 import { GeexMockingCapabilities, GeexMockingOptions } from "./types";
 
-export const GEEX_MOCKING_OPTIONS = new InjectionToken<GeexMockingOptions>("GEEX_MOCKING_OPTIONS");
+export const GEEX_MOCKING_OPTIONS =
+  new InjectionToken<Readonly<GeexMockingOptions>>("GEEX_MOCKING_OPTIONS");
 
 const DISABLED: GeexMockingCapabilities = {
   enabled: false,
@@ -21,7 +22,7 @@ export class GeexMockingCapabilitiesService {
 
   constructor(
     private readonly apollo: Apollo,
-    @Optional() @Inject(GEEX_MOCKING_OPTIONS) private readonly options: GeexMockingOptions | null,
+    @Optional() @Inject(GEEX_MOCKING_OPTIONS) private readonly options: Readonly<GeexMockingOptions> | null,
   ) {}
 
   getCapabilities(force = false): Promise<GeexMockingCapabilities> {

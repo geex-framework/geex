@@ -1,0 +1,15 @@
+query blobObjects($filter: IBlobObjectFilterInput, $skip: Int = 0, $take: Int = 10) {
+  blobObjects(filter: $filter, skip: $skip, take: $take) {
+    items { id fileName fileSize md5 mimeType storageType url expireAt createdOn }
+    pageInfo { hasPreviousPage hasNextPage }
+    totalCount
+  }
+}
+
+mutation createBlobObject($request: CreateBlobObjectRequest!) {
+  createBlobObject(request: $request) { id fileName fileSize md5 mimeType storageType url expireAt createdOn }
+}
+
+mutation deleteBlobObject($request: DeleteBlobObjectRequest!) {
+  deleteBlobObject(request: $request)
+}

@@ -2,7 +2,9 @@
   "workbench.colorCustomizations": {
     "activityBar.background": "#392C0F",
     "titleBar.activeBackground": "#4F3D15",
-    "titleBar.activeForeground": "#FCFAF4"
+    "titleBar.activeForeground": "#FCFAF4",
+    "titleBar.inactiveBackground": "#07296A",
+    "titleBar.inactiveForeground": "#F8FAFF"
   },
   "dotnet.defaultSolution": "disable"
 }

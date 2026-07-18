@@ -1,0 +1,7 @@
+import { Routes } from "@angular/router";
+
+export const approvalFlowsPagesRoutes: Routes = [
+  { path: "", loadComponent: () => import("./list/list.page").then(m => m.ApprovalFlowTemplateListPage) },
+  { path: "edit", loadComponent: () => import("./edit/edit.page").then(m => m.ApprovalFlowTemplateEditPage) },
+  { path: "edit/:id", loadComponent: () => import("./edit/edit.page").then(m => m.ApprovalFlowTemplateEditPage) },
+];

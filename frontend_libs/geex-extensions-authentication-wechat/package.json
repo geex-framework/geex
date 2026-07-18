@@ -5,10 +5,8 @@
   "sideEffects": false,
   "peerDependencies": {
     "@angular/core": "^20.0.0",
-    "@angular/router": "^20.0.0",
     "@apollo/client": "^4.0.1",
-    "@geexcode/geex-angular": ">=0.0.39",
-    "angular-oauth2-oidc": "^15.0.0",
+    "angular-oauth2-oidc": ">=15.0.0 <21.0.0",
     "apollo-angular": "^14.0.0",
     "graphql": "^16.8.0",
     "rxjs": "^7.8.0"
@@ -29,12 +27,14 @@
     },
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/fesm2022/geexcode-geex-extensions-authentication-wechat.mjs",
       "default": "./dist/fesm2022/geexcode-geex-extensions-authentication-wechat.mjs"
     }
   },
   "scripts": {
     "clean": "rimraf dist",
     "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
+    "test": "node --test src/provide-geex-authentication-wechat.node-test.mjs",
     "prepublishOnly": "npm run build",
     "publish:public": "npm publish ./dist --access public"
   },

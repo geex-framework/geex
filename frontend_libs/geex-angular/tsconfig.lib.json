@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc",
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSources": true,
+    "types": ["lodash-es"]
+  },
+  "exclude": ["**/*.spec.ts", "**/*.node-test.mjs"],
+  "files": ["src/shims.d.ts"],
+  "include": ["src/**/*.ts"],
+  "angularCompilerOptions": {
+    "compilationMode": "partial",
+    "strictMetadataEmit": true,
+    "enableResourceInlining": true
+  }
+}

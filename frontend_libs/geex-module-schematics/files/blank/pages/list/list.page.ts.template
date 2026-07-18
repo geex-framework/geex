@@ -1,0 +1,10 @@
+import { Component } from "@angular/core";
+import { SharedModule } from "@/shared/shared.module";
+
+@Component({
+  selector: "app-<%= name %>-list",
+  standalone: true,
+  imports: [SharedModule],
+  templateUrl: "./list.page.html",
+})
+export class <%= className %>ListPage {}
