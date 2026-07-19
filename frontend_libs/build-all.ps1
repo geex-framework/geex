@@ -14,7 +14,10 @@ $Root = $PSScriptRoot
 
 $PreferredOrder = @(
   'geex-angular',
-  'geex-cli',
+  'geex-extensions-settings',
+  'geex-extensions-multi-tenant',
+  'geex-extensions-identity',
+  'geex-extensions-authentication',
   'geex-extensions-authorization',
   'geex-extensions-authentication-wechat',
   'geex-extensions-mocking'

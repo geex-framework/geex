@@ -7,10 +7,19 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("provideGeexMocking", () => {
-  it("uses the standard options token and environment providers", () => {
+  it("registers the mocking module through core module contributions", () => {
     const source = fs.readFileSync(path.join(__dirname, "provide-geex-mocking.ts"), "utf8");
     assert.match(source, /GEEX_MOCKING_OPTIONS/);
+    assert.match(source, /provideGeexModuleContribution/);
+    assert.match(source, /\(\{\s*mocking:/);
     assert.match(source, /EnvironmentProviders/);
     assert.match(source, /makeEnvironmentProviders/);
+  });
+
+  it("uses core-owned GeexModule contracts", () => {
+    const types = fs.readFileSync(path.join(__dirname, "mocking.types.ts"), "utf8");
+    assert.match(types, /from "@geexcode\/geex-angular"/);
+    assert.match(types, /declare module "@geexcode\/geex-angular"/);
+    assert.match(types, /mocking:/);
   });
 });

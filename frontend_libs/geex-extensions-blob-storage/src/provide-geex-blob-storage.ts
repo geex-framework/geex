@@ -1,17 +1,18 @@
-import { EnvironmentProviders, InjectionToken, makeEnvironmentProviders } from "@angular/core";
+import { EnvironmentProviders, InjectionToken, Injector, makeEnvironmentProviders } from "@angular/core";
+import { provideGeexModuleContribution } from "@geexcode/geex-angular";
 import type { DocumentNode } from "graphql";
-import {
-  GEEX_BLOB_CREATE_DOCUMENT,
-  GEEX_BLOB_DEFAULT_STORAGE_TYPE,
-  GEEX_BLOB_DELETE_DOCUMENT,
-  GEEX_BLOB_LIST_DOCUMENT,
-} from "./blob.tokens";
+import { createBlobStorageModule, type BlobStorageModuleConfig } from "./blob-storage.module";
+import type { BlobStorageModule } from "./blob-storage.types";
 
 export interface GeexBlobStorageOptions {
   readonly defaultStorageType?: string;
-  readonly createDocument?: DocumentNode;
-  readonly listDocument?: DocumentNode;
-  readonly deleteDocument?: DocumentNode;
+  readonly createDocument: DocumentNode;
+  readonly listDocument: DocumentNode;
+  readonly deleteDocument: DocumentNode;
+  readonly createBlobStorageModule?: (
+    injector: Injector,
+    config: BlobStorageModuleConfig,
+  ) => BlobStorageModule;
 }
 
 export const GEEX_BLOB_STORAGE_OPTIONS = new InjectionToken<Readonly<GeexBlobStorageOptions>>(
@@ -19,21 +20,22 @@ export const GEEX_BLOB_STORAGE_OPTIONS = new InjectionToken<Readonly<GeexBlobSto
 );
 
 export function provideGeexBlobStorage(
-  options: Readonly<GeexBlobStorageOptions> = {},
+  options: Readonly<GeexBlobStorageOptions>,
 ): EnvironmentProviders {
   return makeEnvironmentProviders([
     { provide: GEEX_BLOB_STORAGE_OPTIONS, useValue: options },
-    ...(options.defaultStorageType
-      ? [{ provide: GEEX_BLOB_DEFAULT_STORAGE_TYPE, useValue: options.defaultStorageType }]
-      : []),
-    ...(options.createDocument
-      ? [{ provide: GEEX_BLOB_CREATE_DOCUMENT, useValue: options.createDocument }]
-      : []),
-    ...(options.listDocument
-      ? [{ provide: GEEX_BLOB_LIST_DOCUMENT, useValue: options.listDocument }]
-      : []),
-    ...(options.deleteDocument
-      ? [{ provide: GEEX_BLOB_DELETE_DOCUMENT, useValue: options.deleteDocument }]
-      : []),
+    provideGeexModuleContribution({
+      createModules: ({ injector }) => {
+        const config: BlobStorageModuleConfig = {
+          defaultStorageType: options.defaultStorageType ?? "Db",
+          createDocument: options.createDocument,
+          listDocument: options.listDocument,
+          deleteDocument: options.deleteDocument,
+        };
+        return {
+          blobStorage: (options.createBlobStorageModule ?? createBlobStorageModule)(injector, config),
+        };
+      },
+    }),
   ]);
 }

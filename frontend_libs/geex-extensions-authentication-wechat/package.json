@@ -1,11 +1,12 @@
 {
   "name": "@geexcode/geex-extensions-authentication-wechat",
   "version": "0.0.1",
-  "description": "WeChat login extension for Geex Angular apps.",
+  "description": "WeChat login extension: headless wechatAuth module for Geex Angular apps.",
   "sideEffects": false,
   "peerDependencies": {
     "@angular/core": "^20.0.0",
     "@apollo/client": "^4.0.1",
+    "@geexcode/geex-angular": ">=0.0.41",
     "angular-oauth2-oidc": ">=15.0.0 <21.0.0",
     "apollo-angular": "^14.0.0",
     "graphql": "^16.8.0",
@@ -43,6 +44,7 @@
     "@angular/compiler-cli": "^20.0.0",
     "@angular/core": "^20.0.0",
     "@apollo/client": "^4.2.7",
+    "@geexcode/geex-angular": "workspace:*",
     "angular-oauth2-oidc": "^20.0.2",
     "apollo-angular": "^14.1.0",
     "graphql": "^16.9.0",

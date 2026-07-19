@@ -1,0 +1,6 @@
+mutation generatePersonalAccessToken($req: GeneratePersonalAccessTokenRequest!) {
+  generatePersonalAccessToken(request: $req) {
+    userId
+    token
+  }
+}

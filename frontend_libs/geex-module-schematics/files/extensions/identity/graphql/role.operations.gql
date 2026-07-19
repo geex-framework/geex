@@ -1,0 +1,87 @@
+# 角色列表
+query roleLists($skip: Int, $take: Int, $filter: IRoleFilterInput) {
+  roles(skip: $skip, take: $take, filter: $filter) {
+    items {
+      ...RoleBrief
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+# 角色 selectMenu options
+query roleMenus($filter: IRoleFilterInput) {
+  roles(skip: 0, take: 999, filter: $filter) {
+    items {
+      ...RoleMinimal
+    }
+  }
+}
+# 根据角色名称获取角色详情
+query roleByName($name: String) {
+  roles(skip: 0, take: 1, filter: { name: { eq: $name } }) {
+    items {
+      ...RoleDetail
+    }
+  }
+}
+# 根据角色id获取角色详情
+query roleById($id: String) {
+  roles(skip: 0, take: 1, filter: { id: { eq: $id } }) {
+    items {
+      ...RoleDetail
+    }
+  }
+}
+# 新增角色
+mutation createRole($request: CreateRoleRequest!) {
+  createRole(request: $request) {
+    id
+    createdOn
+    name
+    users {
+      id
+      username
+      email
+      phoneNumber
+      ... on User {
+        permissions
+      }
+    }
+    permissions
+  }
+}
+# 给角色添加组织权限
+mutation authorize($request: AuthorizeRequest!) {
+  authorize(request: $request)
+}
+mutation setRoleDefault($roleId: String!) {
+  setRoleDefault(request: { roleId: $roleId })
+}
+# 删除角色
+mutation deleteRole($ids: [String!]!) {
+  deleteRole(ids: $ids)
+}
+# 角色list
+fragment RoleBrief on Role {
+  createdOn
+  name
+  id
+  isStatic
+  isDefault
+}
+# 角色详情
+fragment RoleDetail on Role {
+  ...RoleBrief
+  permissions
+  name
+  users {
+    id
+  }
+}
+# 角色下拉菜单Dto
+fragment RoleMinimal on Role {
+  id
+  name
+}

@@ -1,0 +1,65 @@
+<list-page-layout [title]="'用户管理'"
+                  [loading]="loading()"
+                  [total]="total()"
+                  [data]="data()"
+                  [pi]="params().pi"
+                  [ps]="params().ps"
+                  [selectedCount]="selectedData().length"
+                  [columns]="columns()"
+                  [filtersInHeader]="false"
+                  (refresh)="refresh()"
+                  (tableChange)="tableChange($event)">
+  @if (paramsForm) {
+    <form filters
+          nz-form
+          [formGroup]="paramsForm"
+          nzLayout="inline">
+      <nz-form-item>
+        <nz-form-label>名称</nz-form-label>
+        <nz-form-control>
+          <input nz-input
+                 [formControl]="paramsForm.controls.username" />
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label>创建日期</nz-form-label>
+        <nz-form-control>
+          <nz-range-picker [formControl]="paramsForm.controls.createDate"></nz-range-picker>
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-label>组织筛选</nz-form-label>
+        <nz-form-control>
+          <nz-tree-select [formControl]="paramsForm.controls.org"
+                          org-tree-select-picker>
+          </nz-tree-select>
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-control>
+          <button (click)="refresh()"
+                  nz-button
+                  nzType="primary">
+            <i nz-icon
+               nzType="reload"></i>
+            刷新</button>
+        </nz-form-control>
+      </nz-form-item>
+      <nz-form-item>
+        <nz-form-control>
+          <button (click)="createUser()"
+                  nzType="primary"
+                  nz-button
+                  [acl]="AppPermission.identity_mutation_createUser">
+            <i nz-icon
+               nzType="user-add"></i>
+            新增用户</button>
+        </nz-form-control>
+      </nz-form-item>
+    </form>
+  }
+  <ng-container toolbar>
+    <nz-divider nzType="vertical" />
+    <a (click)="selectedData.set([])">{{ I18N.Common.list.clearSelection }}</a>
+  </ng-container>
+</list-page-layout>

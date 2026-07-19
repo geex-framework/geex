@@ -1,20 +1,19 @@
-import { inject } from "@angular/core";
 import { CanMatchFn } from "@angular/router";
 import { OAuthService } from "angular-oauth2-oidc";
-import { GeexMockingCapabilitiesService } from "./mocking-capabilities.service";
-import { GEEX_SUPER_ADMIN_ID } from "./types";
+import { inject } from "@angular/core";
+import { geex } from "@geexcode/geex-angular";
+import { GEEX_DEFAULT_SUPER_ADMIN_USER_ID } from "@geexcode/geex-extensions-identity";
 
 export const mockingEnabledCanMatch: CanMatchFn = () =>
-  inject(GeexMockingCapabilitiesService).getCapabilities().then(capabilities => capabilities.enabled);
+  geex.mocking.getCapabilities().then(capabilities => capabilities.enabled);
 
 export const mockingSuperAdminCanMatch: CanMatchFn = () => {
-  const capabilities = inject(GeexMockingCapabilitiesService);
   const oauth = inject(OAuthService, { optional: true });
-  return capabilities.getCapabilities().then(result => {
+  return geex.mocking.getCapabilities().then(result => {
     if (!result.enabled || !result.management) {
       return false;
     }
     const claims = oauth?.getIdentityClaims() as { sub?: string } | null;
-    return claims?.sub === GEEX_SUPER_ADMIN_ID;
+    return claims?.sub === GEEX_DEFAULT_SUPER_ADMIN_USER_ID;
   });
 };

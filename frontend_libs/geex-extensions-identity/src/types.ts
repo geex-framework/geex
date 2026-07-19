@@ -1,18 +1,9 @@
 import type { WritableSignal } from "@angular/core";
 import type { GeexModule } from "@geexcode/geex-angular";
 export type { MessagingModule, SettingItem, SettingsModule, UiModule } from "@geexcode/geex-angular";
+export type { Tenant, ITenant, TenantModule } from "@geexcode/geex-extensions-multi-tenant";
 
-export interface Tenant {
-  id: string;
-  code: string;
-  name: string;
-  isEnabled: boolean;
-  createdOn: Date;
-  [key: string]: any;
-}
-
-/** @deprecated Use `Tenant`; alias for host `ITenant` compatibility. */
-export type ITenant = Tenant;
+export const GEEX_DEFAULT_SUPER_ADMIN_USER_ID = "000000000000000000000001";
 
 export const LoginProviderEnum: Record<string, string> & {
   Local: "Local";
@@ -59,33 +50,26 @@ export interface User {
   [key: string]: any;
 }
 
-export interface TenantModule extends GeexModule<{
-  current: WritableSignal<Tenant | null>;
-  loadTenantData(code: string): Promise<Tenant>;
-  switchTenant(targetTenantCode: string): void;
-}> {}
-
-export interface AuthModule extends GeexModule<{
-  user: WritableSignal<User | null>;
-  loadUserData(): Promise<User | undefined>;
-}> {}
-
 export interface IdentityModule extends GeexModule<{
   orgs: WritableSignal<Org[]>;
   userOwnedOrgs: WritableSignal<Org[]>;
 }> {}
 
+/** Auth module dependency shape; kept structural to avoid depending on `@geexcode/geex-extensions-authentication`. */
+export interface IdentityAuthDeps {
+  init: (force?: boolean) => Promise<unknown>;
+  user: WritableSignal<User | null>;
+}
+
 export interface IdentityModuleDeps {
-  tenant: Pick<TenantModule, "init">;
-  auth: Pick<AuthModule, "init" | "user">;
+  tenant: Pick<GeexModule, "init">;
+  auth: IdentityAuthDeps;
 }
 
 export type IdentityModuleDepsFactory = () => IdentityModuleDeps;
 
 declare module "@geexcode/geex-angular" {
   interface GeexModuleMap {
-    tenant: TenantModule;
-    auth: AuthModule;
     identity: IdentityModule;
   }
 }

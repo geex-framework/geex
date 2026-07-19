@@ -1,0 +1,133 @@
+<div class="auth-container">
+  <!-- 品牌头部 -->
+  <div class="brand-header">
+    <div class="logo-desktop">
+      <img ngSrc="assets/logo.png"
+           alt="Brand Logo"
+           class="brand-logo"
+           width="64"
+           height="64" />
+      <h1 class="brand-title">欢迎加入</h1>
+      <p class="brand-subtitle">您的账户已创建成功</p>
+    </div>
+  </div>
+
+  <!-- 结果卡片 -->
+  <div class="auth-card">
+    <div class="card-content">
+      <!-- 成功图标 -->
+      <div class="result-icon">
+        <div class="success-circle">
+          <i nz-icon
+             nzType="check"
+             nzTheme="outline"></i>
+        </div>
+      </div>
+
+      <!-- 结果标题 -->
+      <div class="result-title">
+        <h2>注册成功！</h2>
+        <p class="result-subtitle">您的账户已经创建完成，请查看您的邮箱以激活账户</p>
+      </div>
+
+      <!-- 操作步骤 -->
+      <div class="result-steps">
+        <div class="step-item">
+          <div class="step-icon">
+            <i nz-icon
+               nzType="mail"
+               nzTheme="outline"></i>
+          </div>
+          <div class="step-content">
+            <div class="step-title">查看邮箱</div>
+            <div class="step-desc">我们已发送激活链接到您的邮箱</div>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-icon">
+            <i nz-icon
+               nzType="link"
+               nzTheme="outline"></i>
+          </div>
+          <div class="step-content">
+            <div class="step-title">点击激活</div>
+            <div class="step-desc">点击邮件中的激活链接完成验证</div>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-icon">
+            <i nz-icon
+               nzType="login"
+               nzTheme="outline"></i>
+          </div>
+          <div class="step-content">
+            <div class="step-title">开始使用</div>
+            <div class="step-desc">激活后即可登录系统</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="result-actions"
+           style="display: flex; gap: 12px;">
+        <button (click)="msg.success('email')"
+                nz-button
+                class="auth-button"
+                nzType="primary"
+                style="flex: 1;">
+          <span class="button-content">
+            <i nz-icon
+               nzType="mail"
+               nzTheme="outline"></i>
+            查看邮箱
+          </span>
+        </button>
+
+        <button routerLink="/auth/login"
+                nz-button
+                class="auth-button"
+                nzType="default"
+                style="flex: 1;">
+          <span class="button-content">
+            <i nz-icon
+               nzType="login"
+               nzTheme="outline"></i>
+            前往登录
+          </span>
+        </button>
+      </div>
+
+      <!-- 提示信息 -->
+      <div class="result-hint">
+        <div class="hint-item">
+          <i nz-icon
+             nzType="info-circle"
+             nzTheme="outline"></i>
+          <span>没有收到邮件？请检查垃圾邮件文件夹</span>
+        </div>
+        <div class="hint-item">
+          <i nz-icon
+             nzType="clock-circle"
+             nzTheme="outline"></i>
+          <span>激活链接将在24小时后过期</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部提示 -->
+  <div class="footer-hint">
+    <div class="hint-line"></div>
+    <div class="hint-content">
+      <i nz-icon
+         nzType="question-circle"
+         nzTheme="outline"></i>
+      <span>需要帮助？查看</span>
+      <a href="#"
+         class="docs-link">注册指南</a>
+    </div>
+    <div class="hint-line"></div>
+  </div>
+</div>

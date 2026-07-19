@@ -1,5 +1,5 @@
-export * from "./types";
+export * from "./mocking.types";
 export * from "./graphql";
-export * from "./mocking-capabilities.service";
+export * from "./mocking.module";
 export * from "./mocking.guards";
 export * from "./provide-geex-mocking";

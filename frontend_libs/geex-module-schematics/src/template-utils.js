@@ -3,7 +3,15 @@ const { apply, applyTemplates, forEach, move, url } = require("@angular-devkit/s
 
 const { version: packageVersion } = require("../package.json");
 
-const OVERLAY_TEMPLATES = new Set(["identity", "blob-storage", "approval-flows", "mocking"]);
+const OVERLAY_TEMPLATES = new Set([
+  "identity",
+  "blob-storage",
+  "approval-flows",
+  "mocking",
+  "auth",
+  "settings",
+  "tenant",
+]);
 
 function toCamelAlias(name) {
   const dashed = strings.dasherize(name);

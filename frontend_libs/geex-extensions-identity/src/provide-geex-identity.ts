@@ -5,14 +5,10 @@ import {
   provideGeexModuleContribution,
   type GeexTypePolicies,
 } from "@geexcode/geex-angular";
-import { createAuthModule } from "./auth.module";
 import { createIdentityModule } from "./identity.module";
-import { createTenantModule } from "./tenant.module";
-import type { AuthModule, IdentityModule, IdentityModuleDepsFactory, TenantModule } from "./types";
+import type { IdentityModule, IdentityModuleDeps, IdentityModuleDepsFactory } from "./types";
 
 export interface GeexIdentityOptions {
-  readonly createTenantModule?: (injector: Injector) => TenantModule;
-  readonly createAuthModule?: (injector: Injector) => AuthModule;
   readonly createIdentityModule?: (
     injector: Injector,
     dependencies: IdentityModuleDepsFactory,
@@ -68,14 +64,19 @@ export function provideGeexIdentity(
   return makeEnvironmentProviders([
     { provide: GEEX_IDENTITY_OPTIONS, useValue: options },
     provideGeexModuleContribution({
-      createModules: ({ injector }) => {
-        const tenant = (options.createTenantModule ?? createTenantModule)(injector);
-        const auth = (options.createAuthModule ?? createAuthModule)(injector);
+      createModules: ({ injector, modules }) => {
+        const tenant = modules["tenant"];
+        const auth = modules["auth"];
+        if (!tenant || !auth) {
+          throw new Error(
+            "provideGeexMultiTenant() and provideGeexAuthentication() must be registered before provideGeexIdentity()",
+          );
+        }
         const identity = (options.createIdentityModule ?? createIdentityModule)(
           injector,
-          () => ({ tenant, auth }),
+          () => ({ tenant, auth } as unknown as IdentityModuleDeps),
         );
-        return { tenant, auth, identity };
+        return { identity };
       },
     }),
     provideGeexApolloTypePolicies(geexIdentityTypePolicies),

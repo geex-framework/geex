@@ -1,6 +1,6 @@
 import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
 import { gql } from "graphql-tag";
-import { GeexMockingCapabilities } from "./types";
+import { GeexMockingCapabilities } from "./mocking.types";
 
 export type MockingCapabilitiesVariables = Record<string, never>;
 

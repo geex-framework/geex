@@ -1,0 +1,149 @@
+@use '../shared/style' as *;
+
+:host {
+  @extend .auth-page;
+  width: min(100%, 400px);
+  max-width: 400px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+.auth-container {
+  width: 100%;
+  align-items: stretch;
+}
+
+.brand-header {
+  width: 100%;
+  margin-bottom: $spacing-sm;
+
+  .logo-desktop {
+    .brand-logo {
+      margin-bottom: $spacing-sm;
+    }
+
+    .brand-subtitle {
+      margin-top: $spacing-xs;
+    }
+  }
+}
+
+.auth-card {
+  width: 100%;
+
+  .card-content {
+    padding: $spacing-xxl;
+  }
+}
+
+.auth-form {
+  .form-title {
+    margin-bottom: $spacing-lg;
+  }
+
+  .form-group {
+    margin-bottom: $spacing-lg;
+
+    &--submit {
+      margin-bottom: 0;
+    }
+  }
+}
+
+::ng-deep .register-password-cdk {
+  .ant-popover-inner-content {
+    padding: $spacing-lg;
+  }
+}
+
+.password-strength {
+  .strength-header {
+    margin-bottom: $spacing-md;
+
+    .strength-label {
+      font-size: 14px;
+      font-weight: 600;
+      padding: $spacing-xs $spacing-md;
+      border-radius: $radius-sm;
+      text-align: center;
+
+      &.success {
+        background: $gradient-success;
+        color: $success;
+      }
+
+      &.warning {
+        background: linear-gradient(135deg, #fff7e6 0%, #ffd591 100%);
+        color: $warning;
+      }
+
+      &.error {
+        background: $gradient-error;
+        color: $error;
+      }
+    }
+  }
+
+  .strength-progress {
+    margin-bottom: $spacing-md;
+  }
+
+  .strength-tips {
+    p {
+      margin: 0 0 $spacing-xs 0;
+      font-size: 13px;
+      color: $text-secondary;
+      line-height: 1.4;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.captcha-row {
+  @include flex-between;
+  gap: $spacing-md;
+  align-items: flex-start;
+
+  .captcha-input {
+    flex: 1;
+  }
+
+  .captcha-button {
+    flex-shrink: 0;
+    width: 120px;
+  }
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: $spacing-sm;
+  padding-top: $spacing-md;
+  border-top: 1px solid $border-light;
+
+  .footer-text {
+    font-size: 14px;
+    color: $text-secondary;
+    margin-right: $spacing-sm;
+  }
+
+  .footer-link {
+    font-size: 14px;
+    font-weight: 600;
+    color: $primary;
+    text-decoration: none;
+
+    &:hover {
+      color: $primary-hover;
+      text-decoration: underline;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  ::ng-deep .register-password-cdk {
+    display: none !important;
+  }
+}

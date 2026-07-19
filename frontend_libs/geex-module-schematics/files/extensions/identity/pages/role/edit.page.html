@@ -1,0 +1,46 @@
+@if (params()) {
+<page-header title="编辑角色">
+</page-header>
+@if (paramsForm) {
+  <nz-card>
+    @if (paramsForm) {
+      <form nz-form
+        [formGroup]="paramsForm"
+        autocomplete="off">
+        <nz-form-item>
+          <nz-form-label nzFor="roleName">角色</nz-form-label>
+          <nz-form-control>
+            <input nz-input
+              [formControl]="paramsForm.controls.roleName">
+            </nz-form-control>
+          </nz-form-item>
+        </form>
+      }
+      <nz-card nzTitle="权限">
+        <app-permissions [permissions]="originalAllowedPermissions"
+        (permissionsChange)="allowedPermissions = $event"></app-permissions>
+      </nz-card>
+  <div style="display: flex;
+             text-align: center;
+             gap: 10px;
+             justify-content: center;">
+        <button nz-button
+          type="button"
+          (click)="close()"><i nz-icon
+          nzType="rollback"
+        nzTheme="outline"></i>返回</button>
+        <span nz-tooltip
+          [nzTooltipTitle]="entity?.isStatic ?'系统内置角色不可编辑.':''">
+          <button nz-button
+            type="submit"
+            nzType="primary"
+            [disabled]="entity?.isStatic"
+            (click)="submit()">
+            <i nz-icon
+              nzType="save"
+            nzTheme="outline"></i>保存</button>
+          </span>
+        </div>
+      </nz-card>
+    }
+  }

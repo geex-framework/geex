@@ -1,0 +1,175 @@
+// 导入公共样式
+@use '../shared/style' as *;
+
+// ===============================
+// 注册成功页面特定样式
+// ===============================
+
+:host {
+  @extend .auth-page;
+}
+
+// 成功结果页面特殊样式
+.result-icon {
+  text-align: center;
+  margin-bottom: $spacing-xxxl;
+  
+  @include result-icon-success;
+}
+
+.result-title {
+  text-align: center;
+  margin-bottom: $spacing-xxxl;
+  
+  h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 $spacing-md 0;
+      color: $success;
+  }
+  
+  .result-subtitle {
+    font-size: 16px;
+    color: $text-secondary;
+    line-height: 1.5;
+  }
+}
+
+// 步骤列表
+.result-steps {
+  margin-bottom: $spacing-xxxl;
+  
+  .step-item {
+    @include step-item-style;
+    @include fade-in-animation;
+    
+    &:nth-child(1) { @include fade-in-animation(0.1s); }
+    &:nth-child(2) { @include fade-in-animation(0.2s); }
+    &:nth-child(3) { @include fade-in-animation(0.3s); }
+    
+    &:hover .step-icon {
+      background: $gradient-primary;
+    }
+    
+    .step-icon {
+      @include step-icon-style;
+    }
+    
+    .step-content {
+      flex: 1;
+      
+      .step-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: $text-primary;
+        margin-bottom: $spacing-xs;
+      }
+      
+      .step-desc {
+        font-size: 14px;
+        color: $text-secondary;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
+// 操作按钮组
+.result-actions {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-xxxl;
+  
+  .auth-button {
+    flex: 1;
+  }
+}
+
+// 提示信息
+.result-hint {
+  background: rgba($primary, 0.05);
+  border: 1px solid rgba($primary, 0.1);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  
+  .hint-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    font-size: 14px;
+    color: $text-secondary;
+    margin-bottom: $spacing-sm;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    i {
+      color: $primary;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// 脉冲动画
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 30px rgba($success, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba($success, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 30px rgba($success, 0.3);
+  }
+}
+
+// 响应式调整
+@media (max-width: 768px) {
+  .result-icon {
+    @include result-icon-success(60px);
+  }
+  
+  .result-title {
+    h2 {
+      font-size: 24px;
+    }
+    
+    .result-subtitle {
+      font-size: 14px;
+    }
+  }
+  
+  .result-steps .step-item {
+    padding: $spacing-md;
+    margin-bottom: $spacing-md;
+    
+    .step-icon {
+      @include step-icon-style(32px);
+      margin-right: $spacing-md;
+    }
+    
+    .step-content {
+      .step-title {
+        font-size: 14px;
+      }
+      
+      .step-desc {
+        font-size: 13px;
+      }
+    }
+  }
+  
+  .result-actions {
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+  
+  .result-hint {
+    padding: $spacing-md;
+    
+    .hint-item {
+      font-size: 13px;
+    }
+  }
+}

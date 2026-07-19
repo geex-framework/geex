@@ -1,9 +1,13 @@
 import { EnvironmentProviders, InjectionToken, Injector, makeEnvironmentProviders } from "@angular/core";
 import { ACLService } from "@delon/acl";
+import { provideGeexModuleContribution } from "@geexcode/geex-angular";
 import { AuthorizeGuard } from "./authorize.guard";
+import { createAuthorizationModule } from "./authorization.module";
+import type { AuthorizationModule } from "./authorization.types";
 import { LocalStorageACLService } from "./local-storage-acl.service";
 
 export interface GeexAuthorizationOptions {
+  readonly createAuthorizationModule?: (injector: Injector) => AuthorizationModule;
   readonly createAclService?: (injector: Injector) => ACLService;
 }
 
@@ -16,6 +20,11 @@ export function provideGeexAuthorization(
 ): EnvironmentProviders {
   return makeEnvironmentProviders([
     { provide: GEEX_AUTHORIZATION_OPTIONS, useValue: options },
+    provideGeexModuleContribution({
+      createModules: ({ injector }) => ({
+        authorization: (options.createAuthorizationModule ?? createAuthorizationModule)(injector),
+      }),
+    }),
     AuthorizeGuard,
     {
       provide: ACLService,

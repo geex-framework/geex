@@ -1,0 +1,82 @@
+@use '../shared/style' as *;
+
+:host {
+  @extend .auth-page;
+  width: min(100%, 400px);
+  max-width: 400px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+.auth-container {
+  width: 100%;
+  align-items: stretch;
+}
+
+.brand-header {
+  width: 100%;
+  margin-bottom: $spacing-sm;
+
+  .logo-desktop {
+    .brand-logo {
+      margin-bottom: $spacing-sm;
+    }
+
+    .brand-subtitle {
+      margin-top: $spacing-xs;
+    }
+  }
+}
+
+.auth-card {
+  width: 100%;
+
+  .card-content {
+    padding: $spacing-xxl;
+  }
+}
+
+.tenant-info {
+  @include flex-between;
+  padding: 10px;
+  background: $gradient-tenant;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+  border: 1px solid rgba($primary, 0.1);
+
+  .tenant-label {
+    font-size: 14px;
+    color: $text-secondary;
+    margin-right: $spacing-sm;
+  }
+
+  .tenant-code {
+    font-size: 14px;
+    font-weight: 600;
+    color: $primary;
+  }
+
+  .tenant-switch {
+    background: transparent;
+    color: $primary;
+    padding: 6px $spacing-md;
+    border: none;
+    cursor: pointer;
+    border-radius: $radius-sm;
+
+    &:hover {
+      background: rgba($primary, 0.1);
+      transform: scale(1.05);
+    }
+  }
+}
+
+.auth-form {
+  .form-group {
+    margin-bottom: $spacing-lg;
+  }
+
+  .auth-button {
+    margin-top: $spacing-sm;
+  }
+}

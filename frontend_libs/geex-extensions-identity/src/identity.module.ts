@@ -1,9 +1,9 @@
 import { Injector, signal } from "@angular/core";
-import { Apollo } from "apollo-angular";
+import { Apollo, gql } from "apollo-angular";
 import { deepCopy } from "@delon/util";
-import gql from "graphql-tag";
+import { guardedSignal } from "@geexcode/geex-angular";
 import { firstValueFrom } from "rxjs";
-import { guardedSignal } from "./guarded-signal";
+import { GEEX_DEFAULT_SUPER_ADMIN_USER_ID } from "./types";
 import type { IdentityModule, IdentityModuleDepsFactory, Org } from "./types";
 
 const GQL_ORGS_CACHE = gql`query orgsCache { orgs(take: 999) { items { id orgType code name parentOrgCode } } }`;
@@ -36,7 +36,7 @@ export function createIdentityModule(injector: Injector, deps: IdentityModuleDep
             const userData = auth.user();
             let allOwned: Org[] = [];
             if (orgs?.length && userData) {
-              if (userData.id === "000000000000000000000001") {
+              if (userData.id === GEEX_DEFAULT_SUPER_ADMIN_USER_ID) {
                 allOwned = deepCopy(orgs);
               } else {
                 const ownedCodes = userData.orgs.map(x => x.code);

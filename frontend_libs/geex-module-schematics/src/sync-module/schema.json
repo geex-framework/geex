@@ -6,16 +6,20 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Module short name",
+      "description": "Module short name. Omit when using --all.",
       "$default": {
         "$source": "argv",
         "index": 0
-      },
-      "x-prompt": "Module name"
+      }
     },
     "path": {
       "type": "string",
       "default": "src/app/modules"
+    },
+    "all": {
+      "type": "boolean",
+      "default": false,
+      "description": "Sync every module recorded in .geex/modules.json"
     },
     "force": {
       "type": "boolean",
@@ -28,6 +32,5 @@
       "visible": false,
       "description": "Internal CLI alias for force"
     }
-  },
-  "required": ["name"]
+  }
 }

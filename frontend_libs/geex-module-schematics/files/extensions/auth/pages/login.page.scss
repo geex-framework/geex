@@ -1,0 +1,168 @@
+// 导入公共样式
+@use '../shared/style' as *;
+
+// ===============================
+// 登录页面特定样式
+// ===============================
+
+:host {
+  @extend .auth-page;
+  width: min(100%, 400px);
+  max-width: 400px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+// 登录页面背景样式已经移动到 auth.component.scss 中
+
+// 使用全局的auth容器和卡片样式
+
+// OAuth 加载遮罩 - 复用共享样式并重写必要部分
+.oauth-loading-overlay {
+  @extend .auth-loading-overlay;
+}
+
+.auth-container {
+  width: 100%;
+  align-items: stretch;
+}
+
+.brand-header {
+  width: 100%;
+  margin-bottom: $spacing-sm;
+
+  .logo-desktop,
+  .logo-mobile {
+    .brand-logo {
+      margin-bottom: $spacing-sm;
+    }
+
+    .brand-subtitle {
+      margin-top: $spacing-xs;
+    }
+  }
+}
+
+.auth-card {
+  width: 100%;
+
+  .card-content {
+    padding: $spacing-xxl;
+  }
+}
+
+.tech-tabs {
+  ::ng-deep .ant-tabs-content {
+    min-height: 260px;
+  }
+
+  ::ng-deep .ant-tabs-tabpane {
+    min-height: 260px;
+  }
+}
+
+.login-tab-body {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-tab-body.auth-form {
+  justify-content: flex-start;
+}
+
+.login-tab-body--wechat {
+  height: 260px;
+  min-height: 260px;
+  overflow: hidden;
+  align-items: center;
+}
+
+.wechat-login-container {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: $spacing-md;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+
+  > svg,
+  > iframe {
+    width: 100%;
+    height: 100%;
+    max-width: 236px;
+    max-height: 236px;
+  }
+}
+
+// 租户信息
+.tenant-info {
+  @include flex-between;
+  padding: 10px;
+  background: $gradient-tenant;
+  border-radius: $radius-md;
+  border: 1px solid rgba($primary, 0.1);
+
+  .tenant-label {
+    font-size: 14px;
+    color: $text-secondary;
+    margin-right: $spacing-sm;
+  }
+
+  .tenant-code {
+    font-size: 14px;
+    font-weight: 600;
+    color: $primary;
+  }
+
+  .tenant-switch {
+    background: transparent;
+    color: $primary;
+    padding: 6px $spacing-md;
+    border: none;
+    cursor: pointer;
+    border-radius: $radius-sm;
+
+    &:hover {
+      background: rgba($primary, 0.1);
+      transform: scale(1.05);
+    }
+  }
+}
+
+// 登录表单样式
+.auth-form {
+  .form-group {
+    margin-bottom: $spacing-lg;
+  }
+
+  // 表单选项
+  .form-options {
+    @include flex-between;
+    margin-bottom: $spacing-xxl;
+    @include fade-in-animation(0.3s);
+    
+    .remember-checkbox {
+      font-size: 14px;
+      color: $text-secondary;
+      
+      ::ng-deep .ant-checkbox-checked .ant-checkbox-inner {
+        background-color: $primary;
+        border-color: $primary;
+      }
+    }
+    
+    .forgot-password {
+      font-size: 14px;
+      color: $primary;
+      text-decoration: none;
+      
+      &:hover {
+        color: $primary-hover;
+        text-decoration: underline;
+      }
+    }
+  }
+}

@@ -15,14 +15,9 @@ import { NzUploadModule } from "ng-zorro-antd/upload";
 import { NzButtonModule } from "ng-zorro-antd/button";
 import { NzIconModule } from "ng-zorro-antd/icon";
 import { from, Observable, Subscription } from "rxjs";
-import { map, switchMap } from "rxjs/operators";
+import { switchMap } from "rxjs/operators";
 
-import {
-  GEEX_BLOB_CREATE_DOCUMENT,
-  GEEX_BLOB_DEFAULT_STORAGE_TYPE,
-  GEEX_BLOB_DELETE_DOCUMENT,
-  GEEX_BLOB_LIST_DOCUMENT,
-} from "@geexcode/geex-extensions-blob-storage";
+import { geex } from "@geexcode/geex-angular";
 
 export type GeexUploadWidgetSchema = SFUploadWidgetSchema & {
   valueEmitType?: "id" | "file";
@@ -120,10 +115,9 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
       storageType,
     } = this.ui as GeexUploadWidgetSchema;
 
-    const defaultStorageType = this.injector.get(GEEX_BLOB_DEFAULT_STORAGE_TYPE);
-    const createDocument = this.injector.get(GEEX_BLOB_CREATE_DOCUMENT, null);
-    const listDocument = this.injector.get(GEEX_BLOB_LIST_DOCUMENT, null);
-    const deleteDocument = this.injector.get(GEEX_BLOB_DELETE_DOCUMENT, null);
+    const blobStorage = geex.blobStorage;
+    const defaultStorageType = blobStorage.defaultStorageType;
+    const createDocument = blobStorage.createDocument;
 
     const res: GeexUploadWidgetSchema = {
       type: type || "select",
@@ -215,11 +209,9 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
       res.hint = hint || `支持单个或批量，严禁上传公司数据或其他安全文件`;
     }
     this.ui = res;
-    this.deleteDocument = deleteDocument;
     this.defaultStorageType = defaultStorageType;
   }
 
-  private deleteDocument: import("graphql").DocumentNode | null = null;
   private defaultStorageType = "";
 
   change(args: NzUploadChangeParam): void {
@@ -237,39 +229,32 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
     if (fileList?.any()) {
       throw new Error("不支持通过filelist传值, 请根据valueEmitType直接设置formdata为blobObjectId或者file对象");
     }
-    const listDocument = this.injector.get(GEEX_BLOB_LIST_DOCUMENT, null);
-    if (this.ui.valueEmitType == "id" && listDocument) {
-      this.injector
-        .get(Apollo)
-        .query({
-          query: listDocument,
-          variables: {
-            includeDetail: true,
-            filter: {
-              id: {
-                in: value as string[],
-              },
+    const blobStorage = geex.blobStorage;
+    if (this.ui.valueEmitType == "id") {
+      blobStorage
+        .list({
+          includeDetail: true,
+          filter: {
+            id: {
+              in: value as string[],
             },
           },
         })
-        .pipe(
-          map(x => {
-            const blobs = (x.data as { blobObjects: { items: Array<Record<string, unknown>> } }).blobObjects.items;
-            fileList = blobs.map(y => ({
-              name: String(y.fileName),
-              uid: String(y.id),
-              size: Number(y.fileSize),
-              url: String(y.url),
-              status: "done" as const,
-              linkProps: {
-                download: String(y.url),
-              },
-            }));
-            this.fileList = fileList ?? [];
-            this.setValue(this.schema.transformIn ? this.schema.transformIn(value) : value);
-          }),
-        )
-        .firstValuePromise();
+        .then(data => {
+          const blobs = (data as { blobObjects: { items: Array<Record<string, unknown>> } }).blobObjects.items;
+          fileList = blobs.map(y => ({
+            name: String(y.fileName),
+            uid: String(y.id),
+            size: Number(y.fileSize),
+            url: String(y.url),
+            status: "done" as const,
+            linkProps: {
+              download: String(y.url),
+            },
+          }));
+          this.fileList = fileList ?? [];
+          this.setValue(this.schema.transformIn ? this.schema.transformIn(value) : value);
+        });
     } else {
       fileList = value as NzUploadFile[];
       this.fileList = fileList;
@@ -313,19 +298,13 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
         if (this.ui.deleteRemoteFile) {
           isDelete = (await this.ui.deleteRemoteFile.firstValuePromise()) ?? true;
         }
-        if (isDelete && this.deleteDocument && file.uid) {
-          await this.injector
-            .get(Apollo)
-            .mutate({
-              mutation: this.deleteDocument,
-              variables: {
-                request: {
-                  ids: [file.uid],
-                  storageType: this.ui.storageType ?? this.defaultStorageType,
-                },
-              },
-            })
-            .firstValuePromise();
+        if (isDelete && file.uid) {
+          await geex.blobStorage.delete({
+            request: {
+              ids: [file.uid],
+              storageType: this.ui.storageType ?? this.defaultStorageType,
+            },
+          });
         }
         return true;
       })(),

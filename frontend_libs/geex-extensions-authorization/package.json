@@ -31,8 +31,8 @@
   },
   "scripts": {
     "clean": "rimraf dist",
-    "test": "node --test src/provide-geex-authorization.node-test.mjs",
     "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
+    "test": "node --test src/provide-geex-authorization.node-test.mjs",
     "prepublishOnly": "npm run build",
     "publish:public": "npm publish ./dist --access public"
   },

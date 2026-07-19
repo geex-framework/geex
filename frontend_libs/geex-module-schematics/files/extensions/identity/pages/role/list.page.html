@@ -1,0 +1,92 @@
+@defer (when params()) {
+<list-page-layout [title]="'角色管理'"
+                  [loading]="loading()"
+                  [total]="total()"
+                  [data]="data()"
+                  [pi]="params().pi"
+                  [ps]="params().ps"
+                  [selectedCount]="selectedData().length"
+                  [columns]="columns"
+                  (refresh)="refresh()"
+                  (tableChange)="tableChange($event)">
+  <form filters
+        style="display: block;"
+        nz-form
+        [formGroup]="paramsForm"
+        nzLayout="inline">
+    <div nz-row
+         nzGutter="24">
+      <div nz-col
+           nzSm="24"
+           nzMd="12"
+           nzLg="8"
+           nzXl="6"
+           nzXXl="4">
+        <nz-form-item>
+          <nz-form-label>名称</nz-form-label>
+          <nz-form-control>
+            <input nz-input
+                   [formControl]="paramsForm.controls.name" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+      <div nz-col>
+        <button (click)="refresh()"
+                nz-button
+                nzType="primary">
+          <i nz-icon
+             nzType="reload"></i>
+          刷新</button>
+      </div>
+    </div>
+  </form>
+  <ng-template #headerExtra>
+    <button (click)="add()"
+            nz-button
+            nzType="primary"
+            [acl]="AppPermission.identity_mutation_createRole">
+      <i nz-icon
+         nzType="plus"></i>
+      新增</button>
+  </ng-template>
+  <ng-template #headerTab>
+    <!-- <nz-tabs #contentTabSet>
+      <nz-tab nzTitle="没有实现功能的tab 1"></nz-tab>
+      <nz-tab nzTitle="没有实现功能的tab 2"></nz-tab>
+      <nz-tab nzTitle="没有实现功能的tab 3"></nz-tab>
+    </nz-tabs> -->
+  </ng-template>
+  <ng-template #headerAction>
+    <!-- <button (click)="add()"
+    nz-button
+    nzType="primary">
+    <i nz-icon
+    nzType="audit"></i>
+  审批</button> -->
+  </ng-template>
+  <ng-container toolbar>
+    @if (can(AppPermission.identity_mutation_editRole)) {
+      <nz-divider nzType="vertical" />
+      <a (click)="batchDelete()"><i nz-icon
+           nzType="delete"></i>
+        删除
+      </a>
+    }
+    <!-- *ngIf="can('Messages.BatchApprove')" -->
+    <!-- <ng-container>
+      <nz-divider nzType="vertical"></nz-divider>
+      <a (click)="batchApprove(true)"><i nz-icon
+      nzType="audit"></i>
+      审批
+    </a>
+  </ng-container>
+  <ng-container>
+    <nz-divider nzType="vertical"></nz-divider>
+    <a (click)="batchApprove(false)"><i nz-icon
+      nzType="rollback"></i>
+      取消审批
+    </a>
+  </ng-container> -->
+  </ng-container>
+</list-page-layout>
+}

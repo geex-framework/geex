@@ -1,0 +1,54 @@
+fragment AuthenticateResultFragment on UserSession {
+  userId
+  user {
+    ...UserDetail
+  }
+  token
+}
+mutation authenticate($request: AuthenticateRequest!) {
+  authenticate(request: $request) {
+    ...AuthenticateResultFragment
+  }
+}
+
+mutation federateAuthenticate($code: String!, $loginProvider: LoginProviderEnum!) {
+  federateAuthenticate(request: { code: $code, loginProvider: $loginProvider }) {
+    ...AuthenticateResultFragment
+  }
+}
+
+mutation registerAndSignIn($registerRequest: RegisterUserRequest!, $authenticateRequest: AuthenticateRequest!) {
+  register(request: $registerRequest)
+  authenticate(request: $authenticateRequest) {
+    userId
+    user {
+      id
+      ... on User {
+        roleNames
+        roleIds
+        permissions
+        avatarFile {
+          url
+        }
+      }
+      phoneNumber
+      email
+      username
+    }
+    token
+  }
+}
+
+mutation sendSmsCaptcha($phoneOrEmail: ChinesePhoneNumber!) {
+  generateCaptcha(request: { captchaProvider: Sms, smsCaptchaPhoneNumber: $phoneOrEmail }) {
+    captchaType
+    key
+  }
+}
+input ValidateSmsCaptchaRequest {
+  captchaKey: String!
+  captchaCode: String!
+}
+mutation validateSmsCaptcha($captchaKey: String!, $captchaCode: String!) {
+  validateCaptcha(request: { captchaProvider: Sms, captchaKey: $captchaKey, captchaCode: $captchaCode })
+}

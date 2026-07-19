@@ -1,0 +1,251 @@
+<page-header title="个人中心">
+</page-header>
+
+<div nz-row
+  nzGutter="16">
+  <div nz-col
+    nzXs="24"
+    nzSm="24"
+    nzLg="24"
+    nzXl="12"
+    nzXXl="12">
+    @if (userData$(); as userData) {
+      <nz-card nzTitle="用户信息"
+        style="height: 100%;">
+        <div nz-row
+          nzAlign="middle"
+          style="height: 100%;">
+          <div nz-col
+            style="text-align: center;"
+            nzXs="24"
+            nzSm="24"
+            nzLg="8"
+            nzXl="8"
+            nzXXl="8">
+            <nz-avatar [nzSrc]="userData.avatarFile?.url"
+              [nzSize]="80"
+              style="color:#f56a00; background-color:#fde3cf;"
+            nzIcon="user"></nz-avatar>
+          </div>
+          <div nz-col
+            nzXs="24"
+            nzSm="24"
+            nzLg="16"
+            nzXl="16"
+            nzXXl="14"
+            style="line-height: 50px;">
+            <div>名称：<span style="font-size: 18px;">{{userData.username}}</span></div>
+            <div>角色：{{userData.roleNames}}</div>
+            <div>手机号：{{userData.phoneNumber == null?"暂未绑定":userData.phoneNumber}}</div>
+            <div>电子邮箱：{{userData.email}}</div>
+            <div>
+              <button nz-button
+                type="button"
+                style="margin-right: 8px;"
+              (click)="showModal()">修改用户密码</button>
+              <button nz-button
+                type="button"
+                nzType="primary"
+              (click)="showTokenModal()">生成访问令牌</button>
+              <nz-modal [(nzVisible)]="isVisible"
+                nzTitle="修改用户密码"
+                (nzOnOk)="handleOk()"
+                (nzOnCancel)="handleCancel()"
+                nzMaskClosable="false"
+                nzCentered>
+                <form nz-form
+                  *nzModalContent
+                  #ChangePassword="ngForm">
+                  <nz-form-item>
+                    <nz-form-label nzRequired
+                      [nzSm]="6"
+                      [nzXs]="24"
+                    nzFor="originPassword">当前密码</nz-form-label>
+                    <nz-form-control [nzSm]="14"
+                      [nzXs]="24"
+                      nzErrorTip="请输入当前密码">
+                      <input nz-input
+                        [(ngModel)]="data.originPassword"
+                        type="password"
+                        id="originPassword"
+                        name="originPassword">
+                      </nz-form-control>
+                    </nz-form-item>
+                    <nz-form-item>
+                      <nz-form-label nzRequired
+                        [nzSm]="6"
+                        [nzXs]="24"
+                      nzFor="newPassword">新密码</nz-form-label>
+                      <nz-form-control [nzSm]="14"
+                        [nzXs]="24"
+                        [nzErrorTip]="combineTpl">
+                        <input nz-input
+                          [(ngModel)]="data.newPassword"
+                          type="password"
+                          name="newPassword"
+                          [appForbiddenName]="confirmPassword">
+                        </nz-form-control>
+                      </nz-form-item>
+                      <nz-form-item>
+                        <nz-form-label nzRequired
+                          [nzSm]="6"
+                          [nzXs]="24"
+                        nzFor="checkPassword">确认密码</nz-form-label>
+                        <nz-form-control [nzSm]="14"
+                          [nzXs]="24"
+                          [nzErrorTip]="combineTpl">
+                          <input nz-input
+                            [(ngModel)]="confirmPassword"
+                            type="password"
+                            name="checkNewPassword"
+                            [appForbiddenName]="data.newPassword">
+                          </nz-form-control>
+                        </nz-form-item>
+                        <ng-template #combineTpl
+                          let-control>
+                          @if (control.hasError('newPassword')) {
+                            密码不一致
+                          }
+                          @if (control.hasError('required')) {
+                            必填
+                          }
+                        </ng-template>
+                      </form>
+                    </nz-modal>
+                    
+                    <!-- Personal Access Token 生成模态框 -->
+                    <nz-modal [nzVisible]="isTokenModalVisible$()"
+                      nzTitle="生成个人访问令牌 (Personal Access Token)"
+                      [nzFooter]="tokenModalFooter"
+                      (nzOnCancel)="handleTokenModalCancel()"
+                      (nzVisibleChange)="isTokenModalVisible$.set($event)"
+                      nzMaskClosable="false"
+                      nzWidth="600px"
+                      nzCentered>
+                      <div *nzModalContent>
+                        @if (!generatedToken$()) {
+                          <nz-alert nzType="warning"
+                            nzMessage="安全提示"
+                            nzDescription="生成的令牌只会显示一次，请务必妥善保管！令牌可用于 API 访问认证。"
+                            nzShowIcon
+                            style="margin-bottom: 16px;">
+                          </nz-alert>
+                          
+                          <nz-form-item>
+                            <nz-form-label [nzSpan]="6"
+                              nzRequired>有效期（天）</nz-form-label>
+                            <nz-form-control [nzSpan]="18">
+                              <nz-input-number [ngModel]="tokenExpireDays$()"
+                                (ngModelChange)="tokenExpireDays$.set($event)"
+                                [nzMin]="1"
+                                [nzMax]="365"
+                                [nzStep]="1"
+                                style="width: 100%;">
+                              </nz-input-number>
+                            </nz-form-control>
+                          </nz-form-item>
+                        }
+                        
+                        @if (generatedToken$()) {
+                          <nz-alert nzType="success"
+                            nzMessage="令牌生成成功"
+                            nzDescription="请立即复制并保存令牌，关闭此窗口后将无法再次查看！"
+                            nzShowIcon
+                            style="margin-bottom: 16px;">
+                          </nz-alert>
+                          
+                          <nz-form-item>
+                            <nz-form-label [nzSpan]="6">访问令牌</nz-form-label>
+                            <nz-form-control [nzSpan]="18">
+                              <textarea nz-input
+                                [ngModel]="generatedToken$()"
+                                [nzAutosize]="{ minRows: 3, maxRows: 6 }"
+                                readonly
+                                style="font-family: monospace; font-size: 12px;">
+                              </textarea>
+                              <button nz-button
+                                nzType="link"
+                                (click)="copyToken()"
+                                style="padding: 0; margin-top: 8px;">
+                                <i nz-icon nzType="copy"></i> 复制到剪贴板
+                              </button>
+                            </nz-form-control>
+                          </nz-form-item>
+                        }
+                      </div>
+                      
+                      <ng-template #tokenModalFooter>
+                        @if (!generatedToken$()) {
+                          <button nz-button
+                            nzType="default"
+                            (click)="handleTokenModalCancel()">取消</button>
+                          <button nz-button
+                            nzType="primary"
+                            (click)="handleGenerateToken()">生成</button>
+                        }
+                        @if (generatedToken$()) {
+                          <button nz-button
+                            nzType="primary"
+                            (click)="handleTokenModalCancel()">关闭</button>
+                        }
+                      </ng-template>
+                    </nz-modal>
+                  </div>
+                </div>
+              </div>
+            </nz-card>
+          }
+        </div>
+        <div nz-col
+          nzXs="24"
+          nzSm="24"
+          nzLg="24"
+          nzXl="12"
+          nzXXl="12">
+          <nz-card [nzTitle]="orgTitle"
+            [nzExtra]="extra"
+            style="height: 100%;">
+            <ng-template #orgTitle>
+              <i nz-icon
+                nzType="share-alt"
+              nzTheme="outline"></i> 我的组织关系
+            </ng-template>
+            <ng-template #extra>
+              <button nz-tooltip
+                nzTooltipTitle="刷新"
+                (click)="refresh()"
+                nz-button
+                nzSize="small"
+                nzType="link">
+                <i nz-icon
+                nzType="reload"></i>
+              </button>
+            </ng-template>
+
+            <nz-tree [nzData]="nodes$()"
+            [nzTreeTemplate]="nzTreeTemplate"></nz-tree>
+            <ng-template #nzTreeTemplate
+              let-node
+              let-origin="origin">
+              <span class="custom-node">
+                @if (!node.isLeaf) {
+                  <span>
+                    <i nz-icon
+                    [nzType]="node.isExpanded ? 'folder-open' : 'folder'"></i>
+                    <span class="folder-name">{{ node.title }}</span>
+                  </span>
+                }
+                @if (node.isLeaf) {
+                  <span>
+                    <i nz-icon
+                    nzType="file"></i>
+                    <span class="file-name">{{ node.title }}</span>
+                  </span>
+                }
+              </span>
+            </ng-template>
+
+          </nz-card>
+        </div>
+
+      </div>

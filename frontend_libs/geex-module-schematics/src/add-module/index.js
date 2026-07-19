@@ -43,14 +43,17 @@ function updateRegistry(tree, options, context) {
     `$1\n  ${alias},$2`,
   );
 
-  const routeEntry = `  { path: "${name}", loadChildren: () => import("./${name}/${name}.routes").then(m => m.${alias}Routes) },\n`;
-  source = source.replace(
-    /(export const authenticatedModuleChildren: Routes = \[[\s\S]*?)(\];)/,
-    `$1${routeEntry}$2`,
-  );
+  // auth is mounted outside authenticated shell via authLoadChildren
+  if (name !== "auth" && !source.includes(`path: "${name}"`)) {
+    const routeEntry = `  { path: "${name}", loadChildren: () => import("./${name}/${name}.routes").then(m => m.${alias}Routes) },\n`;
+    source = source.replace(
+      /(export const authenticatedModuleChildren: Routes = \[[\s\S]*?)(\];)/,
+      `$1${routeEntry}$2`,
+    );
+  }
 
   // Place menu contribution into 系统及配置 group children by default
-  if (name !== "mocking" && !source.includes(`...${alias}.menuContribution`)) {
+  if (name !== "mocking" && name !== "auth" && !source.includes(`...${alias}.menuContribution`)) {
     source = source.replace(
       /(\[\.\.\.identity\.menuContribution, \.\.\.settings\.menuContribution, \.\.\.tenant\.menuContribution)/,
       `[...identity.menuContribution, ...settings.menuContribution, ...tenant.menuContribution, ...${alias}.menuContribution`,
@@ -58,17 +61,19 @@ function updateRegistry(tree, options, context) {
   }
 
   const i18nKey = strings.classify(name);
-  if (!source.includes(`${i18nKey}: ${alias}.i18n["zh-CN"]`)) {
-    source = source.replace(
-      /(export const moduleI18nZhCN = \{[\s\S]*?)(\r?\n\};)/,
-      `$1\n  ${i18nKey}: ${alias}.i18n["zh-CN"],$2`,
-    );
-  }
-  if (!source.includes(`${i18nKey}: ${alias}.i18n["en-US"]`)) {
-    source = source.replace(
-      /(export const moduleI18nEnUS = \{[\s\S]*?)(\r?\n\};)/,
-      `$1\n  ${i18nKey}: ${alias}.i18n["en-US"],$2`,
-    );
+  if (name !== "auth" && name !== "identity" && name !== "tenant") {
+    if (!source.includes(`${i18nKey}: ${alias}.i18n["zh-CN"]`)) {
+      source = source.replace(
+        /(export const moduleI18nZhCN = \{[\s\S]*?)(\r?\n\};)/,
+        `$1\n  ${i18nKey}: ${alias}.i18n["zh-CN"],$2`,
+      );
+    }
+    if (!source.includes(`${i18nKey}: ${alias}.i18n["en-US"]`)) {
+      source = source.replace(
+        /(export const moduleI18nEnUS = \{[\s\S]*?)(\r?\n\};)/,
+        `$1\n  ${i18nKey}: ${alias}.i18n["en-US"],$2`,
+      );
+    }
   }
 
   tree.overwrite(registryPath, source);
@@ -111,12 +116,15 @@ function addModule(options) {
     }
 
     const mergeStrategy = shouldOverwrite ? MergeStrategy.Overwrite : MergeStrategy.Default;
-    const rules = [
-      mergeWith(templateSource("blank", options, name, targetPath), mergeStrategy),
-    ];
-    if (selectedTemplate !== "blank") {
+    const rules = [];
+    if (selectedTemplate === "blank") {
+      rules.push(mergeWith(templateSource("blank", options, name, targetPath), mergeStrategy));
+    } else {
       rules.push(
-        mergeWith(templateSource(`extensions/${selectedTemplate}`, options, name, targetPath), MergeStrategy.Overwrite),
+        mergeWith(
+          templateSource(`extensions/${selectedTemplate}`, options, name, targetPath),
+          MergeStrategy.Overwrite,
+        ),
       );
     }
     rules.push(

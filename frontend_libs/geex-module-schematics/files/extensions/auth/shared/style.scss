@@ -1,0 +1,644 @@
+// ==============================================
+// 认证模块公共样式系统
+// ==============================================
+@forward "../../../../styles/variables";
+@use "../../../../styles/variables" as *;
+
+// ============== 基础Mixins ==============
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin glass-card {
+  background: rgba($white, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-xl;
+  border: 1px solid rgba($white, 0.2);
+}
+
+@mixin text-gradient {
+  background: $gradient-brand;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// ============== 新增通用Mixins ==============
+@mixin auth-input-hover {
+  border-color: $primary;
+  box-shadow: 0 0 0 2px rgba($primary, 0.1);
+}
+
+@mixin button-hover-effect {
+  transform: translateY(-1px);
+  
+}
+
+@mixin fade-in-animation($delay: 0s) {
+  animation: fadeIn $transition ease-out $delay both;
+}
+
+@mixin step-item-style {
+  display: flex;
+  align-items: flex-start;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  background: rgba($white, 0.8);
+  border-radius: $radius-lg;
+  border: 1px solid $border-light;
+  
+  
+  &:hover {
+    @include button-hover-effect;
+    box-shadow: $shadow-md;
+    background: rgba($white, 0.95);
+  }
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+@mixin step-icon-style($size: 40px) {
+  width: $size;
+  height: $size;
+  border-radius: $radius-md;
+  background: $primary;
+  @include flex-center;
+  margin-right: $spacing-lg;
+  flex-shrink: 0;
+  transition: background $transition;
+  
+  i {
+    font-size: calc($size * 0.45);
+    color: $white;
+  }
+}
+
+@mixin auth-card-hover {
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: $shadow-lg;
+    border-color: $primary;
+  }
+}
+
+@mixin result-icon-success($size: 80px) {
+  .success-circle {
+    width: $size;
+    height: $size;
+    border-radius: 50%;
+    background: $gradient-success;
+    @include flex-center;
+    margin: 0 auto;
+    box-shadow: 0 0 30px rgba($success, 0.3);
+    animation: pulse 2s infinite;
+    
+    i {
+      font-size: calc($size * 0.45);
+      color: $success;
+    }
+  }
+}
+
+// ============== 页面布局基础 ==============
+.auth-page {
+  display: block;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+// 背景
+.auth-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: $gradient-primary;
+
+  .grid-background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image:
+      linear-gradient(rgba($white, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba($white, 0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: grid 20s linear infinite;
+  }
+
+  .floating-particles .particle {
+    position: absolute;
+    width: $spacing-xs;
+    height: $spacing-xs;
+    background: rgba($white, 0.6);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+  }
+}
+
+// 主容器
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  @include flex-center;
+  padding: 0;
+  position: relative;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+.auth-content {
+  width: 100%;
+  max-width: $container-max-width;
+  position: relative;
+  z-index: 1;
+}
+
+// ============== 品牌头部组件 ==============
+.brand-header {
+  text-align: center;
+  margin-bottom: $spacing-xxxl;
+
+  .logo-mobile,
+  .logo-desktop {
+    @include flex-center;
+    flex-direction: column;
+
+    .brand-logo {
+      width: $logo-size;
+      height: $logo-size;
+      margin-bottom: $spacing-lg;
+      border-radius: $radius-lg;
+      box-shadow: $shadow-md;
+      transition: transform $transition;
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
+
+    .brand-title {
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0;
+      @include text-gradient;
+    }
+
+    .brand-subtitle {
+      font-size: 16px;
+      font-weight: 300;
+      color: rgba($white, 0.8);
+      margin-top: $spacing-sm;
+    }
+  }
+}
+
+// ============== 通用卡片样式 ==============
+.auth-card {
+  @include glass-card;
+  overflow: hidden;
+  position: relative;
+  
+  width: 100%;
+  max-width: 100%;
+
+  .card-content {
+    padding: $spacing-huge;
+    
+  }
+}
+
+// ============== 通用表单样式 ==============
+.auth-form {
+  .form-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: $spacing-xxxl;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: $spacing-xxl;
+    @include fade-in-animation;
+
+    &:nth-child(2) {
+      @include fade-in-animation(0.1s);
+    }
+    &:nth-child(3) {
+      @include fade-in-animation(0.2s);
+    }
+    &:nth-child(4) {
+      @include fade-in-animation(0.3s);
+    }
+
+    .input-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: $text-primary;
+      display: block;
+      margin-bottom: $spacing-sm;
+    }
+
+    // Ant Design 输入框样式覆盖
+    ::ng-deep .ant-input-group-wrapper,
+    ::ng-deep .ant-input-wrapper {
+      .ant-input-group {
+        border-radius: $radius-md;
+        border: 2px solid $border-light;
+        
+        overflow: hidden;
+
+        &:hover,
+        &:focus-within {
+          @include auth-input-hover;
+        }
+
+        .ant-input-group-addon {
+          background: $gradient-input;
+          border: none;
+
+          .anticon {
+            color: $text-secondary;
+          }
+        }
+
+        .ant-input {
+          border: none;
+          padding: $spacing-md $spacing-lg;
+          font-size: 16px;
+          background: rgba($white, 0.8);
+
+          &:focus {
+            box-shadow: none;
+          }
+
+          &::placeholder {
+            color: $text-tertiary;
+          }
+        }
+      }
+    }
+
+    // 单独的输入框样式
+    ::ng-deep .ant-input {
+      border-radius: $radius-md;
+      border: 2px solid $border-light;
+      padding: $spacing-md $spacing-lg;
+      font-size: 16px;
+      
+
+      &:hover,
+      &:focus {
+        @include auth-input-hover;
+      }
+
+      &::placeholder {
+        color: $text-tertiary;
+      }
+    }
+
+    // 选择框样式
+    ::ng-deep .ant-select {
+      .ant-select-selector {
+        border-radius: $radius-md;
+        border: 2px solid $border-light !important;
+        
+
+        &:hover,
+        &:focus {
+          @include auth-input-hover;
+          border-color: $primary !important;
+          box-shadow: 0 0 0 2px rgba($primary, 0.1) !important;
+        }
+      }
+    }
+  }
+}
+
+// ============== 通用按钮样式 ==============
+.auth-button {
+  &.ant-btn {
+    width: 100%;
+    height: $button-height;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: $radius-md;
+    cursor: pointer;
+    
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn $transition ease-out;
+    animation-delay: 0.1s;
+    animation-fill-mode: both;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .button-content {
+      @include flex-center;
+      gap: $spacing-sm;
+      position: relative;
+      z-index: 2;
+    }
+
+    &.ant-btn-primary {
+      background-color: $primary;
+      background-image: none;
+      color: $white;
+      border: none;
+      transition: color $transition, transform $transition, box-shadow $transition;
+
+      &:hover:not(:disabled):not(.ant-btn-loading) {
+        background-image: $gradient-primary-hover;
+        transform: translateY(-1px);
+        box-shadow: $shadow-primary-hover;
+      }
+
+      &:active:not(:disabled):not(.ant-btn-loading) {
+        background-image: $gradient-primary;
+        transform: translateY(0);
+        box-shadow: $shadow-sm;
+      }
+
+      &.ant-btn-loading {
+        background: $gradient-primary !important;
+        color: $white !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+        box-shadow: $shadow-primary !important;
+
+        .button-content {
+          opacity: 0.8;
+        }
+
+        .anticon-loading {
+          color: $white !important;
+          margin-right: $spacing-sm;
+        }
+      }
+
+      &:disabled:not(.ant-btn-loading) {
+        background: linear-gradient(135deg, #f5f5f5 0%, #d9d9d9 100%) !important;
+        color: $text-tertiary !important;
+        transform: none !important;
+        box-shadow: none !important;
+        cursor: not-allowed !important;
+      }
+
+      &:focus {
+        outline: none !important;
+        box-shadow: $shadow-primary !important;
+      }
+    }
+
+    &.ant-btn-default {
+      background: $white;
+      border: 2px solid $border-light;
+      color: $text-primary;
+
+      &:hover:not(:disabled) {
+        border-color: $primary;
+        color: $primary;
+        transform: translateY(-1px);
+        box-shadow: $shadow-sm;
+      }
+    }
+  }
+}
+
+// ============== 错误和提示信息 ==============
+.error-message {
+  margin-top: $spacing-lg;
+  padding: $spacing-sm;
+  background: $gradient-error;
+  border: 1px solid #ffccc7;
+  border-radius: $radius-sm;
+  overflow-x: auto;
+  color: $error;
+  font-size: 14px;
+  display: flex;
+  gap: $spacing-sm;
+  animation:
+    fadeIn $transition ease-out;
+  i {
+    color: $error;
+  }
+}
+
+.success-message {
+  margin-top: $spacing-lg;
+  padding: $spacing-sm;
+  background: $gradient-success;
+  border: 1px solid #b7eb8f;
+  border-radius: $radius-sm;
+  color: $success;
+  font-size: 14px;
+  display: flex;
+  gap: $spacing-sm;
+  animation: fadeIn $transition ease-out;
+
+  i {
+    color: $success;
+  }
+}
+
+// ============== 加载状态 ==============
+.auth-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 21, 41, 0.9);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  @include flex-center;
+  animation: fadeIn $transition;
+
+  .loading-content {
+    text-align: center;
+    color: $white;
+
+    .loading-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: $spacing-sm;
+      @include text-gradient;
+    }
+
+    .loading-subtitle {
+      font-size: 14px;
+      color: rgba($white, 0.7);
+    }
+  }
+}
+
+// ============== 底部提示 ==============
+.footer-hint {
+  margin-top: $spacing-huge;
+  @include flex-center;
+  gap: $spacing-lg;
+
+  .hint-line {
+    flex: 1;
+    height: 3px !important;
+    width: 60px !important;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  }
+
+  .hint-content {
+    @include flex-center;
+    gap: $spacing-sm;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    white-space: nowrap;
+
+    i {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .docs-link {
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+
+      &:hover {
+        color: white;
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// ============== 动画 ==============
+@keyframes grid {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  33% {
+    transform: translateY(-35px) rotate(120deg) scale(1.2);
+    opacity: 0.7;
+  }
+  66% {
+    transform: translateY(-15px) rotate(240deg) scale(0.8);
+    opacity: 0.4;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// ============== 响应式设计 ==============
+@media (max-width: 768px) {
+  .auth-container {
+    padding: $spacing-lg;
+  }
+  
+  .auth-card .card-content {
+    padding: $spacing-xxl;
+  }
+  
+  .auth-form .form-group {
+    margin-bottom: $spacing-xl;
+  }
+  
+  .auth-button.ant-btn {
+    height: $button-height-mobile !important;
+    
+    &:hover:not(:disabled):not(.ant-btn-loading) {
+      @include button-hover-effect;
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25);
+    }
+  }
+
+  .auth-content {
+    max-width: 100%;
+  }
+
+  .brand-header {
+    margin-bottom: $spacing-xxl;
+
+    .logo-mobile,
+    .logo-desktop {
+      .brand-logo {
+        width: $logo-size-mobile;
+        height: $logo-size-mobile;
+        margin-bottom: $spacing-md;
+      }
+
+      .brand-title {
+        font-size: 24px;
+      }
+
+      .brand-subtitle {
+        font-size: 14px;
+      }
+    }
+  }
+
+  .auth-card {
+    border-radius: $spacing-lg;
+  }
+
+  .footer-hint {
+    margin-top: $spacing-xxl;
+
+    .hint-content {
+      font-size: 12px;
+      flex-direction: column;
+      gap: $spacing-xs;
+      text-align: center;
+    }
+  }
+
+  .auth-loading-overlay .loading-content {
+    padding: $spacing-xl;
+
+    .tech-spinner {
+      width: 60px;
+      height: 60px;
+      margin-bottom: $spacing-xl;
+    }
+
+    .loading-title {
+      font-size: 18px;
+    }
+
+    .loading-subtitle {
+      font-size: 12px;
+    }
+  }
+
+  .floating-particles .particle {
+    animation-duration: 4s;
+  }
+}

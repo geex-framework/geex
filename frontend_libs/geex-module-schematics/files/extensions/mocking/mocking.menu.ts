@@ -1,22 +1,18 @@
-import { inject, Injectable, makeEnvironmentProviders } from "@angular/core";
+import { Injectable, makeEnvironmentProviders } from "@angular/core";
 import {
   GEEX_MENU_CONTRIBUTIONS,
+  geex,
   type GeexMenuContribution,
   type GeexMenuContributionContext,
   type GeexMenuItem,
 } from "@geexcode/geex-angular";
-import {
-  GEEX_SUPER_ADMIN_ID,
-  GeexMockingCapabilitiesService,
-} from "@geexcode/geex-extensions-mocking";
+import { GEEX_DEFAULT_SUPER_ADMIN_USER_ID } from "@geexcode/geex-extensions-identity";
 
 @Injectable()
 export class MockingMenuContribution implements GeexMenuContribution {
-  private readonly capabilities = inject(GeexMockingCapabilitiesService);
-
   async resolve(user: GeexMenuContributionContext): Promise<GeexMenuItem[]> {
-    const capabilities = await this.capabilities.getCapabilities();
-    if (!capabilities.enabled || !capabilities.management || user.id !== GEEX_SUPER_ADMIN_ID) {
+    const capabilities = await geex.mocking.getCapabilities();
+    if (!capabilities.enabled || !capabilities.management || user.id !== GEEX_DEFAULT_SUPER_ADMIN_USER_ID) {
       return [];
     }
     return [{

@@ -1,0 +1,50 @@
+{
+  "name": "@geexcode/geex-extensions-settings",
+  "version": "0.0.1",
+  "description": "Geex settings extension: headless settings module and domain tokens. Aligns with Geex.Extensions.Settings.",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/core": "^20.0.0",
+    "@geexcode/geex-angular": ">=0.0.41",
+    "apollo-angular": "^14.0.0",
+    "graphql": "^16.8.0",
+    "rxjs": "^7.8.0"
+  },
+  "dependencies": {
+    "tslib": "^2.6.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "module": "dist/fesm2022/geexcode-geex-extensions-settings.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fesm2022/geexcode-geex-extensions-settings.mjs",
+      "default": "./dist/fesm2022/geexcode-geex-extensions-settings.mjs"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
+    "test": "node --test src/provide-geex-settings.node-test.mjs",
+    "prepublishOnly": "npm run build",
+    "publish:public": "npm publish ./dist --access public"
+  },
+  "devDependencies": {
+    "@angular/compiler": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@geexcode/geex-angular": "workspace:*",
+    "apollo-angular": "^14.1.0",
+    "graphql": "^16.9.0",
+    "ng-packagr": "^20.0.0",
+    "rimraf": "^5.0.5",
+    "rxjs": "^7.8.2",
+    "typescript": "~5.8.3"
+  }
+}

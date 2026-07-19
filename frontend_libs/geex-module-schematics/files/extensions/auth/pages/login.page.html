@@ -1,0 +1,218 @@
+<!-- Loading 遮罩层 -->
+@if (oauthLoading()) {
+<div class="oauth-loading-overlay">
+  <div class="loading-content">
+    <div class="tech-spinner">
+      <div class="spinner-ring"></div>
+      <div class="spinner-ring"></div>
+      <div class="spinner-ring"></div>
+    </div>
+    <div class="loading-text">
+      <div class="loading-title">正在加载...</div>
+      <div class="loading-subtitle">请稍候，系统正在为您准备数据...</div>
+    </div>
+  </div>
+</div>
+}
+@else{
+<div class="auth-container">
+  <!-- Logo 和标题 -->
+  <div class="brand-header">
+    @if (isMobile()) {
+    <div class="logo-mobile">
+      <img ngSrc="./assets/logo.png"
+           width="64"
+           height="64"
+           alt="Geex Admin"
+           class="brand-logo">
+      <h1 class="brand-title">Geex Admin</h1>
+    </div>
+    } @else {
+    <div class="logo-desktop">
+      <img ngSrc="./assets/logo.png"
+           width="64"
+           height="64"
+           alt="Geex Admin"
+           class="brand-logo">
+      <h1 class="brand-title">Geex Admin</h1>
+      <div class="brand-subtitle">企业级开发脚手架</div>
+    </div>
+    }
+  </div>
+
+  <!-- 登录卡片 -->
+  <div class="auth-card">
+    <div class="card-content">
+      <!-- 租户信息 -->
+      <div class="tenant-info">
+        <div class="tenant-display">
+          <span class="tenant-label">租户:</span>
+          <span class="tenant-code">{{(geex.init() | async) && tenant$()?.code}}</span>
+        </div>
+        <button nz-button
+                type="button"
+                nzType="text"
+                (click)="showTenantSwitcher()"
+                class="tenant-switch">
+          <i nz-icon
+             nzType="swap"
+             nzTheme="outline"></i>
+          切换
+        </button>
+      </div>
+
+      <nz-tabs (nzSelectChange)="switch($event)"
+               nzCentered
+               nzSize="large"
+               class="tech-tabs">
+
+        <!-- 用户登录标签页 -->
+        <nz-tab nzTitle="账户登录">
+          <form nz-form
+                [formGroup]="form"
+                (ngSubmit)="submit()"
+                #loginForm="ngForm"
+                class="auth-form login-tab-body">
+
+            <!-- 用户名输入 -->
+            <div class="form-group">
+              <label class="input-label">用户名</label>
+              <nz-input-group nzPrefixIcon="user"
+                              nzSize="large"
+                              class="tech-input">
+                <input nz-input
+                       formControlName="userName"
+                       placeholder="请输入用户名或邮箱"
+                       autocomplete="username"
+                       maxlength="255" />
+              </nz-input-group>
+            </div>
+
+            <!-- 密码输入 -->
+            <div class="form-group">
+              <label class="input-label">密码</label>
+              <nz-input-group nzPrefixIcon="lock"
+                              nzSize="large"
+                              class="tech-input">
+                <input nz-input
+                       formControlName="password"
+                       placeholder="请输入密码"
+                       type="password"
+                       autocomplete="current-password"
+                       maxlength="32" />
+              </nz-input-group>
+            </div>
+
+            <!-- 验证码（保留但隐藏，根据需要可以启用）
+                    <div class="form-group captcha-group" style="display: none;">
+                      <label class="input-label">验证码</label>
+                      <div class="captcha-container">
+                        <nz-input-group nzPrefixIcon="safety" nzSize="large" class="tech-input captcha-input">
+                          <input nz-input
+                            name="verificationCode"
+                            placeholder="验证码"
+                            type="text"
+                            maxlength="32">
+                        </nz-input-group>
+                        <div class="captcha-image" (click)="clearimg()">
+                          <img [src]="verificationImgUrl" alt="验证码">
+                        </div>
+                      </div>
+                    </div>
+                    -->
+
+            <!-- 选项行 -->
+            <div class="form-options">
+              <label nz-checkbox
+                     formControlName="remember"
+                     class="remember-checkbox">
+                <span>记住登录状态</span>
+              </label>
+              <a (click)="msg.error('暂不支持')"
+                 class="forgot-password">
+                忘记密码？
+              </a>
+            </div>
+
+            <!-- 登录按钮 -->
+            <button nz-button
+                    nzType="primary"
+                    type="submit"
+                    [nzLoading]="submitting()"
+                    nzSize="large"
+                    class="auth-button"
+                    [disabled]="!loginForm.form.valid">
+              <span class="button-content">
+                <i nz-icon
+                   style="display: inline-block;"
+                   nzType="login"
+                   nzTheme="outline"></i>
+                <span>登录系统</span>
+              </span>
+            </button>
+
+            <!-- 错误信息 -->
+            @if (error) {
+            <div class="error-message">
+              <i nz-icon
+                 nzType="exclamation-circle"
+                 nzTheme="outline"></i>
+              {{error}}
+            </div>
+            }
+          </form>
+        </nz-tab>
+
+        <!-- 微信登录 -->
+        @if (wechatEnabled) {
+        <nz-tab nzTitle="微信登录">
+          <div class="login-tab-body login-tab-body--wechat">
+            <div id="wechat_login_container" class="wechat-login-container"></div>
+          </div>
+        </nz-tab>
+        }
+      </nz-tabs>
+    </div>
+  </div>
+
+  <!-- 底部提示 -->
+  <div class="footer-hint">
+    <div class="hint-line"></div>
+    <div class="hint-content">
+      <i nz-icon
+         nzType="info-circle"
+         nzTheme="outline"></i>
+      <span>为获得最佳开发体验，建议先阅读</span>
+      <a href="https://docs.geexcode.com/"
+         target="_blank"
+         class="docs-link">开发文档</a>
+    </div>
+    <div class="hint-line"></div>
+  </div>
+</div>
+
+}
+
+<!-- <div class="login-action-items">
+            <div class="links">
+              <br /> -->
+<!-- 用户注册 -->
+<!-- <span >
+              <a routerLink="/account/register">注册</a>
+              <nz-divider nzType="vertical"></nz-divider>
+            </span> -->
+<!-- 租户注册 -->
+<!--
+            <span *ngIf="isTenantSelfRegistrationAllowed">
+              <a routerLink="/account/tenant-register">{{
+                l("TenantRegister")
+              }}</a>
+              <nz-divider nzType="vertical"></nz-divider>
+              <nz-form-extra>请通过租户注册来查看完整系统内容</nz-form-extra>
+            </span>-->
+<!-- //todo: 等待有缘人帮我们完善吧 -->
+<!-- <span>
+            <a routerLink="/account/email-activation">{{l("EmailActivation")}}</a>
+          </span> -->
+<!-- </div>
+      </div> -->

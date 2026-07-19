@@ -3,7 +3,7 @@ import { FormControl, FormGroup } from "@angular/forms";
 import { STChange } from "@delon/abc/st";
 import { gql } from "apollo-angular";
 
-import { GeexApproveStatus, GeexHint } from "../types";
+import { GeexHint } from "../types";
 import { RoutedComponent } from "./routed.component.base";
 
 export type BatchOperationName = "delete" | "approve" | "submit" | "unApprove" | "unSubmit";
@@ -117,16 +117,16 @@ export abstract class RoutedListComponent<
     switch (operation) {
       case "delete":
       case "submit":
-        ids = selectedData.filter(x => x["approveStatus"] === GeexApproveStatus.DEFAULT).map(x => x["id"]);
+        ids = selectedData.filter(x => x["approveStatus"] === "DEFAULT").map(x => x["id"]);
         text = "只能操作未上报状态的数据";
         break;
       case "approve":
       case "unSubmit":
-        ids = selectedData.filter(x => x["approveStatus"] === GeexApproveStatus.SUBMITTED).map(x => x["id"]);
+        ids = selectedData.filter(x => x["approveStatus"] === "SUBMITTED").map(x => x["id"]);
         text = "只能操作已上报状态的数据";
         break;
       case "unApprove":
-        ids = selectedData.filter(x => x["approveStatus"] === GeexApproveStatus.APPROVED).map(x => x["id"]);
+        ids = selectedData.filter(x => x["approveStatus"] === "APPROVED").map(x => x["id"]);
         text = "只能操作已审核状态的数据";
         break;
       default:

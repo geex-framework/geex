@@ -86,20 +86,26 @@ describe("add-module schematic", () => {
 
   for (const [name, expectedFiles] of Object.entries({
     identity: [
+      "identity.routes.ts",
       "widgets/org-tree/org-tree-select.widget.ts",
-      "widgets/permissions/permissions.component.ts",
+      "pages/user/list.page.ts",
+      "pages/user/user.routes.ts",
+      "graphql/user.operations.gql.ts",
+      "components/modals/add-user-modal.component.ts",
     ],
     "blob-storage": [
       "blob-storage.routes.ts",
       "graphql/operations.gql.ts",
       "pages/edit/edit.page.ts",
-      "widgets/upload/geex-upload.component.ts",
+      "components/upload/geex-upload.component.ts",
+      "widgets/upload/geex-upload.widget.ts",
     ],
     "approval-flows": [
       "approval-flows.routes.ts",
       "graphql/operations.gql.ts",
       "pages/edit/edit.page.ts",
-      "widgets/approve/approve-button.component.ts",
+      "components/approve/approve-button.component.ts",
+      "widgets/approve/common-options.ts",
     ],
     mocking: [
       "mocking.routes.ts",
@@ -107,6 +113,9 @@ describe("add-module schematic", () => {
       "pages/mocking-home.page.ts",
       "pages/mock-wechat-authorize.page.ts",
     ],
+    auth: ["auth.routes.ts", "pages/login.page.ts"],
+    settings: ["settings.routes.ts", "pages/setting-list.page.ts", "graphql/operations.gql.ts"],
+    tenant: ["tenant.routes.ts", "pages/tenant-list.page.ts", "components/tenant-switcher/tenant-switcher.component.ts"],
   })) {
     it(`merges the ${name} overlay without duplicate path segments`, async () => {
       const runner = new SchematicTestRunner("geex-module-schematics", collectionPath);
@@ -125,3 +134,4 @@ describe("add-module schematic", () => {
     });
   }
 });
+

@@ -1,0 +1,12 @@
+export { menuContribution } from "./approval-flows.menu";
+export { i18n } from "./i18n";
+export {
+  approvalFlows,
+  approvalFlowTemplates,
+  approvalFlowTemplateById,
+  createApprovalFlowTemplate,
+  editApprovalFlowTemplate,
+  deleteApprovalFlowTemplate,
+} from "./graphql/operations.gql";
+export * from "./components/approve";
+export * from "./widgets/approve";

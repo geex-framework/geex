@@ -3,7 +3,7 @@ import { signal, InjectionToken, runInInjectionContext, makeEnvironmentProviders
 import { Apollo, APOLLO_OPTIONS, APOLLO_NAMED_OPTIONS, gql as gql$1 } from 'apollo-angular';
 import { OAuthService, OAuthErrorEvent } from 'angular-oauth2-oidc';
 import gql from 'graphql-tag';
-import { firstValueFrom, fromEvent, Subject, Observable, throwError, of, interval, filter, map as map$1, takeUntil, timer, BehaviorSubject, isObservable, lastValueFrom, switchMap as switchMap$1 } from 'rxjs';
+import { fromEvent, Subject, Observable, throwError, of, firstValueFrom, interval, filter, map as map$1, takeUntil, timer, BehaviorSubject, isObservable, lastValueFrom, switchMap as switchMap$1 } from 'rxjs';
 import { map, debounceTime, switchMap, distinctUntilChanged, share, mergeMap, catchError, finalize, filter as filter$1 } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpContextToken, HttpErrorResponse, HttpContext, HttpResponseBase } from '@angular/common/http';
@@ -52,9 +52,6 @@ import { List } from 'linqts-camelcase';
 import { addYears, addMonths, addWeeks, addDays, addHours, addMinutes, addSeconds, addMilliseconds } from 'date-fns';
 import SparkMD5 from 'spark-md5';
 
-const ExtensionModule = {};
-const GQL_ON_PUBLIC_NOTIFY = gql `subscription onPublicNotify { onPublicNotify { __typename ... on DataChangeClientNotify { dataChangeType } } }`;
-const GQL_ACTIVE_SETTINGS = gql `query activeSettings { activeSettings { id name value } }`;
 function guardedSignal(innerSignal, isInitialized) {
     const guard = (() => {
         if (!isInitialized()) {
@@ -71,6 +68,9 @@ function guardedSignal(innerSignal, isInitialized) {
     }
     return guard;
 }
+
+const ExtensionModule = {};
+const GQL_ON_PUBLIC_NOTIFY = gql `subscription onPublicNotify { onPublicNotify { __typename ... on DataChangeClientNotify { dataChangeType } } }`;
 function createMessagingModule(injector, deps) {
     let _initialized = false;
     let _initPromise = null;
@@ -108,34 +108,6 @@ function createMessagingModule(injector, deps) {
     };
     return module;
 }
-function createSettingsModule(injector) {
-    const _settingsSignal = signal([], ...(ngDevMode ? [{ debugName: "_settingsSignal" }] : []));
-    let _initialized = false;
-    let _initPromise = null;
-    const module = {
-        settings: guardedSignal(_settingsSignal, () => _initialized),
-        init: (force = false) => {
-            if (force) {
-                _initPromise = null;
-                _initialized = false;
-            }
-            if (!_initPromise) {
-                _initPromise = (async () => {
-                    try {
-                        const res = (await firstValueFrom(injector.get(Apollo).query({ query: GQL_ACTIVE_SETTINGS })));
-                        _settingsSignal.set(res.data.activeSettings);
-                        _initialized = true;
-                    }
-                    catch (err) {
-                        console.error(err);
-                    }
-                })();
-            }
-            return _initPromise;
-        },
-    };
-    return module;
-}
 function createUiModule(_injector) {
     const _fullScreenSignal = signal(false, ...(ngDevMode ? [{ debugName: "_fullScreenSignal" }] : []));
     const _isMobile = toSignal(fromEvent(window, "resize").pipe(debounceTime(200), switchMap(async () => window.innerHeight / window.innerWidth >= 1.5)));
@@ -166,7 +138,6 @@ let Geex = new InjectionToken("Geex");
 function configGeex(injector, overrides = {}, contributions = []) {
     runInInjectionContext(injector, () => {
         const modules = {
-            settings: createSettingsModule(injector),
             ui: createUiModule(injector),
         };
         const moduleRecord = modules;
@@ -470,10 +441,10 @@ class GeexHttpInterceptor {
             return of(ev);
         }), catchError((err) => this.handleData(err, newReq, next)), finalize(() => { }));
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexHttpInterceptor, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexHttpInterceptor });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexHttpInterceptor, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexHttpInterceptor });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexHttpInterceptor, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexHttpInterceptor, decorators: [{
             type: Injectable
         }], ctorParameters: () => [] });
 
@@ -711,6 +682,19 @@ const GEEX_SUPER_ADMIN_USER_ID = new InjectionToken("GEEX_SUPER_ADMIN_USER_ID", 
     factory: () => "000000000000000000000001",
 });
 
+/**
+ * Single bootstrap entry for app session.
+ *
+ * Linear flow:
+ * 1. configure OAuth
+ * 2. if OIDC callback code present → tryLogin (once)
+ * 3. geex.init()
+ * 4. bind Delon user / ACL / menus
+ * 5. start session watch (once)
+ *
+ * Login pages must not call tryLogin/load for OIDC callbacks.
+ * Password / WeChat token handoff uses initCodeFlow → IdP → this bootstrap again.
+ */
 class GeexStartupService {
     options = inject(GEEX_STARTUP_OPTIONS);
     injector = inject(Injector);
@@ -724,61 +708,97 @@ class GeexStartupService {
     loginPath = inject(GEEX_LOGIN_PATH);
     afterLoginNavigate = inject(GEEX_AFTER_LOGIN_NAVIGATE);
     superAdminUserId = inject(GEEX_SUPER_ADMIN_USER_ID);
+    bootstrapPromise = null;
+    bootstrapped = false;
+    sessionWatchStarted = false;
+    /** APP_INITIALIZER entry. Safe to call concurrently; runs the bootstrap pipeline once. */
     async load() {
+        if (this.bootstrapped) {
+            return;
+        }
+        if (this.bootstrapPromise) {
+            return this.bootstrapPromise;
+        }
+        this.bootstrapPromise = this.bootstrap().finally(() => {
+            this.bootstrapPromise = null;
+        });
+        return this.bootstrapPromise;
+    }
+    async bootstrap() {
         const exception500Url = this.options.exception500Url ?? "/exception/500";
         try {
             runInInjectionContext(this.injector, () => this.options.onDebuggerInit?.());
             this.oAuthService.configure(this.options.getOAuthConfig());
             await this.trySwitchTenant();
             await this.tryAutoOAuthLogin();
-            this.setupSessionCheckAndRefresh();
-            await this.geex.init(true);
-            if (this.oAuthService.hasValidAccessToken()) {
-                const user = await firstValueFrom(interval(100).pipe(filter(() => this.geex.auth.user() != undefined), map$1(() => this.geex.auth.user()), takeUntil(timer(1000))));
-                this.settingsService.setUser({
-                    avatar: user.avatarFile?.url,
-                    id: user.id,
-                    phoneNumber: user.phoneNumber,
-                    email: user.email,
-                    username: user.username,
-                    roleName: user.roleNames,
-                });
-                const adminId = this.options.superAdminUserId ?? this.superAdminUserId;
-                if (user.id == adminId) {
-                    this.aclService.setFull(true);
-                }
-                else {
-                    this.aclService.setRole(user.permissions);
-                }
-                const settings = this.geex.settings.settings();
-                if (settings.any()) {
-                    const keys = this.options.settingKeys;
-                    const appName = settings.firstOrDefault(x => x?.name == keys.appName)?.value;
-                    if (appName) {
-                        this.settingsService.setApp({ name: appName });
-                    }
-                    let menus = this.options.defaultMenus;
-                    const settingMenus = settings.firstOrDefault(x => x?.name == keys.appMenu)?.value;
-                    if (settingMenus?.length) {
-                        menus = settingMenus;
-                    }
-                    const contributions = this.injector.get(GEEX_MENU_CONTRIBUTIONS, []);
-                    const contributed = [];
-                    for (const contribution of contributions) {
-                        contributed.push(...(await contribution.resolve(user)));
-                    }
-                    this.menuService.add([...menus, ...contributed]);
-                    this.menuService.resume();
-                    const i18n = this.resolveI18nAdapter();
-                    i18n?.merge(settings.first(x => x?.name == keys.localizationData)?.value);
-                    i18n?.use(settings.first(x => x?.name == keys.localizationLanguage)?.value);
-                }
-            }
+            await this.tryOidcCodeCallback();
+            this.ensureSessionWatch();
+            await this.geex.init();
+            await this.bindUiSession();
+            this.bootstrapped = true;
         }
         catch (error) {
             await this.router.navigateByUrl(exception500Url);
             console.error(error);
         }
+    }
+    async tryOidcCodeCallback() {
+        const url = new URL(location.href);
+        const code = url.searchParams.get("code");
+        if (!code) {
+            return;
+        }
+        const state = url.searchParams.get("state") ?? "";
+        // WeChat QR callback uses the same ?code= param but is handled on the login page first.
+        if (state === "WechatWeb" || state.startsWith("WechatWeb")) {
+            return;
+        }
+        await this.oAuthService.tryLogin();
+    }
+    async bindUiSession() {
+        if (!this.oAuthService.hasValidAccessToken()) {
+            return;
+        }
+        const user = await firstValueFrom(interval(100).pipe(filter(() => this.geex.auth.user() != undefined), map$1(() => this.geex.auth.user()), takeUntil(timer(1000))));
+        this.settingsService.setUser({
+            avatar: user.avatarFile?.url,
+            id: user.id,
+            phoneNumber: user.phoneNumber,
+            email: user.email,
+            username: user.username,
+            roleName: user.roleNames,
+        });
+        const adminId = this.options.superAdminUserId ?? this.superAdminUserId;
+        if (user.id == adminId) {
+            this.aclService.setFull(true);
+        }
+        else {
+            this.aclService.setRole(user.permissions);
+        }
+        const settings = this.geex.settings.settings();
+        if (!settings.any()) {
+            return;
+        }
+        const keys = this.options.settingKeys;
+        const appName = settings.firstOrDefault(x => x?.name == keys.appName)?.value;
+        if (appName) {
+            this.settingsService.setApp({ name: appName });
+        }
+        let menus = this.options.defaultMenus;
+        const settingMenus = settings.firstOrDefault(x => x?.name == keys.appMenu)?.value;
+        if (settingMenus?.length) {
+            menus = settingMenus;
+        }
+        const contributions = this.injector.get(GEEX_MENU_CONTRIBUTIONS, []);
+        const contributed = [];
+        for (const contribution of contributions) {
+            contributed.push(...(await contribution.resolve(user)));
+        }
+        this.menuService.add([...menus, ...contributed]);
+        this.menuService.resume();
+        const i18n = this.resolveI18nAdapter();
+        i18n?.merge(settings.first(x => x?.name == keys.localizationData)?.value);
+        i18n?.use(settings.first(x => x?.name == keys.localizationLanguage)?.value);
     }
     async tryAutoOAuthLogin() {
         const url = new URL(location.href);
@@ -815,7 +835,11 @@ class GeexStartupService {
         this.geex.tenant.switchTenant(targetTenantCode);
         await this.router.navigateByUrl(url.pathname + url.search + url.hash);
     }
-    setupSessionCheckAndRefresh() {
+    ensureSessionWatch() {
+        if (this.sessionWatchStarted) {
+            return;
+        }
+        this.sessionWatchStarted = true;
         this.oAuthService.setupAutomaticSilentRefresh();
         this.oAuthService["initSessionCheck"]();
         const loginUrl = this.options.loginUrl ?? this.loginPath;
@@ -841,10 +865,10 @@ class GeexStartupService {
             }
         });
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexStartupService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexStartupService });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexStartupService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexStartupService });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexStartupService, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexStartupService, decorators: [{
             type: Injectable
         }] });
 
@@ -870,10 +894,10 @@ class GeexTranslateLoader {
         }
         return of({});
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexTranslateLoader, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexTranslateLoader, providedIn: "root" });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexTranslateLoader, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexTranslateLoader, providedIn: "root" });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexTranslateLoader, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexTranslateLoader, decorators: [{
             type: Injectable,
             args: [{ providedIn: "root" }]
         }] });
@@ -1005,10 +1029,10 @@ class GeexI18nService {
     get currentLang() {
         return this.translate.currentLang || this.translate.getDefaultLang() || this._default;
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexI18nService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexI18nService });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexI18nService, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexI18nService });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexI18nService, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexI18nService, decorators: [{
             type: Injectable
         }], ctorParameters: () => [] });
 
@@ -1085,10 +1109,10 @@ class GeexAuthLogout {
             this.afterLoginNavigate();
         });
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexAuthLogout, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexAuthLogout, providedIn: "root" });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexAuthLogout, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexAuthLogout, providedIn: "root" });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexAuthLogout, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexAuthLogout, decorators: [{
             type: Injectable,
             args: [{ providedIn: "root" }]
         }] });
@@ -1148,14 +1172,6 @@ async function loadEnvironmentOverrides(env, options = {}) {
     }
 }
 
-/** Approve workflow status codes used by RoutedListComponent batch ops. */
-var GeexApproveStatus;
-(function (GeexApproveStatus) {
-    GeexApproveStatus["DEFAULT"] = "DEFAULT";
-    GeexApproveStatus["SUBMITTED"] = "SUBMITTED";
-    GeexApproveStatus["APPROVED"] = "APPROVED";
-})(GeexApproveStatus || (GeexApproveStatus = {}));
-
 class BusinessComponentBase {
     acl = inject(ACLService);
     apollo = inject(Apollo);
@@ -1170,10 +1186,10 @@ class BusinessComponentBase {
     can(permission) {
         return this.acl.can(permission);
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: BusinessComponentBase, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: BusinessComponentBase });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: BusinessComponentBase, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: BusinessComponentBase });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: BusinessComponentBase, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: BusinessComponentBase, decorators: [{
             type: Injectable
         }] });
 
@@ -1181,8 +1197,8 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImpor
 /* eslint-disable */
 // Converted from UMD rison.js for ng-packagr bundling
 var risonRegex = /^\s*(?:\([^()]*:[^()]*\)|!\([^()]*\)|!t|!f|!n|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE]\d+)?|'(?:[^'!]|!(?:'|!))*'|[A-Za-z0-9_./~-]+)\s*$/;
-const exports$1 = {};
-var rison = exports$1;
+const exports = {};
+var rison = exports;
 //////////////////////////////////////////////////
 //
 //  the stringifier is based on
@@ -1747,7 +1763,7 @@ class RoutedComponent extends BusinessComponentBase {
         return this.fb.group(Object.fromEntries(Object.entries(defaults).map(x => [x[0], new FormControl(x[1])])));
     }
     decodeQueryParam(raw) {
-        return exports$1.decode(raw);
+        return exports.decode(raw);
     }
     async resolve({ pathParams, queryParams, fragment }) {
         const params = {};
@@ -1798,10 +1814,10 @@ class RoutedComponent extends BusinessComponentBase {
     isEqualToDefault(value, defaultValue) {
         return geexIsEqual$1(value, defaultValue);
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: RoutedComponent, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: RoutedComponent });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: RoutedComponent, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: RoutedComponent });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: RoutedComponent, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: RoutedComponent, decorators: [{
             type: Injectable
         }], ctorParameters: () => [] });
 
@@ -1894,16 +1910,16 @@ class RoutedListComponent extends RoutedComponent {
         switch (operation) {
             case "delete":
             case "submit":
-                ids = selectedData.filter(x => x["approveStatus"] === GeexApproveStatus.DEFAULT).map(x => x["id"]);
+                ids = selectedData.filter(x => x["approveStatus"] === "DEFAULT").map(x => x["id"]);
                 text = "只能操作未上报状态的数据";
                 break;
             case "approve":
             case "unSubmit":
-                ids = selectedData.filter(x => x["approveStatus"] === GeexApproveStatus.SUBMITTED).map(x => x["id"]);
+                ids = selectedData.filter(x => x["approveStatus"] === "SUBMITTED").map(x => x["id"]);
                 text = "只能操作已上报状态的数据";
                 break;
             case "unApprove":
-                ids = selectedData.filter(x => x["approveStatus"] === GeexApproveStatus.APPROVED).map(x => x["id"]);
+                ids = selectedData.filter(x => x["approveStatus"] === "APPROVED").map(x => x["id"]);
                 text = "只能操作已审核状态的数据";
                 break;
             default:
@@ -1949,10 +1965,10 @@ class RoutedListComponent extends RoutedComponent {
             });
         });
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: RoutedListComponent, deps: null, target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "20.3.0", type: RoutedListComponent, isStandalone: true, selector: "ng-component", usesInheritance: true, ngImport: i0, template: "", isInline: true });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: RoutedListComponent, deps: null, target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "20.1.6", type: RoutedListComponent, isStandalone: true, selector: "ng-component", usesInheritance: true, ngImport: i0, template: "", isInline: true });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: RoutedListComponent, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: RoutedListComponent, decorators: [{
             type: Component,
             args: [{ template: "", standalone: true }]
         }] });
@@ -2014,10 +2030,10 @@ class RoutedEditComponent extends RoutedComponent {
             this.location.back();
         }
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: RoutedEditComponent, deps: null, target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "20.3.0", type: RoutedEditComponent, isStandalone: true, selector: "ng-component", usesInheritance: true, ngImport: i0, template: "", isInline: true });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: RoutedEditComponent, deps: null, target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "20.1.6", type: RoutedEditComponent, isStandalone: true, selector: "ng-component", usesInheritance: true, ngImport: i0, template: "", isInline: true });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: RoutedEditComponent, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: RoutedEditComponent, decorators: [{
             type: Component,
             args: [{
                     template: "",
@@ -2100,10 +2116,10 @@ class TreeTableComponentBase {
             array.push(node);
         }
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: TreeTableComponentBase, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "20.3.0", type: TreeTableComponentBase, isStandalone: true, selector: "ng-component", ngImport: i0, template: "", isInline: true });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: TreeTableComponentBase, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "14.0.0", version: "20.1.6", type: TreeTableComponentBase, isStandalone: true, selector: "ng-component", ngImport: i0, template: "", isInline: true });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: TreeTableComponentBase, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: TreeTableComponentBase, decorators: [{
             type: Component,
             args: [{
                     template: "",
@@ -2165,7 +2181,7 @@ class GeexRouter extends Router {
             for (const key in navigationExtras.queryParams) {
                 const value = navigationExtras.queryParams[key];
                 try {
-                    processedParams[key] = exports$1.encode(value);
+                    processedParams[key] = exports.encode(value);
                 }
                 catch (e) {
                     console.warn(e);
@@ -2179,10 +2195,10 @@ class GeexRouter extends Router {
         }
         return super.createUrlTree(commands, navigationExtras);
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexRouter, deps: [{ token: i0.Injector }], target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexRouter });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexRouter, deps: [{ token: i0.Injector }], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexRouter });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexRouter, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexRouter, decorators: [{
             type: Injectable
         }], ctorParameters: () => [{ type: i0.Injector }] });
 
@@ -2215,10 +2231,10 @@ class GeexReuseTabStrategy extends ReuseTabStrategy {
         }
         return super.shouldAttach(route);
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexReuseTabStrategy, deps: null, target: i0.ɵɵFactoryTarget.Injectable });
-    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexReuseTabStrategy });
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexReuseTabStrategy, deps: null, target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexReuseTabStrategy });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexReuseTabStrategy, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: GeexReuseTabStrategy, decorators: [{
             type: Injectable
         }] });
 
@@ -2248,8 +2264,8 @@ class ListPageLayoutComponent {
     get refreshLabel() {
         return this.i18n?.Common?.list?.refresh ?? "Refresh";
     }
-    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: ListPageLayoutComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
-    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "17.0.0", version: "20.3.0", type: ListPageLayoutComponent, isStandalone: true, selector: "list-page-layout", inputs: { title: { classPropertyName: "title", publicName: "title", isSignal: true, isRequired: true, transformFunction: null }, loading: { classPropertyName: "loading", publicName: "loading", isSignal: true, isRequired: false, transformFunction: null }, total: { classPropertyName: "total", publicName: "total", isSignal: true, isRequired: false, transformFunction: null }, data: { classPropertyName: "data", publicName: "data", isSignal: true, isRequired: false, transformFunction: null }, columns: { classPropertyName: "columns", publicName: "columns", isSignal: true, isRequired: false, transformFunction: null }, pi: { classPropertyName: "pi", publicName: "pi", isSignal: true, isRequired: false, transformFunction: null }, ps: { classPropertyName: "ps", publicName: "ps", isSignal: true, isRequired: false, transformFunction: null }, selectedCount: { classPropertyName: "selectedCount", publicName: "selectedCount", isSignal: true, isRequired: false, transformFunction: null }, multiSort: { classPropertyName: "multiSort", publicName: "multiSort", isSignal: true, isRequired: false, transformFunction: null }, filtersInHeader: { classPropertyName: "filtersInHeader", publicName: "filtersInHeader", isSignal: true, isRequired: false, transformFunction: null } }, outputs: { tableChange: "tableChange", refresh: "refresh" }, queries: [{ propertyName: "headerExtraTpl", first: true, predicate: ["headerExtra"], descendants: true, isSignal: true }, { propertyName: "headerTabTpl", first: true, predicate: ["headerTab"], descendants: true, isSignal: true }, { propertyName: "headerActionTpl", first: true, predicate: ["headerAction"], descendants: true, isSignal: true }], ngImport: i0, template: `
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: ListPageLayoutComponent, deps: [], target: i0.ɵɵFactoryTarget.Component });
+    static ɵcmp = i0.ɵɵngDeclareComponent({ minVersion: "17.0.0", version: "20.1.6", type: ListPageLayoutComponent, isStandalone: true, selector: "list-page-layout", inputs: { title: { classPropertyName: "title", publicName: "title", isSignal: true, isRequired: true, transformFunction: null }, loading: { classPropertyName: "loading", publicName: "loading", isSignal: true, isRequired: false, transformFunction: null }, total: { classPropertyName: "total", publicName: "total", isSignal: true, isRequired: false, transformFunction: null }, data: { classPropertyName: "data", publicName: "data", isSignal: true, isRequired: false, transformFunction: null }, columns: { classPropertyName: "columns", publicName: "columns", isSignal: true, isRequired: false, transformFunction: null }, pi: { classPropertyName: "pi", publicName: "pi", isSignal: true, isRequired: false, transformFunction: null }, ps: { classPropertyName: "ps", publicName: "ps", isSignal: true, isRequired: false, transformFunction: null }, selectedCount: { classPropertyName: "selectedCount", publicName: "selectedCount", isSignal: true, isRequired: false, transformFunction: null }, multiSort: { classPropertyName: "multiSort", publicName: "multiSort", isSignal: true, isRequired: false, transformFunction: null }, filtersInHeader: { classPropertyName: "filtersInHeader", publicName: "filtersInHeader", isSignal: true, isRequired: false, transformFunction: null } }, outputs: { tableChange: "tableChange", refresh: "refresh" }, queries: [{ propertyName: "headerExtraTpl", first: true, predicate: ["headerExtra"], descendants: true, isSignal: true }, { propertyName: "headerTabTpl", first: true, predicate: ["headerTab"], descendants: true, isSignal: true }, { propertyName: "headerActionTpl", first: true, predicate: ["headerAction"], descendants: true, isSignal: true }], ngImport: i0, template: `
     <page-header [title]="title()" [tab]="headerTabTpl()" [extra]="headerExtraTpl()" [action]="headerActionTpl()">
       @if (filtersInHeader()) {
         <ng-content select="[filters]" />
@@ -2283,9 +2299,9 @@ class ListPageLayoutComponent {
         (change)="tableChange.emit($event)"
       />
     </nz-card>
-  `, isInline: true, dependencies: [{ kind: "ngmodule", type: PageHeaderModule }, { kind: "component", type: i1.PageHeaderComponent, selector: "page-header", inputs: ["title", "titleSub", "loading", "wide", "home", "homeLink", "homeI18n", "autoBreadcrumb", "autoTitle", "syncTitle", "fixed", "fixedOffsetTop", "breadcrumb", "recursiveBreadcrumb", "logo", "action", "content", "extra", "tab"], exportAs: ["pageHeader"] }, { kind: "ngmodule", type: STModule }, { kind: "component", type: i2.STComponent, selector: "st", inputs: ["req", "res", "page", "data", "delay", "columns", "contextmenu", "ps", "pi", "total", "loading", "loadingDelay", "loadingIndicator", "bordered", "size", "scroll", "drag", "singleSort", "multiSort", "rowClassName", "clickRowClassName", "widthMode", "widthConfig", "resizable", "header", "showHeader", "footer", "bodyHeader", "body", "expandRowByClick", "expandAccordion", "expand", "expandIcon", "noResult", "responsive", "responsiveHideHeaderFooter", "virtualScroll", "virtualItemSize", "virtualMaxBufferPx", "virtualMinBufferPx", "customRequest", "virtualForTrackBy", "trackBy"], outputs: ["error", "change"], exportAs: ["st"] }, { kind: "ngmodule", type: NzCardModule }, { kind: "component", type: i3.NzCardComponent, selector: "nz-card", inputs: ["nzBordered", "nzLoading", "nzHoverable", "nzBodyStyle", "nzCover", "nzActions", "nzType", "nzSize", "nzTitle", "nzExtra"], exportAs: ["nzCard"] }, { kind: "ngmodule", type: NzAlertModule }, { kind: "component", type: i4.NzAlertComponent, selector: "nz-alert", inputs: ["nzAction", "nzCloseText", "nzIconType", "nzMessage", "nzDescription", "nzType", "nzCloseable", "nzShowIcon", "nzBanner", "nzNoAnimation", "nzIcon"], outputs: ["nzOnClose"], exportAs: ["nzAlert"] }, { kind: "ngmodule", type: NzDividerModule }, { kind: "component", type: i5.NzDividerComponent, selector: "nz-divider", inputs: ["nzText", "nzType", "nzOrientation", "nzVariant", "nzDashed", "nzPlain"], exportAs: ["nzDivider"] }, { kind: "ngmodule", type: NzIconModule }, { kind: "directive", type: i6.NzIconDirective, selector: "nz-icon,[nz-icon]", inputs: ["nzSpin", "nzRotate", "nzType", "nzTheme", "nzTwotoneColor", "nzIconfont"], exportAs: ["nzIcon"] }] });
+  `, isInline: true, dependencies: [{ kind: "ngmodule", type: PageHeaderModule }, { kind: "component", type: i1.PageHeaderComponent, selector: "page-header", inputs: ["title", "titleSub", "loading", "wide", "home", "homeLink", "homeI18n", "autoBreadcrumb", "autoTitle", "syncTitle", "fixed", "fixedOffsetTop", "breadcrumb", "recursiveBreadcrumb", "logo", "action", "content", "extra", "tab"], exportAs: ["pageHeader"] }, { kind: "ngmodule", type: STModule }, { kind: "component", type: i2.STComponent, selector: "st", inputs: ["req", "res", "page", "data", "delay", "columns", "contextmenu", "ps", "pi", "total", "loading", "loadingDelay", "loadingIndicator", "bordered", "size", "scroll", "drag", "singleSort", "multiSort", "rowClassName", "clickRowClassName", "widthMode", "widthConfig", "resizable", "header", "showHeader", "footer", "bodyHeader", "body", "expandRowByClick", "expandAccordion", "expand", "expandIcon", "noResult", "responsive", "responsiveHideHeaderFooter", "virtualScroll", "virtualItemSize", "virtualMaxBufferPx", "virtualMinBufferPx", "customRequest", "virtualForTrackBy", "trackBy"], outputs: ["error", "change"], exportAs: ["st"] }, { kind: "ngmodule", type: NzCardModule }, { kind: "component", type: i3.NzCardComponent, selector: "nz-card", inputs: ["nzBordered", "nzLoading", "nzHoverable", "nzBodyStyle", "nzCover", "nzActions", "nzType", "nzSize", "nzTitle", "nzExtra"], exportAs: ["nzCard"] }, { kind: "ngmodule", type: NzAlertModule }, { kind: "component", type: i4.NzAlertComponent, selector: "nz-alert", inputs: ["nzAction", "nzCloseText", "nzIconType", "nzMessage", "nzDescription", "nzType", "nzCloseable", "nzShowIcon", "nzBanner", "nzNoAnimation", "nzIcon"], outputs: ["nzOnClose"], exportAs: ["nzAlert"] }, { kind: "ngmodule", type: NzDividerModule }, { kind: "component", type: i5.NzDividerComponent, selector: "nz-divider", inputs: ["nzText", "nzType", "nzOrientation", "nzVariant", "nzSize", "nzDashed", "nzPlain"], exportAs: ["nzDivider"] }, { kind: "ngmodule", type: NzIconModule }, { kind: "directive", type: i6.NzIconDirective, selector: "nz-icon,[nz-icon]", inputs: ["nzSpin", "nzRotate", "nzType", "nzTheme", "nzTwotoneColor", "nzIconfont"], exportAs: ["nzIcon"] }] });
 }
-i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: ListPageLayoutComponent, decorators: [{
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.1.6", ngImport: i0, type: ListPageLayoutComponent, decorators: [{
             type: Component,
             args: [{
                     selector: "list-page-layout",
@@ -2908,5 +2924,5 @@ function bindGeexGlobal() {
  * Generated bundle index. Do not edit.
  */
 
-export { BusinessComponentBase, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_PERMISSION, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexApproveStatus, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createMessagingModule, createSettingsModule, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexI18n, provideGeexModuleContribution, provideGeexStartup, exports$1 as rison };
+export { BusinessComponentBase, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_PERMISSION, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createMessagingModule, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexI18n, provideGeexModuleContribution, provideGeexStartup, exports as rison };
 //# sourceMappingURL=geexcode-geex-angular.mjs.map

@@ -1,0 +1,75 @@
+<div class="auth-container">
+      <!-- 品牌头部 - 锁屏页面简化版 -->
+      <div class="brand-header">
+        <div class="logo-desktop">
+          <!-- 用户头像 -->
+          <div class="user-avatar">
+            <nz-avatar [nzSrc]="user.avatar" nzIcon="user" [nzSize]="80"></nz-avatar>
+            <div class="user-name">{{ user.name || '用户' }}</div>
+          </div>
+          <h1 class="brand-title">屏幕已锁定</h1>
+          <p class="brand-subtitle">请输入您的密码以继续</p>
+        </div>
+      </div>
+
+    <!-- 锁屏卡片 -->
+    <div class="auth-card">
+        <div class="card-content">
+          <form nz-form [formGroup]="f" (ngSubmit)="submit()" class="auth-form" role="form">
+            <!-- 密码输入 -->
+            <div class="form-group">
+              <label class="input-label">密码</label>
+              <nz-form-item>
+                <nz-form-control [nzErrorTip]="'请输入密码！'">
+                  <nz-input-group nzSuffixIcon="lock">
+                    <input type="password" 
+                           nz-input 
+                           formControlName="password" 
+                           placeholder="请输入您的密码" 
+                           autocomplete="current-password" />
+                  </nz-input-group>
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="form-group">
+              <div style="display: flex; gap: 12px;">
+                <button nz-button 
+                        class="auth-button" 
+                        nzType="default"
+                        type="button"
+                        style="flex: 1;">
+                  <span class="button-content">
+                    <i nz-icon nzType="swap" nzTheme="outline"></i>
+                    切换用户
+                  </span>
+                </button>
+                <button nz-button 
+                        class="auth-button" 
+                        nzType="primary"
+                        type="submit"
+                        [disabled]="!f.valid"
+                        style="flex: 1;">
+                  <span class="button-content">
+                    <i nz-icon nzType="unlock" nzTheme="outline"></i>
+                    解锁
+                  </span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- 底部提示 -->
+      <div class="footer-hint">
+        <div class="hint-line"></div>
+        <div class="hint-content">
+          <i nz-icon nzType="info-circle" nzTheme="outline"></i>
+          <span>忘记密码？请联系</span>
+          <a href="#" class="docs-link">系统管理员</a>
+        </div>
+        <div class="hint-line"></div>
+      </div>
+  </div>

@@ -1,0 +1,117 @@
+# 查询用户列表
+query userLists($skip: Int, $take: Int, $filter: IUserFilterInput, $sort: [IUserSortInput!]) {
+  users(skip: $skip, take: $take, filter: $filter, sort: $sort) {
+    items {
+      ...UserList
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+
+# 获取用户详情
+query userById($id: String) {
+  users(skip: 0, take: 1, filter: { id: { eq: $id } }) {
+    items {
+      ...UserDetail
+    }
+  }
+}
+# 获取用户下拉menus
+query userMenus($filter: IUserFilterInput) {
+  users(skip: 0, take: 999, filter: $filter) {
+    items {
+      ...UserMinimal
+    }
+  }
+}
+# 编辑用户
+mutation editUser($request: EditUserRequest!) {
+  editUser(request: $request){
+    id
+  }
+}
+# 添加用户
+mutation createUser($request: CreateUserRequest!) {
+  createUser(request: $request){
+    id
+  }
+}
+# 重置用户密码
+mutation resetUserPassword($request: ResetUserPasswordRequest!) {
+  resetUserPassword(request: $request){
+    id
+  }
+}
+# 修改用户密码
+mutation changePassword($request: ChangePasswordRequest!) {
+  changePassword(request: $request)
+}
+# 删除用户
+mutation deleteUser($ids: [String!]!) {
+  deleteUser(ids: $ids)
+}
+
+# 公共的user字段
+fragment UserBrief on User {
+  id
+  username
+  nickname
+  phoneNumber
+  email
+  isEnable
+  roleNames
+  roleIds
+}
+# 用户列表
+fragment UserList on User {
+  ...UserBrief
+  createdOn
+  orgCodes
+}
+# 用户 缓存数据Dto cacheStore
+fragment UserCacheDto on User {
+  ...UserBrief
+  avatarFile {
+    url
+  }
+}
+# 用户 select option Menus
+fragment UserMinimal on User {
+  id
+  username
+  nickname
+}
+# 用户详情
+fragment UserDetail on User {
+  ...UserBrief
+  isEnable
+  permissions
+  avatarFile {
+    url
+  }
+  orgs {
+    allParentOrgs {
+      code
+      name
+    }
+    name
+    code
+  }
+  claims {
+    claimType
+    claimValue
+  }
+  orgCodes
+  avatarFileId
+  avatarFile {
+    ...BlobObjectBrief
+  }
+}
+
+# 组织上 添加或删除用户
+mutation assignOrgs($request: AssignOrgRequest!) {
+  assignOrgs(request: $request)
+}

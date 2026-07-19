@@ -1,0 +1,255 @@
+<div class="auth-container">
+  <!-- 品牌头部 -->
+  <div class="brand-header">
+    <div class="logo-desktop">
+      <img ngSrc="assets/logo.png"
+           alt="Brand Logo"
+           class="brand-logo"
+           width="64"
+           height="64" />
+      <h1 class="brand-title">创建账户</h1>
+      <div class="brand-subtitle">注册新账户，开始您的旅程</div>
+    </div>
+  </div>
+
+  <!-- 注册卡片 -->
+  <div class="auth-card">
+    <div class="card-content">
+      <form nz-form
+            [formGroup]="form"
+            (ngSubmit)="submit()"
+            class="auth-form"
+            role="form">
+        <!-- 表单标题 -->
+        <div class="form-title">用户注册</div>
+
+        <!-- 错误信息 -->
+        @if (error) {
+        <div class="error-message">
+          <i nz-icon
+             nzType="exclamation-circle"
+             nzTheme="outline"></i>
+          <span>{{ error }}</span>
+        </div>
+        }
+
+        <!-- 邮箱 -->
+        <div class="form-group">
+          <label class="input-label">邮箱地址</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="mailErrorTip">
+              <nz-input-group nzSuffixIcon="user"
+                              nzSize="large"
+                              class="tech-input">
+                <input nz-input
+                       formControlName="mail"
+                       placeholder="请输入您的邮箱地址"
+                       autocomplete="email" />
+              </nz-input-group>
+              <ng-template #mailErrorTip
+                           let-i>
+                @if (i.errors?.required) {
+                请输入邮箱地址！
+                }
+                @if (i.errors?.email) {
+                邮箱地址格式错误！
+                }
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 密码 -->
+        <div class="form-group">
+          <label class="input-label">密码</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="'请输入密码！'">
+              <nz-input-group nzSuffixIcon="lock"
+                              nzSize="large"
+                              class="tech-input"
+                              nz-popover
+                              nzPopoverPlacement="right"
+                              nzPopoverTrigger="focus"
+                              [(nzPopoverVisible)]="visible"
+                              nzPopoverOverlayClassName="register-password-cdk"
+                              [nzPopoverOverlayStyle]="{ 'width.px': 280 }"
+                              [nzPopoverContent]="pwdCdkTpl">
+                <input nz-input
+                       type="password"
+                       formControlName="password"
+                       placeholder="请输入密码"
+                       autocomplete="new-password" />
+              </nz-input-group>
+              <ng-template #pwdCdkTpl>
+                <div class="password-strength">
+                  <div class="strength-header">
+                    @switch (status) {
+                    @case ('ok') {
+                    <div class="strength-label success">强度：强</div>
+                    }
+                    @case ('pass') {
+                    <div class="strength-label warning">强度：中</div>
+                    }
+                    @default {
+                    <div class="strength-label error">强度：太短</div>
+                    }
+                    }
+                  </div>
+                  <div class="strength-progress">
+                    <nz-progress [nzPercent]="progress"
+                                 [nzStatus]="passwordProgressMap[status]"
+                                 [nzStrokeWidth]="6"
+                                 [nzShowInfo]="false"></nz-progress>
+                  </div>
+                  <div class="strength-tips">
+                    <p>请至少输入 6 个字符</p>
+                    <p>建议包含数字、字母和特殊字符</p>
+                  </div>
+                </div>
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 确认密码 -->
+        <div class="form-group">
+          <label class="input-label">确认密码</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="confirmErrorTip">
+              <nz-input-group nzSuffixIcon="lock"
+                              nzSize="large"
+                              class="tech-input">
+                <input nz-input
+                       type="password"
+                       formControlName="confirm"
+                       placeholder="请再次输入密码"
+                       autocomplete="new-password" />
+              </nz-input-group>
+              <ng-template #confirmErrorTip
+                           let-i>
+                @if (i.errors?.required) {
+                请确认密码！
+                }
+                @if (i.errors?.equar) {
+                两次输入的密码不匹配！
+                }
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 手机号 -->
+        <div class="form-group">
+          <label class="input-label">手机号码</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="mobileErrorTip">
+              <nz-input-group [nzAddOnBefore]="addOnBeforeTemplate"
+                              nzSize="large"
+                              class="tech-input">
+                <ng-template #addOnBeforeTemplate>
+                  <nz-select formControlName="mobilePrefix"
+                             style="width: 100px">
+                    <nz-option [nzLabel]="'+86'"
+                               [nzValue]="'+86'"></nz-option>
+                    <nz-option [nzLabel]="'+87'"
+                               [nzValue]="'+87'"></nz-option>
+                  </nz-select>
+                </ng-template>
+                <input formControlName="mobile"
+                       nz-input
+                       placeholder="请输入手机号码"
+                       autocomplete="tel" />
+              </nz-input-group>
+              <ng-template #mobileErrorTip
+                           let-i>
+                @if (i.errors?.required) {
+                请输入手机号！
+                }
+                @if (i.errors?.pattern) {
+                手机号格式错误！
+                }
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 验证码 -->
+        <div class="form-group">
+          <label class="input-label">邮箱验证码</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="'请输入验证码！'">
+              <div class="captcha-row">
+                <div class="captcha-input">
+                  <nz-input-group nzSuffixIcon="mail"
+                                  nzSize="large"
+                                  class="tech-input">
+                    <input nz-input
+                           formControlName="captcha"
+                           placeholder="请输入验证码"
+                           autocomplete="off" />
+                  </nz-input-group>
+                </div>
+                <button type="button"
+                        nz-button
+                        class="captcha-button"
+                        nzType="default"
+                        (click)="getCaptcha()"
+                        [disabled]="count > 0"
+                        [nzLoading]="http.loading">
+                  <span class="button-content">
+                    @if (count > 0) {
+                    {{ count }}s
+                    } @else {
+                    获取验证码
+                    }
+                  </span>
+                </button>
+              </div>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 提交按钮 -->
+        <div class="form-group form-group--submit">
+          <button nz-button
+                  class="auth-button"
+                  nzType="primary"
+                  type="submit"
+                  nzSize="large"
+                  [nzLoading]="http.loading">
+            <span class="button-content">
+              <i nz-icon
+                 nzType="user-add"
+                 nzTheme="outline"></i>
+              <span>立即注册</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- 登录链接 -->
+        <div class="form-footer">
+          <span class="footer-text">已有账户？</span>
+          <a routerLink="/auth/login"
+             class="footer-link">立即登录</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 底部提示 -->
+  <div class="footer-hint">
+    <div class="hint-line"></div>
+    <div class="hint-content">
+      <i nz-icon
+         nzType="safety"
+         nzTheme="outline"></i>
+      <span>注册即表示您同意我们的</span>
+      <a href="#"
+         class="docs-link">服务条款</a>
+      <span>和</span>
+      <a href="#"
+         class="docs-link">隐私政策</a>
+    </div>
+    <div class="hint-line"></div>
+  </div>
+</div>

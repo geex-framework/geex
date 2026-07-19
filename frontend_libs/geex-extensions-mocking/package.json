@@ -1,14 +1,16 @@
 {
   "name": "@geexcode/geex-extensions-mocking",
   "version": "0.0.1",
-  "description": "Mocking extension for Geex Angular apps.",
+  "description": "Mocking extension: headless mocking module for Geex Angular apps.",
   "sideEffects": false,
   "peerDependencies": {
     "@angular/core": "^20.0.0",
     "@angular/router": "^20.0.0",
     "@apollo/client": "^4.0.1",
+    "@geexcode/geex-angular": ">=0.0.41",
     "@geexcode/geex-extensions-authentication-wechat": ">=0.0.1",
-    "angular-oauth2-oidc": "^20.0.0",
+    "@geexcode/geex-extensions-identity": ">=0.0.1",
+    "angular-oauth2-oidc": ">=15.0.0 <21.0.0",
     "apollo-angular": "^14.0.0",
     "graphql": "^16.8.0",
     "rxjs": "^7.8.0"
@@ -35,8 +37,8 @@
   },
   "scripts": {
     "clean": "rimraf dist",
-    "test": "node --test src/provide-geex-mocking.node-test.mjs",
     "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
+    "test": "node --test src/provide-geex-mocking.node-test.mjs",
     "prepublishOnly": "npm run build",
     "publish:public": "npm publish ./dist --access public"
   },
@@ -46,7 +48,9 @@
     "@angular/core": "^20.0.0",
     "@angular/router": "^20.0.0",
     "@apollo/client": "^4.2.7",
+    "@geexcode/geex-angular": "workspace:*",
     "@geexcode/geex-extensions-authentication-wechat": "workspace:*",
+    "@geexcode/geex-extensions-identity": "workspace:*",
     "angular-oauth2-oidc": "^20.0.2",
     "apollo-angular": "^14.1.0",
     "graphql": "^16.9.0",

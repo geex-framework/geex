@@ -1,15 +1,27 @@
-import { EnvironmentProviders, makeEnvironmentProviders } from "@angular/core";
-import { WechatWebLoginService } from "@geexcode/geex-extensions-authentication-wechat";
-import { GEEX_MOCKING_OPTIONS, GeexMockingCapabilitiesService } from "./mocking-capabilities.service";
-import { MockAwareWechatWebLoginService } from "./mock-aware-wechat-web-login.service";
-import { GeexMockingOptions } from "./types";
+import { EnvironmentProviders, InjectionToken, Injector, makeEnvironmentProviders } from "@angular/core";
+import { provideGeexModuleContribution } from "@geexcode/geex-angular";
+import { createMockingModule } from "./mocking.module";
+import type { MockingModule } from "./mocking.types";
+
+export interface GeexMockingOptions {
+  readonly createMockingModule?: (injector: Injector) => MockingModule;
+}
+
+export type GeexMockingProvideOptions = GeexMockingOptions;
+
+export const GEEX_MOCKING_OPTIONS = new InjectionToken<Readonly<GeexMockingProvideOptions>>(
+  "GEEX_MOCKING_OPTIONS",
+);
 
 export function provideGeexMocking(
-  options: Readonly<GeexMockingOptions> = {},
+  options: Readonly<GeexMockingProvideOptions> = {},
 ): EnvironmentProviders {
   return makeEnvironmentProviders([
     { provide: GEEX_MOCKING_OPTIONS, useValue: options },
-    GeexMockingCapabilitiesService,
-    { provide: WechatWebLoginService, useClass: MockAwareWechatWebLoginService },
+    provideGeexModuleContribution({
+      createModules: ({ injector }) => ({
+        mocking: (options.createMockingModule ?? createMockingModule)(injector),
+      }),
+    }),
   ]);
 }

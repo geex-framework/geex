@@ -1,0 +1,97 @@
+# 获取全量的组织
+query orgs($filter: IOrgFilterInput) {
+  orgs(skip: 0, take: 999, filter: $filter) {
+    items {
+      ...OrgBrief
+    }
+  }
+}
+mutation createOrg($request: CreateOrgRequest!) {
+  createOrg(request: $request) {
+    ...OrgBrief
+  }
+}
+
+mutation deleteOrg($ids: [String!]!) {
+  deleteOrg(ids: $ids)
+}
+
+# 组织List
+fragment OrgBrief on Org {
+  code
+  name
+  orgType
+  parentOrgCode
+  id
+}
+# 组织详情
+fragment OrgDetail on Org {
+  ...OrgBrief
+  allSubOrgs {
+    name
+    code
+  }
+  directSubOrgs {
+    name
+    code
+  }
+}
+#递归查询org的父级(向上查询10级)
+fragment OrgRecursiveParent on Org {
+  parentOrg {
+    ...OrgBrief
+    parentOrg {
+      ...OrgBrief
+      parentOrg {
+        ...OrgBrief
+        parentOrg {
+          ...OrgBrief
+          parentOrg {
+            ...OrgBrief
+            parentOrg {
+              ...OrgBrief
+              parentOrg {
+                ...OrgBrief
+                parentOrg {
+                  ...OrgBrief
+                  parentOrg {
+                    ...OrgBrief
+                    parentOrg {
+                      ...OrgBrief
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+# 更新组织
+mutation updateOrg($request: UpdateOrgRequest!) {
+  updateOrg(request: $request) {
+    ...OrgBrief
+  }
+}
+
+# 移动组织
+mutation moveOrg($request: MoveOrgRequest!) {
+  moveOrg(request: $request)
+}
+
+# 导入组织
+mutation importOrg($request: ImportOrgRequest!) {
+  importOrg(request: $request) {
+    ...OrgBrief
+  }
+}
+
+# 修复用户组织关系
+mutation fixUserOrg {
+  fixUserOrg
+}

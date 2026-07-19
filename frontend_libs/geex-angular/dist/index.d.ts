@@ -1,7 +1,7 @@
 import * as i0 from '@angular/core';
 import { WritableSignal, Signal, Injector, Provider, InjectionToken, EnvironmentProviders, ChangeDetectorRef, TemplateRef, Type, ExtendedSignal, CreateSignalOptions } from '@angular/core';
 import { HttpContextToken, HttpInterceptor, HttpRequest, HttpResponseBase, HttpHandler, HttpHeaders, HttpEvent } from '@angular/common/http';
-import { InMemoryCache, TypePolicies, ApolloLink, ApolloClient } from '@apollo/client';
+import { TypePolicies, ApolloLink, InMemoryCache, ApolloClient } from '@apollo/client';
 import { ApolloBase, Apollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
 import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
@@ -58,7 +58,6 @@ type GeexModules<TExtensionModules extends Record<string, GeexModule> = {}> = {
     }>;
 } & GeexModuleMap & TExtensionModules;
 declare function createMessagingModule(injector: Injector, deps?: () => Pick<GeexModule, "init"> | undefined): MessagingModule;
-declare function createSettingsModule(injector: Injector): SettingsModule;
 declare function createUiModule(_injector: Injector): UiModule;
 
 declare function provideGeex<TExtensionModules extends Record<string, GeexModule> = {}>(overrides?: Partial<GeexModules>, extensions?: TExtensionModules): Provider[];
@@ -191,6 +190,19 @@ interface GeexStartupOptions {
 
 declare const GEEX_STARTUP_OPTIONS: InjectionToken<GeexStartupOptions>;
 
+/**
+ * Single bootstrap entry for app session.
+ *
+ * Linear flow:
+ * 1. configure OAuth
+ * 2. if OIDC callback code present → tryLogin (once)
+ * 3. geex.init()
+ * 4. bind Delon user / ACL / menus
+ * 5. start session watch (once)
+ *
+ * Login pages must not call tryLogin/load for OIDC callbacks.
+ * Password / WeChat token handoff uses initCodeFlow → IdP → this bootstrap again.
+ */
 declare class GeexStartupService {
     private readonly options;
     private readonly injector;
@@ -204,11 +216,18 @@ declare class GeexStartupService {
     private readonly loginPath;
     private readonly afterLoginNavigate;
     private readonly superAdminUserId;
+    private bootstrapPromise;
+    private bootstrapped;
+    private sessionWatchStarted;
+    /** APP_INITIALIZER entry. Safe to call concurrently; runs the bootstrap pipeline once. */
     load(): Promise<void>;
+    private bootstrap;
+    private tryOidcCodeCallback;
+    private bindUiSession;
     tryAutoOAuthLogin(): Promise<void>;
     private resolveI18nAdapter;
     private trySwitchTenant;
-    private setupSessionCheckAndRefresh;
+    private ensureSessionWatch;
     static ɵfac: i0.ɵɵFactoryDeclaration<GeexStartupService, never>;
     static ɵprov: i0.ɵɵInjectableDeclaration<GeexStartupService>;
 }
@@ -391,6 +410,9 @@ declare let geex: GeexModules;
 declare let Geex: InjectionToken<GeexModules>;
 declare function configGeex<TExtensionModules extends Record<string, GeexModule> = Record<string, never>>(injector: Injector, overrides?: GeexOverrides<TExtensionModules>, contributions?: readonly GeexModuleContribution[]): void;
 
+declare function guardedSignal<T>(innerSignal: WritableSignal<T>, isInitialized: () => boolean): WritableSignal<T>;
+declare function guardedSignal<T>(innerSignal: Signal<T>, isInitialized: () => boolean): Signal<T>;
+
 /** Minimal menu shape shared by host Delon menus and extension plugins. */
 interface GeexMenuItem {
     text?: string;
@@ -458,12 +480,6 @@ declare const GEEX_I18N_SERVICE: InjectionToken<unknown>;
  */
 declare const GEEX_APP_PERMISSION: InjectionToken<Record<string, string>>;
 
-/** Approve workflow status codes used by RoutedListComponent batch ops. */
-declare enum GeexApproveStatus {
-    DEFAULT = "DEFAULT",
-    SUBMITTED = "SUBMITTED",
-    APPROVED = "APPROVED"
-}
 /** Loose entity / DTO shape used by page bases (host `Hint<T>`-compatible). */
 type GeexHint<T> = T & Record<string, any>;
 /**
@@ -942,8 +958,8 @@ declare global {
  */
 declare function bindGeexGlobal(): void;
 
-declare const exports$1: Record<string, any>;
+declare const exports: Record<string, any>;
 
-export { BusinessComponentBase, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_PERMISSION, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexApproveStatus, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createMessagingModule, createSettingsModule, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexI18n, provideGeexModuleContribution, provideGeexStartup, exports$1 as rison };
+export { BusinessComponentBase, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_PERMISSION, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createMessagingModule, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexI18n, provideGeexModuleContribution, provideGeexStartup, exports as rison };
 export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexStartupI18nAdapter, GeexStartupModalCopy, GeexStartupOptions, GeexStartupSettingKeys, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, MessagingModule, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, SettingItem, SettingsModule, UiModule, WritableDeepSignal };
 //# sourceMappingURL=index.d.ts.map

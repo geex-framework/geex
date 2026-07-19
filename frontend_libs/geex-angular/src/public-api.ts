@@ -7,6 +7,7 @@ export * from "./auth";
 export * from "./environment-overrides";
 export * from "./http";
 export * from "./geex";
+export * from "./guarded-signal";
 export * from "./modules";
 export * from "./module-contribution";
 export * from "./menu-contribution";

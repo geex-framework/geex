@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "dom"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@geexcode/geex-angular": ["../geex-angular/src/public-api.ts"],
+      "@geexcode/geex-extensions-settings": ["../geex-extensions-settings/src/public-api.ts"],
+      "@geexcode/geex-extensions-multi-tenant": ["../geex-extensions-multi-tenant/src/public-api.ts"],
+      "@geexcode/geex-extensions-identity": ["../geex-extensions-identity/src/public-api.ts"],
+      "@geexcode/geex-extensions-authentication": ["../geex-extensions-authentication/src/public-api.ts"],
+      "@geexcode/geex-extensions-authorization": ["../geex-extensions-authorization/src/public-api.ts"],
+      "@geexcode/geex-extensions-authentication-wechat": ["../geex-extensions-authentication-wechat/src/public-api.ts"],
+      "@geexcode/geex-extensions-mocking": ["../geex-extensions-mocking/src/public-api.ts"],
+      "@geexcode/geex-extensions-blob-storage": ["../geex-extensions-blob-storage/src/public-api.ts"],
+      "@geexcode/geex-extensions-approval-flows": ["../geex-extensions-approval-flows/src/public-api.ts"],
+      "@/app/*": ["../../private/template/client/admin/ClientApp/src/app/*"],
+      "@/modules/*": ["../../private/template/client/admin/ClientApp/src/app/modules/*"],
+      "@/shared/*": ["../../private/template/client/admin/ClientApp/src/app/shared/*"],
+      "@/core/*": ["../../private/template/client/admin/ClientApp/src/app/modules/core/*"],
+      "@/assets/*": ["../../private/template/client/admin/ClientApp/src/assets/*"],
+      "@/*": ["../../private/template/client/admin/ClientApp/src/*"],
+      "@/gql": ["../../private/template/client/admin/ClientApp/src/app/shared/graphql/schema.gql.ts"],
+      "@/env": ["../../private/template/client/admin/ClientApp/src/environment.ts"]
+    },
+    "typeRoots": [
+      "../../private/template/client/admin/ClientApp/node_modules/@types",
+      "../../private/template/client/admin/ClientApp/node_modules"
+    ]
+  },
+  "include": ["files/extensions/**/*.ts"],
+  "exclude": ["files/blank/**"]
+}

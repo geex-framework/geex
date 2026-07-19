@@ -1,0 +1,153 @@
+// 导入公共样式
+@use '../shared/style' as *;
+
+// ===============================
+// 锁屏页面特定样式
+// ===============================
+
+:host {
+  @extend .auth-page;
+}
+
+// 用户头像区域
+.user-avatar {
+  @include flex-center;
+  flex-direction: column;
+  margin-bottom: $spacing-lg;
+  
+  ::ng-deep .ant-avatar {
+    margin-bottom: $spacing-md;
+    box-shadow: $shadow-lg;
+    border: 3px solid rgba($white, 0.3);
+    
+    
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: $shadow-xl;
+    }
+  }
+  
+  .user-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba($white, 0.9);
+    margin-top: $spacing-sm;
+  }
+}
+
+// 锁屏特殊的品牌头部样式调整
+.brand-header {
+  .logo-desktop {
+    .brand-title {
+      color: rgba($white, 0.95);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .brand-subtitle {
+      color: rgba($white, 0.8);
+    }
+  }
+}
+
+// 锁屏表单样式
+.auth-form {
+  .form-group {
+    margin-bottom: $spacing-xl;
+    
+    // 密码输入框
+    ::ng-deep .ant-input-group-wrapper {
+      .ant-input-group {
+        &:focus-within {
+          border-color: $warning;
+          box-shadow: 0 0 0 2px rgba($warning, 0.1);
+        }
+        
+        .ant-input-group-addon {
+          background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
+          
+          .anticon {
+            color: $warning;
+          }
+        }
+      }
+    }
+    
+    // 按钮组样式
+    &:last-child {
+      margin-bottom: 0;
+      
+      > div {
+        display: flex;
+        gap: $spacing-md;
+        
+        .auth-button {
+          &.ant-btn-default {
+            border-color: rgba($white, 0.3);
+            color: rgba($white, 0.8);
+            background: rgba($white, 0.1);
+            
+            &:hover {
+              background: rgba($white, 0.2);
+              border-color: rgba($white, 0.5);
+              color: $white;
+            }
+          }
+          
+          &.ant-btn-primary {
+            background: $warning;
+            border-color: $warning;
+            
+            &:hover {
+              background: $gradient-warning;
+              @include button-hover-effect;
+              box-shadow: 0 8px 25px rgba($warning, 0.4);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// 锁屏页面特殊的底部提示
+.footer-hint .hint-content {
+  color: rgba($white, 0.7);
+  
+  i {
+    color: rgba($white, 0.5);
+  }
+  
+  .docs-link {
+    color: rgba($white, 0.85);
+    
+    &:hover {
+      color: $white;
+    }
+  }
+}
+
+// 响应式调整
+@media (max-width: 768px) {
+  .user-avatar {
+    margin-bottom: $spacing-md;
+    
+    ::ng-deep .ant-avatar {
+      width: 60px !important;
+      height: 60px !important;
+      font-size: 24px !important;
+    }
+    
+    .user-name {
+      font-size: 16px;
+    }
+  }
+  
+  .auth-form .form-group:last-child > div {
+    flex-direction: column;
+    gap: $spacing-sm;
+    
+    .auth-button {
+      width: 100%;
+    }
+  }
+}

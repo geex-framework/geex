@@ -1,0 +1,38 @@
+mutation editSetting($request: EditSettingRequest!) {
+  editSetting(request: $request) {
+    name
+    value
+  }
+}
+
+
+query settings($request: GetSettingsRequest!, $skip: Int, $take: Int, $filter: ISettingFilterInput, $includeDetail: Boolean!) {
+  settings(request: $request, skip: $skip, take: $take, filter: $filter) {
+    items {
+      ...SettingBrief
+      ...SettingDetail @include(if: $includeDetail)
+    }
+    pageInfo {
+      ...PageInfo
+    }
+    totalCount
+  }
+}
+
+query activeSettings {
+  activeSettings {
+      ...SettingBrief
+  }
+}
+
+fragment SettingBrief on Setting {
+  id
+  name
+  value
+}
+
+fragment SettingDetail on Setting {
+  scope
+  scopedKey
+}
+# 系统备份
