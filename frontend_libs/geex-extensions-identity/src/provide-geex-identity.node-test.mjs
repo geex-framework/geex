@@ -7,12 +7,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("provideGeexIdentity", () => {
-  it("registers the identity module through core module contributions and consumes tenant/auth from the modules bag", () => {
+  it("registers the identity module through core module contributions and consumes multiTenant/authentication from the modules bag", () => {
     const source = fs.readFileSync(path.join(__dirname, "provide-geex-identity.ts"), "utf8");
     assert.match(source, /GEEX_IDENTITY_OPTIONS/);
     assert.match(source, /provideGeexModuleContribution/);
-    assert.match(source, /modules\["tenant"\]/);
-    assert.match(source, /modules\["auth"\]/);
+    assert.match(source, /modules\["multiTenant"\]/);
+    assert.match(source, /modules\["authentication"\]/);
     assert.match(source, /provideGeexMultiTenant.*provideGeexAuthentication/);
     assert.match(source, /return \{ identity \}/);
     assert.match(source, /provideGeexApolloTypePolicies/);

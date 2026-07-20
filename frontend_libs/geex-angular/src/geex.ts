@@ -2,7 +2,7 @@ import { InjectionToken, Injector, runInInjectionContext } from "@angular/core";
 import type { GeexModuleContribution } from "./module-contribution";
 import type { GeexModule } from "./modules";
 import type { GeexModules } from "./modules";
-import { createMessagingModule, createUiModule } from "./modules";
+import { createUiModule } from "./modules";
 
 export type GeexOverrides<TExtensionModules extends Record<string, GeexModule> = Record<string, GeexModule>> = Partial<
   Omit<GeexModules<TExtensionModules>, "init">
@@ -24,7 +24,6 @@ export function configGeex<TExtensionModules extends Record<string, GeexModule> 
       ui: createUiModule(injector),
     } as GeexModules<TExtensionModules>;
     const moduleRecord = modules as unknown as Record<string, GeexModule>;
-    modules.messaging = createMessagingModule(injector, () => modules["auth"]);
 
     for (const contribution of contributions) {
       const contributedModules = contribution.createModules({

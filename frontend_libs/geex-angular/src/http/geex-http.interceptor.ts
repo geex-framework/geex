@@ -27,7 +27,7 @@ import {
 } from "./tokens";
 
 /**
- * Default Geex HTTP interceptor (zh-CN messages, `/auth/login`, tenant/Bearer headers).
+ * Default Geex HTTP interceptor (zh-CN messages, `/authentication/login`, tenant/Bearer headers).
  * Override via tokens or protected hooks; host may `extends` or provide callbacks.
  */
 @Injectable()
@@ -179,7 +179,7 @@ export class GeexHttpInterceptor implements HttpInterceptor {
 
     if (this.shouldAttachTenant()) {
       try {
-        const tenantCode = geex.tenant.current()?.code;
+        const tenantCode = geex.multiTenant.current()?.code;
         if (tenantCode && !headers?.has("__tenant")) {
           reqHeader["__tenant"] = tenantCode;
         }

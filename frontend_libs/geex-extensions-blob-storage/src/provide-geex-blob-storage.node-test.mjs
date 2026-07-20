@@ -14,6 +14,17 @@ describe("provideGeexBlobStorage", () => {
     assert.match(source, /blobStorage:/);
     assert.match(source, /EnvironmentProviders/);
     assert.match(source, /makeEnvironmentProviders/);
+    assert.doesNotMatch(source, /createDocument/);
+    assert.doesNotMatch(source, /listDocument/);
+    assert.doesNotMatch(source, /deleteDocument/);
+  });
+
+  it("owns blob GraphQL operations inside the module factory", () => {
+    const module = fs.readFileSync(path.join(__dirname, "blob-storage.module.ts"), "utf8");
+    assert.match(module, /query blobObjects/);
+    assert.match(module, /mutation createBlobObject/);
+    assert.match(module, /mutation deleteBlobObject/);
+    assert.doesNotMatch(module, /includeDetail/);
   });
 
   it("uses core-owned GeexModule contracts", () => {

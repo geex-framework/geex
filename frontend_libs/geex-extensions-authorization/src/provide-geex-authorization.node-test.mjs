@@ -11,9 +11,13 @@ describe("provideGeexAuthorization", () => {
     const provide = fs.readFileSync(path.join(__dirname, "provide-geex-authorization.ts"), "utf8");
     assert.match(provide, /GEEX_AUTHORIZATION_OPTIONS/);
     assert.match(provide, /provideGeexModuleContribution/);
-    assert.match(provide, /\(\{\s*authorization:/);
+    assert.match(provide, /authorization:\s*\(options\.createAuthorizationModule/);
     assert.match(provide, /AuthorizeGuard/);
     assert.match(provide, /makeEnvironmentProviders/);
+    assert.match(
+      provide,
+      /provideGeexAuthorization\(\) requires provideGeexMultiTenant\(\) and provideGeexAuthentication\(\) to be registered first/,
+    );
 
     const api = fs.readFileSync(path.join(__dirname, "public-api.ts"), "utf8");
     assert.match(api, /authorization\.types/);
@@ -22,7 +26,7 @@ describe("provideGeexAuthorization", () => {
 
   it("keeps business logic on the module, not the guard", () => {
     const module = fs.readFileSync(path.join(__dirname, "authorization.module.ts"), "utf8");
-    assert.match(module, /geex\["tenant"\]/);
+    assert.match(module, /geex\["multiTenant"\]/);
     assert.match(module, /GEEX_SUPER_ADMIN_USER_ID/);
 
     const guard = fs.readFileSync(path.join(__dirname, "authorize.guard.ts"), "utf8");

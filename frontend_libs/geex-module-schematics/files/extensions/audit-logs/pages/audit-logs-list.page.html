@@ -1,0 +1,18 @@
+@defer (when params()) {
+<list-page-layout [title]="I18N.AuditLogs.listTitle"
+                  [loading]="loading()"
+                  [total]="total()"
+                  [data]="data()"
+                  [pi]="params().pi"
+                  [ps]="params().ps"
+                  [selectedCount]="selectedData().length"
+                  [columns]="columns"
+                  (refresh)="refresh()"
+                  (tableChange)="tableChange($event)">
+  <div actions>
+    <button nz-button nzType="primary" nzDanger [disabled]="!selectedData().length" (click)="batchDelete()">
+      {{ I18N.AuditLogs.batchDelete }}
+    </button>
+  </div>
+</list-page-layout>
+}

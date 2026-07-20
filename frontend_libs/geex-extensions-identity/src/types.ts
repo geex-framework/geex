@@ -1,7 +1,9 @@
 import type { WritableSignal } from "@angular/core";
 import type { GeexModule } from "@geexcode/geex-angular";
-export type { MessagingModule, SettingItem, SettingsModule, UiModule } from "@geexcode/geex-angular";
-export type { Tenant, ITenant, TenantModule } from "@geexcode/geex-extensions-multi-tenant";
+export type { UiModule } from "@geexcode/geex-angular";
+export type { SettingItem, SettingsModule } from "@geexcode/geex-extensions-settings";
+export type { Tenant, ITenant, MultiTenantModule } from "@geexcode/geex-extensions-multi-tenant";
+export type { MessagingModule } from "@geexcode/geex-extensions-messaging";
 
 export const GEEX_DEFAULT_SUPER_ADMIN_USER_ID = "000000000000000000000001";
 
@@ -55,15 +57,15 @@ export interface IdentityModule extends GeexModule<{
   userOwnedOrgs: WritableSignal<Org[]>;
 }> {}
 
-/** Auth module dependency shape; kept structural to avoid depending on `@geexcode/geex-extensions-authentication`. */
-export interface IdentityAuthDeps {
+/** Authentication module dependency shape; kept structural to avoid depending on `@geexcode/geex-extensions-authentication`. */
+export interface IdentityAuthenticationDeps {
   init: (force?: boolean) => Promise<unknown>;
   user: WritableSignal<User | null>;
 }
 
 export interface IdentityModuleDeps {
-  tenant: Pick<GeexModule, "init">;
-  auth: IdentityAuthDeps;
+  multiTenant: Pick<GeexModule, "init">;
+  authentication: IdentityAuthenticationDeps;
 }
 
 export type IdentityModuleDepsFactory = () => IdentityModuleDeps;

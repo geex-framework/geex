@@ -5,12 +5,12 @@ import { geex, GEEX_SUPER_ADMIN_USER_ID, type IdentityClaims } from "@geexcode/g
 import json5 from "json5";
 import type { AuthorizationAclData, AuthorizationModule } from "./authorization.types";
 
-type AuthorizationTenantModule = {
+type AuthorizationMultiTenantModule = {
   current(): { code: string } | null;
   loadTenantData(code: string): Promise<unknown>;
 };
 
-type AuthorizationAuthModule = {
+type AuthorizationAuthenticationModule = {
   init(force?: boolean): Promise<unknown>;
   user(): unknown;
 };
@@ -23,7 +23,7 @@ export function createAuthorizationModule(injector: Injector): AuthorizationModu
   const module: AuthorizationModule = {
     canActivate: async (_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean | UrlTree> => {
       if (!oauth().hasValidAccessToken()) {
-        return router().parseUrl(`/auth/login?redirect_uri=${encodeURIComponent(state.url)}`);
+        return router().parseUrl(`/authentication/login?redirect_uri=${encodeURIComponent(state.url)}`);
       }
 
       const claims = oauth().getIdentityClaims() as IdentityClaims | null;
@@ -31,8 +31,8 @@ export function createAuthorizationModule(injector: Injector): AuthorizationModu
         return true;
       }
 
-      const tenant = geex["tenant"] as AuthorizationTenantModule;
-      const currentTenantCode = tenant.current()?.code;
+      const multiTenant = geex["multiTenant"] as AuthorizationMultiTenantModule;
+      const currentTenantCode = multiTenant.current()?.code;
       const tokenTenantCode = claims?.__tenant;
 
       if (currentTenantCode && tokenTenantCode === currentTenantCode) {
@@ -42,7 +42,7 @@ export function createAuthorizationModule(injector: Injector): AuthorizationModu
       return router().parseUrl("/exception/403");
     },
     checkTenant: async (pathTenant: string) => {
-      return (geex["tenant"] as AuthorizationTenantModule).loadTenantData(pathTenant);
+      return (geex["multiTenant"] as AuthorizationMultiTenantModule).loadTenantData(pathTenant);
     },
     loadAcl: () => {
       try {
@@ -56,9 +56,9 @@ export function createAuthorizationModule(injector: Injector): AuthorizationModu
       localStorage.setItem("acl", json5.stringify(data));
     },
     syncAclFromAuth: async () => {
-      const auth = geex["auth"] as AuthorizationAuthModule;
-      await auth.init();
-      if (auth.user() == undefined) {
+      const authentication = geex["authentication"] as AuthorizationAuthenticationModule;
+      await authentication.init();
+      if (authentication.user() == undefined) {
         return null;
       }
       return module.loadAcl();

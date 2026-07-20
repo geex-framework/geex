@@ -8,6 +8,8 @@
     "@delon/util": "^20.0.0",
     "@geexcode/geex-angular": ">=0.0.41",
     "@geexcode/geex-extensions-multi-tenant": ">=0.0.1",
+    "@geexcode/geex-extensions-settings": ">=0.0.1",
+    "@geexcode/geex-extensions-messaging": ">=0.0.1",
     "apollo-angular": "^14.0.0",
     "graphql-tag": "^2.12.0",
     "rxjs": "^7.8.0"
@@ -44,6 +46,8 @@
     "@delon/util": "^20.0.1",
     "@geexcode/geex-angular": "workspace:*",
     "@geexcode/geex-extensions-multi-tenant": "workspace:*",
+    "@geexcode/geex-extensions-settings": "workspace:*",
+    "@geexcode/geex-extensions-messaging": "workspace:*",
     "apollo-angular": "^14.0.0",
     "graphql-tag": "^2.12.6",
     "ng-packagr": "^20.0.0",

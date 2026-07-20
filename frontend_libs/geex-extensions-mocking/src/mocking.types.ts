@@ -1,5 +1,5 @@
 import type { GeexModule } from "@geexcode/geex-angular";
-import type { WechatAuthRenderOverrides } from "@geexcode/geex-extensions-authentication-wechat";
+import type { AuthenticationWechatRenderOverrides } from "@geexcode/geex-extensions-authentication-wechat";
 
 export interface GeexMockingCapabilities {
   enabled: boolean;
@@ -11,7 +11,7 @@ export interface GeexMockingCapabilities {
 
 export interface MockingModule extends GeexModule<{
   getCapabilities(force?: boolean): Promise<GeexMockingCapabilities>;
-  renderWechatQr(overrides?: WechatAuthRenderOverrides): Promise<void>;
+  renderWechatQr(overrides?: AuthenticationWechatRenderOverrides): Promise<void>;
 }> {}
 
 declare module "@geexcode/geex-angular" {

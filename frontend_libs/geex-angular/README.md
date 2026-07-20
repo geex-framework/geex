@@ -60,7 +60,7 @@ bootstrapApplication(AppComponent, {
 - `provideGeexI18n(packs)` — `GeexI18nService` + `GEEX_I18N` / `GEEX_I18N_PACKS`; host owns zh-CN/en-US dictionary data; also wire `ALAIN_I18N_TOKEN` → `GeexI18nService` and `TranslateLoader` → `GeexTranslateLoader`.
 - `provideGeexStartup` / `GeexStartupService` — inject Core service directly (no host facade).
 - `provideGeexDelonBase()` — `GeexRouter` + `GeexReuseTabStrategy` (call after `provideReuseTabConfig`).
-- `GeexHttpInterceptor` — default zh-CN status messages + `/auth/login`; override via `GEEX_HTTP_STATUS_MESSAGES` / `GEEX_LOGIN_PATH` / hooks.
+- `GeexHttpInterceptor` — default zh-CN status messages + `/authentication/login`; override via `GEEX_HTTP_STATUS_MESSAGES` / `GEEX_LOGIN_PATH` / hooks.
 - `provideGeexApollo` — default typePolicies + error/silent/WS links + **multipart upload** (`extract-files`); host must pass `baseUrl` + `possibleTypes`. Opt out: `enableUpload: false` or custom `createHttpLinkInstance`.
 - `loadEnvironmentOverrides` — merges `/assets/environment.override.js` into host `environment`.
 

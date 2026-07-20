@@ -1,4 +1,4 @@
-import { inject, Injectable, Injector, runInInjectionContext } from "@angular/core";
+import { inject, Injectable, Injector } from "@angular/core";
 import { Router } from "@angular/router";
 import { OAuthErrorEvent, OAuthService } from "angular-oauth2-oidc";
 import { NzModalService } from "ng-zorro-antd/modal";
@@ -8,13 +8,16 @@ import { ACLService } from "@delon/acl";
 import { Menu, MenuService, SettingsService } from "@delon/theme";
 import { CookieService } from "@delon/util";
 
+import { DebuggerBlockerService } from "../debugger-blocker.service";
 import { Geex } from "../geex";
 import { GEEX_AFTER_LOGIN_NAVIGATE, GEEX_LOGIN_PATH } from "../http/tokens";
-import { GEEX_MENU_CONTRIBUTIONS } from "../menu-contribution";
+import { GEEX_DEFAULT_MENUS, GEEX_MENU_CONTRIBUTIONS } from "../menu-contribution";
 import { GEEX_I18N_SERVICE } from "../delon/tokens";
+import { GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING } from "../i18n/tokens";
+import { GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING } from "../settings-setting-names";
 import { GEEX_SUPER_ADMIN_USER_ID } from "../tokens/identity.tokens";
 import type { GeexStartupI18nAdapter } from "./types";
-import { GEEX_STARTUP_OPTIONS } from "./tokens";
+import { GEEX_EXCEPTION_500_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS } from "./tokens";
 
 /**
  * Single bootstrap entry for app session.
@@ -43,6 +46,10 @@ export class GeexStartupService {
   private readonly loginPath = inject(GEEX_LOGIN_PATH);
   private readonly afterLoginNavigate = inject(GEEX_AFTER_LOGIN_NAVIGATE);
   private readonly superAdminUserId = inject(GEEX_SUPER_ADMIN_USER_ID);
+  private readonly exception500Url = inject(GEEX_EXCEPTION_500_PATH);
+  private readonly sessionTerminatedCopy = inject(GEEX_SESSION_TERMINATED_COPY);
+  private readonly defaultMenus = inject(GEEX_DEFAULT_MENUS);
+  private readonly debuggerBlocker = inject(DebuggerBlockerService);
 
   private bootstrapPromise: Promise<void> | null = null;
   private bootstrapped = false;
@@ -63,10 +70,9 @@ export class GeexStartupService {
   }
 
   private async bootstrap(): Promise<void> {
-    const exception500Url = this.options.exception500Url ?? "/exception/500";
     try {
-      runInInjectionContext(this.injector, () => this.options.onDebuggerInit?.());
-      this.oAuthService.configure(this.options.getOAuthConfig());
+      this.debuggerBlocker.init();
+      this.oAuthService.configure(this.options.oauth.getConfig());
       await this.trySwitchTenant();
       await this.tryAutoOAuthLogin();
       await this.tryOidcCodeCallback();
@@ -75,7 +81,7 @@ export class GeexStartupService {
       await this.bindUiSession();
       this.bootstrapped = true;
     } catch (error) {
-      await this.router.navigateByUrl(exception500Url);
+      await this.router.navigateByUrl(this.exception500Url);
       console.error(error);
     }
   }
@@ -123,7 +129,7 @@ export class GeexStartupService {
     const user = await this.resolveAuthUser();
     if (!user) {
       // Token without federateAuthenticate user is not a completed Geex login.
-      console.error("bindUiSession: access token present but geex.auth.user() missing after federateAuthenticate");
+      console.error("bindUiSession: access token present but geex.authentication.user() missing after federateAuthenticate");
       this.oAuthService.logOut(true);
       return;
     }
@@ -135,27 +141,28 @@ export class GeexStartupService {
       username: user.username,
       roleName: user.roleNames,
     });
-    const adminId = this.options.superAdminUserId ?? this.superAdminUserId;
+    const adminId = this.superAdminUserId;
     if (user.id == adminId) {
       this.aclService.setFull(true);
     } else {
       this.aclService.setRole(user.permissions);
     }
-    const settings = this.geex.settings.settings();
-    if (!settings.any()) {
+    type SettingRow = { name?: string; value?: unknown };
+    const settingsModule = this.geex["settings"] as { settings: () => SettingRow[] } | undefined;
+    const settings = settingsModule?.settings?.() ?? [];
+    if (!settings.length) {
       return;
     }
-    const keys = this.options.settingKeys;
-    const appName = settings.firstOrDefault(x => x?.name == keys.appName)?.value;
+    const appName = settings.find(x => x?.name == GEEX_APP_NAME_SETTING)?.value;
     if (appName) {
-      this.settingsService.setApp({ name: appName });
+      this.settingsService.setApp({ name: appName as string });
     }
-    let menus = this.options.defaultMenus.map(menu => ({
+    let menus = this.defaultMenus.map(menu => ({
       ...menu,
       children: menu.children ? [...menu.children] : menu.children,
-    }));
-    const settingMenus = settings.firstOrDefault(x => x?.name == keys.appMenu)?.value;
-    if (settingMenus?.length) {
+    })) as Menu[];
+    const settingMenus = settings.find(x => x?.name == GEEX_APP_MENU_SETTING)?.value;
+    if (Array.isArray(settingMenus) && settingMenus.length) {
       menus = (settingMenus as Menu[]).map(menu => ({
         ...menu,
         children: menu.children ? [...menu.children] : menu.children,
@@ -199,8 +206,8 @@ export class GeexStartupService {
     this.menuService.add([...menus, ...contributedGroups]);
     this.menuService.resume();
     const i18n = this.resolveI18nAdapter();
-    i18n?.merge(settings.first(x => x?.name == keys.localizationData)?.value);
-    const backendLang = settings.first(x => x?.name == keys.localizationLanguage)?.value as string | undefined;
+    i18n?.merge(settings.find(x => x?.name == GEEX_LOCALIZATION_DATA_SETTING)?.value as object);
+    const backendLang = settings.find(x => x?.name == GEEX_LOCALIZATION_LANGUAGE_SETTING)?.value as string | undefined;
     if (backendLang) {
       this.settingsService.setLayout("lang", backendLang);
       i18n?.use(backendLang);
@@ -258,9 +265,6 @@ export class GeexStartupService {
   }
 
   private resolveI18nAdapter(): GeexStartupI18nAdapter | null {
-    if (this.options.i18n) {
-      return this.options.i18n;
-    }
     const service = this.injector.get(GEEX_I18N_SERVICE, null);
     if (service && typeof (service as GeexStartupI18nAdapter).merge === "function" && typeof (service as GeexStartupI18nAdapter).use === "function") {
       return service as GeexStartupI18nAdapter;
@@ -271,7 +275,7 @@ export class GeexStartupService {
   /** Safe read: guardedSignal throws before auth.init finishes. */
   private readAuthUser() {
     try {
-      return this.geex.auth.user() ?? undefined;
+      return this.geex.authentication.user() ?? undefined;
     } catch {
       return undefined;
     }
@@ -286,7 +290,7 @@ export class GeexStartupService {
     if (user) {
       return user;
     }
-    const auth = this.geex.auth as { reload?: () => Promise<void> };
+    const auth = this.geex.authentication as { reload?: () => Promise<void> };
     if (typeof auth.reload === "function") {
       await auth.reload();
       user = this.readAuthUser();
@@ -316,7 +320,7 @@ export class GeexStartupService {
       await this.router.navigateByUrl(url.pathname + url.search + url.hash);
       return;
     }
-    this.geex.tenant.switchTenant(targetTenantCode);
+    this.geex.multiTenant.switchTenant(targetTenantCode);
     await this.router.navigateByUrl(url.pathname + url.search + url.hash);
   }
 
@@ -327,8 +331,8 @@ export class GeexStartupService {
     this.sessionWatchStarted = true;
     this.oAuthService.setupAutomaticSilentRefresh();
     this.oAuthService["initSessionCheck"]();
-    const loginUrl = this.options.loginUrl ?? this.loginPath;
-    const modalCopy = this.options.modalCopy ?? {};
+    const loginUrl = this.loginPath;
+    const modalCopy = this.sessionTerminatedCopy;
     this.oAuthService.events.subscribe(e => {
       if (e instanceof OAuthErrorEvent && (e.reason as { status?: number } | undefined)?.status == 401) {
         this.oAuthService.logOut(true);
@@ -336,8 +340,8 @@ export class GeexStartupService {
       if (e.type == "session_terminated") {
         console.error(e);
         this.modalService.info({
-          nzTitle: modalCopy.sessionTerminatedTitle ?? "检测到账号切换, 请重新登入",
-          nzOkText: modalCopy.sessionTerminatedOkText ?? "确认",
+          nzTitle: modalCopy.title ?? "检测到账号切换, 请重新登入",
+          nzOkText: modalCopy.okText ?? "确认",
           nzOnOk: async () => {
             this.settingsService.setUser({});
             this.aclService.set({});

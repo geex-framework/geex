@@ -10,5 +10,5 @@ export const mockingSuperAdminCanMatch: CanMatchFn = () =>
     if (!result.enabled || !result.management) {
       return false;
     }
-    return geex["auth"].user()?.id === GEEX_DEFAULT_SUPER_ADMIN_USER_ID;
+    return geex["authentication"].user()?.id === GEEX_DEFAULT_SUPER_ADMIN_USER_ID;
   });

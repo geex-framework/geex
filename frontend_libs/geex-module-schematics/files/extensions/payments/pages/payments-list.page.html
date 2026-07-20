@@ -1,0 +1,29 @@
+<page-header [title]="I18N.Payments.listTitle" [autoBreadcrumb]="true" />
+<nz-card [nzBordered]="false">
+  <nz-tabset [nzSelectedIndex]="tabIndex()" (nzSelectedIndexChange)="onTabChange($event)">
+    <nz-tab [nzTitle]="I18N.Payments.tabPayments">
+      <st
+        [columns]="paymentColumns"
+        [data]="paymentData()"
+        [loading]="loading()"
+        [total]="paymentTotal()"
+        [pi]="paymentPageIndex"
+        [ps]="paymentPageSize"
+        [page]="{ front: false }"
+        (change)="onPaymentTableChange($event)"
+      />
+    </nz-tab>
+    <nz-tab [nzTitle]="I18N.Payments.tabRefunds">
+      <st
+        [columns]="refundColumns"
+        [data]="refundData()"
+        [loading]="loading()"
+        [total]="refundTotal()"
+        [pi]="refundPageIndex"
+        [ps]="refundPageSize"
+        [page]="{ front: false }"
+        (change)="onRefundTableChange($event)"
+      />
+    </nz-tab>
+  </nz-tabset>
+</nz-card>

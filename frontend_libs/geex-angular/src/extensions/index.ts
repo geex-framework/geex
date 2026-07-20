@@ -14,6 +14,8 @@ import "./misc.extension";
 
 import "./file.extension";
 
+import "./clear-history.extension";
+
 
 
 export { deepSignal, computedAsync } from "./signal.extension";

@@ -1,5 +1,6 @@
 import { HttpContextToken } from "@angular/common/http";
 import { InjectionToken } from "@angular/core";
+import "../extensions/clear-history.extension";
 
 /** Mark HTTP / GraphQL ops that should not show error UI. */
 export const SILENT_REQUEST = new HttpContextToken<boolean>(() => false);
@@ -28,16 +29,16 @@ export const GEEX_HTTP_STATUS_MESSAGES = new InjectionToken<{ [key: number]: str
   { providedIn: "root", factory: () => GEEX_DEFAULT_HTTP_STATUS_MESSAGES },
 );
 
-/** Login route after 401 (default `/auth/login`). */
+/** Login route after 401 (default `/authentication/login`). */
 export const GEEX_LOGIN_PATH = new InjectionToken<string>("GEEX_LOGIN_PATH", {
   providedIn: "root",
-  factory: () => "/auth/login",
+  factory: () => "/authentication/login",
 });
 
-/** Called after navigating to login (e.g. host `clearHistory`). Default no-op. */
+/** Called after navigating to login. Defaults to `window.clearHistory`. */
 export const GEEX_AFTER_LOGIN_NAVIGATE = new InjectionToken<() => void>("GEEX_AFTER_LOGIN_NAVIGATE", {
   providedIn: "root",
-  factory: () => () => {},
+  factory: () => () => window.clearHistory(),
 });
 
 /** API base URL for relative HTTP requests (host `environment.api.baseUrl`). */

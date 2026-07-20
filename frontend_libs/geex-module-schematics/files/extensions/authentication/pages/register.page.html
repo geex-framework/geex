@@ -1,0 +1,255 @@
+<div class="auth-container">
+  <!-- 品牌头部 -->
+  <div class="brand-header">
+    <div class="logo-desktop">
+      <img ngSrc="assets/logo.png"
+           [alt]="I18N.Auth.brand.alt"
+           class="brand-logo"
+           width="64"
+           height="64" />
+      <h1 class="brand-title">{{ I18N.Auth.brand.createAccountTitle }}</h1>
+      <div class="brand-subtitle">{{ I18N.Auth.brand.createAccountSubtitle }}</div>
+    </div>
+  </div>
+
+  <!-- 注册卡片 -->
+  <div class="auth-card">
+    <div class="card-content">
+      <form nz-form
+            [formGroup]="form"
+            (ngSubmit)="submit()"
+            class="auth-form"
+            role="form">
+        <!-- 表单标题 -->
+        <div class="form-title">{{ I18N.Auth.register.formTitle }}</div>
+
+        <!-- 错误信息 -->
+        @if (error) {
+        <div class="error-message">
+          <i nz-icon
+             nzType="exclamation-circle"
+             nzTheme="outline"></i>
+          <span>{{ error }}</span>
+        </div>
+        }
+
+        <!-- 邮箱 -->
+        <div class="form-group">
+          <label class="input-label">{{ I18N.Auth.fields.email }}</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="mailErrorTip">
+              <nz-input-group nzSuffixIcon="user"
+                              nzSize="large"
+                              class="tech-input">
+                <input nz-input
+                       formControlName="mail"
+                       [placeholder]="I18N.Auth.fields.emailPlaceholder"
+                       autocomplete="email" />
+              </nz-input-group>
+              <ng-template #mailErrorTip
+                           let-i>
+                @if (i.errors?.required) {
+                {{ I18N.Auth.register.validation.emailRequired }}
+                }
+                @if (i.errors?.email) {
+                {{ I18N.Auth.register.validation.emailInvalid }}
+                }
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 密码 -->
+        <div class="form-group">
+          <label class="input-label">{{ I18N.Auth.fields.password }}</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="I18N.Auth.register.validation.passwordRequired">
+              <nz-input-group nzSuffixIcon="lock"
+                              nzSize="large"
+                              class="tech-input"
+                              nz-popover
+                              nzPopoverPlacement="right"
+                              nzPopoverTrigger="focus"
+                              [(nzPopoverVisible)]="visible"
+                              nzPopoverOverlayClassName="register-password-cdk"
+                              [nzPopoverOverlayStyle]="{ 'width.px': 280 }"
+                              [nzPopoverContent]="pwdCdkTpl">
+                <input nz-input
+                       type="password"
+                       formControlName="password"
+                       [placeholder]="I18N.Auth.fields.passwordPlaceholder"
+                       autocomplete="new-password" />
+              </nz-input-group>
+              <ng-template #pwdCdkTpl>
+                <div class="password-strength">
+                  <div class="strength-header">
+                    @switch (status) {
+                    @case ('ok') {
+                    <div class="strength-label success">{{ I18N.Auth.register.passwordStrength.strong }}</div>
+                    }
+                    @case ('pass') {
+                    <div class="strength-label warning">{{ I18N.Auth.register.passwordStrength.medium }}</div>
+                    }
+                    @default {
+                    <div class="strength-label error">{{ I18N.Auth.register.passwordStrength.weak }}</div>
+                    }
+                    }
+                  </div>
+                  <div class="strength-progress">
+                    <nz-progress [nzPercent]="progress"
+                                 [nzStatus]="passwordProgressMap[status]"
+                                 [nzStrokeWidth]="6"
+                                 [nzShowInfo]="false"></nz-progress>
+                  </div>
+                  <div class="strength-tips">
+                    <p>{{ I18N.Auth.register.passwordTips.minLength }}</p>
+                    <p>{{ I18N.Auth.register.passwordTips.suggestion }}</p>
+                  </div>
+                </div>
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 确认密码 -->
+        <div class="form-group">
+          <label class="input-label">{{ I18N.Auth.fields.confirmPassword }}</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="confirmErrorTip">
+              <nz-input-group nzSuffixIcon="lock"
+                              nzSize="large"
+                              class="tech-input">
+                <input nz-input
+                       type="password"
+                       formControlName="confirm"
+                       [placeholder]="I18N.Auth.fields.confirmPasswordPlaceholder"
+                       autocomplete="new-password" />
+              </nz-input-group>
+              <ng-template #confirmErrorTip
+                           let-i>
+                @if (i.errors?.required) {
+                {{ I18N.Auth.register.validation.confirmRequired }}
+                }
+                @if (i.errors?.equar) {
+                {{ I18N.Auth.register.validation.confirmMismatch }}
+                }
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 手机号 -->
+        <div class="form-group">
+          <label class="input-label">{{ I18N.Auth.fields.phoneNumber }}</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="mobileErrorTip">
+              <nz-input-group [nzAddOnBefore]="addOnBeforeTemplate"
+                              nzSize="large"
+                              class="tech-input">
+                <ng-template #addOnBeforeTemplate>
+                  <nz-select formControlName="mobilePrefix"
+                             style="width: 100px">
+                    <nz-option [nzLabel]="'+86'"
+                               [nzValue]="'+86'"></nz-option>
+                    <nz-option [nzLabel]="'+87'"
+                               [nzValue]="'+87'"></nz-option>
+                  </nz-select>
+                </ng-template>
+                <input formControlName="mobile"
+                       nz-input
+                       [placeholder]="I18N.Auth.fields.phonePlaceholder"
+                       autocomplete="tel" />
+              </nz-input-group>
+              <ng-template #mobileErrorTip
+                           let-i>
+                @if (i.errors?.required) {
+                {{ I18N.Auth.register.validation.phoneRequired }}
+                }
+                @if (i.errors?.pattern) {
+                {{ I18N.Auth.register.validation.phoneInvalid }}
+                }
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 验证码 -->
+        <div class="form-group">
+          <label class="input-label">{{ I18N.Auth.fields.emailCaptcha }}</label>
+          <nz-form-item>
+            <nz-form-control [nzErrorTip]="I18N.Auth.register.validation.captchaRequired">
+              <div class="captcha-row">
+                <div class="captcha-input">
+                  <nz-input-group nzSuffixIcon="mail"
+                                  nzSize="large"
+                                  class="tech-input">
+                    <input nz-input
+                           formControlName="captcha"
+                           [placeholder]="I18N.Auth.fields.captchaPlaceholder"
+                           autocomplete="off" />
+                  </nz-input-group>
+                </div>
+                <button type="button"
+                        nz-button
+                        class="captcha-button"
+                        nzType="default"
+                        (click)="getCaptcha()"
+                        [disabled]="count > 0"
+                        [nzLoading]="http.loading">
+                  <span class="button-content">
+                    @if (count > 0) {
+                    {{ count }}s
+                    } @else {
+                    {{ I18N.Auth.register.getCaptcha }}
+                    }
+                  </span>
+                </button>
+              </div>
+            </nz-form-control>
+          </nz-form-item>
+        </div>
+
+        <!-- 提交按钮 -->
+        <div class="form-group form-group--submit">
+          <button nz-button
+                  class="auth-button"
+                  nzType="primary"
+                  type="submit"
+                  nzSize="large"
+                  [nzLoading]="http.loading">
+            <span class="button-content">
+              <i nz-icon
+                 nzType="user-add"
+                 nzTheme="outline"></i>
+              <span>{{ I18N.Auth.register.submit }}</span>
+            </span>
+          </button>
+        </div>
+
+        <!-- 登录链接 -->
+        <div class="form-footer">
+          <span class="footer-text">{{ I18N.Auth.register.hasAccount }}</span>
+          <a routerLink="/authentication/login"
+             class="footer-link">{{ I18N.Auth.register.signIn }}</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 底部提示 -->
+  <div class="footer-hint">
+    <div class="hint-line"></div>
+    <div class="hint-content">
+      <i nz-icon
+         nzType="safety"
+         nzTheme="outline"></i>
+      <span>{{ I18N.Auth.footer.termsPrefix }}</span>
+      <a href="#"
+         class="docs-link">{{ I18N.Auth.footer.termsOfService }}</a>
+      <span>{{ I18N.Auth.footer.and }}</span>
+      <a href="#"
+         class="docs-link">{{ I18N.Auth.footer.privacyPolicy }}</a>
+    </div>
+    <div class="hint-line"></div>
+  </div>
+</div>

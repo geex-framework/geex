@@ -234,7 +234,6 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
     if (this.ui.valueEmitType == "id") {
       blobStorage
         .list({
-          includeDetail: true,
           filter: {
             id: {
               in: value as string[],

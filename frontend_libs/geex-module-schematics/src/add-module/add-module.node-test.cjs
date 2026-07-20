@@ -113,9 +113,9 @@ describe("add-module schematic", () => {
       "pages/mocking-home.page.ts",
       "pages/mock-wechat-authorize.page.ts",
     ],
-    auth: ["auth.routes.ts", "pages/login.page.ts"],
+    authentication: ["authentication.routes.ts", "pages/login.page.ts"],
     settings: ["settings.routes.ts", "pages/setting-list.page.ts", "graphql/operations.gql.ts"],
-    tenant: ["tenant.routes.ts", "pages/tenant-list.page.ts", "components/tenant-switcher/tenant-switcher.component.ts"],
+    "multi-tenant": ["multi-tenant.routes.ts", "pages/tenant-list.page.ts", "components/tenant-switcher/tenant-switcher.component.ts"],
   })) {
     it(`merges the ${name} overlay without duplicate path segments`, async () => {
       const runner = new SchematicTestRunner("geex-module-schematics", collectionPath);

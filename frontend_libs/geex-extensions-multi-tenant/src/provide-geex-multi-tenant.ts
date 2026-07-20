@@ -1,10 +1,10 @@
 import { EnvironmentProviders, InjectionToken, Injector, makeEnvironmentProviders } from "@angular/core";
 import { provideGeexModuleContribution } from "@geexcode/geex-angular";
-import { createTenantModule } from "./tenant.module";
-import type { TenantModule } from "./tenant.types";
+import { createMultiTenantModule } from "./multi-tenant.module";
+import type { MultiTenantModule } from "./multi-tenant.types";
 
 export interface GeexMultiTenantOptions {
-  readonly createTenantModule?: (injector: Injector) => TenantModule;
+  readonly createMultiTenantModule?: (injector: Injector) => MultiTenantModule;
 }
 
 export const GEEX_MULTI_TENANT_OPTIONS = new InjectionToken<Readonly<GeexMultiTenantOptions>>(
@@ -18,7 +18,7 @@ export function provideGeexMultiTenant(
     { provide: GEEX_MULTI_TENANT_OPTIONS, useValue: options },
     provideGeexModuleContribution({
       createModules: ({ injector }) => ({
-        tenant: (options.createTenantModule ?? createTenantModule)(injector),
+        multiTenant: (options.createMultiTenantModule ?? createMultiTenantModule)(injector),
       }),
     }),
   ]);

@@ -69,7 +69,7 @@ export class OrgTreeSelectWidget extends ControlUIWidget<OrgTreeSelectWidgetSche
   constructor(injector: Injector) {
     super();
     this.orgs$ = geex.identity.orgs as unknown as Signal<Org[]>;
-    this.userData$ = geex.auth.user as unknown as Signal<User>;
+    this.userData$ = geex.authentication.user as unknown as Signal<User>;
   }
 
   static readonly KEY = "org-tree-select";

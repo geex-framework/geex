@@ -54,7 +54,7 @@ export class OrgTreeSelectPickerDirective implements OnInit {
     private arrSrv: ArrayService,
     private el: ElementRef,
   ) {
-    this.userData$ = geex.auth.user as Signal<User | null>;
+    this.userData$ = geex.authentication.user as Signal<User | null>;
     this.orgs$ = geex.identity.orgs;
 
     const nativeElement = this.el.nativeElement;

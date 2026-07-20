@@ -1,0 +1,18 @@
+export default {
+  title: "支付",
+  listTitle: "支付管理",
+  tabPayments: "支付单",
+  tabRefunds: "退款单",
+  columnClientSn: "商户单号",
+  columnStatus: "状态",
+  columnAmount: "金额",
+  columnSubject: "标题",
+  columnProvider: "渠道",
+  columnRefundNo: "退款单号",
+  columnActions: "操作",
+  sync: "同步",
+  close: "关闭",
+  revoke: "撤销",
+  syncRefund: "同步退款",
+  actionSuccess: "操作成功",
+};

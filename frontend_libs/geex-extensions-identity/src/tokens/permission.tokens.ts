@@ -4,8 +4,8 @@ import { geex } from "@geexcode/geex-angular";
 export type GeexPermissionFilterFn = (permissions: string[]) => string[];
 
 export const defaultGeexPermissionFilter: GeexPermissionFilterFn = permissions => {
-  const tenant = geex.tenant.current?.();
-  if (tenant?.code != undefined) {
+  const multiTenant = geex.multiTenant.current?.();
+  if (multiTenant?.code != undefined) {
     return permissions.filter(x => !x.toString().startsWith("multiTenant_"));
   }
   return permissions;

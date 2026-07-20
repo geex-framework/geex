@@ -49,7 +49,7 @@ export class MyProfilePage extends RoutedComponent<{}> {
   constructor() {
     super();
     this.orgs$ = geex.identity.orgs;
-    this.userData$ = geex.auth.user;
+    this.userData$ = geex.authentication.user;
     this.nodes$ = computed(() => {
       let userData = this.userData$();
       if (userData == undefined) {

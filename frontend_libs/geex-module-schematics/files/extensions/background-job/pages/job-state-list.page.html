@@ -1,0 +1,22 @@
+<page-header [title]="I18N.BackgroundJob.listTitle" [autoBreadcrumb]="true" />
+<nz-card [nzBordered]="false">
+  <div class="mb-md">
+    <button nz-button (click)="load()">{{ I18N.Common.action.refresh }}</button>
+  </div>
+  <st
+    [columns]="columns"
+    [data]="data()"
+    [loading]="loading()"
+    [total]="total()"
+    [pi]="pageIndex"
+    [ps]="pageSize"
+    [page]="{ front: false }"
+    (change)="onTableChange($event)"
+  />
+</nz-card>
+
+@if (expandedJob(); as job) {
+<nz-card class="mt-md" [nzTitle]="I18N.BackgroundJob.historiesTitle + ' - ' + job.jobName" [nzBordered]="false">
+  <st [columns]="historyColumns" [data]="histories()" [page]="{ front: false, show: false }" />
+</nz-card>
+}

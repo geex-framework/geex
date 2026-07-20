@@ -1,0 +1,18 @@
+<page-header [title]="I18N.Messaging.unreadTitle" [autoBreadcrumb]="true" />
+<nz-card [nzBordered]="false">
+  <div class="mb-md">
+    <button nz-button nzType="primary" [disabled]="!selectedIds().length" (click)="markRead()">
+      {{ I18N.Messaging.markRead }}
+    </button>
+    <button nz-button class="ml-sm" (click)="load()">{{ I18N.Common.action.refresh }}</button>
+  </div>
+  <st
+    [columns]="columns"
+    [data]="data()"
+    [loading]="loading()"
+    [total]="total()"
+    [pi]="pageIndex"
+    [ps]="pageSize"
+    (change)="onTableChange($event)"
+  />
+</nz-card>

@@ -1,4 +1,4 @@
-export * from "./wechat-auth.types";
+export * from "./authentication-wechat.types";
 export * from "./graphql";
-export * from "./wechat-auth.module";
+export * from "./authentication-wechat.module";
 export * from "./provide-geex-authentication-wechat";

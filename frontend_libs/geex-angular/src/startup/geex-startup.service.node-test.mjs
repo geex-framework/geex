@@ -7,10 +7,13 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("GeexStartupService", () => {
-  it("runs startup callbacks inside the configured injector context", () => {
+  it("initializes debugger blocker from startup options", () => {
     const source = fs.readFileSync(path.join(__dirname, "geex-startup.service.ts"), "utf8");
-    assert.match(source, /runInInjectionContext\(this\.injector/);
-    assert.match(source, /this\.options\.onDebuggerInit/);
+    assert.match(source, /this\.debuggerBlocker\.init\(\)/);
+    assert.match(source, /this\.options\.oauth\.getConfig\(\)/);
+    const types = fs.readFileSync(path.join(__dirname, "types.ts"), "utf8");
+    assert.match(types, /blockDebugger\?/);
+    assert.doesNotMatch(types, /onDebuggerInit/);
   });
 
   it("bootstraps OIDC once in a linear pipeline", () => {
@@ -27,7 +30,7 @@ describe("GeexStartupService", () => {
     assert.match(source, /resolveAuthUser/);
     assert.match(source, /readAuthUser/);
     assert.match(source, /defaultValue:\s*undefined/);
-    assert.match(source, /federateAuthenticate did not produce a user|geex\.auth\.user\(\) missing after federateAuthenticate/);
+    assert.match(source, /federateAuthenticate did not produce a user|geex\.authentication\.user\(\) missing after federateAuthenticate/);
   });
 
   it("loads discovery before tryLogin on OIDC callback", () => {
@@ -37,6 +40,17 @@ describe("GeexStartupService", () => {
       /tryOidcCodeCallback[\s\S]*loadDiscoveryDocument\(\);[\s\S]*ensureOAuthTokenEndpoint\(\);[\s\S]*tryLogin\(\)/,
     );
   });
+
+  it("reads menus and well-known setting names", () => {
+    const source = fs.readFileSync(path.join(__dirname, "geex-startup.service.ts"), "utf8");
+    assert.match(source, /GEEX_DEFAULT_MENUS/);
+    assert.match(source, /GEEX_APP_NAME_SETTING/);
+    assert.match(source, /GEEX_APP_MENU_SETTING/);
+    assert.match(source, /GEEX_LOCALIZATION_DATA_SETTING/);
+    assert.match(source, /GEEX_LOCALIZATION_LANGUAGE_SETTING/);
+    assert.doesNotMatch(source, /GEEX_SETTINGS_UI_BINDINGS/);
+    assert.doesNotMatch(source, /GEEX_I18N_SETTINGS_BINDINGS/);
+    assert.doesNotMatch(source, /options\.defaultMenus/);
+    assert.doesNotMatch(source, /options\.settingKeys/);
+  });
 });
-
-

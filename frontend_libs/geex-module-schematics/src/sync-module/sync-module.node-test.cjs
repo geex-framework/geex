@@ -37,9 +37,9 @@ describe("sync-module schematic", () => {
     "blob-storage": "graphql/operations.gql",
     "approval-flows": "pages/edit/edit.page.html",
     mocking: "pages/mocking-home.page.ts",
-    auth: "pages/login.page.ts",
+    authentication: "pages/login.page.ts",
     settings: "graphql/operations.gql",
-    tenant: "pages/tenant-list.page.ts",
+    "multi-tenant": "pages/tenant-list.page.ts",
   })) {
     it(`restores missing ${name} overlay files and preserves modified files by default`, async () => {
       const { runner, tree: installed } = await addModule(name);

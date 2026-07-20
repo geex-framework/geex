@@ -43,8 +43,8 @@ function updateRegistry(tree, options, context) {
     `$1\n  ${alias},$2`,
   );
 
-  // auth is mounted outside authenticated shell via authLoadChildren
-  if (name !== "auth" && !source.includes(`path: "${name}"`)) {
+  // authentication is mounted outside authenticated shell via authenticationLoadChildren
+  if (name !== "authentication" && !source.includes(`path: "${name}"`)) {
     const routeEntry = `  { path: "${name}", loadChildren: () => import("./${name}/${name}.routes").then(m => m.${alias}Routes) },\n`;
     source = source.replace(
       /(export const authenticatedModuleChildren: Routes = \[[\s\S]*?)(\];)/,
@@ -53,15 +53,15 @@ function updateRegistry(tree, options, context) {
   }
 
   // Place menu contribution into 系统及配置 group children by default
-  if (name !== "mocking" && name !== "auth" && !source.includes(`...${alias}.menuContribution`)) {
+  if (name !== "mocking" && name !== "authentication" && !source.includes(`...${alias}.menuContribution`)) {
     source = source.replace(
-      /(\[\.\.\.identity\.menuContribution, \.\.\.settings\.menuContribution, \.\.\.tenant\.menuContribution)/,
-      `[...identity.menuContribution, ...settings.menuContribution, ...tenant.menuContribution, ...${alias}.menuContribution`,
+      /(\[\.\.\.identity\.menuContribution, \.\.\.settings\.menuContribution, \.\.\.multiTenant\.menuContribution)/,
+      `[...identity.menuContribution, ...settings.menuContribution, ...multiTenant.menuContribution, ...${alias}.menuContribution`,
     );
   }
 
   const i18nKey = strings.classify(name);
-  if (name !== "auth" && name !== "identity" && name !== "tenant") {
+  if (name !== "authentication" && name !== "identity" && name !== "multi-tenant") {
     if (!source.includes(`${i18nKey}: ${alias}.i18n["zh-CN"]`)) {
       source = source.replace(
         /(export const moduleI18nZhCN = \{[\s\S]*?)(\r?\n\};)/,

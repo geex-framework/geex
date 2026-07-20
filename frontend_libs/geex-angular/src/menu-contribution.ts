@@ -1,4 +1,4 @@
-import { InjectionToken } from "@angular/core";
+import { InjectionToken, type Provider } from "@angular/core";
 
 /** Minimal menu shape shared by host Delon menus and extension plugins. */
 export interface GeexMenuItem {
@@ -25,3 +25,13 @@ export interface GeexMenuContribution {
 }
 
 export const GEEX_MENU_CONTRIBUTIONS = new InjectionToken<GeexMenuContribution[]>("GEEX_MENU_CONTRIBUTIONS");
+
+/** Host-composed default menus (e.g. from module-registry). */
+export const GEEX_DEFAULT_MENUS = new InjectionToken<GeexMenuItem[]>("GEEX_DEFAULT_MENUS", {
+  providedIn: "root",
+  factory: () => [],
+});
+
+export function provideGeexMenus(menus: GeexMenuItem[]): Provider[] {
+  return [{ provide: GEEX_DEFAULT_MENUS, useValue: menus }];
+}

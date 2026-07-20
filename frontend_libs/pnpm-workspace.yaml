@@ -1,5 +1,6 @@
 packages:
   - geex-angular
+  - geex-module-schematics
   - geex-extensions-settings
   - geex-extensions-multi-tenant
   - geex-extensions-identity
@@ -9,3 +10,8 @@ packages:
   - geex-extensions-mocking
   - geex-extensions-blob-storage
   - geex-extensions-approval-flows
+  - geex-extensions-messaging
+  - geex-extensions-captcha
+  - geex-extensions-audit-logs
+  - geex-extensions-background-job
+  - geex-extensions-payments

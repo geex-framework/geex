@@ -12,5 +12,5 @@ export const GEEX_EXCEPTION_403_PROFILE_LABEL = new InjectionToken<string>("GEEX
 
 export const GEEX_EXCEPTION_LOGIN_PATH = new InjectionToken<string>("GEEX_EXCEPTION_LOGIN_PATH", {
   providedIn: "root",
-  factory: () => "/auth/login",
+  factory: () => "/authentication/login",
 });

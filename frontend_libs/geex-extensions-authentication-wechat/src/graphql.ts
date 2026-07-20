@@ -1,6 +1,6 @@
 import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
 import gql from "graphql-tag";
-import { ResolveLoginResult, WechatLoginProvider } from "./wechat-auth.types";
+import { ResolveLoginResult, WechatLoginProvider } from "./authentication-wechat.types";
 
 export type UserSessionResult = {
   token?: string | null;

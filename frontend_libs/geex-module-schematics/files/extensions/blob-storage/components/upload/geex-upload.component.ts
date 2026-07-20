@@ -218,7 +218,6 @@ export class GeexUploadComponent implements ControlValueAccessor {
   private async fetchFilesByIds(ids: string[] | string): Promise<NzUploadFile[]> {
     const idList = Array.isArray(ids) ? ids : [ids];
     const data = await this.blobStorage.list({
-      includeDetail: true,
       filter: {
         id: {
           in: idList,

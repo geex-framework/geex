@@ -1,0 +1,18 @@
+export default {
+  title: "Payments",
+  listTitle: "Payments",
+  tabPayments: "Payments",
+  tabRefunds: "Refunds",
+  columnClientSn: "Client SN",
+  columnStatus: "Status",
+  columnAmount: "Amount",
+  columnSubject: "Subject",
+  columnProvider: "Provider",
+  columnRefundNo: "Refund no",
+  columnActions: "Actions",
+  sync: "Sync",
+  close: "Close",
+  revoke: "Revoke",
+  syncRefund: "Sync refund",
+  actionSuccess: "Done",
+};

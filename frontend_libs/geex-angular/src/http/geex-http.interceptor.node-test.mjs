@@ -12,8 +12,10 @@ describe("GeexHttpInterceptor", () => {
     assert.match(tokens, /GEEX_DEFAULT_HTTP_STATUS_MESSAGES/);
     assert.match(tokens, /GEEX_HTTP_STATUS_MESSAGES/);
     assert.match(tokens, /GEEX_LOGIN_PATH/);
-    assert.match(tokens, /\/auth\/login/);
+    assert.match(tokens, /\/authentication\/login/);
     assert.match(tokens, /GEEX_AFTER_LOGIN_NAVIGATE/);
+    assert.match(tokens, /window\.clearHistory/);
+    assert.match(tokens, /clear-history\.extension/);
     assert.match(tokens, /SILENT_REQUEST/);
   });
 

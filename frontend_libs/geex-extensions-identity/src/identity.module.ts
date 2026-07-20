@@ -24,16 +24,16 @@ export function createIdentityModule(injector: Injector, deps: IdentityModuleDep
       if (!_initPromise) {
         _initPromise = (async () => {
           try {
-            const { tenant, auth } = deps();
-            await tenant.init();
-            await auth.init();
+            const { multiTenant, authentication } = deps();
+            await multiTenant.init();
+            await authentication.init();
             type OrgsCacheResponse = { data?: { orgs?: { items?: Org[] | null } | null } | null };
             const res = (await firstValueFrom(
               injector.get(Apollo).query<OrgsCacheResponse>({ query: GQL_ORGS_CACHE }),
             )) as unknown as OrgsCacheResponse;
             const orgs = deepCopy(res.data?.orgs?.items ?? []) as Org[];
             _orgsSignal.set(orgs);
-            const userData = auth.user();
+            const userData = authentication.user();
             let allOwned: Org[] = [];
             if (orgs?.length && userData) {
               if (userData.id === GEEX_DEFAULT_SUPER_ADMIN_USER_ID) {

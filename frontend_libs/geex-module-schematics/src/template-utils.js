@@ -8,9 +8,13 @@ const OVERLAY_TEMPLATES = new Set([
   "blob-storage",
   "approval-flows",
   "mocking",
-  "auth",
+  "authentication",
   "settings",
-  "tenant",
+  "multi-tenant",
+  "messaging",
+  "audit-logs",
+  "background-job",
+  "payments",
 ]);
 
 function toCamelAlias(name) {

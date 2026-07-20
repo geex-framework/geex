@@ -1,3 +1,3 @@
-export * from "./auth.types";
-export * from "./auth.module";
+export * from "./authentication.types";
+export * from "./authentication.module";
 export * from "./provide-geex-authentication";

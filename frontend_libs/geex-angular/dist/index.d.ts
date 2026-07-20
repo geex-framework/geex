@@ -1,13 +1,13 @@
 import * as i0 from '@angular/core';
 import { WritableSignal, Signal, Injector, Provider, InjectionToken, EnvironmentProviders, ChangeDetectorRef, TemplateRef, Type, ExtendedSignal, CreateSignalOptions } from '@angular/core';
 import { HttpContextToken, HttpInterceptor, HttpRequest, HttpResponseBase, HttpHandler, HttpHeaders, HttpEvent } from '@angular/common/http';
-import { TypePolicies, ApolloLink, InMemoryCache, ApolloClient } from '@apollo/client';
+import { InMemoryCache, TypePolicies, ApolloLink, ApolloClient } from '@apollo/client';
 import { ApolloBase, Apollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
 import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
-import { Menu, AlainI18NService, ModalHelper, TitleService } from '@delon/theme';
 import { TranslateLoader, TranslationObject } from '@ngx-translate/core';
 import { Observable, ObservableInput, ObservedValueOf } from 'rxjs';
+import { AlainI18NService, ModalHelper, TitleService } from '@delon/theme';
 import { DocumentNode } from 'graphql';
 import { NzModalService, NzModalRef } from 'ng-zorro-antd/modal';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
@@ -16,7 +16,7 @@ import { Router, Params, ActivatedRoute, Route, NavigationExtras, UrlTree, Activ
 import { ACLService, ACLCanType } from '@delon/acl';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { Location } from '@angular/common';
-import { ReuseTabService, ReuseTabStrategy } from '@delon/abc/reuse-tab';
+import { ReuseTabService, ReuseTabStrategy, provideReuseTabConfig } from '@delon/abc/reuse-tab';
 import { LoadingService } from '@delon/abc/loading';
 import { STChange, STData, STColumn, STExportOptions } from '@delon/abc/st';
 import { List } from 'linqts-camelcase';
@@ -28,18 +28,6 @@ type ExtensionModule = typeof ExtensionModule;
 type GeexModule<TExtension = any> = {
     init: (force?: boolean) => Promise<unknown>;
 } & TExtension;
-interface SettingItem {
-    name: string;
-    value?: any;
-}
-interface MessagingModule extends GeexModule<{
-    onPublicNotify(notify: unknown): void;
-}> {
-}
-interface SettingsModule extends GeexModule<{
-    settings: WritableSignal<SettingItem[]>;
-}> {
-}
 interface UiModule extends GeexModule<{
     fullScreen: WritableSignal<boolean>;
     isMobile: Signal<boolean | undefined>;
@@ -47,8 +35,6 @@ interface UiModule extends GeexModule<{
 }> {
 }
 interface GeexModuleMap {
-    messaging: MessagingModule;
-    settings: SettingsModule;
     ui: UiModule;
     [name: string]: GeexModule<any>;
 }
@@ -57,7 +43,6 @@ type GeexModules<TExtensionModules extends Record<string, GeexModule> = {}> = {
         [K in keyof (GeexModuleMap & TExtensionModules)]: unknown;
     }>;
 } & GeexModuleMap & TExtensionModules;
-declare function createMessagingModule(injector: Injector, deps?: () => Pick<GeexModule, "init"> | undefined): MessagingModule;
 declare function createUiModule(_injector: Injector): UiModule;
 
 declare function provideGeex<TExtensionModules extends Record<string, GeexModule> = {}>(overrides?: Partial<GeexModules>, extensions?: TExtensionModules): Provider[];
@@ -162,33 +147,26 @@ interface ProvideGeexApolloOptions {
 }
 declare function provideGeexApollo(options: ProvideGeexApolloOptions): Provider[];
 
-interface GeexStartupSettingKeys {
-    appName: string;
-    appMenu: string;
-    localizationData: string;
-    localizationLanguage: string;
+/** Startup-only orchestration. Module-owned keys live on their provideGeex* entrypoints. */
+interface GeexStartupOptions {
+    oauth: {
+        getConfig: () => AuthConfig;
+    };
+    /** Forward host `environment.blockDebugger`. */
+    blockDebugger?: boolean;
 }
-interface GeexStartupModalCopy {
-    sessionTerminatedTitle?: string;
-    sessionTerminatedOkText?: string;
+interface GeexSessionTerminatedCopy {
+    title?: string;
+    okText?: string;
 }
 interface GeexStartupI18nAdapter {
     merge(translations: object): void;
     use(lang: string): void;
 }
-interface GeexStartupOptions {
-    getOAuthConfig: () => AuthConfig;
-    defaultMenus: Menu[];
-    settingKeys: GeexStartupSettingKeys;
-    loginUrl?: string;
-    exception500Url?: string;
-    superAdminUserId?: string;
-    onDebuggerInit?: () => void;
-    modalCopy?: GeexStartupModalCopy;
-    i18n?: GeexStartupI18nAdapter;
-}
 
 declare const GEEX_STARTUP_OPTIONS: InjectionToken<GeexStartupOptions>;
+declare const GEEX_EXCEPTION_500_PATH: InjectionToken<string>;
+declare const GEEX_SESSION_TERMINATED_COPY: InjectionToken<GeexSessionTerminatedCopy>;
 
 /**
  * Single bootstrap entry for app session.
@@ -216,6 +194,10 @@ declare class GeexStartupService {
     private readonly loginPath;
     private readonly afterLoginNavigate;
     private readonly superAdminUserId;
+    private readonly exception500Url;
+    private readonly sessionTerminatedCopy;
+    private readonly defaultMenus;
+    private readonly debuggerBlocker;
     private bootstrapPromise;
     private bootstrapped;
     private sessionWatchStarted;
@@ -243,10 +225,13 @@ declare class GeexStartupService {
     static ɵprov: i0.ɵɵInjectableDeclaration<GeexStartupService>;
 }
 
-declare function provideGeexStartup(options: GeexStartupOptions): Provider[];
+declare function provideGeexStartup(options: GeexStartupOptions): Array<Provider | EnvironmentProviders>;
 
 /** Per-language ngx-translate dictionaries keyed by locale code (e.g. `zh-cn`). */
 declare const GEEX_I18N_PACKS: InjectionToken<Record<string, Record<string, unknown>>>;
+/** Well-known setting names for post-login localization (aligned with SettingDefinition). */
+declare const GEEX_LOCALIZATION_DATA_SETTING = "LocalizationData";
+declare const GEEX_LOCALIZATION_LANGUAGE_SETTING = "LocalizationLanguage";
 
 /**
  * Nested i18n dictionary typing.
@@ -303,11 +288,13 @@ declare class GeexI18nService implements AlainI18NService {
     static ɵprov: i0.ɵɵInjectableDeclaration<GeexI18nService>;
 }
 
+interface GeexI18nProvideOptions {
+    fallbackLang?: string;
+}
 /**
- * Register kiwi packs + GeexI18nService.
- * Host should also: `{ provide: ALAIN_I18N_TOKEN, useExisting: GeexI18nService }` (or useClass).
+ * Register kiwi packs + GeexI18nService + Alain/ngx-translate wiring.
  */
-declare function provideGeexI18n(packs: Record<string, Record<string, unknown>>): Provider[];
+declare function provideGeexI18n(packs: Record<string, Record<string, unknown>>, options?: GeexI18nProvideOptions): Array<Provider | EnvironmentProviders>;
 
 declare const GEEX_CANCEL_AUTHENTICATION_DOCUMENT: InjectionToken<DocumentNode>;
 /** Header profile route (default `/identity/me`). */
@@ -343,6 +330,13 @@ declare function applyEnvironmentOverrides(env: object, override: Record<string,
  */
 declare function loadEnvironmentOverrides(env: object, options?: GeexEnvironmentOverridesOptions): Promise<void>;
 
+declare global {
+    interface Window {
+        clearHistory(): void;
+    }
+    function clearHistory(): void;
+}
+
 /** Mark HTTP / GraphQL ops that should not show error UI. */
 declare const SILENT_REQUEST: HttpContextToken<boolean>;
 declare const GEEX_DEFAULT_HTTP_STATUS_MESSAGES: {
@@ -352,15 +346,15 @@ declare const GEEX_DEFAULT_HTTP_STATUS_MESSAGES: {
 declare const GEEX_HTTP_STATUS_MESSAGES: InjectionToken<{
     [key: number]: string;
 }>;
-/** Login route after 401 (default `/auth/login`). */
+/** Login route after 401 (default `/authentication/login`). */
 declare const GEEX_LOGIN_PATH: InjectionToken<string>;
-/** Called after navigating to login (e.g. host `clearHistory`). Default no-op. */
+/** Called after navigating to login. Defaults to `window.clearHistory`. */
 declare const GEEX_AFTER_LOGIN_NAVIGATE: InjectionToken<() => void>;
 /** API base URL for relative HTTP requests (host `environment.api.baseUrl`). */
 declare const GEEX_API_BASE_URL: InjectionToken<string>;
 
 /**
- * Default Geex HTTP interceptor (zh-CN messages, `/auth/login`, tenant/Bearer headers).
+ * Default Geex HTTP interceptor (zh-CN messages, `/authentication/login`, tenant/Bearer headers).
  * Override via tokens or protected hooks; host may `extends` or provide callbacks.
  */
 declare class GeexHttpInterceptor implements HttpInterceptor {
@@ -410,6 +404,11 @@ declare class GeexHttpInterceptor implements HttpInterceptor {
     static ɵprov: i0.ɵɵInjectableDeclaration<GeexHttpInterceptor>;
 }
 
+interface GeexHttpProvideOptions {
+    apiBaseUrl: string;
+}
+declare function provideGeexHttp(options: GeexHttpProvideOptions): Provider[];
+
 interface GeexModuleContributionContext {
     readonly injector: Injector;
     readonly modules: Readonly<Record<string, GeexModule>>;
@@ -451,6 +450,25 @@ interface GeexMenuContribution {
     resolve(user: GeexMenuContributionContext): Promise<GeexMenuItem[]>;
 }
 declare const GEEX_MENU_CONTRIBUTIONS: InjectionToken<GeexMenuContribution[]>;
+/** Host-composed default menus (e.g. from module-registry). */
+declare const GEEX_DEFAULT_MENUS: InjectionToken<GeexMenuItem[]>;
+declare function provideGeexMenus(menus: GeexMenuItem[]): Provider[];
+
+/** Well-known setting names for post-login app/menu bind (aligned with SettingDefinition). */
+declare const GEEX_APP_NAME_SETTING = "AppAppName";
+declare const GEEX_APP_MENU_SETTING = "AppAppMenu";
+
+/** When true, DebuggerBlockerService activates anti-devtools measures. */
+declare const GEEX_BLOCK_DEBUGGER: InjectionToken<boolean>;
+
+declare class DebuggerBlockerService {
+    private readonly enabled;
+    init(): void;
+    private blockDebugger;
+    private disableDevToolsShortcuts;
+    static ɵfac: i0.ɵɵFactoryDeclaration<DebuggerBlockerService, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<DebuggerBlockerService>;
+}
 
 interface IdentityClaims {
     nbf: number;
@@ -707,14 +725,17 @@ declare class ListPageLayoutComponent {
     static ɵcmp: i0.ɵɵComponentDeclaration<ListPageLayoutComponent, "list-page-layout", never, { "title": { "alias": "title"; "required": true; "isSignal": true; }; "loading": { "alias": "loading"; "required": false; "isSignal": true; }; "total": { "alias": "total"; "required": false; "isSignal": true; }; "data": { "alias": "data"; "required": false; "isSignal": true; }; "columns": { "alias": "columns"; "required": false; "isSignal": true; }; "pi": { "alias": "pi"; "required": false; "isSignal": true; }; "ps": { "alias": "ps"; "required": false; "isSignal": true; }; "selectedCount": { "alias": "selectedCount"; "required": false; "isSignal": true; }; "multiSort": { "alias": "multiSort"; "required": false; "isSignal": true; }; "filtersInHeader": { "alias": "filtersInHeader"; "required": false; "isSignal": true; }; }, { "tableChange": "tableChange"; "refresh": "refresh"; }, ["headerExtraTpl", "headerTabTpl", "headerActionTpl"], ["[filters]", "[filters]", "[toolbar]"], true, never>;
 }
 
-/**
- * Delon-coupled Core providers (Router subclass + hardened ReuseTab strategy).
- * Call after `provideReuseTabConfig(...)` so GeexReuseTabStrategy wins.
- */
-declare function provideGeexDelonBase(options?: {
+type GeexReuseTabOptions = NonNullable<Parameters<typeof provideReuseTabConfig>[0]>;
+interface GeexDelonProvideOptions {
     router?: Type<Router>;
     reuseStrategy?: Type<RouteReuseStrategy>;
-}): Provider[];
+    appPermission?: GeexAppPermission;
+    reuseTab?: GeexReuseTabOptions;
+}
+/**
+ * Delon-coupled Core providers (Router subclass + ReuseTab + optional AppPermission).
+ */
+declare function provideGeexDelonBase(options?: GeexDelonProvideOptions): Array<Provider | EnvironmentProviders>;
 
 declare global {
     interface ReadonlyArray<T> {
@@ -987,8 +1008,8 @@ declare global {
  */
 declare function bindGeexGlobal(): void;
 
-declare const exports: Record<string, any>;
+declare const exports$1: Record<string, any>;
 
-export { BusinessComponentBase, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_PERMISSION, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createMessagingModule, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexI18n, provideGeexModuleContribution, provideGeexStartup, exports as rison };
-export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexAppPermission, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexI18n, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexStartupI18nAdapter, GeexStartupModalCopy, GeexStartupOptions, GeexStartupSettingKeys, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, MessagingModule, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, SettingItem, SettingsModule, UiModule, WritableDeepSignal };
+export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports$1 as rison };
+export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexAppPermission, GeexDelonProvideOptions, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexHttpProvideOptions, GeexI18n, GeexI18nProvideOptions, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexSessionTerminatedCopy, GeexStartupI18nAdapter, GeexStartupOptions, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, UiModule, WritableDeepSignal };
 //# sourceMappingURL=index.d.ts.map

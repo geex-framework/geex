@@ -22,4 +22,10 @@ describe("provideGeexMocking", () => {
     assert.match(types, /declare module "@geexcode\/geex-angular"/);
     assert.match(types, /mocking:/);
   });
+
+  it("registers menu contribution by default", () => {
+    const source = fs.readFileSync(path.join(__dirname, "provide-geex-mocking.ts"), "utf8");
+    assert.match(source, /MockingMenuContribution/);
+    assert.match(source, /GEEX_MENU_CONTRIBUTIONS/);
+  });
 });

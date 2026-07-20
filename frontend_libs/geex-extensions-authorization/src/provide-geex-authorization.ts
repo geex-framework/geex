@@ -21,9 +21,18 @@ export function provideGeexAuthorization(
   return makeEnvironmentProviders([
     { provide: GEEX_AUTHORIZATION_OPTIONS, useValue: options },
     provideGeexModuleContribution({
-      createModules: ({ injector }) => ({
-        authorization: (options.createAuthorizationModule ?? createAuthorizationModule)(injector),
-      }),
+      createModules: ({ modules, injector }) => {
+        const multiTenant = modules["multiTenant"];
+        const authentication = modules["authentication"];
+        if (!multiTenant || !authentication) {
+          throw new Error(
+            "provideGeexAuthorization() requires provideGeexMultiTenant() and provideGeexAuthentication() to be registered first",
+          );
+        }
+        return {
+          authorization: (options.createAuthorizationModule ?? createAuthorizationModule)(injector),
+        };
+      },
     }),
     AuthorizeGuard,
     {

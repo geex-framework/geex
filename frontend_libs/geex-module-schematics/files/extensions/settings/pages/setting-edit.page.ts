@@ -36,7 +36,7 @@ export class SettingEditComponent extends RoutedEditComponent<
   SettingEditFormSchema
 > {
   override async onRouted(params: { name?: SettingDefinition }) {
-    this.tenant = geex.tenant.current();
+    this.tenant = geex.multiTenant.current();
     this.name = params.name;
     if (params.name) {
       let res = await this.apollo

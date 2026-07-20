@@ -2,7 +2,7 @@ import { Injector } from "@angular/core";
 import { Apollo, ApolloBase } from "apollo-angular";
 import { firstValueFrom, of } from "rxjs";
 import { catchError, map } from "rxjs/operators";
-import type { WechatAuthRenderOverrides } from "@geexcode/geex-extensions-authentication-wechat";
+import type { AuthenticationWechatRenderOverrides } from "@geexcode/geex-extensions-authentication-wechat";
 import { geex } from "@geexcode/geex-angular";
 import {
   CREATE_MOCK_WECHAT_AUTHORIZATION,
@@ -79,9 +79,14 @@ export function createMockingModule(injector: Injector): MockingModule {
 
   return {
     getCapabilities,
-    renderWechatQr: async (overrides?: WechatAuthRenderOverrides) => {
-      const wechatAuth = geex.wechatAuth;
-      const config = wechatAuth.getConfig(overrides);
+    renderWechatQr: async (overrides?: AuthenticationWechatRenderOverrides) => {
+      const authenticationWechat = geex.authenticationWechat;
+      if (!authenticationWechat) {
+        throw new Error(
+          "renderWechatQr() requires geex.authenticationWechat; register provideGeexAuthenticationWechat() first.",
+        );
+      }
+      const config = authenticationWechat.getConfig(overrides);
       const containerId = overrides?.containerId ?? config.containerId ?? "wechat_login_container";
       const state = overrides?.state ?? "WechatWeb";
       const redirectUri = overrides?.redirectUri || config.redirectUri;

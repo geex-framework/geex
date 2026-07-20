@@ -1,13 +1,13 @@
 import { EnvironmentProviders, InjectionToken, Injector, makeEnvironmentProviders } from "@angular/core";
 import { provideGeexModuleContribution } from "@geexcode/geex-angular";
-import { createWechatAuthModule } from "./wechat-auth.module";
-import type { GeexAuthenticationWechatOptions, WechatAuthModule } from "./wechat-auth.types";
+import { createAuthenticationWechatModule } from "./authentication-wechat.module";
+import type { AuthenticationWechatModule, GeexAuthenticationWechatOptions } from "./authentication-wechat.types";
 
 export interface GeexAuthenticationWechatProvideOptions extends GeexAuthenticationWechatOptions {
-  readonly createWechatAuthModule?: (
+  readonly createAuthenticationWechatModule?: (
     injector: Injector,
     options: Readonly<GeexAuthenticationWechatOptions>,
-  ) => WechatAuthModule;
+  ) => AuthenticationWechatModule;
 }
 
 export const GEEX_AUTHENTICATION_WECHAT_OPTIONS =
@@ -22,7 +22,10 @@ export function provideGeexAuthenticationWechat(
     { provide: GEEX_AUTHENTICATION_WECHAT_OPTIONS, useValue: options },
     provideGeexModuleContribution({
       createModules: ({ injector }) => ({
-        wechatAuth: (options.createWechatAuthModule ?? createWechatAuthModule)(injector, options),
+        authenticationWechat: (options.createAuthenticationWechatModule ?? createAuthenticationWechatModule)(
+          injector,
+          options,
+        ),
       }),
     }),
   ]);
