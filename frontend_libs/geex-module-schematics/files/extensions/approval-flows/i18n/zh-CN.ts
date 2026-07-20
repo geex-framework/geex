@@ -1,5 +1,6 @@
 export default {
-  title: "审批流模板",
+  title: "审批流",
+  listTitle: "审批流模板",
   name: "名称",
   description: "描述",
   orgCode: "组织编码",
@@ -8,4 +9,10 @@ export default {
   actions: "操作",
   saveSuccess: "保存成功",
   deleteSuccess: "删除成功",
+  approve: {
+    pass: "通过",
+    reject: "驳回",
+    passHint: "执行该操作将审批通过",
+    rejectReasonPlaceholder: "驳回原因",
+  },
 };

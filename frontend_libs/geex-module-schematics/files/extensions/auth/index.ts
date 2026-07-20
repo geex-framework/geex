@@ -1,2 +1,2 @@
 export const menuContribution: never[] = [];
-export const i18n = {};
+export { i18n } from "./i18n";

@@ -1,11 +1,11 @@
 @if (params()) {
-<page-header [title]="'setting'"
+<page-header [title]="I18N.Settings.title"
   [content]="phContentTpl"
   [tab]="phTab"
   [extra]="phExtra"
   [action]="phActionTpl">
   <ng-template #phContentTpl>
-    编辑setting值
+    {{ I18N.Settings.editTitle }}
   </ng-template>
   <ng-template #phExtra>
     <!-- <button nz-button

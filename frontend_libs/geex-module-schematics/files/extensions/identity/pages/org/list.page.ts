@@ -25,30 +25,30 @@ export type OrgListParams = {
 export class OrgListComponent extends RoutedListComponent<OrgListParams, OrgBrief> {
   private modalSrv = inject(ModalHelper);
 
-  override columns = [
+  override columns = computed<STColumn<OrgBrief>[]>(() => [
     { title: "", width: 30, type: "checkbox", index: "checked", fixed: "left", className: ["text-center"] },
-    { title: "编码", index: "code", className: "text-center" },
-    { title: "名称", index: "name", className: "text-center" },
-    { title: "父组织", index: "parentOrgCode", className: "text-center" },
+    { title: this.I18N.Identity.org.columnCode, index: "code", className: "text-center" },
+    { title: this.I18N.Common.list.name, index: "name", className: "text-center" },
+    { title: this.I18N.Identity.org.columnParentOrg, index: "parentOrgCode", className: "text-center" },
     {
-      title: "操作",
+      title: this.I18N.Common.list.actions,
       buttons: [
         {
           icon: "edit",
-          text: "编辑",
+          text: this.I18N.Common.action.edit,
           click: item => this.edit(item),
           acl: AppPermission.identity_mutation_editOrg,
         },
         {
           icon: "delete",
-          text: "删除",
+          text: this.I18N.Common.action.delete,
           click: item => this.delete(item),
           acl: AppPermission.identity_mutation_editOrg,
         },
       ],
       className: "text-center",
     },
-  ] as STColumn<OrgBrief>[];
+  ]);
 
   override routeParamsMappings: RouteParamsMappings<OrgListParams> = {
     pi: { position: "queryParams", default: 1 },
@@ -90,7 +90,7 @@ export class OrgListComponent extends RoutedListComponent<OrgListParams, OrgBrie
 
   private async delete(item: OrgBrief) {
     this.nzModalSrv.confirm({
-      nzTitle: `确认删除组织“${item.name}”?`,
+      nzTitle: this.I18N.Identity.org.confirmDelete.replace("{name}", item.name),
       nzOnOk: async () => {
         await this.apollo.mutate({ mutation: deleteOrg, variables: { ids: [item.id] }, refetchQueries: [orgs] }).firstValuePromise();
         this.refresh();

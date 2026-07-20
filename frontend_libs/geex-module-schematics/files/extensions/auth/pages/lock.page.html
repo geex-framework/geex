@@ -5,10 +5,10 @@
           <!-- 用户头像 -->
           <div class="user-avatar">
             <nz-avatar [nzSrc]="user.avatar" nzIcon="user" [nzSize]="80"></nz-avatar>
-            <div class="user-name">{{ user.name || '用户' }}</div>
+            <div class="user-name">{{ user.name || I18N.Auth.lock.defaultUserName }}</div>
           </div>
-          <h1 class="brand-title">屏幕已锁定</h1>
-          <p class="brand-subtitle">请输入您的密码以继续</p>
+          <h1 class="brand-title">{{ I18N.Auth.lock.title }}</h1>
+          <p class="brand-subtitle">{{ I18N.Auth.lock.subtitle }}</p>
         </div>
       </div>
 
@@ -18,14 +18,14 @@
           <form nz-form [formGroup]="f" (ngSubmit)="submit()" class="auth-form" role="form">
             <!-- 密码输入 -->
             <div class="form-group">
-              <label class="input-label">密码</label>
+              <label class="input-label">{{ I18N.Auth.fields.password }}</label>
               <nz-form-item>
-                <nz-form-control [nzErrorTip]="'请输入密码！'">
+                <nz-form-control [nzErrorTip]="I18N.Auth.lock.passwordRequired">
                   <nz-input-group nzSuffixIcon="lock">
                     <input type="password" 
                            nz-input 
                            formControlName="password" 
-                           placeholder="请输入您的密码" 
+                           [placeholder]="I18N.Auth.fields.lockPasswordPlaceholder" 
                            autocomplete="current-password" />
                   </nz-input-group>
                 </nz-form-control>
@@ -42,7 +42,7 @@
                         style="flex: 1;">
                   <span class="button-content">
                     <i nz-icon nzType="swap" nzTheme="outline"></i>
-                    切换用户
+                    {{ I18N.Auth.lock.switchUser }}
                   </span>
                 </button>
                 <button nz-button 
@@ -53,7 +53,7 @@
                         style="flex: 1;">
                   <span class="button-content">
                     <i nz-icon nzType="unlock" nzTheme="outline"></i>
-                    解锁
+                    {{ I18N.Auth.lock.unlock }}
                   </span>
                 </button>
               </div>
@@ -67,8 +67,8 @@
         <div class="hint-line"></div>
         <div class="hint-content">
           <i nz-icon nzType="info-circle" nzTheme="outline"></i>
-          <span>忘记密码？请联系</span>
-          <a href="#" class="docs-link">系统管理员</a>
+          <span>{{ I18N.Auth.footer.forgotPasswordContact }}</span>
+          <a href="#" class="docs-link">{{ I18N.Auth.footer.systemAdmin }}</a>
         </div>
         <div class="hint-line"></div>
       </div>

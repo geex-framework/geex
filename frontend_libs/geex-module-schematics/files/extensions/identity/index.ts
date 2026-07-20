@@ -1,5 +1,5 @@
 export { menuContribution, meMenuContribution } from "./identity.menu";
-export const i18n = {};
+export { i18n } from "./i18n";
 export * from "./widgets/org-tree";
 export * from "./widgets/permissions";
 export * from "./widgets/user-select.widget";

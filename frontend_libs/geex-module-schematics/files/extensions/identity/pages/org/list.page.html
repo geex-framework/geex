@@ -1,33 +1,43 @@
 @defer (when params) {
-<page-header [title]="'组织管理'" [extra]="phExtra">
-  <form nz-form [formGroup]="paramsForm" nzLayout="inline">
-    <div nz-row nzGutter="24">
-      <div nz-col>
-        <nz-form-item>
-          <nz-form-label>名称</nz-form-label>
-          <nz-form-control>
-            <input nz-input [formControl]="paramsForm.controls.name" />
-          </nz-form-control>
-        </nz-form-item>
-      </div>
-      <div nz-col>
-        <button (click)="refresh()" nz-button nzType="primary">
-          <i nz-icon nzType="reload"></i>
-          刷新
-        </button>
-      </div>
-    </div>
+<list-page-layout [title]="I18N.Identity.org.listTitle"
+                  [loading]="loading()"
+                  [total]="total()"
+                  [data]="data()"
+                  [pi]="params().pi"
+                  [ps]="params().ps"
+                  [selectedCount]="selectedData().length"
+                  [columns]="columns()"
+                  (refresh)="refresh()"
+                  (tableChange)="tableChange($event)">
+  <form filters
+        nz-form
+        [formGroup]="paramsForm"
+        nzLayout="inline">
+    <nz-form-item>
+      <nz-form-label>{{ I18N.Common.list.name }}</nz-form-label>
+      <nz-form-control>
+        <input nz-input
+               [formControl]="paramsForm.controls.name" />
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <button (click)="refresh()"
+              nz-button
+              nzType="primary">
+        <i nz-icon
+           nzType="search"
+           nzTheme="outline"></i>{{ I18N.Common.action.search }}
+      </button>
+    </nz-form-item>
   </form>
-  <ng-template #phExtra>
-    <button nz-button nzType="primary" (click)="add()">
-      <i nz-icon nzType="plus"></i>
-      新增
+  <ng-template #headerExtra>
+    <button nz-button
+            nzType="primary"
+            (click)="add()">
+      <i nz-icon
+         nzType="plus"></i>
+      {{ I18N.Common.action.create }}
     </button>
   </ng-template>
-</page-header>
-<nz-card>
-  @if (data) {
-  <st class="mt-sm" [data]="data()" [total]="total" [columns]="columns"></st>
-  }
-</nz-card>
+</list-page-layout>
 }

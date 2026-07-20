@@ -1,4 +1,5 @@
 import { Injectable, makeEnvironmentProviders } from "@angular/core";
+import type { Menu } from "@delon/theme";
 import {
   GEEX_MENU_CONTRIBUTIONS,
   geex,
@@ -8,6 +9,19 @@ import {
 } from "@geexcode/geex-angular";
 import { GEEX_DEFAULT_SUPER_ADMIN_USER_ID } from "@geexcode/geex-extensions-identity";
 
+/** Static entry under 系统及配置; hidden until contribution unhides it. */
+export const menuContribution: Menu[] = [
+  {
+    text: "模拟服务",
+    i18n: "Mocking.title",
+    link: "/mocking",
+    icon: "anticon-experiment",
+    group: false,
+    children: [],
+    hide: true,
+  },
+];
+
 @Injectable()
 export class MockingMenuContribution implements GeexMenuContribution {
   async resolve(user: GeexMenuContributionContext): Promise<GeexMenuItem[]> {
@@ -15,12 +29,17 @@ export class MockingMenuContribution implements GeexMenuContribution {
     if (!capabilities.enabled || !capabilities.management || user.id !== GEEX_DEFAULT_SUPER_ADMIN_USER_ID) {
       return [];
     }
-    return [{
-      group: true,
-      hideInBreadcrumb: true,
-      text: "Mocking",
-      children: [{ text: "Mocking", link: "/mocking", icon: "experiment" }],
-    }];
+    return [
+      {
+        text: "模拟服务",
+        i18n: "Mocking.title",
+        link: "/mocking",
+        icon: "anticon-experiment",
+        group: false,
+        children: [],
+        hide: false,
+      },
+    ];
   }
 }
 

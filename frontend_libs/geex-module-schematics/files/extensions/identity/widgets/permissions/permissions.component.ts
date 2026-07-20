@@ -27,7 +27,7 @@ export class PermissionsComponent implements OnInit {
   @Input() permissions!: string[];
   @Output() readonly permissionsChange = new EventEmitter<string[]>();
 
-  private readonly i18n = inject(GEEX_I18N);
+  readonly I18N = inject(GEEX_I18N) as any;
   private readonly appPermission = inject(GEEX_APP_PERMISSION);
   private readonly permissionFilter = inject(GEEX_PERMISSION_FILTER);
 
@@ -45,7 +45,7 @@ export class PermissionsComponent implements OnInit {
     allPermissions.forEach(x => {
       const moduleName = x.split("_")[0];
       childNodes.push({
-        title: this.i18n.permissions.get(x),
+        title: this.I18N.permissions.get(x),
         key: x,
         parentName: moduleName,
       });
@@ -54,7 +54,7 @@ export class PermissionsComponent implements OnInit {
       }
       parentNodeKeys.push(moduleName);
       parentNodes.push({
-        title: this.i18n.permissions.get(moduleName),
+        title: this.I18N.permissions.get(moduleName),
         key: moduleName,
         isLeaf: false,
         parentName: "all",
@@ -63,7 +63,7 @@ export class PermissionsComponent implements OnInit {
     this.nodes = this.arrSrv.arrToTreeNode(
       [
         {
-          title: "全部",
+          title: this.I18N.Identity.widget.permissionsAll,
           key: "all",
           children: [],
         },

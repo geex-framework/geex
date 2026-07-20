@@ -93,28 +93,29 @@ export function createAuthModule(injector: Injector): AuthModule {
     async loadUserData(): Promise<User | undefined> {
       const oAuthService = injector.get(OAuthService);
       try {
+        // Always discover: issuer alignment is required for id_token / userinfo, not only endpoint URLs.
         await oAuthService.loadDiscoveryDocument();
         if (!oAuthService.hasValidAccessToken()) {
           return undefined;
         }
         await oAuthService.loadUserProfile();
-        const profile = oAuthService.getIdentityClaims() as { login_provider: string } | null;
-        if (profile) {
-          type FederateAuthResponse = { federateAuthenticate: { user: User } };
-          const result = await firstValueFrom(
-            injector
-              .get(Apollo)
-              .mutate<FederateAuthResponse>({
-                mutation: GQL_FEDERATE_AUTH,
-                variables: {
-                  code: oAuthService.getAccessToken(),
-                  loginProvider: profile.login_provider,
-                },
-              })
-              .pipe(map(res => res?.data?.federateAuthenticate.user)),
-          );
-          return result;
+        const profile = oAuthService.getIdentityClaims() as { login_provider?: string } | null;
+        if (!profile?.login_provider) {
+          return undefined;
         }
+        type FederateAuthResponse = { federateAuthenticate: { user: User } };
+        return await firstValueFrom(
+          injector
+            .get(Apollo)
+            .mutate<FederateAuthResponse>({
+              mutation: GQL_FEDERATE_AUTH,
+              variables: {
+                code: oAuthService.getAccessToken(),
+                loginProvider: profile.login_provider,
+              },
+            })
+            .pipe(map(res => res?.data?.federateAuthenticate.user)),
+        );
       } catch (err) {
         console.error(err);
       }

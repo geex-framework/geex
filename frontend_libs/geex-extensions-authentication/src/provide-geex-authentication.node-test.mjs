@@ -30,4 +30,14 @@ describe("provideGeexAuthentication", () => {
     assert.doesNotMatch(module, /_initializedToken/);
     assert.doesNotMatch(module, /tokenChanged/);
   });
+
+  it("requires discovery, userinfo login_provider, and federateAuthenticate for session user", () => {
+    const module = fs.readFileSync(path.join(__dirname, "auth.module.ts"), "utf8");
+    assert.match(module, /await oAuthService\.loadDiscoveryDocument\(\)/);
+    assert.match(module, /await oAuthService\.loadUserProfile\(\)/);
+    assert.match(module, /login_provider/);
+    assert.match(module, /federateAuthenticate/);
+    assert.doesNotMatch(module, /if\s*\(\s*!oAuthService\.userinfoEndpoint\s*\)/);
+  });
 });
+

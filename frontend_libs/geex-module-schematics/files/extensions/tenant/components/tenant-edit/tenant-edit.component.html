@@ -1,11 +1,11 @@
-<label for="code">编码</label>
+<label for="code">{{ I18N.Tenant.edit.code }}</label>
 @if (isCreate) {
   <input nz-input
     [(ngModel)]="code"
     name="code"
     placeholder="">
 }
-<label for="name">名称</label>
+<label for="name">{{ I18N.Tenant.edit.name }}</label>
 <input nz-input
   [(ngModel)]="name"
   name="name"
@@ -14,4 +14,4 @@
     nzType="primary"
     nzSize="small"
     (click)="submit()"
-  nzSearch>确定</button>
+  nzSearch>{{ I18N.Common.action.confirm }}</button>

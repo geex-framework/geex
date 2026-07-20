@@ -8,8 +8,8 @@
       <div class="spinner-ring"></div>
     </div>
     <div class="loading-text">
-      <div class="loading-title">正在加载...</div>
-      <div class="loading-subtitle">请稍候，系统正在为您准备数据...</div>
+      <div class="loading-title">{{ I18N.Auth.login.loading.title }}</div>
+      <div class="loading-subtitle">{{ I18N.Auth.login.loading.subtitle }}</div>
     </div>
   </div>
 </div>
@@ -23,19 +23,19 @@
       <img ngSrc="./assets/logo.png"
            width="64"
            height="64"
-           alt="Geex Admin"
+           [alt]="I18N.Auth.brand.alt"
            class="brand-logo">
-      <h1 class="brand-title">Geex Admin</h1>
+      <h1 class="brand-title">{{ I18N.Auth.brand.title }}</h1>
     </div>
     } @else {
     <div class="logo-desktop">
       <img ngSrc="./assets/logo.png"
            width="64"
            height="64"
-           alt="Geex Admin"
+           [alt]="I18N.Auth.brand.alt"
            class="brand-logo">
-      <h1 class="brand-title">Geex Admin</h1>
-      <div class="brand-subtitle">企业级开发脚手架</div>
+      <h1 class="brand-title">{{ I18N.Auth.brand.title }}</h1>
+      <div class="brand-subtitle">{{ I18N.Auth.brand.subtitle }}</div>
     </div>
     }
   </div>
@@ -46,7 +46,7 @@
       <!-- 租户信息 -->
       <div class="tenant-info">
         <div class="tenant-display">
-          <span class="tenant-label">租户:</span>
+          <span class="tenant-label">{{ I18N.Auth.tenant.label }}</span>
           <span class="tenant-code">{{(geex.init() | async) && tenant$()?.code}}</span>
         </div>
         <button nz-button
@@ -57,7 +57,7 @@
           <i nz-icon
              nzType="swap"
              nzTheme="outline"></i>
-          切换
+          {{ I18N.Auth.tenant.switch }}
         </button>
       </div>
 
@@ -67,7 +67,7 @@
                class="tech-tabs">
 
         <!-- 用户登录标签页 -->
-        <nz-tab nzTitle="账户登录">
+        <nz-tab [nzTitle]="I18N.Auth.login.tabAccount">
           <form nz-form
                 [formGroup]="form"
                 (ngSubmit)="submit()"
@@ -76,13 +76,13 @@
 
             <!-- 用户名输入 -->
             <div class="form-group">
-              <label class="input-label">用户名</label>
+              <label class="input-label">{{ I18N.Auth.fields.userName }}</label>
               <nz-input-group nzPrefixIcon="user"
                               nzSize="large"
                               class="tech-input">
                 <input nz-input
                        formControlName="userName"
-                       placeholder="请输入用户名或邮箱"
+                       [placeholder]="I18N.Auth.fields.userNamePlaceholder"
                        autocomplete="username"
                        maxlength="255" />
               </nz-input-group>
@@ -90,47 +90,29 @@
 
             <!-- 密码输入 -->
             <div class="form-group">
-              <label class="input-label">密码</label>
+              <label class="input-label">{{ I18N.Auth.fields.password }}</label>
               <nz-input-group nzPrefixIcon="lock"
                               nzSize="large"
                               class="tech-input">
                 <input nz-input
                        formControlName="password"
-                       placeholder="请输入密码"
+                       [placeholder]="I18N.Auth.fields.passwordPlaceholder"
                        type="password"
                        autocomplete="current-password"
                        maxlength="32" />
               </nz-input-group>
             </div>
 
-            <!-- 验证码（保留但隐藏，根据需要可以启用）
-                    <div class="form-group captcha-group" style="display: none;">
-                      <label class="input-label">验证码</label>
-                      <div class="captcha-container">
-                        <nz-input-group nzPrefixIcon="safety" nzSize="large" class="tech-input captcha-input">
-                          <input nz-input
-                            name="verificationCode"
-                            placeholder="验证码"
-                            type="text"
-                            maxlength="32">
-                        </nz-input-group>
-                        <div class="captcha-image" (click)="clearimg()">
-                          <img [src]="verificationImgUrl" alt="验证码">
-                        </div>
-                      </div>
-                    </div>
-                    -->
-
             <!-- 选项行 -->
             <div class="form-options">
               <label nz-checkbox
                      formControlName="remember"
                      class="remember-checkbox">
-                <span>记住登录状态</span>
+                <span>{{ I18N.Auth.login.remember }}</span>
               </label>
-              <a (click)="msg.error('暂不支持')"
+              <a (click)="msg.error(I18N.Auth.login.notSupported)"
                  class="forgot-password">
-                忘记密码？
+                {{ I18N.Auth.login.forgotPassword }}
               </a>
             </div>
 
@@ -147,7 +129,7 @@
                    style="display: inline-block;"
                    nzType="login"
                    nzTheme="outline"></i>
-                <span>登录系统</span>
+                <span>{{ I18N.Auth.login.submit }}</span>
               </span>
             </button>
 
@@ -165,7 +147,7 @@
 
         <!-- 微信登录 -->
         @if (wechatEnabled) {
-        <nz-tab nzTitle="微信登录">
+        <nz-tab [nzTitle]="I18N.Auth.login.tabWechat">
           <div class="login-tab-body login-tab-body--wechat">
             <div id="wechat_login_container" class="wechat-login-container"></div>
           </div>
@@ -182,37 +164,13 @@
       <i nz-icon
          nzType="info-circle"
          nzTheme="outline"></i>
-      <span>为获得最佳开发体验，建议先阅读</span>
+      <span>{{ I18N.Auth.footer.docsHint }}</span>
       <a href="https://docs.geexcode.com/"
          target="_blank"
-         class="docs-link">开发文档</a>
+         class="docs-link">{{ I18N.Auth.footer.docsLink }}</a>
     </div>
     <div class="hint-line"></div>
   </div>
 </div>
 
 }
-
-<!-- <div class="login-action-items">
-            <div class="links">
-              <br /> -->
-<!-- 用户注册 -->
-<!-- <span >
-              <a routerLink="/account/register">注册</a>
-              <nz-divider nzType="vertical"></nz-divider>
-            </span> -->
-<!-- 租户注册 -->
-<!--
-            <span *ngIf="isTenantSelfRegistrationAllowed">
-              <a routerLink="/account/tenant-register">{{
-                l("TenantRegister")
-              }}</a>
-              <nz-divider nzType="vertical"></nz-divider>
-              <nz-form-extra>请通过租户注册来查看完整系统内容</nz-form-extra>
-            </span>-->
-<!-- //todo: 等待有缘人帮我们完善吧 -->
-<!-- <span>
-            <a routerLink="/account/email-activation">{{l("EmailActivation")}}</a>
-          </span> -->
-<!-- </div>
-      </div> -->

@@ -1,9 +1,45 @@
-<page-header title="Blob storage" />
-<nz-card>
-  <div style="display:flex; gap:8px; margin-bottom:16px">
-    <input nz-input [(ngModel)]="filterText" placeholder="File name" (keyup.enter)="load()" />
-    <button nz-button nzType="default" (click)="load()">Search</button>
-    <button nz-button nzType="primary" (click)="add()">Upload</button>
-  </div>
-  <st [data]="data()" [columns]="columns" [loading]="loading()" [total]="total()" [page]="{ front: false }" />
-</nz-card>
+<list-page-layout [title]="I18N.BlobStorage.title"
+                  [loading]="loading()"
+                  [total]="total()"
+                  [data]="data()"
+                  [pi]="pageIndex"
+                  [ps]="pageSize"
+                  [columns]="columns"
+                  [multiSort]="false"
+                  (refresh)="load()"
+                  (tableChange)="onTableChange($event)">
+  <form filters
+        nz-form
+        nzLayout="inline">
+    <nz-form-item>
+      <nz-form-label>{{ I18N.BlobStorage.fileName }}</nz-form-label>
+      <nz-form-control>
+        <input nz-input
+               [(ngModel)]="filterText"
+               name="filterText"
+               [placeholder]="I18N.BlobStorage.fileName"
+               (keyup.enter)="load()" />
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <button nz-button
+              nzType="primary"
+              type="button"
+              (click)="load()">
+        <i nz-icon
+           nzType="search"
+           nzTheme="outline"></i>{{ I18N.Common.action.search }}
+      </button>
+    </nz-form-item>
+  </form>
+  <ng-template #headerExtra>
+    <button nz-button
+            nzType="primary"
+            type="button"
+            (click)="add()">
+      <i nz-icon
+         nzType="upload"></i>
+      {{ I18N.BlobStorage.upload }}
+    </button>
+  </ng-template>
+</list-page-layout>

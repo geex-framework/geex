@@ -1,7 +1,7 @@
 <nz-input-group [nzSuffix]="suffixIcon">
   <input type="text"
          nz-input
-         placeholder="Search"
+         [placeholder]="I18N.Identity.widget.permissionsSearchPlaceholder"
          [(ngModel)]="searchValue" />
 </nz-input-group>
 <ng-template #suffixIcon>

@@ -1,9 +1,10 @@
 import { Component, OnInit, inject, signal } from "@angular/core";
-import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { Apollo } from "apollo-angular";
 import { firstValueFrom } from "rxjs";
 import { CLEAR_MOCK_SMS_MESSAGES, MOCK_SMS_MESSAGES } from "@geexcode/geex-extensions-mocking";
+import { GEEX_I18N } from "@geexcode/geex-angular";
+import { SharedModule } from "@/shared/shared.module";
 
 type MockSmsMessageRow = {
   phoneNumber: string;
@@ -15,42 +16,66 @@ type MockSmsMessageRow = {
 
 @Component({
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [SharedModule, FormsModule],
   template: `
-    <div style="padding:16px;font-family:sans-serif">
-      <h2>Mock SMS Inbox</h2>
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        <input [(ngModel)]="phoneNumber" name="phoneNumber" placeholder="filter phone" />
-        <button type="button" (click)="reload()">Refresh</button>
-        <button type="button" (click)="clear()">Clear</button>
-      </div>
-      @if (loading()) {
-        <p>Loading...</p>
-      }
+    <page-header [title]="I18N.Mocking.sms.title" [autoBreadcrumb]="true" [extra]="phExtra">
+      <form nz-form nzLayout="inline">
+        <nz-form-item>
+          <nz-form-label>{{ I18N.Mocking.sms.phone }}</nz-form-label>
+          <nz-form-control>
+            <input nz-input [(ngModel)]="phoneNumber" name="phoneNumber" [placeholder]="I18N.Mocking.sms.phoneFilter" (keyup.enter)="reload()" />
+          </nz-form-control>
+        </nz-form-item>
+        <nz-form-item>
+          <button nz-button nzType="primary" type="button" (click)="reload()">
+            <i nz-icon nzType="search" nzTheme="outline"></i>{{ I18N.Common.action.search }}
+          </button>
+        </nz-form-item>
+      </form>
+      <ng-template #phExtra>
+        <button nz-button nzDanger type="button" (click)="clear()">
+          <i nz-icon nzType="clear"></i>{{ I18N.Common.action.clear }}
+        </button>
+      </ng-template>
+    </page-header>
+    <nz-card>
       @if (error()) {
-        <p style="color:red">{{ error() }}</p>
+        <nz-alert nzType="error" [nzMessage]="error()" class="mb-md"></nz-alert>
       }
-      <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%">
+
+      <nz-table #table [nzData]="messages()" [nzLoading]="loading()" [nzFrontPagination]="false" [nzShowPagination]="false">
         <thead>
-          <tr><th>Phone</th><th>Params</th><th>Captcha</th><th>Success</th><th>SentAt</th><th></th></tr>
+          <tr>
+            <th>{{ I18N.Mocking.sms.phone }}</th>
+            <th>{{ I18N.Mocking.sms.params }}</th>
+            <th>{{ I18N.Mocking.sms.captcha }}</th>
+            <th>{{ I18N.Mocking.sms.success }}</th>
+            <th>{{ I18N.Mocking.sms.sentAt }}</th>
+            <th>{{ I18N.Common.list.actions }}</th>
+          </tr>
         </thead>
         <tbody>
-          @for (m of messages(); track $index) {
+          @for (m of table.data; track $index) {
             <tr>
               <td>{{ m.phoneNumber }}</td>
               <td>{{ m.templateParams | json }}</td>
               <td>{{ m.captchaCandidate }}</td>
               <td>{{ m.success }}</td>
               <td>{{ m.sentAt }}</td>
-              <td><button type="button" (click)="copy(m.captchaCandidate)">Copy</button></td>
+              <td>
+                <button nz-button nzType="link" type="button" (click)="copy(m.captchaCandidate)">
+                  {{ I18N.Common.action.copy }}
+                </button>
+              </td>
             </tr>
           }
         </tbody>
-      </table>
-    </div>
+      </nz-table>
+    </nz-card>
   `,
 })
 export class MockingSmsPage implements OnInit {
+  I18N = inject(GEEX_I18N) as any;
   private readonly apollo = inject(Apollo);
 
   messages = signal<MockSmsMessageRow[]>([]);
@@ -75,7 +100,7 @@ export class MockingSmsPage implements OnInit {
       );
       this.messages.set(result.data?.mockSmsMessages ?? []);
     } catch (err: any) {
-      this.error.set(err?.message ?? "Failed to load SMS messages");
+      this.error.set(err?.message ?? this.I18N.Mocking.sms.loadFailed);
       this.messages.set([]);
     } finally {
       this.loading.set(false);
@@ -93,7 +118,7 @@ export class MockingSmsPage implements OnInit {
       );
       await this.reload();
     } catch (err: any) {
-      this.error.set(err?.message ?? "Failed to clear SMS messages");
+      this.error.set(err?.message ?? this.I18N.Mocking.sms.clearFailed);
     }
   }
 

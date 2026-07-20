@@ -91,20 +91,42 @@ export class GeexStartupService {
     if (state === "WechatWeb" || state.startsWith("WechatWeb")) {
       return;
     }
+    // Discovery aligns issuer/jwks before tryLogin (id_token validation). tokenEndpoint alone is not enough.
+    try {
+      await this.oAuthService.loadDiscoveryDocument();
+    } catch (err) {
+      console.error(err);
+    }
+    await this.ensureOAuthTokenEndpoint();
     await this.oAuthService.tryLogin();
+  }
+
+  /** Fill tokenEndpoint gaps after discovery (or when discovery is unreachable). */
+  private async ensureOAuthTokenEndpoint(): Promise<void> {
+    if (this.oAuthService.tokenEndpoint) {
+      return;
+    }
+    const issuer = this.oAuthService.issuer?.replace(/\/?$/, "/");
+    if (issuer) {
+      this.oAuthService.tokenEndpoint = `${issuer}idsvr/token`;
+      return;
+    }
+    throw new Error(
+      "OAuth tokenEndpoint is not configured. Set AuthConfig.tokenEndpoint (e.g. {issuer}/idsvr/token) or make OIDC discovery reachable.",
+    );
   }
 
   private async bindUiSession(): Promise<void> {
     if (!this.oAuthService.hasValidAccessToken()) {
       return;
     }
-    const user = await firstValueFrom(
-      interval(100).pipe(
-        filter(() => this.geex.auth.user() != undefined),
-        map(() => this.geex.auth.user()!),
-        takeUntil(timer(1000)),
-      ),
-    );
+    const user = await this.resolveAuthUser();
+    if (!user) {
+      // Token without federateAuthenticate user is not a completed Geex login.
+      console.error("bindUiSession: access token present but geex.auth.user() missing after federateAuthenticate");
+      this.oAuthService.logOut(true);
+      return;
+    }
     this.settingsService.setUser({
       avatar: user.avatarFile?.url,
       id: user.id,
@@ -128,21 +150,66 @@ export class GeexStartupService {
     if (appName) {
       this.settingsService.setApp({ name: appName });
     }
-    let menus = this.options.defaultMenus;
+    let menus = this.options.defaultMenus.map(menu => ({
+      ...menu,
+      children: menu.children ? [...menu.children] : menu.children,
+    }));
     const settingMenus = settings.firstOrDefault(x => x?.name == keys.appMenu)?.value;
     if (settingMenus?.length) {
-      menus = settingMenus as Menu[];
+      menus = (settingMenus as Menu[]).map(menu => ({
+        ...menu,
+        children: menu.children ? [...menu.children] : menu.children,
+      }));
     }
     const contributions = this.injector.get(GEEX_MENU_CONTRIBUTIONS, []);
-    const contributed: Menu[] = [];
+    const contributedGroups: Menu[] = [];
     for (const contribution of contributions) {
-      contributed.push(...((await contribution.resolve(user)) as Menu[]));
+      for (const item of (await contribution.resolve(user)) as Menu[]) {
+        if (item.group === true) {
+          contributedGroups.push(item);
+          continue;
+        }
+        // Leaf items must stay under a group. Delon top-level `group !== false` renders
+        // as a non-clickable title without icons; never promote bare leaves to top-level.
+        const leaf: Menu = {
+          ...item,
+          group: false,
+          children: Array.isArray(item.children) ? item.children : [],
+        };
+        const existing = leaf.link ? this.findMenuByLink(menus, leaf.link) : undefined;
+        if (existing) {
+          Object.assign(existing, leaf, { hide: leaf.hide ?? false, group: false });
+          continue;
+        }
+        const systemConfigGroup = this.findSystemConfigGroup(menus);
+        if (systemConfigGroup) {
+          systemConfigGroup.children = [...(systemConfigGroup.children ?? []), leaf];
+        } else {
+          contributedGroups.push({
+            group: true,
+            hideInBreadcrumb: true,
+            open: true,
+            text: "系统及配置",
+            i18n: "Common.menu.systemConfig",
+            children: [leaf],
+          });
+        }
+      }
     }
-    this.menuService.add([...menus, ...contributed]);
+    this.menuService.add([...menus, ...contributedGroups]);
     this.menuService.resume();
     const i18n = this.resolveI18nAdapter();
     i18n?.merge(settings.first(x => x?.name == keys.localizationData)?.value);
-    i18n?.use(settings.first(x => x?.name == keys.localizationLanguage)?.value);
+    const backendLang = settings.first(x => x?.name == keys.localizationLanguage)?.value as string | undefined;
+    if (backendLang) {
+      this.settingsService.setLayout("lang", backendLang);
+      i18n?.use(backendLang);
+    } else {
+      const cachedLang = this.settingsService.layout.lang as string | undefined;
+      if (cachedLang) {
+        i18n?.use(cachedLang);
+      }
+    }
   }
 
   async tryAutoOAuthLogin(): Promise<void> {
@@ -156,6 +223,40 @@ export class GeexStartupService {
     }
   }
 
+  private findMenuByLink(menus: Menu[], link: string): Menu | undefined {
+    for (const menu of menus) {
+      if (menu.link === link) {
+        return menu;
+      }
+      if (menu.children?.length) {
+        const found = this.findMenuByLink(menu.children, link);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  private findSystemConfigGroup(menus: Menu[]): Menu | undefined {
+    return menus.find(
+      m =>
+        m.i18n === "Common.menu.systemConfig" ||
+        m.i18n === "menu.systemConfig" ||
+        m.text === "系统及配置" ||
+        m.children?.some(
+          c =>
+            c.link === "/settings" ||
+            c.link === "/tenant" ||
+            c.link === "/blob-storage" ||
+            c.link === "/mocking" ||
+            c.i18n === "Common.menu.settings" ||
+            c.i18n === "Common.menu.tenant" ||
+            c.i18n === "Mocking.title",
+        ),
+    );
+  }
+
   private resolveI18nAdapter(): GeexStartupI18nAdapter | null {
     if (this.options.i18n) {
       return this.options.i18n;
@@ -165,6 +266,42 @@ export class GeexStartupService {
       return service as GeexStartupI18nAdapter;
     }
     return null;
+  }
+
+  /** Safe read: guardedSignal throws before auth.init finishes. */
+  private readAuthUser() {
+    try {
+      return this.geex.auth.user() ?? undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * After OIDC, auth.init may have finished with a null user (token race) or still be settling.
+   * Never throw EmptyError into bootstrap (that becomes the 500 page).
+   */
+  private async resolveAuthUser() {
+    let user = this.readAuthUser();
+    if (user) {
+      return user;
+    }
+    const auth = this.geex.auth as { reload?: () => Promise<void> };
+    if (typeof auth.reload === "function") {
+      await auth.reload();
+      user = this.readAuthUser();
+      if (user) {
+        return user;
+      }
+    }
+    return firstValueFrom(
+      interval(100).pipe(
+        filter(() => this.readAuthUser() != undefined),
+        map(() => this.readAuthUser()),
+        takeUntil(timer(5000)),
+      ),
+      { defaultValue: undefined },
+    );
   }
 
   private async trySwitchTenant(): Promise<void> {

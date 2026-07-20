@@ -160,7 +160,8 @@ export abstract class RoutedListComponent<
     remark?: string,
   ): Promise<boolean> {
     return new Promise((resolve) => {
-      const alertMessage = this.I18N?.Common?.action?.get?.(operation) ?? operation;
+      const common = (this.I18N as { Common?: { action?: { get?(k: string): string }; message?: { get?(k: string): string } } }).Common;
+      const alertMessage = common?.action?.get?.(operation) ?? operation;
       this.nzModalSrv.confirm({
         nzTitle: `确认${alertMessage}吗？`,
         nzOnOk: async () => {
@@ -171,7 +172,7 @@ export abstract class RoutedListComponent<
               ids,
             },
           }) as any).firstValuePromise();
-          this.msgSrv.success(this.I18N?.Common?.message?.get?.(operation) ?? "ok");
+          this.msgSrv.success(common?.message?.get?.(operation) ?? "ok");
           this.refresh();
           resolve(true);
         },

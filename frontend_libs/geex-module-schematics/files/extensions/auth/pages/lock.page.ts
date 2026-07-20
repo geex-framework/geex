@@ -1,7 +1,8 @@
-import { Component, Inject, ViewEncapsulation } from "@angular/core";
+import { Component, inject, ViewEncapsulation } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { SettingsService, User } from "@delon/theme";
+import { GEEX_I18N } from "@geexcode/geex-angular";
 import { SharedModule } from "@/shared/shared.module";
 
 @Component({
@@ -13,6 +14,7 @@ import { SharedModule } from "@/shared/shared.module";
   encapsulation: ViewEncapsulation.None,
 })
 export class UserLockComponent {
+  readonly I18N = inject(GEEX_I18N) as any;
   f: FormGroup;
 
   get user(): User {

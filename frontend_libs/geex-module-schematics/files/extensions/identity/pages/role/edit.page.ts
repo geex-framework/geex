@@ -59,7 +59,7 @@ export class RoleEditComponent extends RoutedComponent<RoleEditComponentParams> 
       this.location.back();
     } else {
       this.nzModalSrv.confirm({
-        nzTitle: "当前页面内容未保存，确定离开？",
+        nzTitle: this.I18N.Identity.common.unsavedLeaveConfirm,
         nzOnOk: () => {
           // this.router.navigate(["/identity/role"], { relativeTo: this.route });
           this.location.back();
@@ -98,7 +98,7 @@ export class RoleEditComponent extends RoutedComponent<RoleEditComponentParams> 
         },
       })
       .firstValuePromise();
-    this.msgSrv.success("修改成功");
+    this.msgSrv.success(this.I18N.Identity.role.updateSuccess);
     // await this.router.navigate(["/identity/role"], { relativeTo: this.route });
     await this.router.navigate(["/identity/role"], { relativeTo: this.route, replaceUrl: true, forceReload: true });
   }

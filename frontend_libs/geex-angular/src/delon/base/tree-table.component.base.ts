@@ -1,6 +1,6 @@
 import { Component, inject } from "@angular/core";
 
-import { GEEX_I18N } from "../tokens";
+import { GEEX_I18N, type GeexI18n } from "../tokens";
 
 @Component({
   template: "",
@@ -8,7 +8,7 @@ import { GEEX_I18N } from "../tokens";
 })
 export abstract class TreeTableComponentBase<ITreeNode = any> {
   mapOfExpandedData: { [key: string]: ITreeNode[] } = {};
-  I18N = inject(GEEX_I18N, { optional: true }) as any;
+  I18N: GeexI18n = inject(GEEX_I18N);
 
   protected getNodeKey(node: ITreeNode): string {
     return (node as any)["key"];

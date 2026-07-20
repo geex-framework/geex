@@ -32,7 +32,7 @@ export class SettingListComponent extends RoutedListComponent<SettingListParams,
       className: ["text-center"],
     },
     {
-      title: "定义名称",
+      title: this.I18N.Settings.columnName,
       width: "10%",
       index: "name",
       format: item => {
@@ -40,7 +40,7 @@ export class SettingListComponent extends RoutedListComponent<SettingListParams,
       },
     },
     {
-      title: "值",
+      title: this.I18N.Settings.columnValue,
       index: "value",
       format(item, col, index) {
         const itemValueJsonString = JSON.stringify(item.value, null, 2);
@@ -51,12 +51,12 @@ export class SettingListComponent extends RoutedListComponent<SettingListParams,
       },
     },
     {
-      title: "操作",
+      title: this.I18N.Settings.columnActions,
       width: 200,
       buttons: [
         {
           icon: "edit",
-          text: "编辑",
+          text: this.I18N.Common.action.edit,
           click: (item: SettingBrief) => this.router.navigate(["edit", item.name], { relativeTo: this.route }),
         },
       ],
@@ -68,7 +68,7 @@ export class SettingListComponent extends RoutedListComponent<SettingListParams,
     name: { position: "queryParams", default: "" },
   };
   override async onRouted(params: SettingListParams) {
-    this.title.set("Settings管理");
+    this.title.set(this.I18N.Settings.listTitle);
     let res = await this.apollo
       .query<any>({
         query: settings,

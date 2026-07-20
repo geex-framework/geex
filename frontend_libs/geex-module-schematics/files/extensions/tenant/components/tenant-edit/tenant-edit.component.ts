@@ -1,6 +1,7 @@
-import { Component, OnInit, ChangeDetectionStrategy } from "@angular/core";
+import { Component, inject, OnInit } from "@angular/core";
 import { Apollo } from "apollo-angular";
 import { NzModalRef } from "ng-zorro-antd/modal";
+import { GEEX_I18N } from "@geexcode/geex-angular";
 
 import { editTenant, createTenant } from "../../graphql/operations.gql";
 import { SharedModule } from "@/shared/shared.module";
@@ -13,6 +14,7 @@ import { SharedModule } from "@/shared/shared.module";
   imports: [SharedModule],
 })
 export class TenantEditComponent implements OnInit {
+  readonly I18N = inject(GEEX_I18N) as any;
   constructor(
     private modalRef: NzModalRef,
     private apollo: Apollo,

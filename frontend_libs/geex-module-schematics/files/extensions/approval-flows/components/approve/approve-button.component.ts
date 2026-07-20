@@ -1,10 +1,11 @@
-import { Component, EventEmitter, OnInit, Output } from "@angular/core";
+import { Component, EventEmitter, inject, OnInit, Output } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { NzButtonModule } from "ng-zorro-antd/button";
 import { NzIconModule } from "ng-zorro-antd/icon";
 import { NzInputModule } from "ng-zorro-antd/input";
 import { NzPopoverModule } from "ng-zorro-antd/popover";
 import { NzTabsModule } from "ng-zorro-antd/tabs";
+import { GEEX_I18N } from "@geexcode/geex-angular";
 
 export type ClickParams = {
   approve: boolean;
@@ -20,20 +21,21 @@ export type ClickParams = {
     </a>
     <ng-template #contentTemplate>
       <nz-tabs>
-        <nz-tab nzTitle="通过" (nzClick)="isReject = false">
-          <span>执行该操作将审批通过</span>
+        <nz-tab [nzTitle]="I18N.ApprovalFlows.approve.pass" (nzClick)="isReject = false">
+          <span>{{ I18N.ApprovalFlows.approve.passHint }}</span>
         </nz-tab>
-        <nz-tab nzTitle="驳回" (nzClick)="isReject = true">
-          <input nz-input placeholder="驳回原因" [(ngModel)]="rejectReason" />
+        <nz-tab [nzTitle]="I18N.ApprovalFlows.approve.reject" (nzClick)="isReject = true">
+          <input nz-input [placeholder]="I18N.ApprovalFlows.approve.rejectReasonPlaceholder" [(ngModel)]="rejectReason" />
         </nz-tab>
       </nz-tabs>
-      <button style="margin-top: 10px;" nz-button nzType="primary" nzBlock (click)="approveClick()">确定</button>
+      <button style="margin-top: 10px;" nz-button nzType="primary" nzBlock (click)="approveClick()">{{ I18N.Common.action.confirm }}</button>
     </ng-template>
   `,
   standalone: true,
   imports: [FormsModule, NzButtonModule, NzIconModule, NzInputModule, NzPopoverModule, NzTabsModule],
 })
 export class ApproveButtonComponent implements OnInit {
+  readonly I18N = inject(GEEX_I18N) as any;
   isReject = false;
   rejectReason = "";
   @Output() readonly nzClick = new EventEmitter<ClickParams>();

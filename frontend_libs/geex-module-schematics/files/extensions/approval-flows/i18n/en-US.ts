@@ -1,5 +1,6 @@
 export default {
-  title: "Approval flow templates",
+  title: "Approval flows",
+  listTitle: "Approval flow templates",
   name: "Name",
   description: "Description",
   orgCode: "Organization code",
@@ -8,4 +9,10 @@ export default {
   actions: "Actions",
   saveSuccess: "Saved",
   deleteSuccess: "Deleted",
+  approve: {
+    pass: "Approve",
+    reject: "Reject",
+    passHint: "This action will approve the request",
+    rejectReasonPlaceholder: "Rejection reason",
+  },
 };

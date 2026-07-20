@@ -49,7 +49,7 @@ import { GEEX_I18N } from "../tokens";
   `,
 })
 export class ListPageLayoutComponent {
-  private i18n = inject(GEEX_I18N, { optional: true }) as any;
+  private i18n = inject(GEEX_I18N, { optional: true });
 
   title = input.required<string>();
   loading = input(false);
@@ -70,12 +70,12 @@ export class ListPageLayoutComponent {
   headerActionTpl = contentChild<TemplateRef<void>>("headerAction");
 
   get selectedLabel() {
-    return this.i18n?.Common?.list?.selected ?? "";
+    return (this.i18n as { Common?: { list?: { selected?: string } } } | null)?.Common?.list?.selected ?? "";
   }
   get selectedUnitLabel() {
-    return this.i18n?.Common?.list?.selectedUnit ?? "";
+    return (this.i18n as { Common?: { list?: { selectedUnit?: string } } } | null)?.Common?.list?.selectedUnit ?? "";
   }
   get refreshLabel() {
-    return this.i18n?.Common?.list?.refresh ?? "Refresh";
+    return (this.i18n as { Common?: { list?: { refresh?: string } } } | null)?.Common?.list?.refresh ?? "Refresh";
   }
 }

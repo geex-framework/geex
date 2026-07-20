@@ -1,4 +1,4 @@
-import { Component, Inject, Injector, OnDestroy, OnInit, signal, Signal, ViewEncapsulation } from "@angular/core";
+import { Component, inject, Injector, OnDestroy, OnInit, signal, Signal, ViewEncapsulation } from "@angular/core";
 import { AbstractControl, FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 
@@ -7,7 +7,7 @@ import { Apollo } from "apollo-angular";
 import { NzMessageService } from "ng-zorro-antd/message";
 import { NzTabChangeEvent } from "ng-zorro-antd/tabs";
 
-import { geex } from "@geexcode/geex-angular";
+import { geex, GEEX_I18N } from "@geexcode/geex-angular";
 import { ACLService } from "@delon/acl";
 import { _HttpClient, ModalHelper, SettingsService } from "@delon/theme";
 import { CookieService } from "@delon/util";
@@ -28,6 +28,7 @@ import SparkMD5 from "spark-md5";
   encapsulation: ViewEncapsulation.None,
 })
 export class UserLoginComponent implements OnInit, OnDestroy {
+  readonly I18N = inject(GEEX_I18N) as any;
   geex = geex;
   submitting = signal(false);
   oauthLoading = signal(false);
@@ -109,6 +110,7 @@ export class UserLoginComponent implements OnInit, OnDestroy {
             code,
           });
           if (result.isLinked && result.session?.token) {
+            // Leave page for IdP; OIDC callback is handled once by GeexStartupService.load().
             geex.wechatAuth.establishSession({
               token: result.session.token,
               returnUrl: this.route.snapshot.queryParamMap.get("redirect_uri") ?? "/",
@@ -130,8 +132,9 @@ export class UserLoginComponent implements OnInit, OnDestroy {
 
       if (queryParamMap.has("code")) {
         try {
+          // OIDC callback session is already established by GeexStartupService.load().
           if (!this.oauthService.hasValidAccessToken()) {
-            this.msg.error("登录会话未建立, 请重新登录");
+            this.msg.error(this.I18N.Auth.login.sessionNotEstablished);
             return;
           }
           const oauthState = this.oauthService.state;
@@ -179,7 +182,7 @@ export class UserLoginComponent implements OnInit, OnDestroy {
           });
         }
       } else {
-        this.msg.error((err as any)?.message ?? "登录失败");
+        this.msg.error((err as any)?.message ?? this.I18N.Auth.login.loginFailed);
       }
     }
   }
@@ -195,7 +198,7 @@ export class UserLoginComponent implements OnInit, OnDestroy {
       this.normalizeWechatQrSvg();
     } catch (e) {
       console.error(e);
-      this.msg.error("微信登录组件加载失败");
+      this.msg.error(this.I18N.Auth.login.wechatLoadFailed);
     }
   }
 

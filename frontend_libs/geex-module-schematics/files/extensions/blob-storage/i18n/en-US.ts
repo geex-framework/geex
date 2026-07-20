@@ -10,4 +10,8 @@ export default {
   delete: "Delete",
   deleteSuccess: "File deleted",
   uploadSuccess: "File uploaded",
+  uploadClick: "Click to upload",
+  uploadDragText: "Click or drag files to this area to upload",
+  uploadDragHint: "Support single or batch upload. Do not upload confidential company data.",
+  fileSizeExceeded: "File exceeds the configured size limit: {size}KB",
 };

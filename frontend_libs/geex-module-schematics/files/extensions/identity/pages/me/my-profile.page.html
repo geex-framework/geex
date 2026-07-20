@@ -1,4 +1,4 @@
-<page-header title="个人中心">
+<page-header [title]="I18N.Identity.profile.title">
 </page-header>
 
 <div nz-row
@@ -10,7 +10,7 @@
     nzXl="12"
     nzXXl="12">
     @if (userData$(); as userData) {
-      <nz-card nzTitle="用户信息"
+      <nz-card [nzTitle]="I18N.Identity.profile.userInfoTitle"
         style="height: 100%;">
         <div nz-row
           nzAlign="middle"
@@ -34,21 +34,21 @@
             nzXl="16"
             nzXXl="14"
             style="line-height: 50px;">
-            <div>名称：<span style="font-size: 18px;">{{userData.username}}</span></div>
-            <div>角色：{{userData.roleNames}}</div>
-            <div>手机号：{{userData.phoneNumber == null?"暂未绑定":userData.phoneNumber}}</div>
-            <div>电子邮箱：{{userData.email}}</div>
+            <div>{{ I18N.Identity.profile.nameLabel }}<span style="font-size: 18px;">{{userData.username}}</span></div>
+            <div>{{ I18N.Identity.profile.rolesLabel }}{{userData.roleNames}}</div>
+            <div>{{ I18N.Identity.profile.phoneLabel }}{{userData.phoneNumber == null ? I18N.Identity.profile.phoneNotBound : userData.phoneNumber}}</div>
+            <div>{{ I18N.Identity.profile.emailLabel }}{{userData.email}}</div>
             <div>
               <button nz-button
                 type="button"
                 style="margin-right: 8px;"
-              (click)="showModal()">修改用户密码</button>
+              (click)="showModal()">{{ I18N.Identity.profile.changePassword }}</button>
               <button nz-button
                 type="button"
                 nzType="primary"
-              (click)="showTokenModal()">生成访问令牌</button>
+              (click)="showTokenModal()">{{ I18N.Identity.profile.generateToken }}</button>
               <nz-modal [(nzVisible)]="isVisible"
-                nzTitle="修改用户密码"
+                [nzTitle]="I18N.Identity.profile.changePasswordTitle"
                 (nzOnOk)="handleOk()"
                 (nzOnCancel)="handleCancel()"
                 nzMaskClosable="false"
@@ -60,10 +60,10 @@
                     <nz-form-label nzRequired
                       [nzSm]="6"
                       [nzXs]="24"
-                    nzFor="originPassword">当前密码</nz-form-label>
+                    nzFor="originPassword">{{ I18N.Identity.profile.currentPassword }}</nz-form-label>
                     <nz-form-control [nzSm]="14"
                       [nzXs]="24"
-                      nzErrorTip="请输入当前密码">
+                      [nzErrorTip]="I18N.Identity.profile.currentPasswordRequired">
                       <input nz-input
                         [(ngModel)]="data.originPassword"
                         type="password"
@@ -75,7 +75,7 @@
                       <nz-form-label nzRequired
                         [nzSm]="6"
                         [nzXs]="24"
-                      nzFor="newPassword">新密码</nz-form-label>
+                      nzFor="newPassword">{{ I18N.Identity.profile.newPassword }}</nz-form-label>
                       <nz-form-control [nzSm]="14"
                         [nzXs]="24"
                         [nzErrorTip]="combineTpl">
@@ -90,7 +90,7 @@
                         <nz-form-label nzRequired
                           [nzSm]="6"
                           [nzXs]="24"
-                        nzFor="checkPassword">确认密码</nz-form-label>
+                        nzFor="checkPassword">{{ I18N.Identity.profile.confirmPassword }}</nz-form-label>
                         <nz-form-control [nzSm]="14"
                           [nzXs]="24"
                           [nzErrorTip]="combineTpl">
@@ -104,18 +104,17 @@
                         <ng-template #combineTpl
                           let-control>
                           @if (control.hasError('newPassword')) {
-                            密码不一致
+                            {{ I18N.Identity.profile.passwordMismatch }}
                           }
                           @if (control.hasError('required')) {
-                            必填
+                            {{ I18N.Identity.profile.required }}
                           }
                         </ng-template>
                       </form>
                     </nz-modal>
                     
-                    <!-- Personal Access Token 生成模态框 -->
                     <nz-modal [nzVisible]="isTokenModalVisible$()"
-                      nzTitle="生成个人访问令牌 (Personal Access Token)"
+                      [nzTitle]="I18N.Identity.profile.tokenModalTitle"
                       [nzFooter]="tokenModalFooter"
                       (nzOnCancel)="handleTokenModalCancel()"
                       (nzVisibleChange)="isTokenModalVisible$.set($event)"
@@ -125,15 +124,15 @@
                       <div *nzModalContent>
                         @if (!generatedToken$()) {
                           <nz-alert nzType="warning"
-                            nzMessage="安全提示"
-                            nzDescription="生成的令牌只会显示一次，请务必妥善保管！令牌可用于 API 访问认证。"
+                            [nzMessage]="I18N.Identity.profile.securityWarningTitle"
+                            [nzDescription]="I18N.Identity.profile.securityWarningDesc"
                             nzShowIcon
                             style="margin-bottom: 16px;">
                           </nz-alert>
                           
                           <nz-form-item>
                             <nz-form-label [nzSpan]="6"
-                              nzRequired>有效期（天）</nz-form-label>
+                              nzRequired>{{ I18N.Identity.profile.expireDays }}</nz-form-label>
                             <nz-form-control [nzSpan]="18">
                               <nz-input-number [ngModel]="tokenExpireDays$()"
                                 (ngModelChange)="tokenExpireDays$.set($event)"
@@ -148,14 +147,14 @@
                         
                         @if (generatedToken$()) {
                           <nz-alert nzType="success"
-                            nzMessage="令牌生成成功"
-                            nzDescription="请立即复制并保存令牌，关闭此窗口后将无法再次查看！"
+                            [nzMessage]="I18N.Identity.profile.tokenGeneratedTitle"
+                            [nzDescription]="I18N.Identity.profile.tokenGeneratedDesc"
                             nzShowIcon
                             style="margin-bottom: 16px;">
                           </nz-alert>
                           
                           <nz-form-item>
-                            <nz-form-label [nzSpan]="6">访问令牌</nz-form-label>
+                            <nz-form-label [nzSpan]="6">{{ I18N.Identity.profile.accessToken }}</nz-form-label>
                             <nz-form-control [nzSpan]="18">
                               <textarea nz-input
                                 [ngModel]="generatedToken$()"
@@ -167,7 +166,7 @@
                                 nzType="link"
                                 (click)="copyToken()"
                                 style="padding: 0; margin-top: 8px;">
-                                <i nz-icon nzType="copy"></i> 复制到剪贴板
+                                <i nz-icon nzType="copy"></i> {{ I18N.Identity.profile.copyToClipboard }}
                               </button>
                             </nz-form-control>
                           </nz-form-item>
@@ -178,15 +177,15 @@
                         @if (!generatedToken$()) {
                           <button nz-button
                             nzType="default"
-                            (click)="handleTokenModalCancel()">取消</button>
+                            (click)="handleTokenModalCancel()">{{ I18N.Common.action.cancel }}</button>
                           <button nz-button
                             nzType="primary"
-                            (click)="handleGenerateToken()">生成</button>
+                            (click)="handleGenerateToken()">{{ I18N.Identity.profile.generate }}</button>
                         }
                         @if (generatedToken$()) {
                           <button nz-button
                             nzType="primary"
-                            (click)="handleTokenModalCancel()">关闭</button>
+                            (click)="handleTokenModalCancel()">{{ I18N.Identity.profile.close }}</button>
                         }
                       </ng-template>
                     </nz-modal>
@@ -208,11 +207,11 @@
             <ng-template #orgTitle>
               <i nz-icon
                 nzType="share-alt"
-              nzTheme="outline"></i> 我的组织关系
+              nzTheme="outline"></i> {{ I18N.Identity.profile.myOrgsTitle }}
             </ng-template>
             <ng-template #extra>
               <button nz-tooltip
-                nzTooltipTitle="刷新"
+                [nzTooltipTitle]="I18N.Common.action.refresh"
                 (click)="refresh()"
                 nz-button
                 nzSize="small"

@@ -223,9 +223,20 @@ declare class GeexStartupService {
     load(): Promise<void>;
     private bootstrap;
     private tryOidcCodeCallback;
+    /** Fill tokenEndpoint gaps after discovery (or when discovery is unreachable). */
+    private ensureOAuthTokenEndpoint;
     private bindUiSession;
     tryAutoOAuthLogin(): Promise<void>;
+    private findMenuByLink;
+    private findSystemConfigGroup;
     private resolveI18nAdapter;
+    /** Safe read: guardedSignal throws before auth.init finishes. */
+    private readAuthUser;
+    /**
+     * After OIDC, auth.init may have finished with a null user (token race) or still be settling.
+     * Never throw EmptyError into bootstrap (that becomes the 500 page).
+     */
+    private resolveAuthUser;
     private trySwitchTenant;
     private ensureSessionWatch;
     static ɵfac: i0.ɵɵFactoryDeclaration<GeexStartupService, never>;
@@ -237,11 +248,16 @@ declare function provideGeexStartup(options: GeexStartupOptions): Provider[];
 /** Per-language ngx-translate dictionaries keyed by locale code (e.g. `zh-cn`). */
 declare const GEEX_I18N_PACKS: InjectionToken<Record<string, Record<string, unknown>>>;
 
-type LangObject<O = Record<string, any>> = O extends object ? {
+/**
+ * Nested i18n dictionary typing.
+ * Leaf values keep the source type (so Go-to-Definition can reach pack literals).
+ * Nested objects also expose runtime `get(key)` from kiwi attachGetter.
+ */
+type LangObject<O = Record<string, any>> = O extends object ? O extends (...args: never[]) => unknown ? O : {
     get(x: string, notFoundValue?: string): string;
 } & {
     [K in keyof O]: LangObject<O[K]>;
-} : string;
+} : O;
 
 declare function mergeGeexI18nPacks<T extends Record<string, unknown>>(base: T, ...overlays: Array<Partial<T> | Record<string, unknown>>): T;
 
@@ -468,17 +484,30 @@ declare module "angular-oauth2-oidc" {
 }
 
 /**
- * Host provides the kiwi/i18n dictionary object (e.g. `I18N` from admin i18n.service).
+ * Host-augmentable i18n dictionary shape.
+ * Apps should `declare module "@geexcode/geex-angular" { interface GeexI18n extends ... {} }`
+ * (typically in module-registry) so `inject(GEEX_I18N)` / `BusinessComponentBase.I18N` stay typed.
  */
-declare const GEEX_I18N: InjectionToken<Record<string, any>>;
+interface GeexI18n {
+}
 /**
- * Host provides AlainI18NService-compatible instance (e.g. `I18NService`).
+ * Host provides AlainI18NService-compatible instance (e.g. `GeexI18nService`).
  */
 declare const GEEX_I18N_SERVICE: InjectionToken<unknown>;
 /**
- * Host provides AppPermission enum / map for ACL templates.
+ * Host-augmentable AppPermission map / enum object.
+ * Apps should augment `GeexAppPermission` from generated `AppPermission`.
  */
-declare const GEEX_APP_PERMISSION: InjectionToken<Record<string, string>>;
+interface GeexAppPermission {
+}
+/**
+ * Typed kiwi/i18n dictionary (augment `GeexI18n` in the host app).
+ */
+declare const GEEX_I18N: InjectionToken<GeexI18n>;
+/**
+ * Typed AppPermission enum/map (augment `GeexAppPermission` in the host app).
+ */
+declare const GEEX_APP_PERMISSION: InjectionToken<GeexAppPermission>;
 
 /** Loose entity / DTO shape used by page bases (host `Hint<T>`-compatible). */
 type GeexHint<T> = T & Record<string, any>;
@@ -496,14 +525,14 @@ type GeexTypedFormGroup<TValue> = FormGroup & {
 declare abstract class BusinessComponentBase<TParam = any> {
     protected acl: ACLService;
     protected apollo: Apollo;
-    protected i18n: any;
+    protected i18n: unknown;
     protected modal: ModalHelper;
     protected msgSrv: NzMessageService;
     protected nzModalSrv: NzModalService;
     protected router: Router;
     params: WritableSignal<TParam>;
-    I18N: any;
-    AppPermission: any;
+    I18N: GeexI18n;
+    AppPermission: GeexAppPermission;
     can(permission: ACLCanType): boolean;
     static ɵfac: i0.ɵɵFactoryDeclaration<BusinessComponentBase<any>, never>;
     static ɵprov: i0.ɵɵInjectableDeclaration<BusinessComponentBase<any>>;
@@ -620,7 +649,7 @@ declare abstract class TreeTableComponentBase<ITreeNode = any> {
     mapOfExpandedData: {
         [key: string]: ITreeNode[];
     };
-    I18N: any;
+    I18N: GeexI18n;
     protected getNodeKey(node: ITreeNode): string;
     protected getNodeChildren(node: ITreeNode): ITreeNode[] | undefined;
     collapse(array: ITreeNode[], data: ITreeNode, $event: boolean): void;
@@ -671,9 +700,9 @@ declare class ListPageLayoutComponent {
     headerExtraTpl: i0.Signal<TemplateRef<void> | undefined>;
     headerTabTpl: i0.Signal<TemplateRef<void> | undefined>;
     headerActionTpl: i0.Signal<TemplateRef<void> | undefined>;
-    get selectedLabel(): any;
-    get selectedUnitLabel(): any;
-    get refreshLabel(): any;
+    get selectedLabel(): string;
+    get selectedUnitLabel(): string;
+    get refreshLabel(): string;
     static ɵfac: i0.ɵɵFactoryDeclaration<ListPageLayoutComponent, never>;
     static ɵcmp: i0.ɵɵComponentDeclaration<ListPageLayoutComponent, "list-page-layout", never, { "title": { "alias": "title"; "required": true; "isSignal": true; }; "loading": { "alias": "loading"; "required": false; "isSignal": true; }; "total": { "alias": "total"; "required": false; "isSignal": true; }; "data": { "alias": "data"; "required": false; "isSignal": true; }; "columns": { "alias": "columns"; "required": false; "isSignal": true; }; "pi": { "alias": "pi"; "required": false; "isSignal": true; }; "ps": { "alias": "ps"; "required": false; "isSignal": true; }; "selectedCount": { "alias": "selectedCount"; "required": false; "isSignal": true; }; "multiSort": { "alias": "multiSort"; "required": false; "isSignal": true; }; "filtersInHeader": { "alias": "filtersInHeader"; "required": false; "isSignal": true; }; }, { "tableChange": "tableChange"; "refresh": "refresh"; }, ["headerExtraTpl", "headerTabTpl", "headerActionTpl"], ["[filters]", "[filters]", "[toolbar]"], true, never>;
 }
@@ -961,5 +990,5 @@ declare function bindGeexGlobal(): void;
 declare const exports: Record<string, any>;
 
 export { BusinessComponentBase, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_PERMISSION, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createMessagingModule, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexI18n, provideGeexModuleContribution, provideGeexStartup, exports as rison };
-export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexStartupI18nAdapter, GeexStartupModalCopy, GeexStartupOptions, GeexStartupSettingKeys, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, MessagingModule, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, SettingItem, SettingsModule, UiModule, WritableDeepSignal };
+export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexAppPermission, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexI18n, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexStartupI18nAdapter, GeexStartupModalCopy, GeexStartupOptions, GeexStartupSettingKeys, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, MessagingModule, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, SettingItem, SettingsModule, UiModule, WritableDeepSignal };
 //# sourceMappingURL=index.d.ts.map

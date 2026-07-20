@@ -16,7 +16,7 @@ import isExtractableFile from 'extract-files/isExtractableFile.mjs';
 import { createClient } from 'graphql-ws';
 import json5 from 'json5';
 import { Router, ActivatedRoute, RouteConfigLoadEnd, NavigationEnd, RouteReuseStrategy, ActivatedRouteSnapshot } from '@angular/router';
-import { ALAIN_I18N_TOKEN, SettingsService, MenuService, zh_TW, en_US, zh_CN, DelonLocaleService, ModalHelper, TitleService } from '@delon/theme';
+import { ALAIN_I18N_TOKEN, SettingsService, MenuService, en_US, zh_CN, DelonLocaleService, ModalHelper, TitleService } from '@delon/theme';
 import { NzModalService, NzModalRef } from 'ng-zorro-antd/modal';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { ACLService } from '@delon/acl';
@@ -26,11 +26,10 @@ import { merge, flatMapDeep as flatMapDeep$1 } from 'lodash-es';
 import { registerLocaleData, Location } from '@angular/common';
 import ngEn from '@angular/common/locales/en';
 import ngZh from '@angular/common/locales/zh';
-import ngZhTw from '@angular/common/locales/zh-Hant';
 import { TranslateService } from '@ngx-translate/core';
-import { zhTW, enUS, zhCN } from 'date-fns/locale';
+import { enUS, zhCN } from 'date-fns/locale';
 import kiwiIntl from 'kiwi-intl';
-import { zh_TW as zh_TW$1, en_US as en_US$1, zh_CN as zh_CN$1, NzI18nService } from 'ng-zorro-antd/i18n';
+import { en_US as en_US$1, zh_CN as zh_CN$1, NzI18nService } from 'ng-zorro-antd/i18n';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { FormBuilder, FormControl, FormGroup, AbstractControl } from '@angular/forms';
 import { ReuseTabService, ReuseTabStrategy } from '@delon/abc/reuse-tab';
@@ -665,15 +664,15 @@ const GEEX_STARTUP_OPTIONS = new InjectionToken("GEEX_STARTUP_OPTIONS");
 const GEEX_MENU_CONTRIBUTIONS = new InjectionToken("GEEX_MENU_CONTRIBUTIONS");
 
 /**
- * Host provides the kiwi/i18n dictionary object (e.g. `I18N` from admin i18n.service).
- */
-const GEEX_I18N = new InjectionToken("GEEX_I18N");
-/**
- * Host provides AlainI18NService-compatible instance (e.g. `I18NService`).
+ * Host provides AlainI18NService-compatible instance (e.g. `GeexI18nService`).
  */
 const GEEX_I18N_SERVICE = new InjectionToken("GEEX_I18N_SERVICE");
 /**
- * Host provides AppPermission enum / map for ACL templates.
+ * Typed kiwi/i18n dictionary (augment `GeexI18n` in the host app).
+ */
+const GEEX_I18N = new InjectionToken("GEEX_I18N");
+/**
+ * Typed AppPermission enum/map (augment `GeexAppPermission` in the host app).
  */
 const GEEX_APP_PERMISSION = new InjectionToken("GEEX_APP_PERMISSION");
 
@@ -753,13 +752,39 @@ class GeexStartupService {
         if (state === "WechatWeb" || state.startsWith("WechatWeb")) {
             return;
         }
+        // Discovery aligns issuer/jwks before tryLogin (id_token validation). tokenEndpoint alone is not enough.
+        try {
+            await this.oAuthService.loadDiscoveryDocument();
+        }
+        catch (err) {
+            console.error(err);
+        }
+        await this.ensureOAuthTokenEndpoint();
         await this.oAuthService.tryLogin();
+    }
+    /** Fill tokenEndpoint gaps after discovery (or when discovery is unreachable). */
+    async ensureOAuthTokenEndpoint() {
+        if (this.oAuthService.tokenEndpoint) {
+            return;
+        }
+        const issuer = this.oAuthService.issuer?.replace(/\/?$/, "/");
+        if (issuer) {
+            this.oAuthService.tokenEndpoint = `${issuer}idsvr/token`;
+            return;
+        }
+        throw new Error("OAuth tokenEndpoint is not configured. Set AuthConfig.tokenEndpoint (e.g. {issuer}/idsvr/token) or make OIDC discovery reachable.");
     }
     async bindUiSession() {
         if (!this.oAuthService.hasValidAccessToken()) {
             return;
         }
-        const user = await firstValueFrom(interval(100).pipe(filter(() => this.geex.auth.user() != undefined), map$1(() => this.geex.auth.user()), takeUntil(timer(1000))));
+        const user = await this.resolveAuthUser();
+        if (!user) {
+            // Token without federateAuthenticate user is not a completed Geex login.
+            console.error("bindUiSession: access token present but geex.auth.user() missing after federateAuthenticate");
+            this.oAuthService.logOut(true);
+            return;
+        }
         this.settingsService.setUser({
             avatar: user.avatarFile?.url,
             id: user.id,
@@ -784,21 +809,68 @@ class GeexStartupService {
         if (appName) {
             this.settingsService.setApp({ name: appName });
         }
-        let menus = this.options.defaultMenus;
+        let menus = this.options.defaultMenus.map(menu => ({
+            ...menu,
+            children: menu.children ? [...menu.children] : menu.children,
+        }));
         const settingMenus = settings.firstOrDefault(x => x?.name == keys.appMenu)?.value;
         if (settingMenus?.length) {
-            menus = settingMenus;
+            menus = settingMenus.map(menu => ({
+                ...menu,
+                children: menu.children ? [...menu.children] : menu.children,
+            }));
         }
         const contributions = this.injector.get(GEEX_MENU_CONTRIBUTIONS, []);
-        const contributed = [];
+        const contributedGroups = [];
         for (const contribution of contributions) {
-            contributed.push(...(await contribution.resolve(user)));
+            for (const item of (await contribution.resolve(user))) {
+                if (item.group === true) {
+                    contributedGroups.push(item);
+                    continue;
+                }
+                // Leaf items must stay under a group. Delon top-level `group !== false` renders
+                // as a non-clickable title without icons; never promote bare leaves to top-level.
+                const leaf = {
+                    ...item,
+                    group: false,
+                    children: Array.isArray(item.children) ? item.children : [],
+                };
+                const existing = leaf.link ? this.findMenuByLink(menus, leaf.link) : undefined;
+                if (existing) {
+                    Object.assign(existing, leaf, { hide: leaf.hide ?? false, group: false });
+                    continue;
+                }
+                const systemConfigGroup = this.findSystemConfigGroup(menus);
+                if (systemConfigGroup) {
+                    systemConfigGroup.children = [...(systemConfigGroup.children ?? []), leaf];
+                }
+                else {
+                    contributedGroups.push({
+                        group: true,
+                        hideInBreadcrumb: true,
+                        open: true,
+                        text: "系统及配置",
+                        i18n: "Common.menu.systemConfig",
+                        children: [leaf],
+                    });
+                }
+            }
         }
-        this.menuService.add([...menus, ...contributed]);
+        this.menuService.add([...menus, ...contributedGroups]);
         this.menuService.resume();
         const i18n = this.resolveI18nAdapter();
         i18n?.merge(settings.first(x => x?.name == keys.localizationData)?.value);
-        i18n?.use(settings.first(x => x?.name == keys.localizationLanguage)?.value);
+        const backendLang = settings.first(x => x?.name == keys.localizationLanguage)?.value;
+        if (backendLang) {
+            this.settingsService.setLayout("lang", backendLang);
+            i18n?.use(backendLang);
+        }
+        else {
+            const cachedLang = this.settingsService.layout.lang;
+            if (cachedLang) {
+                i18n?.use(cachedLang);
+            }
+        }
     }
     async tryAutoOAuthLogin() {
         const url = new URL(location.href);
@@ -810,6 +882,32 @@ class GeexStartupService {
             throw new Error("starting auto login");
         }
     }
+    findMenuByLink(menus, link) {
+        for (const menu of menus) {
+            if (menu.link === link) {
+                return menu;
+            }
+            if (menu.children?.length) {
+                const found = this.findMenuByLink(menu.children, link);
+                if (found) {
+                    return found;
+                }
+            }
+        }
+        return undefined;
+    }
+    findSystemConfigGroup(menus) {
+        return menus.find(m => m.i18n === "Common.menu.systemConfig" ||
+            m.i18n === "menu.systemConfig" ||
+            m.text === "系统及配置" ||
+            m.children?.some(c => c.link === "/settings" ||
+                c.link === "/tenant" ||
+                c.link === "/blob-storage" ||
+                c.link === "/mocking" ||
+                c.i18n === "Common.menu.settings" ||
+                c.i18n === "Common.menu.tenant" ||
+                c.i18n === "Mocking.title"));
+    }
     resolveI18nAdapter() {
         if (this.options.i18n) {
             return this.options.i18n;
@@ -819,6 +917,34 @@ class GeexStartupService {
             return service;
         }
         return null;
+    }
+    /** Safe read: guardedSignal throws before auth.init finishes. */
+    readAuthUser() {
+        try {
+            return this.geex.auth.user() ?? undefined;
+        }
+        catch {
+            return undefined;
+        }
+    }
+    /**
+     * After OIDC, auth.init may have finished with a null user (token race) or still be settling.
+     * Never throw EmptyError into bootstrap (that becomes the 500 page).
+     */
+    async resolveAuthUser() {
+        let user = this.readAuthUser();
+        if (user) {
+            return user;
+        }
+        const auth = this.geex.auth;
+        if (typeof auth.reload === "function") {
+            await auth.reload();
+            user = this.readAuthUser();
+            if (user) {
+                return user;
+            }
+        }
+        return firstValueFrom(interval(100).pipe(filter(() => this.readAuthUser() != undefined), map$1(() => this.readAuthUser()), takeUntil(timer(5000))), { defaultValue: undefined });
     }
     async trySwitchTenant() {
         const url = new URL(location.href);
@@ -920,14 +1046,6 @@ const LANGS = {
         delon: en_US,
         abbr: "🇺🇸",
     },
-    "zh-tw": {
-        text: "繁体中文",
-        ng: ngZhTw,
-        zorro: zh_TW$1,
-        date: zhTW,
-        delon: zh_TW,
-        abbr: "🇭🇰",
-    },
 };
 /** Mutable kiwi dictionary; host may re-export as `I18N`. */
 let I18N;
@@ -976,10 +1094,9 @@ class GeexI18nService {
         I18N = kiwiIntl.init(DEFAULT, this.kiwiLangs);
         const lans = this._langs.map(item => item.code);
         this.translate.addLangs(lans);
-        const defaultLan = this.getDefaultLang();
-        if (lans.includes(defaultLan)) {
-            this._default = defaultLan;
-        }
+        const defaultLan = this.getDefaultLang().toLowerCase();
+        this._default = lans.includes(defaultLan) ? defaultLan : DEFAULT;
+        this.use(this._default);
     }
     /** Current kiwi dictionary (also mirrored by module `I18N`). */
     get dictionary() {
@@ -989,7 +1106,7 @@ class GeexI18nService {
         if (this.settings.layout.lang) {
             return this.settings.layout.lang;
         }
-        return (navigator.languages ? navigator.languages[0] : DEFAULT) || navigator.language;
+        return (navigator.languages?.[0] || navigator.language || DEFAULT).toLowerCase();
     }
     updateLangData(lang) {
         const item = LANGS[lang.toLocaleLowerCase()] ?? LANGS[DEFAULT];
@@ -1181,8 +1298,8 @@ class BusinessComponentBase {
     nzModalSrv = inject(NzModalService);
     router = inject(Router);
     params;
-    I18N = inject(GEEX_I18N, { optional: true });
-    AppPermission = inject(GEEX_APP_PERMISSION, { optional: true });
+    I18N = inject(GEEX_I18N);
+    AppPermission = inject(GEEX_APP_PERMISSION);
     can(permission) {
         return this.acl.can(permission);
     }
@@ -1946,7 +2063,8 @@ class RoutedListComponent extends RoutedComponent {
     }
     confirmBatch(operation, apiName, ids, remark) {
         return new Promise((resolve) => {
-            const alertMessage = this.I18N?.Common?.action?.get?.(operation) ?? operation;
+            const common = this.I18N.Common;
+            const alertMessage = common?.action?.get?.(operation) ?? operation;
             this.nzModalSrv.confirm({
                 nzTitle: `确认${alertMessage}吗？`,
                 nzOnOk: async () => {
@@ -1957,7 +2075,7 @@ class RoutedListComponent extends RoutedComponent {
                             ids,
                         },
                     }).firstValuePromise();
-                    this.msgSrv.success(this.I18N?.Common?.message?.get?.(operation) ?? "ok");
+                    this.msgSrv.success(common?.message?.get?.(operation) ?? "ok");
                     this.refresh();
                     resolve(true);
                 },
@@ -2068,7 +2186,7 @@ class ModalComponentBase {
 
 class TreeTableComponentBase {
     mapOfExpandedData = {};
-    I18N = inject(GEEX_I18N, { optional: true });
+    I18N = inject(GEEX_I18N);
     getNodeKey(node) {
         return node["key"];
     }

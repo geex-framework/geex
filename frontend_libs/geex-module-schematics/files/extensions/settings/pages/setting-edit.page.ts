@@ -1,10 +1,8 @@
-import { Component, Injector, ViewChild } from "@angular/core";
+import { Component, ViewChild } from "@angular/core";
 import { SFComponent, SFSchema, SFUISchema } from "@delon/form";
-import { _HttpClient } from "@delon/theme";
 
 import { FormControl } from "@angular/forms";
-import { RoutedEditComponent } from "@geexcode/geex-angular";
-import { RouteParamsMappings } from "@geexcode/geex-angular";
+import { geex, RoutedEditComponent, RouteParamsMappings } from "@geexcode/geex-angular";
 import { SharedModule } from "@/shared/shared.module";
 import type { EditSettingRequest } from "@/gql";
 import { SettingDefinition } from "@/gql";
@@ -73,31 +71,35 @@ export class SettingEditComponent extends RoutedEditComponent<
   name: string;
   @ViewChild("sf")
   readonly sf!: SFComponent;
-  schema: SFSchema = {
-    properties: {
-      name: {
-        type: "string",
-        title: "定义名称",
-        readOnly: true,
-        enum: [...Object.entries(SettingDefinition).map(x => x[1])],
-      },
-      value: {
-        type: "string",
-        title: "值",
-        ui: {
-          widget: "code-editor",
-          language: "json",
-        },
-      },
-    } as { [key in keyof EditSettingRequest]: SFSchema },
-    required: ["name" /*'settingType', 'severity'*/],
-  };
+  schema: SFSchema = this.buildSchema();
   ui: SFUISchema = {
     "*": {
       spanLabel: 3,
     },
   };
   tenant: Partial<Tenant>;
+
+  private buildSchema(): SFSchema {
+    return {
+      properties: {
+        name: {
+          type: "string",
+          title: this.I18N.Settings.columnName,
+          readOnly: true,
+          enum: [...Object.entries(SettingDefinition).map(x => x[1])],
+        },
+        value: {
+          type: "string",
+          title: this.I18N.Settings.columnValue,
+          ui: {
+            widget: "code-editor",
+            language: "json",
+          },
+        },
+      } as { [key in keyof EditSettingRequest]: SFSchema },
+      required: ["name" /*'settingType', 'fullname'*/],
+    };
+  }
 
   async submit(value: Partial<EditSettingRequest>): Promise<void> {
     if (!!!this.name) {
@@ -116,7 +118,7 @@ export class SettingEditComponent extends RoutedEditComponent<
         })
         .firstValuePromise();
       if (res.data.editSetting) {
-        this.msgSrv.success("修改成功");
+        this.msgSrv.success(this.I18N.Settings.editSuccess);
         await this.router.navigate(["/setting"], { relativeTo: this.route, replaceUrl: true, forceReload: true });
       }
     }

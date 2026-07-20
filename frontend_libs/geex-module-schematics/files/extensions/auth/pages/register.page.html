@@ -3,12 +3,12 @@
   <div class="brand-header">
     <div class="logo-desktop">
       <img ngSrc="assets/logo.png"
-           alt="Brand Logo"
+           [alt]="I18N.Auth.brand.alt"
            class="brand-logo"
            width="64"
            height="64" />
-      <h1 class="brand-title">创建账户</h1>
-      <div class="brand-subtitle">注册新账户，开始您的旅程</div>
+      <h1 class="brand-title">{{ I18N.Auth.brand.createAccountTitle }}</h1>
+      <div class="brand-subtitle">{{ I18N.Auth.brand.createAccountSubtitle }}</div>
     </div>
   </div>
 
@@ -21,7 +21,7 @@
             class="auth-form"
             role="form">
         <!-- 表单标题 -->
-        <div class="form-title">用户注册</div>
+        <div class="form-title">{{ I18N.Auth.register.formTitle }}</div>
 
         <!-- 错误信息 -->
         @if (error) {
@@ -35,7 +35,7 @@
 
         <!-- 邮箱 -->
         <div class="form-group">
-          <label class="input-label">邮箱地址</label>
+          <label class="input-label">{{ I18N.Auth.fields.email }}</label>
           <nz-form-item>
             <nz-form-control [nzErrorTip]="mailErrorTip">
               <nz-input-group nzSuffixIcon="user"
@@ -43,16 +43,16 @@
                               class="tech-input">
                 <input nz-input
                        formControlName="mail"
-                       placeholder="请输入您的邮箱地址"
+                       [placeholder]="I18N.Auth.fields.emailPlaceholder"
                        autocomplete="email" />
               </nz-input-group>
               <ng-template #mailErrorTip
                            let-i>
                 @if (i.errors?.required) {
-                请输入邮箱地址！
+                {{ I18N.Auth.register.validation.emailRequired }}
                 }
                 @if (i.errors?.email) {
-                邮箱地址格式错误！
+                {{ I18N.Auth.register.validation.emailInvalid }}
                 }
               </ng-template>
             </nz-form-control>
@@ -61,9 +61,9 @@
 
         <!-- 密码 -->
         <div class="form-group">
-          <label class="input-label">密码</label>
+          <label class="input-label">{{ I18N.Auth.fields.password }}</label>
           <nz-form-item>
-            <nz-form-control [nzErrorTip]="'请输入密码！'">
+            <nz-form-control [nzErrorTip]="I18N.Auth.register.validation.passwordRequired">
               <nz-input-group nzSuffixIcon="lock"
                               nzSize="large"
                               class="tech-input"
@@ -77,7 +77,7 @@
                 <input nz-input
                        type="password"
                        formControlName="password"
-                       placeholder="请输入密码"
+                       [placeholder]="I18N.Auth.fields.passwordPlaceholder"
                        autocomplete="new-password" />
               </nz-input-group>
               <ng-template #pwdCdkTpl>
@@ -85,13 +85,13 @@
                   <div class="strength-header">
                     @switch (status) {
                     @case ('ok') {
-                    <div class="strength-label success">强度：强</div>
+                    <div class="strength-label success">{{ I18N.Auth.register.passwordStrength.strong }}</div>
                     }
                     @case ('pass') {
-                    <div class="strength-label warning">强度：中</div>
+                    <div class="strength-label warning">{{ I18N.Auth.register.passwordStrength.medium }}</div>
                     }
                     @default {
-                    <div class="strength-label error">强度：太短</div>
+                    <div class="strength-label error">{{ I18N.Auth.register.passwordStrength.weak }}</div>
                     }
                     }
                   </div>
@@ -102,8 +102,8 @@
                                  [nzShowInfo]="false"></nz-progress>
                   </div>
                   <div class="strength-tips">
-                    <p>请至少输入 6 个字符</p>
-                    <p>建议包含数字、字母和特殊字符</p>
+                    <p>{{ I18N.Auth.register.passwordTips.minLength }}</p>
+                    <p>{{ I18N.Auth.register.passwordTips.suggestion }}</p>
                   </div>
                 </div>
               </ng-template>
@@ -113,7 +113,7 @@
 
         <!-- 确认密码 -->
         <div class="form-group">
-          <label class="input-label">确认密码</label>
+          <label class="input-label">{{ I18N.Auth.fields.confirmPassword }}</label>
           <nz-form-item>
             <nz-form-control [nzErrorTip]="confirmErrorTip">
               <nz-input-group nzSuffixIcon="lock"
@@ -122,16 +122,16 @@
                 <input nz-input
                        type="password"
                        formControlName="confirm"
-                       placeholder="请再次输入密码"
+                       [placeholder]="I18N.Auth.fields.confirmPasswordPlaceholder"
                        autocomplete="new-password" />
               </nz-input-group>
               <ng-template #confirmErrorTip
                            let-i>
                 @if (i.errors?.required) {
-                请确认密码！
+                {{ I18N.Auth.register.validation.confirmRequired }}
                 }
                 @if (i.errors?.equar) {
-                两次输入的密码不匹配！
+                {{ I18N.Auth.register.validation.confirmMismatch }}
                 }
               </ng-template>
             </nz-form-control>
@@ -140,7 +140,7 @@
 
         <!-- 手机号 -->
         <div class="form-group">
-          <label class="input-label">手机号码</label>
+          <label class="input-label">{{ I18N.Auth.fields.phoneNumber }}</label>
           <nz-form-item>
             <nz-form-control [nzErrorTip]="mobileErrorTip">
               <nz-input-group [nzAddOnBefore]="addOnBeforeTemplate"
@@ -157,16 +157,16 @@
                 </ng-template>
                 <input formControlName="mobile"
                        nz-input
-                       placeholder="请输入手机号码"
+                       [placeholder]="I18N.Auth.fields.phonePlaceholder"
                        autocomplete="tel" />
               </nz-input-group>
               <ng-template #mobileErrorTip
                            let-i>
                 @if (i.errors?.required) {
-                请输入手机号！
+                {{ I18N.Auth.register.validation.phoneRequired }}
                 }
                 @if (i.errors?.pattern) {
-                手机号格式错误！
+                {{ I18N.Auth.register.validation.phoneInvalid }}
                 }
               </ng-template>
             </nz-form-control>
@@ -175,9 +175,9 @@
 
         <!-- 验证码 -->
         <div class="form-group">
-          <label class="input-label">邮箱验证码</label>
+          <label class="input-label">{{ I18N.Auth.fields.emailCaptcha }}</label>
           <nz-form-item>
-            <nz-form-control [nzErrorTip]="'请输入验证码！'">
+            <nz-form-control [nzErrorTip]="I18N.Auth.register.validation.captchaRequired">
               <div class="captcha-row">
                 <div class="captcha-input">
                   <nz-input-group nzSuffixIcon="mail"
@@ -185,7 +185,7 @@
                                   class="tech-input">
                     <input nz-input
                            formControlName="captcha"
-                           placeholder="请输入验证码"
+                           [placeholder]="I18N.Auth.fields.captchaPlaceholder"
                            autocomplete="off" />
                   </nz-input-group>
                 </div>
@@ -200,7 +200,7 @@
                     @if (count > 0) {
                     {{ count }}s
                     } @else {
-                    获取验证码
+                    {{ I18N.Auth.register.getCaptcha }}
                     }
                   </span>
                 </button>
@@ -221,16 +221,16 @@
               <i nz-icon
                  nzType="user-add"
                  nzTheme="outline"></i>
-              <span>立即注册</span>
+              <span>{{ I18N.Auth.register.submit }}</span>
             </span>
           </button>
         </div>
 
         <!-- 登录链接 -->
         <div class="form-footer">
-          <span class="footer-text">已有账户？</span>
+          <span class="footer-text">{{ I18N.Auth.register.hasAccount }}</span>
           <a routerLink="/auth/login"
-             class="footer-link">立即登录</a>
+             class="footer-link">{{ I18N.Auth.register.signIn }}</a>
         </div>
       </form>
     </div>
@@ -243,12 +243,12 @@
       <i nz-icon
          nzType="safety"
          nzTheme="outline"></i>
-      <span>注册即表示您同意我们的</span>
+      <span>{{ I18N.Auth.footer.termsPrefix }}</span>
       <a href="#"
-         class="docs-link">服务条款</a>
-      <span>和</span>
+         class="docs-link">{{ I18N.Auth.footer.termsOfService }}</a>
+      <span>{{ I18N.Auth.footer.and }}</span>
       <a href="#"
-         class="docs-link">隐私政策</a>
+         class="docs-link">{{ I18N.Auth.footer.privacyPolicy }}</a>
     </div>
     <div class="hint-line"></div>
   </div>

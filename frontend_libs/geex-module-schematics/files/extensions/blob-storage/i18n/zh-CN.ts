@@ -10,4 +10,8 @@ export default {
   delete: "删除",
   deleteSuccess: "删除成功",
   uploadSuccess: "上传成功",
+  uploadClick: "点击上传",
+  uploadDragText: "单击或拖动文件到该区域上传",
+  uploadDragHint: "支持单个或批量，严禁上传公司数据或其他安全文件",
+  fileSizeExceeded: "上传文件超过了设置的文件大小:{size}KB",
 };

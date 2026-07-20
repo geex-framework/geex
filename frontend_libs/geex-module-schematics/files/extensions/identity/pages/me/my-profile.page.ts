@@ -98,7 +98,7 @@ export class MyProfilePage extends RoutedComponent<{}> {
         },
       })
       .firstValuePromise();
-    this.msgSrv.success("修改成功");
+    this.msgSrv.success(this.I18N.Identity.profile.updateSuccess);
     this.confirmPassword = undefined;
     this.data.originPassword = undefined;
     this.data.newPassword = undefined;
@@ -134,9 +134,9 @@ export class MyProfilePage extends RoutedComponent<{}> {
         .firstValuePromise();
       
       this.generatedToken$.set(result?.data?.generatePersonalAccessToken?.token || '');
-      this.msgSrv.success("Token 生成成功，请妥善保管！");
+      this.msgSrv.success(this.I18N.Identity.profile.tokenGenerateSuccess);
     } catch (error) {
-      this.msgSrv.error("Token 生成失败");
+      this.msgSrv.error(this.I18N.Identity.profile.tokenGenerateFailed);
       console.error(error);
     }
   }
@@ -153,7 +153,7 @@ export class MyProfilePage extends RoutedComponent<{}> {
     const token = this.generatedToken$();
     if (token) {
       navigator.clipboard.writeText(token);
-      this.msgSrv.success("Token 已复制到剪贴板");
+      this.msgSrv.success(this.I18N.Identity.profile.tokenCopied);
     }
   }
 }

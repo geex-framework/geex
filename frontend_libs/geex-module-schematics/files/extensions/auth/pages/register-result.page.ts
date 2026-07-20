@@ -1,6 +1,7 @@
-import { Component, Inject, ViewEncapsulation } from "@angular/core";
+import { Component, inject, ViewEncapsulation } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { NzMessageService } from "ng-zorro-antd/message";
+import { GEEX_I18N } from "@geexcode/geex-angular";
 import { SharedModule } from "@/shared/shared.module";
 
 @Component({
@@ -12,6 +13,8 @@ import { SharedModule } from "@/shared/shared.module";
   imports: [SharedModule],
 })
 export class UserRegisterResultComponent {
+  readonly I18N = inject(GEEX_I18N) as any;
+
   constructor(
     route: ActivatedRoute,
     public msg: NzMessageService,

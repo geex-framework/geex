@@ -3,12 +3,12 @@
   <div class="brand-header">
     <div class="logo-desktop">
       <img ngSrc="assets/logo.png"
-           alt="Brand Logo"
+           [alt]="I18N.Auth.brand.alt"
            class="brand-logo"
            width="64"
            height="64" />
-      <h1 class="brand-title">欢迎加入</h1>
-      <p class="brand-subtitle">您的账户已创建成功</p>
+      <h1 class="brand-title">{{ I18N.Auth.brand.welcomeTitle }}</h1>
+      <p class="brand-subtitle">{{ I18N.Auth.brand.welcomeSubtitle }}</p>
     </div>
   </div>
 
@@ -26,8 +26,8 @@
 
       <!-- 结果标题 -->
       <div class="result-title">
-        <h2>注册成功！</h2>
-        <p class="result-subtitle">您的账户已经创建完成，请查看您的邮箱以激活账户</p>
+        <h2>{{ I18N.Auth.registerResult.successTitle }}</h2>
+        <p class="result-subtitle">{{ I18N.Auth.registerResult.successSubtitle }}</p>
       </div>
 
       <!-- 操作步骤 -->
@@ -39,8 +39,8 @@
                nzTheme="outline"></i>
           </div>
           <div class="step-content">
-            <div class="step-title">查看邮箱</div>
-            <div class="step-desc">我们已发送激活链接到您的邮箱</div>
+            <div class="step-title">{{ I18N.Auth.registerResult.steps.checkEmail.title }}</div>
+            <div class="step-desc">{{ I18N.Auth.registerResult.steps.checkEmail.desc }}</div>
           </div>
         </div>
 
@@ -51,8 +51,8 @@
                nzTheme="outline"></i>
           </div>
           <div class="step-content">
-            <div class="step-title">点击激活</div>
-            <div class="step-desc">点击邮件中的激活链接完成验证</div>
+            <div class="step-title">{{ I18N.Auth.registerResult.steps.clickActivate.title }}</div>
+            <div class="step-desc">{{ I18N.Auth.registerResult.steps.clickActivate.desc }}</div>
           </div>
         </div>
 
@@ -63,8 +63,8 @@
                nzTheme="outline"></i>
           </div>
           <div class="step-content">
-            <div class="step-title">开始使用</div>
-            <div class="step-desc">激活后即可登录系统</div>
+            <div class="step-title">{{ I18N.Auth.registerResult.steps.getStarted.title }}</div>
+            <div class="step-desc">{{ I18N.Auth.registerResult.steps.getStarted.desc }}</div>
           </div>
         </div>
       </div>
@@ -81,7 +81,7 @@
             <i nz-icon
                nzType="mail"
                nzTheme="outline"></i>
-            查看邮箱
+            {{ I18N.Auth.registerResult.checkEmail }}
           </span>
         </button>
 
@@ -94,7 +94,7 @@
             <i nz-icon
                nzType="login"
                nzTheme="outline"></i>
-            前往登录
+            {{ I18N.Auth.registerResult.goToLogin }}
           </span>
         </button>
       </div>
@@ -105,13 +105,13 @@
           <i nz-icon
              nzType="info-circle"
              nzTheme="outline"></i>
-          <span>没有收到邮件？请检查垃圾邮件文件夹</span>
+          <span>{{ I18N.Auth.registerResult.hints.noEmail }}</span>
         </div>
         <div class="hint-item">
           <i nz-icon
              nzType="clock-circle"
              nzTheme="outline"></i>
-          <span>激活链接将在24小时后过期</span>
+          <span>{{ I18N.Auth.registerResult.hints.expiry }}</span>
         </div>
       </div>
     </div>
@@ -124,9 +124,9 @@
       <i nz-icon
          nzType="question-circle"
          nzTheme="outline"></i>
-      <span>需要帮助？查看</span>
+      <span>{{ I18N.Auth.footer.needHelp }}</span>
       <a href="#"
-         class="docs-link">注册指南</a>
+         class="docs-link">{{ I18N.Auth.footer.registerGuide }}</a>
     </div>
     <div class="hint-line"></div>
   </div>

@@ -21,4 +21,22 @@ describe("GeexStartupService", () => {
     assert.match(source, /WechatWeb/);
     assert.doesNotMatch(source, /geex\.init\(true\)/);
   });
+
+  it("resolves auth user without EmptyError into bootstrap", () => {
+    const source = fs.readFileSync(path.join(__dirname, "geex-startup.service.ts"), "utf8");
+    assert.match(source, /resolveAuthUser/);
+    assert.match(source, /readAuthUser/);
+    assert.match(source, /defaultValue:\s*undefined/);
+    assert.match(source, /federateAuthenticate did not produce a user|geex\.auth\.user\(\) missing after federateAuthenticate/);
+  });
+
+  it("loads discovery before tryLogin on OIDC callback", () => {
+    const source = fs.readFileSync(path.join(__dirname, "geex-startup.service.ts"), "utf8");
+    assert.match(
+      source,
+      /tryOidcCodeCallback[\s\S]*loadDiscoveryDocument\(\);[\s\S]*ensureOAuthTokenEndpoint\(\);[\s\S]*tryLogin\(\)/,
+    );
+  });
 });
+
+

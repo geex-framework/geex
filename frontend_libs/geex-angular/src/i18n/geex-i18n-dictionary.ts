@@ -1,11 +1,11 @@
+import type { GeexI18n } from "../delon/tokens";
 import { I18N } from "./geex-i18n.service";
-import type { LangObject } from "./types";
 
 /**
  * Stable DI surface for `GEEX_I18N` that tracks module `I18N` reassignments
  * without depending on `GeexI18nService` (avoids TranslateService cycle).
  */
-export function createGeexI18nDictionaryProxy(): LangObject<any> {
+export function createGeexI18nDictionaryProxy(): GeexI18n {
   const proxy = new Proxy({} as Record<string, unknown>, {
     get(_target, prop, receiver) {
       const dict = I18N;
@@ -19,5 +19,5 @@ export function createGeexI18nDictionaryProxy(): LangObject<any> {
       return value;
     },
   });
-  return proxy as LangObject<any>;
+  return proxy as GeexI18n;
 }

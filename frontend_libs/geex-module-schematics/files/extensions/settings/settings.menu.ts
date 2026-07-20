@@ -2,16 +2,10 @@ import type { Menu } from "@delon/theme";
 
 export const menuContribution: Menu[] = [
   {
-    children: [
-      {
-        text: "Settings参数",
-        icon: "anticon-control",
-        link: "/settings",
-        acl: "settings_mutation_editSetting",
-      },
-    ],
     text: "系统设置",
-    icon: "anticon anticon-tool",
+    i18n: "Common.menu.settings",
+    icon: "anticon-tool",
+    link: "/settings",
     acl: "settings_query_settings",
   },
 ];

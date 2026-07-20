@@ -1,6 +1,7 @@
-import { Directive, Input } from "@angular/core";
+import { Directive, Input, inject } from "@angular/core";
 import { NgModel } from "@angular/forms";
 import { Apollo } from "apollo-angular";
+import { GEEX_I18N } from "@geexcode/geex-angular";
 import { NzDestroyService } from "ng-zorro-antd/core/services";
 import { NzOptionComponent, NzOptionGroupComponent, NzSelectComponent } from "ng-zorro-antd/select";
 import { BehaviorSubject } from "rxjs";
@@ -16,6 +17,8 @@ import type { userMenusResult, userMenusVariables } from "../graphql/user.operat
 export class UserSelectDirective {
   users: Array<{ label: string; value: string }>;
   inputValue$ = new BehaviorSubject("");
+
+  private readonly i18n = inject(GEEX_I18N) as any;
 
   constructor(
     private host: NzSelectComponent,
@@ -48,7 +51,7 @@ export class UserSelectDirective {
 
   private updateHostControl() {
     const defaultItem = new NzOptionComponent();
-    defaultItem.nzLabel = "全部";
+    defaultItem.nzLabel = this.i18n.Common.filter.all;
     defaultItem.nzValue = "";
     this.host.listOfNzOptionComponent?.reset([
       // defaultItem,

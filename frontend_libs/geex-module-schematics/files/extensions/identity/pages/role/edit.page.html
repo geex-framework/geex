@@ -1,5 +1,5 @@
 @if (params()) {
-<page-header title="编辑角色">
+<page-header [title]="I18N.Identity.role.editTitle">
 </page-header>
 @if (paramsForm) {
   <nz-card>
@@ -8,7 +8,7 @@
         [formGroup]="paramsForm"
         autocomplete="off">
         <nz-form-item>
-          <nz-form-label nzFor="roleName">角色</nz-form-label>
+          <nz-form-label nzFor="roleName">{{ I18N.Identity.role.roleLabel }}</nz-form-label>
           <nz-form-control>
             <input nz-input
               [formControl]="paramsForm.controls.roleName">
@@ -16,7 +16,7 @@
           </nz-form-item>
         </form>
       }
-      <nz-card nzTitle="权限">
+      <nz-card [nzTitle]="I18N.Identity.role.permissionsTitle">
         <app-permissions [permissions]="originalAllowedPermissions"
         (permissionsChange)="allowedPermissions = $event"></app-permissions>
       </nz-card>
@@ -28,9 +28,9 @@
           type="button"
           (click)="close()"><i nz-icon
           nzType="rollback"
-        nzTheme="outline"></i>返回</button>
+        nzTheme="outline"></i>{{ I18N.Common.action.back }}</button>
         <span nz-tooltip
-          [nzTooltipTitle]="entity?.isStatic ?'系统内置角色不可编辑.':''">
+          [nzTooltipTitle]="entity?.isStatic ? I18N.Identity.role.staticRoleTooltip : ''">
           <button nz-button
             type="submit"
             nzType="primary"
@@ -38,7 +38,7 @@
             (click)="submit()">
             <i nz-icon
               nzType="save"
-            nzTheme="outline"></i>保存</button>
+            nzTheme="outline"></i>{{ I18N.Common.action.save }}</button>
           </span>
         </div>
       </nz-card>

@@ -1,11 +1,9 @@
-import { Component, Injector } from "@angular/core";
-import * as _ from "lodash-es";
+import { Component, computed } from "@angular/core";
 
 import type { ITenant } from "@geexcode/geex-extensions-identity";
 import { tenants, toggleTenantAvailability } from "../graphql/operations.gql";
 import { TenantEditComponent } from "../components/tenant-edit/tenant-edit.component";
-import { RoutedListComponent } from "@geexcode/geex-angular";
-import { RouteParamsMappings } from "@geexcode/geex-angular";
+import { RoutedListComponent, RouteParamsMappings } from "@geexcode/geex-angular";
 import { SharedModule } from "@/shared/shared.module";
 import { STColumn } from "@delon/abc/st";
 
@@ -22,7 +20,27 @@ type TenantListParams = {
   imports: [SharedModule],
 })
 export class TenantListComponent extends RoutedListComponent<TenantListParams, ITenant> {
-  override columns?: Array<STColumn<ITenant>>;
+  override columns = computed<STColumn<ITenant>[]>(() => [
+    { title: this.I18N.Tenant.list.columnCode, index: "code" },
+    { title: this.I18N.Tenant.list.columnName, index: "name" },
+    {
+      title: this.I18N.Common.list.actions,
+      buttons: [
+        { text: this.I18N.Common.action.edit, click: item => this.edit(item) },
+        {
+          text: this.I18N.Common.action.disable,
+          iif: item => !!item.isEnabled,
+          click: item => this.toggleAvailability(item.code),
+        },
+        {
+          text: this.I18N.Common.action.enable,
+          iif: item => !item.isEnabled,
+          click: item => this.toggleAvailability(item.code),
+        },
+      ],
+    },
+  ]);
+
   routeParamsMappings: RouteParamsMappings<TenantListParams> = {
     pi: { position: "queryParams", default: 1 },
     ps: { position: "queryParams", default: 10 },
@@ -47,19 +65,15 @@ export class TenantListComponent extends RoutedListComponent<TenantListParams, I
     this.total.set(res.data.tenants.totalCount);
   }
 
-  filter: string;
   async add() {
     let changed: boolean = await this.modal.create(TenantEditComponent, {}).firstValuePromise();
     if (changed) {
       this.refresh();
     }
   }
-  // async refresh() {
-  //   let params = this.params();
-  //   await this.router.navigate([], { queryParams: { pi: params.pi, ps: params.ps, filter: this.filter } });
-  // }
+
   async toggleAvailability(code: string) {
-    let res = await this.apollo
+    await this.apollo
       .mutate({
         mutation: toggleTenantAvailability,
         variables: {
@@ -67,9 +81,10 @@ export class TenantListComponent extends RoutedListComponent<TenantListParams, I
         },
       })
       .firstValuePromise();
-    this.msgSrv.success("操作成功");
+    this.msgSrv.success(this.I18N.Common.message.operationSuccess);
     await this.refresh();
   }
+
   async edit(tenant: Hint<ITenant>) {
     let changed: boolean = await this.modal.create(TenantEditComponent, { code: tenant.code, name: tenant.name }).firstValuePromise();
     if (changed) {

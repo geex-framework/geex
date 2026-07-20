@@ -4,14 +4,14 @@
       <img ngSrc="./assets/logo.png"
            width="64"
            height="64"
-           alt="Geex Admin"
+           [alt]="I18N.Auth.brand.alt"
            class="brand-logo">
-      <h1 class="brand-title">关联账号</h1>
+      <h1 class="brand-title">{{ I18N.Auth.linkAccount.title }}</h1>
       <div class="brand-subtitle">
         @if (displayName) {
-        微信用户 {{ displayName }} 尚未关联本地账号
+        {{ I18N.Auth.linkAccount.wechatUser }} {{ displayName }} {{ I18N.Auth.linkAccount.notLinkedSuffix }}
         } @else {
-        外部登录尚未关联本地账号
+        {{ I18N.Auth.linkAccount.externalNotLinked }}
         }
       </div>
     </div>
@@ -21,7 +21,7 @@
     <div class="card-content">
       <div class="tenant-info">
         <div class="tenant-display">
-          <span class="tenant-label">租户:</span>
+          <span class="tenant-label">{{ I18N.Auth.tenant.label }}</span>
           <span class="tenant-code">{{ (geex.init() | async) && tenant$()?.code }}</span>
         </div>
         <button nz-button
@@ -32,7 +32,7 @@
           <i nz-icon
              nzType="swap"
              nzTheme="outline"></i>
-          切换
+          {{ I18N.Auth.tenant.switch }}
         </button>
       </div>
 
@@ -40,31 +40,31 @@
                nzCentered
                nzSize="large"
                class="tech-tabs">
-        <nz-tab nzTitle="关联已有账号">
+        <nz-tab [nzTitle]="I18N.Auth.linkAccount.tabLinkExisting">
           <form nz-form
                 [formGroup]="linkForm"
                 (ngSubmit)="linkExisting()"
                 class="auth-form">
             <div class="form-group">
-              <label class="input-label">用户名</label>
+              <label class="input-label">{{ I18N.Auth.fields.userName }}</label>
               <nz-input-group nzPrefixIcon="user"
                               nzSize="large"
                               class="tech-input">
                 <input nz-input
                        formControlName="userName"
-                       placeholder="请输入用户名或邮箱"
+                       [placeholder]="I18N.Auth.fields.userNamePlaceholder"
                        autocomplete="username" />
               </nz-input-group>
             </div>
             <div class="form-group">
-              <label class="input-label">密码</label>
+              <label class="input-label">{{ I18N.Auth.fields.password }}</label>
               <nz-input-group nzPrefixIcon="lock"
                               nzSize="large"
                               class="tech-input">
                 <input nz-input
                        type="password"
                        formControlName="password"
-                       placeholder="请输入密码"
+                       [placeholder]="I18N.Auth.fields.passwordPlaceholder"
                        autocomplete="current-password" />
               </nz-input-group>
             </div>
@@ -87,59 +87,59 @@
                 <i nz-icon
                    nzType="link"
                    nzTheme="outline"></i>
-                <span>登录并关联</span>
+                <span>{{ I18N.Auth.linkAccount.linkSubmit }}</span>
               </span>
             </button>
           </form>
         </nz-tab>
 
-        <nz-tab nzTitle="注册新账号">
+        <nz-tab [nzTitle]="I18N.Auth.linkAccount.tabRegisterNew">
           <form nz-form
                 [formGroup]="registerForm"
                 (ngSubmit)="registerAndLink()"
                 class="auth-form">
             <div class="form-group">
-              <label class="input-label">用户名</label>
+              <label class="input-label">{{ I18N.Auth.fields.userName }}</label>
               <nz-input-group nzPrefixIcon="user"
                               nzSize="large"
                               class="tech-input">
                 <input nz-input
                        formControlName="userName"
-                       placeholder="请输入用户名"
+                       [placeholder]="I18N.Auth.fields.userNameOnlyPlaceholder"
                        autocomplete="username" />
               </nz-input-group>
             </div>
             <div class="form-group">
-              <label class="input-label">密码</label>
+              <label class="input-label">{{ I18N.Auth.fields.password }}</label>
               <nz-input-group nzPrefixIcon="lock"
                               nzSize="large"
                               class="tech-input">
                 <input nz-input
                        type="password"
                        formControlName="password"
-                       placeholder="至少 6 位"
+                       [placeholder]="I18N.Auth.fields.passwordMinPlaceholder"
                        autocomplete="new-password" />
               </nz-input-group>
             </div>
             <div class="form-group">
-              <label class="input-label">邮箱(可选)</label>
+              <label class="input-label">{{ I18N.Auth.fields.emailOptional }}</label>
               <nz-input-group nzPrefixIcon="mail"
                               nzSize="large"
                               class="tech-input">
                 <input nz-input
                        formControlName="email"
-                       placeholder="可选"
+                       [placeholder]="I18N.Auth.fields.optional"
                        autocomplete="email" />
               </nz-input-group>
             </div>
             <div class="form-group">
-              <label class="input-label">手机号(可选)</label>
+              <label class="input-label">{{ I18N.Auth.fields.phoneOptional }}</label>
               <nz-input-group nzPrefixIcon="mobile"
                               nzSize="large"
                               class="tech-input">
                 <input nz-input
                        formControlName="phoneNumber"
-                       placeholder="可选"
+                       [placeholder]="I18N.Auth.fields.optional"
                        autocomplete="tel" />
               </nz-input-group>
             </div>
@@ -162,7 +162,7 @@
                 <i nz-icon
                    nzType="user-add"
                    nzTheme="outline"></i>
-                <span>注册并关联</span>
+                <span>{{ I18N.Auth.linkAccount.registerSubmit }}</span>
               </span>
             </button>
           </form>

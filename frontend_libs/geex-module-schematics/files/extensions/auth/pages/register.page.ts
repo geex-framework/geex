@@ -1,4 +1,4 @@
-import { Component, Injector, OnDestroy, ViewEncapsulation } from "@angular/core";
+import { Component, inject, Injector, OnDestroy, ViewEncapsulation } from "@angular/core";
 import { AbstractControl, FormBuilder, FormControl, FormGroup, Validators } from "@angular/forms";
 import { Router } from "@angular/router";
 import { _HttpClient } from "@delon/theme";
@@ -6,6 +6,7 @@ import { Apollo } from "apollo-angular";
 import { NzSafeAny } from "ng-zorro-antd/core/types";
 import { NzMessageService } from "ng-zorro-antd/message";
 
+import { GEEX_I18N } from "@geexcode/geex-angular";
 import { SharedModule } from "@/shared/shared.module";
 import { registerAndSignIn, sendSmsCaptcha, validateSmsCaptcha } from "../graphql/operations.gql";
 import SparkMD5 from "spark-md5";
@@ -18,6 +19,7 @@ import SparkMD5 from "spark-md5";
   imports: [SharedModule],
 })
 export class UserRegisterComponent implements OnDestroy {
+  readonly I18N = inject(GEEX_I18N) as any;
   captchaKey: string;
   constructor(
     fb: FormBuilder,

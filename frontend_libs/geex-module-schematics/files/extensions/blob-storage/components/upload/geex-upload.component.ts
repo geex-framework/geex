@@ -20,7 +20,7 @@ import { NzUploadModule } from "ng-zorro-antd/upload";
 import { from, Observable, Subscription } from "rxjs";
 import { switchMap } from "rxjs/operators";
 
-import { geex } from "@geexcode/geex-angular";
+import { GEEX_I18N, geex } from "@geexcode/geex-angular";
 
 @Component({
   selector: "geex-upload",
@@ -39,6 +39,7 @@ export class GeexUploadComponent implements ControlValueAccessor {
   private readonly apollo = inject(Apollo);
   private readonly messageService = inject(NzMessageService);
   private readonly modalService = inject(NzModalService);
+  private readonly I18N = inject(GEEX_I18N) as any;
   private readonly blobStorage = geex.blobStorage;
 
   @ContentChild("uploadButton") uploadButton: any;
@@ -172,7 +173,7 @@ export class GeexUploadComponent implements ControlValueAccessor {
       return true;
     }
     if ((file.size ?? 0) / 1024 > this.customFileSize) {
-      this.messageService.error(`上传文件超过了设置的文件大小: ${this.customFileSize}KB`);
+      this.messageService.error(this.I18N.BlobStorage.fileSizeExceeded.replace("{size}", String(this.customFileSize)));
       return false;
     }
     return true;

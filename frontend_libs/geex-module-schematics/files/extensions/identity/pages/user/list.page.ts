@@ -121,57 +121,57 @@ export class UserListPage extends RoutedListComponent<UserListParams, UserList> 
       sort: { key: "id", default: this.params().sort?.id },
     },
     {
-      title: "用户名",
+      title: this.I18N.Identity.user.columnUsername,
       index: "username",
       className: ["text-center"],
     },
     {
-      title: "昵称",
+      title: this.I18N.Identity.user.columnNickname,
       index: "nickname",
       className: ["text-center"],
     },
     {
-      title: "邮箱",
+      title: this.I18N.Identity.user.columnEmail,
       index: "email",
       className: ["text-center"],
     },
     {
-      title: "手机号",
+      title: this.I18N.Identity.user.columnPhone,
       index: "phoneNumber",
       className: ["text-center"],
     },
     {
-      title: "角色",
+      title: this.I18N.Identity.user.columnRoles,
       index: "roleNames",
       className: ["text-center"],
     },
     {
       width: 60,
-      title: "是否激活",
+      title: this.I18N.Identity.user.columnIsEnable,
       index: "isEnable",
       type: "widget",
       widget: { type: "yn-export", params: ({ record }) => ({ value: record.isEnable }) },
-      format: item => (item.isEnable ? "是" : "否"),
+      format: item => (item.isEnable ? this.I18N.Common.yesNo.yes : this.I18N.Common.yesNo.no),
       className: "text-center",
     },
     {
-      title: "创建时间",
+      title: this.I18N.Identity.user.columnCreatedOn,
       index: "createdOn",
       sort: { key: "createdOn", default: this.params().sort?.createdOn },
       type: "date",
     },
     {
-      title: "操作",
+      title: this.I18N.Common.list.actions,
       buttons: [
         {
           icon: "edit",
-          text: "编辑",
+          text: this.I18N.Common.action.edit,
           click: item => this.router.navigate(["edit", item.id], { relativeTo: this.route }),
           acl: AppPermission.identity_mutation_editUser,
         },
         {
           icon: "delete",
-          text: "删除",
+          text: this.I18N.Common.action.delete,
           click: item => this.delete(item),
           acl: AppPermission.identity_mutation_editUser,
         },
@@ -187,7 +187,7 @@ export class UserListPage extends RoutedListComponent<UserListParams, UserList> 
 
   private async delete(item: UserList) {
     this.nzModalSrv.confirm({
-      nzTitle: `确认删除用户"${item.username}"?`,
+      nzTitle: this.I18N.Identity.user.confirmDelete.replace("{username}", item.username),
       nzOnOk: async () => {
         await this.apollo.mutate({ mutation: deleteUser, variables: { ids: [item.id] }, refetchQueries: [userLists] }).firstValuePromise();
         this.refresh();

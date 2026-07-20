@@ -1,4 +1,4 @@
-import { Component, Injector, ViewChild } from "@angular/core";
+import { Component, computed, Injector, ViewChild } from "@angular/core";
 import { STChange, STColumn, STComponent } from "@delon/abc/st";
 import { _HttpClient } from "@delon/theme";
 
@@ -25,7 +25,7 @@ export type RoleParams = {
   imports: [SharedModule, ListPageLayoutComponent],
 })
 export class RoleListComponent extends RoutedListComponent<RoleParams, RoleBrief> {
-  override columns?: Array<STColumn<RoleBrief>> = [
+  override columns? = computed<Array<STColumn<RoleBrief>>>(() => [
     {
       title: "",
       width: 30,
@@ -34,30 +34,29 @@ export class RoleListComponent extends RoutedListComponent<RoleParams, RoleBrief
       fixed: "left",
       className: ["text-center"],
     },
-    // { title: "Id", index: "id" },
     {
-      title: "名称",
+      title: this.I18N.Common.list.name,
       index: "name",
       className: "text-center",
     },
     {
-      title: "默认角色",
+      title: this.I18N.Identity.role.columnIsDefault,
       index: "isDefault",
       type: "yn",
       className: "text-center",
     },
     {
-      title: "创建时间",
+      title: this.I18N.Identity.user.columnCreatedOn,
       type: "date",
       index: "createdOn",
       className: "text-center",
     },
     {
-      title: "操作",
+      title: this.I18N.Common.list.actions,
       buttons: [
         {
           icon: "edit",
-          text: "设为默认角色",
+          text: this.I18N.Identity.role.setDefault,
           iif(item, btn, column) {
             return !item.isDefault;
           },
@@ -67,28 +66,21 @@ export class RoleListComponent extends RoutedListComponent<RoleParams, RoleBrief
         },
         {
           icon: "edit",
-          text: "编辑",
-          // iif(item, btn, column) {
-          //   let enabled = !item.isStatic;
-          //   if (!enabled) {
-          //     btn.tooltip = "系统角色不可编辑.";
-          //   }
-          //   return enabled;
-          // },
+          text: this.I18N.Common.action.edit,
           iifBehavior: "disabled",
           click: item => this.router.navigate(["edit", item.id], { relativeTo: this.route, queryParams: { roleName: item.name } }),
           acl: AppPermission.identity_mutation_editRole,
         },
         {
           icon: "delete",
-          text: "删除",
+          text: this.I18N.Common.action.delete,
           click: item => this.delete(item),
           acl: AppPermission.identity_mutation_editRole,
         },
       ],
       className: "text-center",
     },
-  ];
+  ]);
 
   override async onRouted(params: RoleParams) {
     let filter = undefined as IRoleFilterInput;
@@ -142,13 +134,13 @@ export class RoleListComponent extends RoutedListComponent<RoleParams, RoleBrief
     this.refresh();
   }
   async sync() {
-    this.msgSrv.warning("同步功能未开放");
+    this.msgSrv.warning(this.I18N.Identity.role.syncNotAvailable);
     return;
   }
 
   private async delete(item: RoleBrief) {
     this.nzModalSrv.confirm({
-      nzTitle: `确认删除角色"${item.name}"?`,
+      nzTitle: this.I18N.Identity.role.confirmDelete.replace("{name}", item.name),
       nzOnOk: async () => {
         await this.apollo.mutate({ mutation: deleteRole, variables: { ids: [item.id] }, refetchQueries: [roleLists] }).firstValuePromise();
         this.refresh();

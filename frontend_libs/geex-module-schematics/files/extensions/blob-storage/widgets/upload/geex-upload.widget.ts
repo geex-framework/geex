@@ -17,7 +17,7 @@ import { NzIconModule } from "ng-zorro-antd/icon";
 import { from, Observable, Subscription } from "rxjs";
 import { switchMap } from "rxjs/operators";
 
-import { geex } from "@geexcode/geex-angular";
+import { GEEX_I18N, geex } from "@geexcode/geex-angular";
 
 export type GeexUploadWidgetSchema = SFUploadWidgetSchema & {
   valueEmitType?: "id" | "file";
@@ -118,10 +118,11 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
     const blobStorage = geex.blobStorage;
     const defaultStorageType = blobStorage.defaultStorageType;
     const createDocument = blobStorage.createDocument;
+    const I18N = this.injector.get(GEEX_I18N) as any;
 
     const res: GeexUploadWidgetSchema = {
       type: type || "select",
-      text: text || "点击上传",
+      text: text || I18N.BlobStorage.uploadClick,
       action: action || "",
       accept: accept || "",
       directory: toBool(directory, false),
@@ -147,7 +148,7 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
                 return true;
               }
               if ((args.size ?? 0) / 1024 > customFileSize) {
-                this.injector.get(NzMessageService).error(`上传文件超过了设置的文件大小:${customFileSize}KB`);
+                this.injector.get(NzMessageService).error(I18N.BlobStorage.fileSizeExceeded.replace("{size}", String(customFileSize)));
                 return false;
               }
               return true;
@@ -205,8 +206,8 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
     if (res.type === "drag") {
       res.listType = undefined;
       this.btnType = "drag";
-      res.text = text || `单击或拖动文件到该区域上传`;
-      res.hint = hint || `支持单个或批量，严禁上传公司数据或其他安全文件`;
+      res.text = text || I18N.BlobStorage.uploadDragText;
+      res.hint = hint || I18N.BlobStorage.uploadDragHint;
     }
     this.ui = res;
     this.defaultStorageType = defaultStorageType;

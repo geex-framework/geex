@@ -1,14 +1,17 @@
-import { Component } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { Component, inject } from "@angular/core";
+import { SharedModule } from "@/shared/shared.module";
+import { GEEX_I18N } from "@geexcode/geex-angular";
 
 @Component({
   standalone: true,
-  imports: [CommonModule],
+  imports: [SharedModule],
   template: `
-    <div style="padding:16px;font-family:sans-serif">
-      <h2>Mock Payments</h2>
-      <p>Open a payment checkout URL returned as CodeUrl from createPayment, for example <code>/mocking/payments/&#123;token&#125;</code>.</p>
-    </div>
+    <page-header [title]="I18N.Mocking.payments.title" [autoBreadcrumb]="true" />
+    <nz-card>
+      <nz-alert nzType="info" nzShowIcon [nzMessage]="I18N.Mocking.payments.description"></nz-alert>
+    </nz-card>
   `,
 })
-export class MockingPaymentsPage {}
+export class MockingPaymentsPage {
+  I18N = inject(GEEX_I18N) as any;
+}

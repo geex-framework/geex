@@ -1,7 +1,6 @@
 import { registerLocaleData } from "@angular/common";
 import ngEn from "@angular/common/locales/en";
 import ngZh from "@angular/common/locales/zh";
-import ngZhTw from "@angular/common/locales/zh-Hant";
 import { Injectable, inject } from "@angular/core";
 import {
   AlainI18NService,
@@ -9,14 +8,13 @@ import {
   en_US as delonEnUS,
   SettingsService,
   zh_CN as delonZhCn,
-  zh_TW as delonZhTw,
 } from "@delon/theme";
 import { TranslateService } from "@ngx-translate/core";
-import { enUS as dfEn, zhCN as dfZhCn, zhTW as dfZhTw } from "date-fns/locale";
+import { enUS as dfEn, zhCN as dfZhCn } from "date-fns/locale";
 import kiwiIntl from "kiwi-intl";
 import { flatMapDeep, merge } from "lodash-es";
 import { NzSafeAny } from "ng-zorro-antd/core/types";
-import { en_US as zorroEnUS, NzI18nService, zh_CN as zorroZhCN, zh_TW as zorroZhTW } from "ng-zorro-antd/i18n";
+import { en_US as zorroEnUS, NzI18nService, zh_CN as zorroZhCN } from "ng-zorro-antd/i18n";
 import { BehaviorSubject, Observable } from "rxjs";
 import { filter } from "rxjs/operators";
 
@@ -50,14 +48,6 @@ const LANGS: { [key: string]: LangData } = {
     date: dfEn,
     delon: delonEnUS,
     abbr: "🇺🇸",
-  },
-  "zh-tw": {
-    text: "繁体中文",
-    ng: ngZhTw,
-    zorro: zorroZhTW,
-    date: dfZhTw,
-    delon: delonZhTw,
-    abbr: "🇭🇰",
   },
 };
 
@@ -119,10 +109,9 @@ export class GeexI18nService implements AlainI18NService {
     const lans = this._langs.map(item => item.code);
     this.translate.addLangs(lans);
 
-    const defaultLan = this.getDefaultLang();
-    if (lans.includes(defaultLan)) {
-      this._default = defaultLan;
-    }
+    const defaultLan = this.getDefaultLang().toLowerCase();
+    this._default = lans.includes(defaultLan) ? defaultLan : DEFAULT;
+    this.use(this._default);
   }
 
   /** Current kiwi dictionary (also mirrored by module `I18N`). */
@@ -134,7 +123,7 @@ export class GeexI18nService implements AlainI18NService {
     if (this.settings.layout.lang) {
       return this.settings.layout.lang;
     }
-    return (navigator.languages ? navigator.languages[0] : DEFAULT) || navigator.language;
+    return (navigator.languages?.[0] || navigator.language || DEFAULT).toLowerCase();
   }
 
   private updateLangData(lang: string): void {

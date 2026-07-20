@@ -42,7 +42,7 @@ export class PermissionTransferWidget extends ControlUIWidget<PermissionTransfer
   static readonly KEY = "permission-transfer";
 
   private readonly appPermission = inject(GEEX_APP_PERMISSION);
-  private readonly i18n = inject(GEEX_I18N);
+  private readonly i18n = inject(GEEX_I18N) as any;
   private readonly permissionFilter = inject(GEEX_PERMISSION_FILTER);
 
   list: SFSchemaEnum[] = [];
@@ -57,10 +57,10 @@ export class PermissionTransferWidget extends ControlUIWidget<PermissionTransfer
     const permissionValues = this.permissionValues;
     this.list = permissionValues.map(x => ({ title: x, value: x }) as SFSchemaEnum);
     this.ui = {
-      titles: titles || ["未拥有", "已拥有"],
+      titles: titles || [this.i18n.Common.transfer.notOwned, this.i18n.Common.transfer.owned],
       operations: operations || ["", ""],
-      itemUnit: itemUnit || "项",
-      itemsUnit: itemsUnit || "项",
+      itemUnit: itemUnit || this.i18n.Common.transfer.itemUnit,
+      itemsUnit: itemsUnit || this.i18n.Common.transfer.itemUnit,
       showSearch: showSearch || true,
       listStyle: { "min-height": "500px", "min-width": "calc(50% - 20px)" },
       asyncData: () => {

@@ -7,6 +7,7 @@ import { merge, Subscription } from "rxjs";
 import { filter, tap } from "rxjs/operators";
 
 import { geex } from "@geexcode/geex-angular";
+import { GEEX_I18N } from "@geexcode/geex-angular";
 import { OrgTypeEnum, type Org, type User } from "@geexcode/geex-extensions-identity";
 import { GEEX_ORG_OWNERSHIP_FILTER } from "@geexcode/geex-extensions-identity";
 import { OrgPickerLevel } from "./org-picker-level";
@@ -24,6 +25,8 @@ type OrgCacheItem = Org & {
 })
 export class OrgTreeSelectPickerDirective implements OnInit {
   @Input() directSelection = false;
+
+  private readonly i18n = inject(GEEX_I18N) as any;
 
   private readonly ownershipFilter = inject(GEEX_ORG_OWNERSHIP_FILTER);
 
@@ -56,7 +59,7 @@ export class OrgTreeSelectPickerDirective implements OnInit {
 
     const nativeElement = this.el.nativeElement;
     if (!nativeElement.hasAttribute("nzPlaceHolder")) {
-      this.host.nzPlaceHolder = "选择组织";
+      this.host.nzPlaceHolder = this.i18n.Identity.widget.selectOrg;
     }
     if (!nativeElement.hasAttribute("nzDropdownMatchSelectWidth")) {
       this.host.nzDropdownMatchSelectWidth = false;

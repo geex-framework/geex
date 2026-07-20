@@ -1,5 +1,5 @@
 @if (params()) {
-<page-header title="编辑用户">
+<page-header [title]="I18N.Identity.user.editTitle">
 
 </page-header>
 <nz-card>
@@ -21,14 +21,14 @@
                 type="button"
                 (click)="showModal()"><i nz-icon
                 nzType="undo"
-              nzTheme="outline"></i>重置密码</button>
+              nzTheme="outline"></i>{{ I18N.Identity.user.resetPassword }}</button>
             }
             <nz-modal [(nzVisible)]="isVisible"
-              nzTitle="重置密码"
+              [nzTitle]="I18N.Identity.user.resetPassword"
               (nzOnOk)="handleOk()"
               (nzOnCancel)="handleCancel()">
               <ng-container *nzModalContent>
-                请输入重置密码：@if (resetUserPasswordRequest) {
+                {{ I18N.Identity.user.resetPasswordPrompt }}@if (resetUserPasswordRequest) {
                 <input nz-input
                   [(ngModel)]="resetUserPasswordRequest.password"
                   type="password">
@@ -40,14 +40,14 @@
           type="button"
           (click)="close()"><i nz-icon
           nzType="rollback"
-        nzTheme="outline"></i>返回</button>
+        nzTheme="outline"></i>{{ I18N.Common.action.back }}</button>
         <button nz-button
           type="submit"
           nzType="primary"
           [disabled]="!sf.valid"
           (click)="submit(sf.value)"><i nz-icon
           nzType="save"
-        nzTheme="outline"></i>保存</button>
+        nzTheme="outline"></i>{{ I18N.Common.action.save }}</button>
       </div>
     </sf>
   }

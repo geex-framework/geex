@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, Signal, ViewEncapsulation } from "@angular/core";
+import { Component, inject, OnInit, signal, Signal, ViewEncapsulation } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Apollo } from "apollo-angular";
@@ -6,7 +6,7 @@ import { NzMessageService } from "ng-zorro-antd/message";
 import { NzTabChangeEvent } from "ng-zorro-antd/tabs";
 import SparkMD5 from "spark-md5";
 import type { Tenant } from "@geexcode/geex-extensions-identity";
-import { geex, rison } from "@geexcode/geex-angular";
+import { geex, GEEX_I18N, rison } from "@geexcode/geex-angular";
 import { ModalHelper } from "@delon/theme";
 import { SharedModule } from "@/shared/shared.module";
 import { TenantSwitcherComponent } from "@/modules/tenant/components/tenant-switcher/tenant-switcher.component";
@@ -21,6 +21,7 @@ import { authenticate } from "../graphql/operations.gql";
   encapsulation: ViewEncapsulation.None,
 })
 export class UserLoginLinkPage implements OnInit {
+  readonly I18N = inject(GEEX_I18N) as any;
   geex = geex;
   tenant$: Signal<Tenant>;
   userLoginLinkToken = "";
@@ -58,7 +59,7 @@ export class UserLoginLinkPage implements OnInit {
     );
     this.displayName = rison.decode_query_param(this.route.snapshot.queryParamMap.get("displayName"));
     if (!this.userLoginLinkToken) {
-      this.msg.error("缺少 UserLoginLinkToken, 请重新扫码登录");
+      this.msg.error(this.I18N.Auth.linkAccount.missingToken);
       void this.router.navigate(["/auth/login"]);
     }
   }
@@ -96,7 +97,7 @@ export class UserLoginLinkPage implements OnInit {
         .firstValuePromise();
       const localToken = authRes.data?.authenticate?.token;
       if (!localToken) {
-        this.error = "本地登录失败";
+        this.error = this.I18N.Auth.linkAccount.localLoginFailed;
         return;
       }
 
@@ -106,9 +107,10 @@ export class UserLoginLinkPage implements OnInit {
         },
       });
       if (!session?.token) {
-        this.error = "关联登录失败";
+        this.error = this.I18N.Auth.linkAccount.linkFailed;
         return;
       }
+      // Leave page for IdP; return trip bootstraps session via GeexStartupService.load().
       geex.wechatAuth.establishSession({ token: session.token, returnUrl: "/" });
     } catch (e: any) {
       this.error = e?.message ?? String(e);
@@ -137,7 +139,7 @@ export class UserLoginLinkPage implements OnInit {
         nickname: this.displayName || undefined,
       });
       if (!session.token) {
-        this.error = "注册并关联失败";
+        this.error = this.I18N.Auth.linkAccount.registerLinkFailed;
         return;
       }
       geex.wechatAuth.establishSession({ token: session.token, returnUrl: "/" });

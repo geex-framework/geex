@@ -12,6 +12,7 @@ import {
   roleMenusVariables as RoleMenusQueryVariables,
 } from "../graphql/role.operations.gql";
 import { SFTransferWidgetSchema } from "@delon/form/widgets/transfer";
+import { GEEX_I18N } from "@geexcode/geex-angular";
 
 export type RoleTransferWidgetSchema = SFTransferWidgetSchema & SFUISchemaItem;
 
@@ -48,11 +49,12 @@ export class RoleTransferWidget extends ControlUIWidget<RoleTransferWidgetSchema
 
   async ngOnInit() {
     const { titles, operations, itemUnit, itemsUnit, showSearch } = this.ui;
+    const i18n = this.injector.get(GEEX_I18N) as any;
     this.ui = {
-      titles: titles || ["未拥有", "已拥有"],
+      titles: titles || [i18n.Common.transfer.notOwned, i18n.Common.transfer.owned],
       operations: operations || ["", ""],
-      itemUnit: itemUnit || "项",
-      itemsUnit: itemsUnit || "项",
+      itemUnit: itemUnit || i18n.Common.transfer.itemUnit,
+      itemsUnit: itemsUnit || i18n.Common.transfer.itemUnit,
       showSearch: showSearch || true,
       asyncData: () => {
         return this.injector

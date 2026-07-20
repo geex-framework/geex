@@ -69,61 +69,7 @@ export class UserEditPage extends RoutedComponent<{ id?: string }> {
   isChecked = signal(false);
   isVisible = signal(false);
   createOrEditRequest = signal<{ [key in keyof (Partial<EditUserRequest> | Partial<CreateUserRequest>)]: any }>({});
-  schema: SFSchema = {
-    properties: {
-      username: {
-        type: "string",
-        title: "用户名",
-        readOnly: this.isChecked,
-        ui: {
-          placeholder: "请输入用户名",
-        },
-      },
-      password: {
-        type: "string",
-        title: "密码",
-        ui: {
-          type: "password",
-          placeholder: "设置密码",
-          visibleIf: {
-            password: () => this.id() == undefined,
-          },
-        },
-      },
-      phoneNumber: { type: "string", title: "手机号", format: "mobile", ui: { placeholder: "请输入手机号" } },
-      email: { type: "string", title: "邮箱", format: "email", ui: { placeholder: "邮箱地址" } },
-      isEnable: { type: "boolean", title: "是否激活" },
-      orgCodes: {
-        type: "string",
-        title: "组织关系",
-        ui: {
-          widget: "org-tree-select",
-          multiple: true,
-          checkable: true,
-          orgType: [OrgTypeEnum.Default],
-          filter: x => true,
-        } as OrgTreeSelectWidgetSchema,
-      },
-      avatarFileId: {
-        type: "string",
-        title: "头像",
-        ui: {
-          widget: "geex-upload",
-          valueEmitType: "id",
-          limitFileCount: 1,
-          listType: "picture-card",
-        } as GeexUploadWidgetSchema,
-      } as SFSchema,
-      roleIds: {
-        type: "number",
-        title: "角色",
-        ui: {
-          widget: "role-transfer",
-        } as SFSelectWidgetSchema,
-      },
-    } as unknown as { [key in keyof EditUserRequest]: SFSchema },
-    required: ["password", "roleIds", "username" /*'userType', 'severity'*/],
-  };
+  schema: SFSchema = this.buildSchema();
   ui: SFUISchema = {
     "*": {
       spanLabelFixed: 100,
@@ -132,10 +78,69 @@ export class UserEditPage extends RoutedComponent<{ id?: string }> {
     },
   };
 
+  private buildSchema(): SFSchema {
+    const t = this.I18N.Identity.user;
+    return {
+      properties: {
+        username: {
+          type: "string",
+          title: t.schemaUsername,
+          readOnly: this.isChecked,
+          ui: {
+            placeholder: t.schemaUsernamePlaceholder,
+          },
+        },
+        password: {
+          type: "string",
+          title: t.schemaPassword,
+          ui: {
+            type: "password",
+            placeholder: t.schemaPasswordPlaceholder,
+            visibleIf: {
+              password: () => this.id() == undefined,
+            },
+          },
+        },
+        phoneNumber: { type: "string", title: t.schemaPhone, format: "mobile", ui: { placeholder: t.schemaPhonePlaceholder } },
+        email: { type: "string", title: t.schemaEmail, format: "email", ui: { placeholder: t.schemaEmailPlaceholder } },
+        isEnable: { type: "boolean", title: t.schemaIsEnable },
+        orgCodes: {
+          type: "string",
+          title: t.schemaOrgCodes,
+          ui: {
+            widget: "org-tree-select",
+            multiple: true,
+            checkable: true,
+            orgType: [OrgTypeEnum.Default],
+            filter: x => true,
+          } as OrgTreeSelectWidgetSchema,
+        },
+        avatarFileId: {
+          type: "string",
+          title: t.schemaAvatar,
+          ui: {
+            widget: "geex-upload",
+            valueEmitType: "id",
+            limitFileCount: 1,
+            listType: "picture-card",
+          } as GeexUploadWidgetSchema,
+        } as SFSchema,
+        roleIds: {
+          type: "number",
+          title: t.schemaRoles,
+          ui: {
+            widget: "role-transfer",
+          } as SFSelectWidgetSchema,
+        },
+      } as unknown as { [key in keyof EditUserRequest]: SFSchema },
+      required: ["password", "roleIds", "username"],
+    };
+  }
+
   close(): void {
     if (this.paramsForm.dirty) {
       this.nzModalSrv.confirm({
-        nzTitle: "当前页面内容未保存，确定离开？",
+        nzTitle: this.I18N.Identity.common.unsavedLeaveConfirm,
         nzOnOk: () => {
           this.location.back();
         },
@@ -167,7 +172,7 @@ export class UserEditPage extends RoutedComponent<{ id?: string }> {
         })
         .firstValuePromise();
       if (res.data.createUser) {
-        this.msgSrv.success("创建成功");
+        this.msgSrv.success(this.I18N.Identity.user.createSuccess);
         await this.router.navigate(["/identity/user"], { replaceUrl: true, forceReload: true });
       }
     } else {
@@ -191,7 +196,7 @@ export class UserEditPage extends RoutedComponent<{ id?: string }> {
         })
         .firstValuePromise();
       if (res.data.editUser) {
-        this.msgSrv.success("修改成功");
+        this.msgSrv.success(this.I18N.Identity.user.updateSuccess);
         await this.router.navigate(["/identity/user"], { replaceUrl: true, forceReload: true });
       }
     }
@@ -214,10 +219,10 @@ export class UserEditPage extends RoutedComponent<{ id?: string }> {
     this.isVisible.set(false);
     setTimeout(async () => {
       if (res.data.resetUserPassword.id) {
-        this.msgSrv.success("重置成功");
+        this.msgSrv.success(this.I18N.Identity.user.resetSuccess);
       }
       else {
-        this.msgSrv.error("重置失败");
+        this.msgSrv.error(this.I18N.Identity.user.resetFailed);
       }
     }, 100);
   }

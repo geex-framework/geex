@@ -1,5 +1,5 @@
 import type { Menu } from "@delon/theme";
 
 export const menuContribution: Menu[] = [
-  { text: "ApprovalFlows", link: "/approval-flows", icon: "anticon-audit", children: [] },
+  { text: "审批流", i18n: "ApprovalFlows.title", link: "/approval-flows", icon: "anticon-audit", children: [] },
 ];
