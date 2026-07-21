@@ -4,7 +4,7 @@ import type { DocumentNode } from "graphql";
 
 export interface MessagingMessage {
   id: string;
-  text?: string | null;
+  title?: string | null;
   messageType?: string | null;
   severity?: string | null;
   createdOn?: unknown;

@@ -6,7 +6,7 @@ export const unreadMessages = gql`
       totalCount
       items {
         id
-        text
+        title
         messageType
         severity
         createdOn
@@ -21,7 +21,7 @@ export const messages = gql`
       totalCount
       items {
         id
-        text
+        title
         messageType
         severity
         createdOn
@@ -40,8 +40,10 @@ export const createMessage = gql`
   mutation createMessage($request: CreateMessageRequest!) {
     createMessage(request: $request) {
       id
-      text
+      title
+      messageType
       severity
+      createdOn
     }
   }
 `;
@@ -60,7 +62,7 @@ export const deleteMessage = gql`
 
 export interface MessagingBrief {
   id: string;
-  text?: string | null;
+  title?: string | null;
   messageType?: string | null;
   severity?: string | null;
   createdOn?: unknown;

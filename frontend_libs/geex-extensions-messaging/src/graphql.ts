@@ -11,7 +11,7 @@ export const GQL_ON_PUBLIC_NOTIFY = gql`
       ... on NewMessageClientNotify {
         message {
           id
-          text
+          title
           messageType
           severity
           createdOn
@@ -32,7 +32,7 @@ export const GQL_ON_PRIVATE_NOTIFY = gql`
       ... on NewMessageClientNotify {
         message {
           id
-          text
+          title
           messageType
           severity
           createdOn
@@ -48,7 +48,7 @@ export const GQL_UNREAD_MESSAGES = gql`
       totalCount
       items {
         id
-        text
+        title
         messageType
         severity
         createdOn
@@ -63,7 +63,7 @@ export const GQL_MESSAGES = gql`
       totalCount
       items {
         id
-        text
+        title
         messageType
         severity
         createdOn
@@ -82,7 +82,7 @@ export const GQL_CREATE_MESSAGE = gql`
   mutation createMessage($request: CreateMessageRequest!) {
     createMessage(request: $request) {
       id
-      text
+      title
       messageType
       severity
       createdOn

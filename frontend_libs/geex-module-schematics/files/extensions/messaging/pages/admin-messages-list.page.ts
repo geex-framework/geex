@@ -24,7 +24,7 @@ export class MessagingAdminListPage implements OnInit {
   pageIndex = 1;
   pageSize = 10;
   readonly columns: Array<STColumn<MessagingBrief>> = [
-    { title: this.I18N.Messaging.columnText, index: "text" },
+    { title: this.I18N.Messaging.columnText, index: "title" },
     { title: this.I18N.Messaging.columnType, index: "messageType" },
     { title: this.I18N.Messaging.columnSeverity, index: "severity" },
     { title: this.I18N.Messaging.columnCreatedOn, index: "createdOn", type: "date" },
@@ -66,7 +66,7 @@ export class MessagingAdminListPage implements OnInit {
   openCreate(): void {
     const form = this.fb.group({
       text: ["", Validators.required],
-      severity: ["Info"],
+      severity: ["INFO"],
     });
     this.modal.create({
       nzTitle: this.I18N.Messaging.createModalTitle,
@@ -83,7 +83,7 @@ export class MessagingAdminListPage implements OnInit {
         if (!text) {
           return false;
         }
-        await geex.messaging.createMessage({ text, severity: form.value.severity ?? "Info" });
+        await geex.messaging.createMessage({ text, severity: form.value.severity ?? "INFO" });
         this.message.success(this.I18N.Messaging.createSuccess);
         await this.load();
         return true;

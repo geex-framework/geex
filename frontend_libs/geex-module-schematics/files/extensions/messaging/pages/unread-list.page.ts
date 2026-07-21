@@ -29,7 +29,7 @@ export class MessagingUnreadListPage implements OnInit {
       fixed: "left",
       className: ["text-center"],
     },
-    { title: this.I18N.Messaging.columnText, index: "text" },
+    { title: this.I18N.Messaging.columnText, index: "title" },
     { title: this.I18N.Messaging.columnType, index: "messageType" },
     { title: this.I18N.Messaging.columnSeverity, index: "severity" },
     { title: this.I18N.Messaging.columnCreatedOn, index: "createdOn", type: "date" },
