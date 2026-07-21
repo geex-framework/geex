@@ -1,4 +1,4 @@
-import { Component, Injector } from "@angular/core";
+import { Component, inject } from "@angular/core";
 import { STColumn } from "@delon/abc/st";
 import { geex, ListPageLayoutComponent, RoutedListComponent, RouteParamsMappings } from "@geexcode/geex-angular";
 import { NzMessageService } from "ng-zorro-antd/message";
@@ -17,7 +17,7 @@ export interface AuditLogsListParams {
   templateUrl: "./audit-logs-list.page.html",
 })
 export class AuditLogsListPage extends RoutedListComponent<AuditLogsListParams, AuditLogBrief> {
-  private readonly message = this.injector.get(NzMessageService);
+  private readonly message = inject(NzMessageService);
 
   override columns?: Array<STColumn<AuditLogBrief>> = [
     {
@@ -41,10 +41,6 @@ export class AuditLogsListPage extends RoutedListComponent<AuditLogsListParams, 
     ps: { position: "queryParams", default: 10 },
   };
 
-  constructor(injector: Injector) {
-    super(injector);
-  }
-
   override async onRouted(params: AuditLogsListParams) {
     this.title.set(this.I18N.AuditLogs.listTitle);
     const result = await geex.auditLogs.loadAuditLogs({
@@ -57,7 +53,7 @@ export class AuditLogsListPage extends RoutedListComponent<AuditLogsListParams, 
   }
 
   async batchDelete(): Promise<void> {
-    const ids = this.selectedData().map(item => item.id);
+    const ids = this.selectedData().map(item => item.id).filter((id): id is string => !!id);
     if (!ids.length) {
       return;
     }

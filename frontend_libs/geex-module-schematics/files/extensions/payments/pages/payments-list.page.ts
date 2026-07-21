@@ -85,7 +85,9 @@ export class PaymentsListPage implements OnInit {
     this.loading.set(true);
     try {
       const result = await this.apollo
-        .query({
+        .query<{
+          payments?: { items?: PaymentBrief[]; totalCount?: number };
+        }>({
           query: payments,
           variables: {
             skip: (this.paymentPageIndex - 1) * this.paymentPageSize,
@@ -94,8 +96,8 @@ export class PaymentsListPage implements OnInit {
           fetchPolicy: "no-cache",
         })
         .firstValuePromise();
-      this.paymentData.set(result.data.payments?.items ?? []);
-      this.paymentTotal.set(result.data.payments?.totalCount ?? 0);
+      this.paymentData.set(result.data?.payments?.items ?? []);
+      this.paymentTotal.set(result.data?.payments?.totalCount ?? 0);
     } finally {
       this.loading.set(false);
     }
@@ -105,7 +107,9 @@ export class PaymentsListPage implements OnInit {
     this.loading.set(true);
     try {
       const result = await this.apollo
-        .query({
+        .query<{
+          paymentRefunds?: { items?: PaymentRefundBrief[]; totalCount?: number };
+        }>({
           query: paymentRefunds,
           variables: {
             skip: (this.refundPageIndex - 1) * this.refundPageSize,
@@ -114,8 +118,8 @@ export class PaymentsListPage implements OnInit {
           fetchPolicy: "no-cache",
         })
         .firstValuePromise();
-      this.refundData.set(result.data.paymentRefunds?.items ?? []);
-      this.refundTotal.set(result.data.paymentRefunds?.totalCount ?? 0);
+      this.refundData.set(result.data?.paymentRefunds?.items ?? []);
+      this.refundTotal.set(result.data?.paymentRefunds?.totalCount ?? 0);
     } finally {
       this.loading.set(false);
     }
