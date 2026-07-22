@@ -2,11 +2,12 @@ import type { GeexModule } from "@geexcode/geex-angular";
 import type { DocumentNode } from "graphql";
 
 export interface JobExecutionHistory {
+  id?: string | null;
   jobName?: string | null;
   isSuccess?: boolean | null;
-  startedOn?: unknown;
-  finishedOn?: unknown;
-  errorMessage?: string | null;
+  executionStartTime?: unknown;
+  executionEndTime?: unknown;
+  message?: string | null;
   [key: string]: unknown;
 }
 

@@ -1,4 +1,5 @@
 using Geex.Extensions.Messaging.Requests;
+using Geex.Extensions.Messaging.Core.Entities;
 using Geex.Extensions.Messaging.Core.Sms;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
@@ -63,5 +64,33 @@ public class MessagingApiTests : TestsBase
         var (responseData, responseString) = await client.PostGqlRequest(mutation, new { id = messageId });
         responseString.ShouldNotContain("errors");
         ((bool)responseData["data"]!["deleteMessage"]!).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task RedistributeSameMessageShouldRemarkUnread()
+    {
+        const string toUserId = "redistribute-user";
+        using var scope = ScopedService.CreateScope();
+        var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+        var message = (Message)await uow.Request(new CreateMessageRequest { Text = "redistribute me" });
+        await message.DistributeAsync(toUserId);
+        await uow.SaveChanges();
+
+        var distribution = uow.Query<MessageDistribution>()
+            .First(x => x.MessageId == message.Id && x.ToUserId == toUserId);
+        distribution.IsRead.ShouldBeFalse();
+
+        distribution.IsRead = true;
+        await uow.SaveChanges();
+
+        await message.DistributeAsync(toUserId);
+        await uow.SaveChanges();
+
+        var redistributed = uow.Query<MessageDistribution>()
+            .Where(x => x.MessageId == message.Id && x.ToUserId == toUserId)
+            .ToList();
+        redistributed.Count.ShouldBe(1);
+        redistributed[0].IsRead.ShouldBeFalse();
     }
 }

@@ -91,6 +91,7 @@ export default {
     tokenGenerateFailed: "Token 生成失败",
     tokenCopied: "Token 已复制到剪贴板",
     myOrgsTitle: "我的组织关系",
+    unreadMessagesTitle: "未读消息",
   },
   modal: {
     selectUser: "选择用户",

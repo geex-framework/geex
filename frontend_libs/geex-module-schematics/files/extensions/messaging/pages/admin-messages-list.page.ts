@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from "@angular/core";
+import { Component, inject, OnInit, signal, TemplateRef, viewChild } from "@angular/core";
 import { FormBuilder, Validators } from "@angular/forms";
 import type { STChange, STColumn } from "@delon/abc/st";
 import { geex, GEEX_I18N } from "@geexcode/geex-angular";
@@ -18,11 +18,23 @@ export class MessagingAdminListPage implements OnInit {
   private readonly message = inject(NzMessageService);
   private readonly modal = inject(NzModalService);
   private readonly fb = inject(FormBuilder);
+  private readonly createTpl = viewChild.required<TemplateRef<unknown>>("createTpl");
+  private readonly sendTpl = viewChild.required<TemplateRef<unknown>>("sendTpl");
   readonly loading = signal(false);
   readonly data = signal<MessagingBrief[]>([]);
   readonly total = signal(0);
   pageIndex = 1;
   pageSize = 10;
+  readonly severityOptions = ["INFO", "SUCCESS", "WARN", "ERROR", "FATAL"] as const;
+  readonly createForm = this.fb.nonNullable.group({
+    text: ["", Validators.required],
+    severity: ["INFO" as (typeof this.severityOptions)[number], Validators.required],
+  });
+  readonly sendForm = this.fb.nonNullable.group({
+    userIds: ["", Validators.required],
+  });
+  private sendTarget: MessagingBrief | null = null;
+
   readonly columns: Array<STColumn<MessagingBrief>> = [
     { title: this.I18N.Messaging.columnText, index: "title" },
     { title: this.I18N.Messaging.columnType, index: "messageType" },
@@ -64,26 +76,17 @@ export class MessagingAdminListPage implements OnInit {
   }
 
   openCreate(): void {
-    const form = this.fb.group({
-      text: ["", Validators.required],
-      severity: ["INFO"],
-    });
+    this.createForm.reset({ text: "", severity: "INFO" });
     this.modal.create({
       nzTitle: this.I18N.Messaging.createModalTitle,
-      nzContent: `
-        <form nz-form>
-          <nz-form-item>
-            <nz-form-label nzRequired>${this.I18N.Messaging.fieldText}</nz-form-label>
-            <nz-form-control><textarea nz-input rows="3" id="msg-text"></textarea></nz-form-control>
-          </nz-form-item>
-        </form>
-      `,
+      nzContent: this.createTpl(),
       nzOnOk: async () => {
-        const text = (document.getElementById("msg-text") as HTMLTextAreaElement | null)?.value?.trim();
-        if (!text) {
+        if (this.createForm.invalid) {
+          this.createForm.markAllAsTouched();
           return false;
         }
-        await geex.messaging.createMessage({ text, severity: form.value.severity ?? "INFO" });
+        const { text, severity } = this.createForm.getRawValue();
+        await geex.messaging.createMessage({ text: text.trim(), severity });
         this.message.success(this.I18N.Messaging.createSuccess);
         await this.load();
         return true;
@@ -92,23 +95,25 @@ export class MessagingAdminListPage implements OnInit {
   }
 
   openSend(item: MessagingBrief): void {
+    this.sendTarget = item;
+    this.sendForm.reset({ userIds: "" });
     this.modal.create({
       nzTitle: this.I18N.Messaging.sendModalTitle,
-      nzContent: `
-        <form nz-form>
-          <nz-form-item>
-            <nz-form-label nzRequired>${this.I18N.Messaging.fieldUserIds}</nz-form-label>
-            <nz-form-control><input nz-input id="msg-user-ids" placeholder="id1,id2" /></nz-form-control>
-          </nz-form-item>
-        </form>
-      `,
+      nzContent: this.sendTpl(),
       nzOnOk: async () => {
-        const raw = (document.getElementById("msg-user-ids") as HTMLInputElement | null)?.value ?? "";
-        const toUserIds = raw.split(",").map(x => x.trim()).filter(Boolean);
+        if (this.sendForm.invalid || !this.sendTarget) {
+          this.sendForm.markAllAsTouched();
+          return false;
+        }
+        const toUserIds = this.sendForm
+          .getRawValue()
+          .userIds.split(",")
+          .map(x => x.trim())
+          .filter(Boolean);
         if (!toUserIds.length) {
           return false;
         }
-        await geex.messaging.sendMessage({ messageId: item.id, toUserIds });
+        await geex.messaging.sendMessage({ messageId: this.sendTarget.id, toUserIds });
         this.message.success(this.I18N.Messaging.sendSuccess);
         return true;
       },

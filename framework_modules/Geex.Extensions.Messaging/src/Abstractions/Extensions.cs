@@ -15,11 +15,11 @@ namespace Geex.Extensions.Messaging
             var topicEventSender = uow.ServiceProvider.GetService<ITopicEventSender>();
             if (!userIds.IsNullOrEmpty())
             {
-                await Task.WhenAll(userIds.Select(userId => topicEventSender.SendAsync($"{nameof(ClientNotifySubscription.OnPrivateNotify)}:{userId}", clientNotify).AsTask()));
+                await Task.WhenAll(userIds.Select(userId => topicEventSender.SendAsync($"{nameof(ClientNotifySubscription.OnPrivateNotify)}:{userId}", (ClientNotify)clientNotify).AsTask()));
             }
             else
             {
-                await topicEventSender.SendAsync(nameof(ClientNotifySubscription.OnPublicNotify), clientNotify as ClientNotify);
+                await topicEventSender.SendAsync(nameof(ClientNotifySubscription.OnPublicNotify), (ClientNotify)clientNotify);
             }
         }
     }

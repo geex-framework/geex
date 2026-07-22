@@ -49,7 +49,10 @@ export function createMessagingModule(
     },
     onPrivateNotify(notify: MessagingNotify) {
       if (notify?.__typename === "NewMessageClientNotify" && notify.message) {
-        unreadSignal.update(list => [notify.message as MessagingMessage, ...list]);
+        const incoming = notify.message as MessagingMessage;
+        unreadSignal.update(list =>
+          list.some(item => item.id === incoming.id) ? list : [incoming, ...list],
+        );
       }
     },
     async loadUnreadMessages() {
@@ -128,20 +131,32 @@ export function createMessagingModule(
             if (injector.get(OAuthService).hasValidAccessToken()) {
               const subClient = injector.get(Apollo).use("subscription");
               subClient
-                .subscribe<{ onPublicNotify: MessagingNotify }>({ query: GQL_ON_PUBLIC_NOTIFY })
+                .subscribe<{ onPublicNotify: MessagingNotify }>({
+                  query: GQL_ON_PUBLIC_NOTIFY,
+                  fetchPolicy: "no-cache",
+                })
                 .pipe(map(res => res?.data?.onPublicNotify))
-                .subscribe(notify => {
-                  if (notify) {
-                    module.onPublicNotify(notify);
-                  }
+                .subscribe({
+                  next: notify => {
+                    if (notify) {
+                      module.onPublicNotify(notify);
+                    }
+                  },
+                  error: err => console.error("onPublicNotify subscription error", err),
                 });
               subClient
-                .subscribe<{ onPrivateNotify: MessagingNotify }>({ query: GQL_ON_PRIVATE_NOTIFY })
+                .subscribe<{ onPrivateNotify: MessagingNotify }>({
+                  query: GQL_ON_PRIVATE_NOTIFY,
+                  fetchPolicy: "no-cache",
+                })
                 .pipe(map(res => res?.data?.onPrivateNotify))
-                .subscribe(notify => {
-                  if (notify) {
-                    module.onPrivateNotify(notify);
-                  }
+                .subscribe({
+                  next: notify => {
+                    if (notify) {
+                      module.onPrivateNotify(notify);
+                    }
+                  },
+                  error: err => console.error("onPrivateNotify subscription error", err),
                 });
               await module.loadUnreadMessages();
             }

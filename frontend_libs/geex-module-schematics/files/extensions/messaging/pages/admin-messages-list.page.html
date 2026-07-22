@@ -15,3 +15,35 @@
     (change)="onTableChange($event)"
   />
 </nz-card>
+
+<ng-template #createTpl>
+  <form nz-form [formGroup]="createForm" nzLayout="vertical">
+    <nz-form-item>
+      <nz-form-label nzRequired>{{ I18N.Messaging.fieldText }}</nz-form-label>
+      <nz-form-control>
+        <textarea nz-input rows="3" formControlName="text"></textarea>
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <nz-form-label nzRequired>{{ I18N.Messaging.fieldSeverity }}</nz-form-label>
+      <nz-form-control>
+        <nz-select formControlName="severity">
+          @for (option of severityOptions; track option) {
+            <nz-option [nzValue]="option" [nzLabel]="option" />
+          }
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+  </form>
+</ng-template>
+
+<ng-template #sendTpl>
+  <form nz-form [formGroup]="sendForm" nzLayout="vertical">
+    <nz-form-item>
+      <nz-form-label nzRequired>{{ I18N.Messaging.fieldUserIds }}</nz-form-label>
+      <nz-form-control>
+        <input nz-input formControlName="userIds" placeholder="id1,id2" />
+      </nz-form-control>
+    </nz-form-item>
+  </form>
+</ng-template>

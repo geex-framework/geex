@@ -13,11 +13,12 @@ export const jobState = gql`
         executionHistories {
           totalCount
           items {
+            id
             jobName
             isSuccess
-            startedOn
-            finishedOn
-            errorMessage
+            executionStartTime
+            executionEndTime
+            message
           }
         }
       }
@@ -26,11 +27,12 @@ export const jobState = gql`
 `;
 
 export interface JobExecutionHistoryBrief {
+  id?: string | null;
   jobName?: string | null;
   isSuccess?: boolean | null;
-  startedOn?: unknown;
-  finishedOn?: unknown;
-  errorMessage?: string | null;
+  executionStartTime?: unknown;
+  executionEndTime?: unknown;
+  message?: string | null;
 }
 
 export interface JobStateBrief {

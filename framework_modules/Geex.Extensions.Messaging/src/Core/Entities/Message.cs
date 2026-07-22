@@ -57,10 +57,26 @@ public class Message : Entity<Message>, IMessage
 
     public async Task<Message> DistributeAsync(params string[] userIds)
     {
-        if (Distributions.Any()) return this;
+        if (userIds == null || userIds.Length == 0)
+        {
+            return this;
+        }
 
-        var distributions = userIds.Select(x => new MessageDistribution(Id, x)).ToList();
-        DbContext.Attach(distributions);
+        var distinctUserIds = userIds.Distinct().ToArray();
+        var existingByUserId = Distributions
+            .Where(x => distinctUserIds.Contains(x.ToUserId))
+            .ToDictionary(x => x.ToUserId);
+
+        foreach (var userId in distinctUserIds)
+        {
+            if (existingByUserId.TryGetValue(userId, out var distribution))
+            {
+                distribution.IsRead = false;
+                continue;
+            }
+
+            DbContext.Attach(new MessageDistribution(Id, userId));
+        }
 
         return this;
     }

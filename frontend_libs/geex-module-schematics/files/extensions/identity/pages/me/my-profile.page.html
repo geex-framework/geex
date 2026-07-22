@@ -248,3 +248,40 @@
         </div>
 
       </div>
+
+@if (messagingEnabled()) {
+  <div nz-row
+    nzGutter="16"
+    class="mt-md"
+    id="unread-messages">
+    <div nz-col
+      nzSpan="24">
+      <nz-card [nzTitle]="I18N.Identity.profile.unreadMessagesTitle"
+        [nzExtra]="unreadExtra">
+        <ng-template #unreadExtra>
+          <button nz-button
+            nzType="primary"
+            nzSize="small"
+            [disabled]="!unreadSelectedIds().length"
+            (click)="markUnreadRead()">
+            {{ I18N.Messaging?.markRead ?? "标记已读" }}
+          </button>
+          <button nz-button
+            nzSize="small"
+            class="ml-sm"
+            (click)="loadUnreadMessages()">
+            {{ I18N.Common.action.refresh }}
+          </button>
+        </ng-template>
+        <st
+          [columns]="unreadColumns"
+          [data]="unreadMessages()"
+          [loading]="unreadLoading()"
+          [total]="unreadMessages().length"
+          [page]="{ front: true, show: true }"
+          (change)="onUnreadTableChange($event)"
+        />
+      </nz-card>
+    </div>
+  </div>
+}

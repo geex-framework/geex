@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from "@angular/core";
+import { Component, computed, inject, OnInit, signal } from "@angular/core";
 import type { STChange, STColumn } from "@delon/abc/st";
 import { geex, GEEX_I18N } from "@geexcode/geex-angular";
 import { NzMessageService } from "ng-zorro-antd/message";
@@ -15,11 +15,15 @@ export class MessagingUnreadListPage implements OnInit {
   readonly I18N = inject(GEEX_I18N) as any;
   private readonly message = inject(NzMessageService);
   readonly loading = signal(false);
-  readonly data = signal<MessagingBrief[]>([]);
-  readonly total = signal(0);
   readonly selectedIds = signal<string[]>([]);
-  pageIndex = 1;
-  pageSize = 10;
+  readonly data = computed(() => {
+    try {
+      return (geex.messaging.unreadMessages() ?? []) as MessagingBrief[];
+    } catch {
+      return [] as MessagingBrief[];
+    }
+  });
+  readonly total = computed(() => this.data().length);
   readonly columns: Array<STColumn<MessagingBrief>> = [
     {
       title: "",
@@ -42,9 +46,7 @@ export class MessagingUnreadListPage implements OnInit {
   async load(): Promise<void> {
     this.loading.set(true);
     try {
-      const result = await geex.messaging.loadUnreadMessages();
-      this.data.set(result);
-      this.total.set(result.length);
+      await geex.messaging.loadUnreadMessages();
     } finally {
       this.loading.set(false);
     }
@@ -53,11 +55,6 @@ export class MessagingUnreadListPage implements OnInit {
   onTableChange(change: STChange): void {
     if (change.type === "checkbox") {
       this.selectedIds.set((change.checkbox ?? []).map(item => item.id));
-    }
-    if (change.type === "pi" || change.type === "ps") {
-      this.pageIndex = change.pi ?? this.pageIndex;
-      this.pageSize = change.ps ?? this.pageSize;
-      void this.load();
     }
   }
 
@@ -73,6 +70,5 @@ export class MessagingUnreadListPage implements OnInit {
     await geex.messaging.markMessagesRead(ids, userId);
     this.message.success(this.I18N.Messaging.markReadSuccess);
     this.selectedIds.set([]);
-    await this.load();
   }
 }

@@ -31,9 +31,9 @@ export class BackgroundJobListPage implements OnInit {
   readonly historyColumns: Array<STColumn<JobExecutionHistoryBrief>> = [
     { title: this.I18N.BackgroundJob.columnJobName, index: "jobName" },
     { title: this.I18N.BackgroundJob.columnSuccess, index: "isSuccess", type: "yn" },
-    { title: this.I18N.BackgroundJob.columnStartedOn, index: "startedOn", type: "date" },
-    { title: this.I18N.BackgroundJob.columnFinishedOn, index: "finishedOn", type: "date" },
-    { title: this.I18N.BackgroundJob.columnError, index: "errorMessage" },
+    { title: this.I18N.BackgroundJob.columnStartedOn, index: "executionStartTime", type: "date" },
+    { title: this.I18N.BackgroundJob.columnFinishedOn, index: "executionEndTime", type: "date" },
+    { title: this.I18N.BackgroundJob.columnError, index: "message" },
   ];
 
   ngOnInit(): void {

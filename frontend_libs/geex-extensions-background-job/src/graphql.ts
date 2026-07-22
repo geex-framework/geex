@@ -13,11 +13,12 @@ export const GQL_JOB_STATE = gql`
         executionHistories {
           totalCount
           items {
+            id
             jobName
             isSuccess
-            startedOn
-            finishedOn
-            errorMessage
+            executionStartTime
+            executionEndTime
+            message
           }
         }
       }

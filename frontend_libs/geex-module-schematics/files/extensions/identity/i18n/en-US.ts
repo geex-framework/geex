@@ -91,6 +91,7 @@ export default {
     tokenGenerateFailed: "Failed to generate token",
     tokenCopied: "Token copied to clipboard",
     myOrgsTitle: "My organizations",
+    unreadMessagesTitle: "Unread messages",
   },
   modal: {
     selectUser: "Select users",

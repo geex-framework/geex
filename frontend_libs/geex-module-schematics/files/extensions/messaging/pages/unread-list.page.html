@@ -11,8 +11,7 @@
     [data]="data()"
     [loading]="loading()"
     [total]="total()"
-    [pi]="pageIndex"
-    [ps]="pageSize"
+    [page]="{ front: true, show: true }"
     (change)="onTableChange($event)"
   />
 </nz-card>
