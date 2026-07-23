@@ -20,6 +20,19 @@ export interface PaymentRefundItem {
   [key: string]: unknown;
 }
 
+export interface CreatePaymentInput {
+  amount: number;
+  subject?: string | null;
+  businessOrderId?: string | null;
+  channel?: string | null;
+  provider?: string | null;
+}
+
+export interface CreatePaymentResult {
+  payment: PaymentItem;
+  prepay?: { outTradeNo?: string | null; codeUrl?: string | null } | null;
+}
+
 export interface PaymentsModule extends GeexModule<{
   loadPayments(options?: { skip?: number; take?: number }): Promise<{
     items: PaymentItem[];
@@ -33,6 +46,7 @@ export interface PaymentsModule extends GeexModule<{
   closePayment(clientSn: string): Promise<PaymentItem | null>;
   revokePayment(clientSn: string): Promise<PaymentItem | null>;
   syncPayment(clientSn: string): Promise<PaymentItem | null>;
+  createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult | null>;
   createPaymentRefund(clientSn: string, amount: number): Promise<PaymentRefundItem | null>;
   syncPaymentRefund(refundRequestNo: string): Promise<PaymentRefundItem | null>;
   readonly documents: {
@@ -42,6 +56,7 @@ export interface PaymentsModule extends GeexModule<{
     closePayment: DocumentNode;
     revokePayment: DocumentNode;
     syncPayment: DocumentNode;
+    createPayment: DocumentNode;
     createPaymentRefund: DocumentNode;
     syncPaymentRefund: DocumentNode;
   };

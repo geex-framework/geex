@@ -18,7 +18,7 @@ public interface IApprovalFlowDate
     List<IApprovalFlowNodeData> Nodes { get; }
     string? OrgCode { get; set; }
     string? TemplateId { get; set; }
-    public AssociatedEntityType? AssociatedEntityType { get; set; }
+    public ApprovalFlowAssociatedEntityType? AssociatedEntityType { get; set; }
     public string? AssociatedEntityId { get; set; }
 }
 
@@ -41,5 +41,5 @@ public interface IApprovalFlowNodeTemplateData
     string? Name { get; set; }
     int? Index { get; set; }
     List<string> CarbonCopyUserIds { get; set; }
-    public AssociatedEntityType? AssociatedEntityType { get; set; }
+    public ApprovalFlowAssociatedEntityType? AssociatedEntityType { get; set; }
 }

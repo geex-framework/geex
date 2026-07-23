@@ -19,6 +19,17 @@ describe("provideGeexPayments", () => {
     assert.match(gql, /paymentRefunds\(/);
     assert.match(gql, /closePayment/);
     assert.match(gql, /revokePayment/);
+    assert.match(gql, /createPayment\(/);
+    assert.match(gql, /createPaymentRefund/);
     assert.match(gql, /syncPaymentRefund/);
+  });
+
+  it("exposes createPayment on payments module API", () => {
+    const types = fs.readFileSync(path.join(__dirname, "payments.types.ts"), "utf8");
+    assert.match(types, /createPayment\(/);
+    assert.match(types, /createPaymentRefund\(/);
+    const moduleSource = fs.readFileSync(path.join(__dirname, "payments.module.ts"), "utf8");
+    assert.match(moduleSource, /async createPayment/);
+    assert.match(moduleSource, /GQL_CREATE_PAYMENT/);
   });
 });

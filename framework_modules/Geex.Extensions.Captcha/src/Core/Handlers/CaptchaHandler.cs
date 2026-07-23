@@ -63,7 +63,11 @@ public class CaptchaHandler :
     private async Task<bool> ValidateCaptcha<TCaptcha>(ValidateCaptchaRequest request) where TCaptcha : Captcha
     {
         var captcha = await _cache.GetNamedAsync<TCaptcha>(request.CaptchaKey);
-        if (captcha?.Code != request.CaptchaCode)
+        // Image codes mix letters; accept case-insensitive input for better UX.
+        var comparison = typeof(TCaptcha) == typeof(ImageCaptcha)
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (captcha is null || !string.Equals(captcha.Code, request.CaptchaCode?.Trim(), comparison))
         {
             return false;
         }

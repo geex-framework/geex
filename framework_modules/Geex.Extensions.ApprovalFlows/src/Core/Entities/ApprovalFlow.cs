@@ -139,7 +139,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     /// <summary>
     /// 关联的实体对象类型
     /// </summary>
-    public AssociatedEntityType? AssociatedEntityType { get; set; }
+    public ApprovalFlowAssociatedEntityType? AssociatedEntityType { get; set; }
     public string? AssociatedEntityId { get; set; }
 
     public async Task CancelAsync()
@@ -185,17 +185,17 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     }
 }
 
-public class AssociatedEntityType : Enumeration<AssociatedEntityType>
+public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociatedEntityType>
 {
     public Type Type { get; }
 
     /// <inheritdoc />
-    public AssociatedEntityType(string value, Type type) : base(value)
+    public ApprovalFlowAssociatedEntityType(string value, Type type) : base(value)
     {
         Type = type;
     }
 
-    public static AssociatedEntityType Object { get; } = new(nameof(Object), typeof(object));
+    public static ApprovalFlowAssociatedEntityType Object { get; } = new(nameof(Object), typeof(object));
 }
 
 public enum ApprovalFlowStatus

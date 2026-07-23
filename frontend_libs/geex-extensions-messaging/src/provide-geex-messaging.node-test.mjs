@@ -21,4 +21,16 @@ describe("provideGeexMessaging", () => {
     assert.match(types, /declare module "@geexcode\/geex-angular"/);
     assert.match(types, /messaging: MessagingModule/);
   });
+
+  it("covers editMessage and deleteMessageDistributions", () => {
+    const gql = fs.readFileSync(path.join(__dirname, "graphql.ts"), "utf8");
+    assert.match(gql, /editMessage\(/);
+    assert.match(gql, /deleteMessageDistributions\(/);
+    const types = fs.readFileSync(path.join(__dirname, "messaging.types.ts"), "utf8");
+    assert.match(types, /editMessage\(/);
+    assert.match(types, /deleteMessageDistributions\(/);
+    const moduleSource = fs.readFileSync(path.join(__dirname, "messaging.module.ts"), "utf8");
+    assert.match(moduleSource, /async editMessage/);
+    assert.match(moduleSource, /async deleteMessageDistributions/);
+  });
 });

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,6 +38,7 @@ namespace Geex
         where TEnum : class, IEnumeration
     {
         static List<Type>? enumTypes;
+        static int cachedKnownAssemblyCount = -1;
         public static List<TEnum> DynamicValues => GetAllOptions().ToList();
 
         private static ILogger<Enumeration>? _logger = null;
@@ -52,19 +53,32 @@ namespace Geex
 
         private static IEnumerable<TEnum> GetAllOptions()
         {
-            enumTypes ??= GeexModule.KnownModuleAssembly
-        .Distinct()
-        .SelectMany(x => x.DefinedTypes).Where(x => x.IsAssignableTo(typeof(TEnum)) && !x.IsAbstract).Concat(new[] { typeof(TEnum) }).Distinct().ToList();
+            var knownAssemblyCount = GeexModule.KnownModuleAssembly.Count;
+            if (enumTypes == null || cachedKnownAssemblyCount != knownAssemblyCount)
+            {
+                cachedKnownAssemblyCount = knownAssemblyCount;
+                enumTypes = GeexModule.KnownModuleAssembly
+                    .Distinct()
+                    .SelectMany(x => x.DefinedTypes)
+                    .Where(x => x.IsAssignableTo(typeof(TEnum)) && !x.IsAbstract)
+                    .Concat(new[] { typeof(TEnum) })
+                    .Distinct()
+                    .ToList();
+
+                ValueCacheDictionary.Clear();
+                _fromName.Clear();
+                _fromNameIgnoreCase.Clear();
+                _fromValue.Clear();
+                foreach (var key in IEnumeration.ValueCacheDictionary.Keys.Where(k => k.StartsWith($"{typeof(TEnum).Name}.")).ToList())
+                {
+                    IEnumeration.ValueCacheDictionary.Remove(key);
+                }
+            }
 
             List<TEnum> options = new List<TEnum>();
             foreach (Type enumType in enumTypes)
             {
                 List<TEnum> typeEnumOptions = enumType.GetPropertiesOfType<TEnum>();
-                //var dynamicOptions = enumType.BaseType?.GetField(nameof(Enumeration.DynamicValues))?.GetValue(default) as List<TEnum>;
-                //if (dynamicOptions?.Any() == true)
-                //{
-                //    typeEnumOptions.AddRange(dynamicOptions);
-                //}
                 options.AddRange(typeEnumOptions);
                 foreach (var enumOption in typeEnumOptions)
                 {

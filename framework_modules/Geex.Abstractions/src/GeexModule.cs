@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,6 +50,17 @@ namespace Geex
       context.Services.Add(new ServiceDescriptor(typeof(GeexModule), this));
       context.Services.Add(new ServiceDescriptor(this.GetType(), this));
       this.InitModuleOptions();
+    }
+
+    public override void ConfigureServices(ServiceConfigurationContext context)
+    {
+      if (!ModuleOptions.Enabled)
+      {
+        Logger.LogInformation("Module {Module} is disabled (Enabled=false), skipping service and schema registration.", typeof(TModule).Name);
+        return;
+      }
+
+      base.ConfigureServices(context);
     }
 
     private void InitModuleOptions()

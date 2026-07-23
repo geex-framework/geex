@@ -7,6 +7,8 @@ import { guardedSignal, type GeexModule } from "@geexcode/geex-angular";
 import {
   GQL_CREATE_MESSAGE,
   GQL_DELETE_MESSAGE,
+  GQL_DELETE_MESSAGE_DISTRIBUTIONS,
+  GQL_EDIT_MESSAGE,
   GQL_MARK_MESSAGES_READ,
   GQL_MESSAGES,
   GQL_ON_PRIVATE_NOTIFY,
@@ -16,6 +18,7 @@ import {
 } from "./graphql";
 import type {
   CreateMessageInput,
+  EditMessageInput,
   MessagingMessage,
   MessagingModule,
   MessagingNotify,
@@ -39,6 +42,8 @@ export function createMessagingModule(
     createMessage: GQL_CREATE_MESSAGE,
     sendMessage: GQL_SEND_MESSAGE,
     deleteMessage: GQL_DELETE_MESSAGE,
+    editMessage: GQL_EDIT_MESSAGE,
+    deleteMessageDistributions: GQL_DELETE_MESSAGE_DISTRIBUTIONS,
   };
 
   const module: MessagingModule = {
@@ -110,6 +115,15 @@ export function createMessagingModule(
       );
       return !!res.data?.sendMessage;
     },
+    async editMessage(input: EditMessageInput) {
+      const res = await firstValueFrom(
+        injector.get(Apollo).mutate<{ editMessage: boolean }>({
+          mutation: GQL_EDIT_MESSAGE,
+          variables: { request: input },
+        }),
+      );
+      return !!res.data?.editMessage;
+    },
     async deleteMessage(messageId: string) {
       const res = await firstValueFrom(
         injector.get(Apollo).mutate<{ deleteMessage: boolean }>({
@@ -118,6 +132,15 @@ export function createMessagingModule(
         }),
       );
       return !!res.data?.deleteMessage;
+    },
+    async deleteMessageDistributions(messageId: string, userIds: string[]) {
+      const res = await firstValueFrom(
+        injector.get(Apollo).mutate<{ deleteMessageDistributions: boolean }>({
+          mutation: GQL_DELETE_MESSAGE_DISTRIBUTIONS,
+          variables: { request: { messageId, userIds } },
+        }),
+      );
+      return !!res.data?.deleteMessageDistributions;
     },
     init: (force = false) => {
       if (force) {

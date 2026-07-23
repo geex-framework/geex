@@ -71,6 +71,25 @@ export const GQL_SYNC_PAYMENT = gql`
   }
 `;
 
+export const GQL_CREATE_PAYMENT = gql`
+  mutation createPayment($request: CreatePaymentRequest!) {
+    createPayment(request: $request) {
+      payment {
+        id
+        clientSn
+        status
+        amount
+        subject
+        provider
+      }
+      prepay {
+        outTradeNo
+        codeUrl
+      }
+    }
+  }
+`;
+
 export const GQL_CREATE_PAYMENT_REFUND = gql`
   mutation createPaymentRefund($request: CreatePaymentRefundRequest!) {
     createPaymentRefund(request: $request) {

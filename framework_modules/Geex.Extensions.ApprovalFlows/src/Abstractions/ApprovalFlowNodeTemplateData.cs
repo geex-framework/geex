@@ -14,5 +14,5 @@ public class ApprovalFlowNodeTemplateData:IApprovalFlowNodeTemplateData
     public List<string> CarbonCopyUserIds { get; set; } = new List<string>();
 
     /// <inheritdoc />
-    public AssociatedEntityType? AssociatedEntityType { get; set; }
+    public ApprovalFlowAssociatedEntityType? AssociatedEntityType { get; set; }
 }

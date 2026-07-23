@@ -30,6 +30,12 @@ export interface SendMessageInput {
   toUserIds: string[];
 }
 
+export interface EditMessageInput {
+  id: string;
+  text?: string | null;
+  severity?: string | null;
+}
+
 export interface MessagingModule extends GeexModule<{
   unreadMessages: WritableSignal<MessagingMessage[]>;
   onPublicNotify(notify: MessagingNotify): void;
@@ -42,7 +48,9 @@ export interface MessagingModule extends GeexModule<{
   markMessagesRead(messageIds: string[], userId: string): Promise<boolean>;
   createMessage(input: CreateMessageInput): Promise<MessagingMessage | null>;
   sendMessage(input: SendMessageInput): Promise<boolean>;
+  editMessage(input: EditMessageInput): Promise<boolean>;
   deleteMessage(messageId: string): Promise<boolean>;
+  deleteMessageDistributions(messageId: string, userIds: string[]): Promise<boolean>;
   readonly documents: {
     onPublicNotify: DocumentNode;
     onPrivateNotify: DocumentNode;
@@ -52,6 +60,8 @@ export interface MessagingModule extends GeexModule<{
     createMessage: DocumentNode;
     sendMessage: DocumentNode;
     deleteMessage: DocumentNode;
+    editMessage: DocumentNode;
+    deleteMessageDistributions: DocumentNode;
   };
 }> {}
 

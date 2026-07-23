@@ -3,6 +3,7 @@ import { Apollo } from "apollo-angular";
 import { firstValueFrom } from "rxjs";
 import {
   GQL_CLOSE_PAYMENT,
+  GQL_CREATE_PAYMENT,
   GQL_CREATE_PAYMENT_REFUND,
   GQL_PAYMENT,
   GQL_PAYMENT_REFUNDS,
@@ -11,7 +12,7 @@ import {
   GQL_SYNC_PAYMENT,
   GQL_SYNC_PAYMENT_REFUND,
 } from "./graphql";
-import type { PaymentItem, PaymentRefundItem, PaymentsModule } from "./payments.types";
+import type { CreatePaymentInput, PaymentItem, PaymentRefundItem, PaymentsModule } from "./payments.types";
 
 export function createPaymentsModule(injector: Injector): PaymentsModule {
   const apollo = () => injector.get(Apollo);
@@ -24,6 +25,7 @@ export function createPaymentsModule(injector: Injector): PaymentsModule {
       closePayment: GQL_CLOSE_PAYMENT,
       revokePayment: GQL_REVOKE_PAYMENT,
       syncPayment: GQL_SYNC_PAYMENT,
+      createPayment: GQL_CREATE_PAYMENT,
       createPaymentRefund: GQL_CREATE_PAYMENT_REFUND,
       syncPaymentRefund: GQL_SYNC_PAYMENT_REFUND,
     },
@@ -89,6 +91,15 @@ export function createPaymentsModule(injector: Injector): PaymentsModule {
         }),
       );
       return res.data?.syncPayment ?? null;
+    },
+    async createPayment(input: CreatePaymentInput) {
+      const res = await firstValueFrom(
+        apollo().mutate<{ createPayment: { payment: PaymentItem; prepay?: { outTradeNo?: string | null; codeUrl?: string | null } } }>({
+          mutation: GQL_CREATE_PAYMENT,
+          variables: { request: input },
+        }),
+      );
+      return res.data?.createPayment ?? null;
     },
     async createPaymentRefund(clientSn: string, amount: number) {
       const res = await firstValueFrom(

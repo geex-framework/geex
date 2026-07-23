@@ -101,3 +101,15 @@ export const GQL_DELETE_MESSAGE = gql`
     deleteMessage(request: $request)
   }
 `;
+
+export const GQL_EDIT_MESSAGE = gql`
+  mutation editMessage($request: EditMessageRequest!) {
+    editMessage(request: $request)
+  }
+`;
+
+export const GQL_DELETE_MESSAGE_DISTRIBUTIONS = gql`
+  mutation deleteMessageDistributions($request: DeleteMessageDistributionsRequest!) {
+    deleteMessageDistributions(request: $request)
+  }
+`;

@@ -50,7 +50,7 @@ public abstract class Captcha
         var numArray = new int[length];
         for (var index = 0; index < length; ++index)
         {
-            numArray[index] = RandomHelper.GetRandom(0, 9);
+            numArray[index] = RandomHelper.GetRandom(0, 10);
         }
 
         return numArray.AsEnumerable().Select(x => x.ToString()).JoinAsString("");
@@ -147,14 +147,20 @@ public abstract class Captcha
             descriptor.BindFieldsExplicitly();
             descriptor.Field(x => x.CaptchaType);
             descriptor.Field(x => x.Key);
-            descriptor.Field((ImageCaptcha x) => x.Bitmap).Use(next => async context =>
-            {
-                await next(context);
-                if (context.Result is MemoryStream stream)
+            // Resolve from Parent explicitly. Expression Field((ImageCaptcha x) => x.Bitmap) on Captcha
+            // can bind to a non-parent instance, so the PNG digits diverge from the Redis-stored Code.
+            descriptor.Field("imageBase64")
+                .Type<StringType>()
+                .Resolve(context =>
                 {
-                    context.Result = Convert.ToBase64String(stream.ToArray());
-                }
-            }).Type<StringType>();
+                    if (context.Parent<Captcha>() is not ImageCaptcha imageCaptcha)
+                    {
+                        return null;
+                    }
+
+                    using var stream = imageCaptcha.Bitmap;
+                    return Convert.ToBase64String(stream.ToArray());
+                });
             base.Configure(descriptor);
         }
     }
