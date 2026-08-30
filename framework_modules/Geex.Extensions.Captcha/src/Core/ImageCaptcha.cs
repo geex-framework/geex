@@ -27,6 +27,9 @@ public class ImageCaptcha : Captcha
         "Helvetica"
     ];
 
+    private static readonly FontCollection EmbeddedFontCollection = new();
+    private static readonly Lazy<FontFamily> EmbeddedFontFamily = new(LoadEmbeddedFontFamily);
+
     public ImageCaptcha()
         : base(GenerateImageCode(DefaultLength), ObjectId.GenerateNewId().ToString())
     {
@@ -147,6 +150,25 @@ public class ImageCaptcha : Captcha
         return stream;
     }
 
+    private static FontFamily LoadEmbeddedFontFamily()
+    {
+        var assembly = typeof(ImageCaptcha).Assembly;
+        var resourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(name => name.EndsWith("LiberationSans-Bold.ttf", StringComparison.Ordinal));
+        if (resourceName is null)
+        {
+            throw new BusinessException(
+                GeexExceptionType.OnPurpose,
+                message: "Embedded image captcha font is missing.");
+        }
+
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new BusinessException(
+                GeexExceptionType.OnPurpose,
+                message: "Embedded image captcha font is missing.");
+        return EmbeddedFontCollection.Add(stream);
+    }
+
     private static Font ResolveCaptchaFont(float size)
     {
         foreach (var name in PreferredFontFamilies)
@@ -163,8 +185,6 @@ public class ImageCaptcha : Captcha
             return fallback.CreateFont(size, FontStyle.Bold);
         }
 
-        throw new BusinessException(
-            GeexExceptionType.OnPurpose,
-            message: "No system fonts available for image captcha generation.");
+        return EmbeddedFontFamily.Value.CreateFont(size, FontStyle.Bold);
     }
 }

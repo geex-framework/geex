@@ -15,6 +15,15 @@ public class CaptchaApiTests : TestsBase
     }
 
     [Fact]
+    public void ImageCaptchaShouldRenderBitmap()
+    {
+        var captcha = new ImageCaptcha();
+        using var stream = captcha.Bitmap;
+        stream.Length.ShouldBeGreaterThan(0);
+        captcha.Code.Length.ShouldBe(5);
+    }
+
+    [Fact]
     public async Task GenerateImageCaptchaShouldWork()
     {
         var client = SuperAdminClient;

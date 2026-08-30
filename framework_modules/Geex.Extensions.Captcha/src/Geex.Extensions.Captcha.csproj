@@ -17,4 +17,8 @@
   <ItemGroup>
     <Folder Include="Gql\Types\" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\LiberationSans-Bold.ttf" />
+    <None Include="Resources\LICENSE.LiberationSans.txt" Pack="true" PackagePath="licenses/" />
+  </ItemGroup>
 </Project>
