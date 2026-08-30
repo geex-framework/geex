@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -27,14 +27,17 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
     public async Task Handle(ApprovalFlowNodeApprovedEvent eventData, CancellationToken cancellationToken)
     {
         var node = _uow.Query<ApprovalFlowNode>().GetById(eventData.ApprovalFlowNodeId);
-        var userIdsToNotify = _uow.Query<IUser>()
-            .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable()
-            .Append(node.AuditUserId)
-            .Where(x => !x.IsNullOrEmpty());
+        var flow = node.ApprovalFlow.Value;
+        var userIdsToNotify = ResolveStakeholderNotifyUserIds(node, flow);
+        if (!userIdsToNotify.Any())
+        {
+            return;
+        }
+
         var messageEntity = await _uow.Request(new CreateMessageRequest()
         {
             Severity = MessageSeverityType.Success,
-            Text = $"【工作流】:{node.ApprovalFlow.Value.Name} 的审批已通过.",
+            Text = $"【工作流】:{flow.Name} 的审批已通过.",
             Meta = new JsonObject([new("ApprovalFlowId", node.ApprovalFlowId)]),
         });
         await _uow.Request(new SendNotificationMessageRequest()
@@ -48,14 +51,13 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
     {
         var node = _uow.Query<ApprovalFlowNode>().GetById(eventData.ApprovalFlowNodeId)
             ?? throw new BusinessException(GeexExceptionType.OnPurpose, message: "Approval flow node not found.");
-        var flowName = _uow.Query<ApprovalFlow>().GetById(eventData.ApprovalFlowId)?.Name
-            ?? "工作流";
-        var carbonCopyUserIds = node.CarbonCopyUserIds;
-        var userIdsToNotify = (carbonCopyUserIds.Count == 0
-                ? Enumerable.Empty<string>()
-                : _uow.Query<IUser>().Where(x => carbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable())
-            .Append(node.AuditUserId)
-            .Where(x => !x.IsNullOrEmpty());
+        var flow = _uow.Query<ApprovalFlow>().GetById(eventData.ApprovalFlowId);
+        var flowName = flow?.Name ?? "工作流";
+        var userIdsToNotify = ResolveStakeholderNotifyUserIds(node, flow);
+        if (!userIdsToNotify.Any())
+        {
+            return;
+        }
 
         var messageEntity = await _uow.Request(new CreateMessageRequest()
         {
@@ -91,15 +93,17 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
     {
         foreach (var node in eventData.NodesToReject)
         {
-            var userIdsToNotify = _uow.Query<IUser>()
-                .Where(x => node.CarbonCopyUserIds.Contains(x.Id)).Select(x => x.Id).AsEnumerable()
-                .Append(node.AuditUserId)
-                .Where(x => !x.IsNullOrEmpty());
+            var flow = node.ApprovalFlow.Value;
+            var userIdsToNotify = ResolveStakeholderNotifyUserIds(node, flow);
+            if (!userIdsToNotify.Any())
+            {
+                continue;
+            }
 
             var messageEntity = await _uow.Request(new CreateMessageRequest()
             {
                 Severity = MessageSeverityType.Warn,
-                Text = $"【工作流】:{node.ApprovalFlow.Value.Name} 的审批被驳回.",
+                Text = $"【工作流】:{flow.Name} 的审批被驳回.",
                 Meta = new JsonObject([new("ApprovalFlowId", node.ApprovalFlowId)]),
             });
             await _uow.Request(new SendNotificationMessageRequest()
@@ -140,5 +144,17 @@ public class ApprovalFlowNodeEventHandler : IEventHandler<ApprovalFlowNodeStartE
             MessageId = messageEntity.Id,
             ToUserIds = [node.AuditUserId]
         });
+    }
+
+    /// <summary>
+    /// Carbon-copy users + flow creator, excluding the node auditor who just acted.
+    /// </summary>
+    private static IEnumerable<string> ResolveStakeholderNotifyUserIds(ApprovalFlowNode node, ApprovalFlow? flow)
+    {
+        var excludedAuditorId = node.AuditUserId;
+        return node.CarbonCopyUserIds
+            .Append(flow?.CreatorUserId)
+            .Where(x => !x.IsNullOrEmpty() && x != excludedAuditorId)
+            .Distinct()!;
     }
 }

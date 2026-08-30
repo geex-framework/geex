@@ -9,7 +9,7 @@ public record CreateApprovalFlowTemplateRequest : IRequest<ApprovalFlowTemplate>
 {
     public string Name { get; set; }
     public string Description { get; set; }
-    public string OrgCode { get; set; }
+    public string? OrgCode { get; set; }
     List<IApprovalFlowNodeTemplateData> IApprovalFlowTemplateDate.ApprovalFlowNodeTemplates => this.ApprovalFlowNodeTemplates.Cast<IApprovalFlowNodeTemplateData>().ToList();
     public List<ApprovalFlowNodeTemplateData> ApprovalFlowNodeTemplates { get; set; }
 }

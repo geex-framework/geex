@@ -73,7 +73,7 @@ namespace Geex.Extensions.Messaging.Core.Handlers
 
         public async Task<IMessage> Handle(CreateMessageRequest request, CancellationToken cancellationToken)
         {
-            var message = new Message(request.Text, request.Severity);
+            var message = new Message(request.Text, request.Severity, request.Meta);
             Uow.Attach(message);
             return message;
         }

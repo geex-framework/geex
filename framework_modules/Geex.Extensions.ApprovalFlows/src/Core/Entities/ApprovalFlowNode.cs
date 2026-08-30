@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -157,12 +157,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
             throw new UserFriendlyException($"该用户已被抄送, 无需转发.");
         }
 
-        if (!this.ApprovalFlow.Value.Stakeholders.Any(x =>
-                x.ApprovalFlowId == this.ApprovalFlowId && userId == x.UserId &&
-                x.OwnershipType == ApprovalFlowOwnershipType.CarbonCopy))
-        {
-            this.ApprovalFlow.Value.Stakeholders.Add(new ApprovalFlowUserRef(this.ApprovalFlowId, userId, ApprovalFlowOwnershipType.CarbonCopy));
-        }
+        this.ApprovalFlow.Value.EnsureStakeholder(userId, ApprovalFlowOwnershipType.CarbonCopy);
 
         this.CarbonCopyUserIds = [.. this.CarbonCopyUserIds, userId];
         Uow.Create(this.Id, ApprovalFlowNodeLogType.CarbonCopy, this.AuditUserId, userId, "");
@@ -215,12 +210,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckNotConsulting();
         CheckIntegrity();
         CheckAuditUser();
-        if (!this.ApprovalFlow.Value.Stakeholders.Any(x =>
-                x.ApprovalFlowId == this.ApprovalFlowId && userId == x.UserId &&
-                x.OwnershipType == ApprovalFlowOwnershipType.Consult))
-        {
-            this.ApprovalFlow.Value.Stakeholders.Add(new ApprovalFlowUserRef(this.ApprovalFlowId, userId, ApprovalFlowOwnershipType.Consult));
-        }
+        this.ApprovalFlow.Value.EnsureStakeholder(userId, ApprovalFlowOwnershipType.Consult);
 
         this.ConsultUserId = userId;
         this.NodeStatus |= ApprovalFlowNodeStatus.Consulting;
@@ -305,10 +295,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckAuditUser();
         var originUserId = AuditUserId;
         this.NodeStatus |= ApprovalFlowNodeStatus.Transferred;
-        if (!this.ApprovalFlow.Value.Stakeholders.Any(x => x.ApprovalFlowId == this.ApprovalFlowId && userId == x.UserId && x.OwnershipType == ApprovalFlowOwnershipType.Participate))
-        {
-            this.ApprovalFlow.Value.Stakeholders.Add(new ApprovalFlowUserRef(this.ApprovalFlowId, userId, ApprovalFlowOwnershipType.Participate));
-        }
+        this.ApprovalFlow.Value.EnsureStakeholder(userId, ApprovalFlowOwnershipType.Participate);
         Uow.Create(this.Id, ApprovalFlowNodeLogType.Transfer, this.AuditUserId, userId, "");
         var newNode = Uow.Create(this);
         newNode.AuditUserId = userId;

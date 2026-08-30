@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using Geex.Validation;
 using System.Linq;
 using System.Threading;
@@ -21,16 +22,17 @@ public class Message : Entity<Message>, IMessage
     {
     }
 
-    public Message(string text, MessageSeverityType severity = MessageSeverityType.Info)
+    public Message(string text, MessageSeverityType severity = MessageSeverityType.Info, JsonNode? meta = null)
         : this()
     {
         Title = text;
         Severity = severity;
         MessageType = MessageType.Notification;
+        Meta = meta;
     }
 
     public Message(string text, IMessageContent content = default,
-        MessageSeverityType severity = MessageSeverityType.Info) : this(text, severity)
+        MessageSeverityType severity = MessageSeverityType.Info, JsonNode? meta = null) : this(text, severity, meta)
     {
         Content = content;
         MessageType = content switch
@@ -52,6 +54,7 @@ public class Message : Entity<Message>, IMessage
     public MessageSeverityType Severity { get; set; }
     public DateTimeOffset Time => CreatedOn;
     public string Title { get; set; }
+    public JsonNode? Meta { get; set; }
     public IList<string> ToUserIds => Distributions.ToList().Select(x => x.ToUserId).ToList();
     public string? TenantCode { get; set; }
 
@@ -114,15 +117,6 @@ public class Message : Entity<Message>, IMessage
         protected override void Configure(IObjectTypeDescriptor<Message> descriptor)
         {
             descriptor.BindFieldsImplicitly();
-            descriptor.ConfigEntity();
-            //descriptor.Field(x => x.FromUserId);
-            //descriptor.Field(x => x.MessageType);
-            //descriptor.Field(x => x.Content);
-            //descriptor.Field(x => x.ToUserIds);
-            //descriptor.Field(x => x.Id);
-            //descriptor.Field(x => x.Title);
-            //descriptor.Field(x => x.Time);
-            //descriptor.Field(x => x.Severity);
             descriptor.Implements<InterfaceType<IMessage>>();
         }
     }

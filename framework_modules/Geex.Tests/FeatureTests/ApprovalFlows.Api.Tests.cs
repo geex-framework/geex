@@ -29,7 +29,7 @@ public class ApprovalFlowsApiTests : TestsBase
             var flow = new ApprovalFlow(new CreateApprovalFlowRequest
             {
                 Name = "reject notify test",
-                OrgCode = null!,
+                OrgCode = null,
                 Nodes =
                 [
                     new ApprovalFlowNodeData

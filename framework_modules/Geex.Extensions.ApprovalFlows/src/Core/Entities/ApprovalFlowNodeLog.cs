@@ -11,6 +11,8 @@ public partial class ApprovalFlowNodeLog : Entity<ApprovalFlowNodeLog>
     public ApprovalFlowNodeLog()
     {
         ConfigLazyQuery(x => x.ApprovalFlowNode, user => user.Id == ApprovalFlowNodeId, nodes => approvalFlowNode => nodes.SelectList(x => x.ApprovalFlowNodeId).Contains(approvalFlowNode.Id));
+        ConfigLazyQuery(x => x.From, user => user.Id == FromUserId, logs => user => logs.SelectList(x => x.FromUserId).Contains(user.Id));
+        ConfigLazyQuery(x => x.To, user => user.Id == ToUserId, logs => user => logs.SelectList(x => x.ToUserId).Contains(user.Id));
     }
 
     public ApprovalFlowNodeLog(string approvalFlowNodeId, ApprovalFlowNodeLogType auditType, string? fromUserId, string? toUserId, string? message, IUnitOfWork uow = default)
@@ -48,9 +50,9 @@ public partial class ApprovalFlowNodeLog : Entity<ApprovalFlowNodeLog>
 
     public string Message { get; set; }
     public ApprovalFlowNodeLogType LogType { get; set; }
-    public virtual User From { get; set; }
+    public Lazy<User> From => LazyQuery(() => From);
     public string FromUserId { get; set; }
-    public virtual User To { get; set; }
+    public Lazy<User> To => LazyQuery(() => To);
     public string? ToUserId { get; set; }
     public DateTime CreationTime { get; set; } = DateTime.Now;
     public virtual Lazy<ApprovalFlowNode> ApprovalFlowNode => LazyQuery(() => ApprovalFlowNode);

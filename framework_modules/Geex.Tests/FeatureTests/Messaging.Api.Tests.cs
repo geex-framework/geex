@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+using Geex.Extensions.Messaging;
 using Geex.Extensions.Messaging.Requests;
 using Geex.Extensions.Messaging.Core.Entities;
 using Geex.Extensions.Messaging.Core.Sms;
@@ -23,6 +25,40 @@ public class MessagingApiTests : TestsBase
         var result = await uow.Request(new SendSmsRequest("13800138000", ["1234"]));
         result.ShouldBeTrue();
         VirtualSmsStore.Sent.Any(x => x.Phone == "13800138000").ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task MessageMetaShouldBeQueryable()
+    {
+        string messageId;
+        using (var scope = ScopedService.CreateScope())
+        {
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var message = await uow.Request(new CreateMessageRequest
+            {
+                Text = "meta field",
+                Severity = MessageSeverityType.Info,
+                Meta = JsonNode.Parse("""{"ApprovalFlowId":"flow-1"}"""),
+            });
+            await uow.SaveChanges();
+            messageId = message.Id;
+            messageId.ShouldNotBeNull();
+        }
+
+        var client = SuperAdminClient;
+        var query = """
+            query {
+                messages(take: 50) {
+                    items { id title meta }
+                }
+            }
+            """;
+        var (responseData, responseString) = await client.PostGqlRequest(query);
+        responseString.ShouldNotContain("errors");
+        var items = responseData["data"]["messages"]["items"]!.AsArray();
+        var created = items.First(x => x!["id"]!.GetValue<string>() == messageId);
+        created!["title"]!.GetValue<string>().ShouldBe("meta field");
+        created["meta"]!["ApprovalFlowId"]!.GetValue<string>().ShouldBe("flow-1");
     }
 
     [Fact]

@@ -16,7 +16,7 @@ public record CreateApprovalFlowRequest : IRequest<ApprovalFlow>, IApprovalFlowD
     public List<ApprovalFlowNodeData> Nodes { get; set; }
     /// <inheritdoc />
 
-    public string OrgCode { get; set; }
+    public string? OrgCode { get; set; }
     public string? TemplateId { get; set; }
     public ApprovalFlowAssociatedEntityType? AssociatedEntityType { get; set; }
     public string? AssociatedEntityId { get; set; }

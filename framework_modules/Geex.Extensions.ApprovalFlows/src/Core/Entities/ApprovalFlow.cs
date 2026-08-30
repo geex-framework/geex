@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -37,20 +37,16 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             x.ApprovalFlowId = this.Id;
             return uow.Create(x);
         }).ToList();
-        List<ApprovalFlowUserRef> stakeholders = [new ApprovalFlowUserRef(this.Id, uow.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create)];
-        foreach (var userId in this.Nodes.Select(x => x.AuditUserId))
-        {
-            if (!userId.IsNullOrEmpty())
-            {
-                stakeholders.Add(new ApprovalFlowUserRef(this.Id, userId, ApprovalFlowOwnershipType.Participate));
-            }
-        }
-        foreach (var userId in this.Nodes.SelectMany(x => x.CarbonCopyUserIds))
-        {
-            stakeholders.Add(new ApprovalFlowUserRef(this.Id, userId, ApprovalFlowOwnershipType.CarbonCopy));
-        }
 
-        this.Stakeholders = stakeholders.DistinctBy(x => new { x.OwnershipType, x.UserId, x.ApprovalFlowId }).ToList();
+        this.EnsureStakeholder(uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create);
+        foreach (var userId in this.Nodes.Select(x => x.AuditUserId).Where(x => !x.IsNullOrEmpty()).Distinct())
+        {
+            this.EnsureStakeholder(userId, ApprovalFlowOwnershipType.Participate);
+        }
+        foreach (var userId in this.Nodes.SelectMany(x => x.CarbonCopyUserIds).Where(x => !x.IsNullOrEmpty()).Distinct())
+        {
+            this.EnsureStakeholder(userId, ApprovalFlowOwnershipType.CarbonCopy);
+        }
     }
 
     public async Task Start()
@@ -74,7 +70,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             node.ApprovalFlowId = this.Id;
             return node;
         }).ToList();
-        this.Stakeholders = [.. Stakeholders, new ApprovalFlowUserRef(this.Id, Uow.ServiceProvider.GetService<ICurrentUser>().UserId, ApprovalFlowOwnershipType.Create)];
+        this.EnsureStakeholder(Uow.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create);
         this.OrgCode = template.OrgCode;
         this.TemplateId = template.Id;
     }
@@ -83,6 +79,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     {
         this.ConfigLazyQuery(x => x.CreatorUser, blob => blob.Id == CreatorUserId, users => blob => users.SelectList(x => x.CreatorUserId).Contains(blob.Id));
         this.ConfigLazyQuery(x => x.Nodes, node => node.ApprovalFlowId == Id, approvalFlows => node => approvalFlows.SelectList(x => x.Id).Contains(node.ApprovalFlowId));
+        this.ConfigLazyQuery(x => x.Stakeholders, stakeholder => stakeholder.ApprovalFlowId == Id, approvalFlows => stakeholder => approvalFlows.SelectList(x => x.Id).Contains(stakeholder.ApprovalFlowId));
         this.ConfigLazyQuery(x => x.AssociatedEntity, approveEntity => approveEntity.Id == AssociatedEntityId, approvalFlows => approveEntity => approvalFlows.SelectList(x => x.AssociatedEntityId).Contains(approveEntity.Id),
             () =>
             {
@@ -100,7 +97,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public string Name { get; set; }
 
-    public List<ApprovalFlowUserRef> Stakeholders { get; set; } = new List<ApprovalFlowUserRef>();
+    public IQueryable<ApprovalFlowUserRef> Stakeholders => LazyQuery(() => Stakeholders);
     public IQueryable<ApprovalFlowNode> Nodes => LazyQuery(() => Nodes).OrderBy(x=>x.Index);
     public string? CreatorUserId { get; set; }
     public Lazy<User> CreatorUser => LazyQuery(() => CreatorUser);
@@ -115,12 +112,28 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         }
     }
 
-    public string OrgCode { get; set; }
+    public string? OrgCode { get; set; }
 
     public bool CanEdit
     {
         //这里判断第一个start的log
         get { return this.ActiveIndex == 0 && !this.ActiveNode.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved); }
+    }
+
+    public ApprovalFlowUserRef? EnsureStakeholder(string? userId, ApprovalFlowOwnershipType ownershipType)
+    {
+        if (userId.IsNullOrEmpty())
+        {
+            return null;
+        }
+
+        var existing = this.Stakeholders.FirstOrDefault(x => x.UserId == userId && x.OwnershipType == ownershipType);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        return Uow.Attach(new ApprovalFlowUserRef(this.Id, userId!, ownershipType));
     }
 
     public async Task Finish()

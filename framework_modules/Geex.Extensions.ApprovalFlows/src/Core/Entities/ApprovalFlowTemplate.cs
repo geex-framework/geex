@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Geex.Extensions.Authentication;
@@ -30,7 +30,7 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     public string Name { get; set; }
     public string Description { get; set; }
     public List<ApprovalFlowNodeTemplate> Nodes { get; set; } = new List<ApprovalFlowNodeTemplate>();
-    public string OrgCode { get; set; }
+    public string? OrgCode { get; set; }
 
     public void Edit(IApprovalFlowTemplateDate request)
     {
