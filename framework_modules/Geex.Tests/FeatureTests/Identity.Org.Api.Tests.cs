@@ -311,5 +311,38 @@ namespace Geex.Tests.FeatureTests
 
             ((string)subOrgResult["parentOrgCode"]).ShouldBe(parentCode);
         }
+
+        [Fact]
+        public async Task QueryOrgsCache_AsAnonymous_ShouldReturnEmptyWithoutAuthError()
+        {
+            var (responseData, responseString) = await AnonymousClient.PostGqlRequest(
+                """
+                query orgsCache {
+                    orgsCache {
+                        id
+                    }
+                }
+                """);
+
+            responseData["errors"].ShouldBeNull(responseString);
+            responseData["data"].ShouldNotBeNull(responseString);
+            responseData["data"]["orgsCache"].AsArray().Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task QueryOrgsCache_AsSuperAdmin_ShouldReturnOrgs()
+        {
+            var (responseData, responseString) = await SuperAdminClient.PostGqlRequest(
+                """
+                query orgsCache {
+                    orgsCache {
+                        id
+                    }
+                }
+                """);
+
+            responseData["errors"].ShouldBeNull(responseString);
+            responseData["data"]["orgsCache"].AsArray().Count.ShouldBeGreaterThan(0);
+        }
     }
 }

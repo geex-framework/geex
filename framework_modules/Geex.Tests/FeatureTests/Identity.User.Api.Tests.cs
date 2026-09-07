@@ -329,5 +329,59 @@ namespace Geex.Tests.FeatureTests
                 ((bool)item["isEnable"]).ShouldBe(true);
             }
         }
+
+        [Fact]
+        public async Task QueryUsersCache_AsAnonymous_ShouldReturnEmptyWithoutAuthError()
+        {
+            var (responseData, responseString) = await AnonymousClient.PostGqlRequest(
+                """
+                query usersCache {
+                    usersCache {
+                        id
+                    }
+                }
+                """);
+
+            responseData["errors"].ShouldBeNull(responseString);
+            responseData["data"].ShouldNotBeNull(responseString);
+            var items = responseData["data"]["usersCache"].AsArray();
+            items.Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task QueryUsersCache_AsSuperAdmin_ShouldReturnUsers()
+        {
+            var (responseData, responseString) = await SuperAdminClient.PostGqlRequest(
+                """
+                query usersCache {
+                    usersCache {
+                        id
+                    }
+                }
+                """);
+
+            responseData["errors"].ShouldBeNull(responseString);
+            responseData["data"]["usersCache"].AsArray().Count.ShouldBeGreaterThan(0);
+        }
+
+        [Fact]
+        public async Task QueryUsers_AsAnonymous_ShouldFail()
+        {
+            var (responseData, responseString) = await AnonymousClient.PostGqlRequest(
+                """
+                query {
+                    users(skip: 0, take: 10) {
+                        items {
+                            id
+                        }
+                    }
+                }
+                """,
+                true);
+
+            responseData["errors"].ShouldNotBeNull(responseString);
+            var errorCode = (string)responseData["errors"][0]["extensions"]["code"];
+            (errorCode == "AUTH_NOT_AUTHENTICATED" || errorCode == "AUTH_NOT_AUTHORIZED").ShouldBeTrue();
+        }
     }
 }

@@ -42,6 +42,7 @@ namespace Geex.Extensions.Identity.Gql
             })
             //.Authorize()
             ;
+            descriptor.Field(x => x.UsersCache()).AllowAnonymous();
             base.Configure(descriptor);
         }
 
@@ -59,6 +60,16 @@ namespace Geex.Extensions.Identity.Gql
                 query = query.Where(x => x.Id != GeexConstants.SuperAdminId);
             }
             return query;
+        }
+
+        public async Task<IQueryable<IUser>> UsersCache()
+        {
+            if (string.IsNullOrEmpty(_currentUser.UserId))
+            {
+                return Enumerable.Empty<IUser>().AsQueryable();
+            }
+
+            return await Users();
         }
 
         public async Task<IUser?> CurrentUser()
