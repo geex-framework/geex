@@ -210,5 +210,58 @@ namespace Geex.Tests.FeatureTests
                 role["permissions"].ShouldNotBeNull();
             }
         }
+
+        [Fact]
+        public async Task QueryRolesCache_AsAnonymous_ShouldReturnEmptyWithoutAuthError()
+        {
+            var (responseData, responseString) = await AnonymousClient.PostGqlRequest(
+                """
+                query rolesCache {
+                    rolesCache {
+                        id
+                    }
+                }
+                """);
+
+            responseData["errors"].ShouldBeNull(responseString);
+            responseData["data"].ShouldNotBeNull(responseString);
+            responseData["data"]["rolesCache"].AsArray().Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task QueryRolesCache_AsSuperAdmin_ShouldReturnRoles()
+        {
+            var (responseData, responseString) = await SuperAdminClient.PostGqlRequest(
+                """
+                query rolesCache {
+                    rolesCache {
+                        id
+                    }
+                }
+                """);
+
+            responseData["errors"].ShouldBeNull(responseString);
+            responseData["data"]["rolesCache"].AsArray().Count.ShouldBeGreaterThan(0);
+        }
+
+        [Fact]
+        public async Task QueryRoles_AsAnonymous_ShouldFail()
+        {
+            var (responseData, responseString) = await AnonymousClient.PostGqlRequest(
+                """
+                query {
+                    roles(skip: 0, take: 10) {
+                        items {
+                            id
+                        }
+                    }
+                }
+                """,
+                true);
+
+            responseData["errors"].ShouldNotBeNull(responseString);
+            var errorCode = (string)responseData["errors"][0]["extensions"]["code"];
+            (errorCode == "AUTH_NOT_AUTHENTICATED" || errorCode == "AUTH_NOT_AUTHORIZED").ShouldBeTrue();
+        }
     }
 }

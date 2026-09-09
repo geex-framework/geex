@@ -203,7 +203,10 @@ namespace Geex.Extensions.Identity.Core.Entities
             {
                 return;
             }
-            this.TenantCode ??= code;
+            if (string.IsNullOrEmpty(this.TenantCode))
+            {
+                this.TenantCode = code;
+            }
         }
     }
 }

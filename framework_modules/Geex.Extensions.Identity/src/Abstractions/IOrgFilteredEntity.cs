@@ -1,4 +1,4 @@
-﻿using MongoDB.Entities;
+using MongoDB.Entities;
 
 namespace Geex.Extensions.Identity;
 
@@ -7,5 +7,5 @@ namespace Geex.Extensions.Identity;
 /// </summary>
 public interface IOrgFilteredEntity : IEntityBase
 {
-    public string OrgCode { get; }
+    public string? OrgCode { get; }
 }
