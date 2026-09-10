@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-approval-flows",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "Approval flows extension tokens for Geex Angular apps. Aligns with Geex.Extensions.ApprovalFlows.",
   "sideEffects": false,
   "peerDependencies": {
@@ -10,11 +10,15 @@
   "dependencies": {
     "tslib": "^2.6.3"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "module": "dist/fesm2022/geexcode-geex-extensions-approval-flows.mjs",
   "typings": "dist/index.d.ts",
   "exports": {
-    "./package.json": { "default": "./package.json" },
+    "./package.json": {
+      "default": "./package.json"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/fesm2022/geexcode-geex-extensions-approval-flows.mjs",

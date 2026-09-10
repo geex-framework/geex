@@ -118,7 +118,7 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
     const blobStorage = geex.blobStorage;
     const defaultStorageType = blobStorage.defaultStorageType;
     const createDocument = blobStorage.createDocument;
-    const I18N = this.injector.get(GEEX_I18N) as any;
+    const I18N = this.injector.get(GEEX_I18N);
 
     const res: GeexUploadWidgetSchema = {
       type: type || "select",

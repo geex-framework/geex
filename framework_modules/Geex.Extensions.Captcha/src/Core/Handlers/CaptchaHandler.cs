@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Geex.Extensions.Captcha;
 using Geex.Extensions.Captcha.Abstractions;
 using Geex.Extensions.Captcha.Abstractions.Requests;
 using Geex.Extensions.Captcha.Core;
@@ -18,11 +19,13 @@ public class CaptchaHandler :
     private static readonly TimeSpan CaptchaLifetime = TimeSpan.FromMinutes(5);
     private readonly IRedisDatabase _cache;
     private readonly IUnitOfWork _uow;
+    private readonly CaptchaModuleOptions _options;
 
-    public CaptchaHandler(IRedisDatabase cache, IUnitOfWork uow)
+    public CaptchaHandler(IRedisDatabase cache, IUnitOfWork uow, CaptchaModuleOptions options)
     {
         _cache = cache;
         _uow = uow;
+        _options = options;
     }
 
     public async Task<Captcha> Handle(SendCaptchaRequest request, CancellationToken cancellationToken)
@@ -31,7 +34,10 @@ public class CaptchaHandler :
         {
             var captcha = new SmsCaptcha();
             await _cache.SetNamedAsync(captcha, keyOverride: captcha.Key, expireIn: CaptchaLifetime, token: cancellationToken);
-            await _uow.Request(new SendSmsRequest(request.SmsCaptchaPhoneNumber!, [captcha.Code]), cancellationToken);
+            if (!_options.BypassValidation)
+            {
+                await _uow.Request(new SendSmsRequest(request.SmsCaptchaPhoneNumber!, [captcha.Code]), cancellationToken);
+            }
             return captcha;
         }
 
@@ -47,6 +53,11 @@ public class CaptchaHandler :
 
     public async Task<bool> Handle(ValidateCaptchaRequest request, CancellationToken cancellationToken)
     {
+        if (_options.BypassValidation)
+        {
+            return true;
+        }
+
         if (request.CaptchaProvider == CaptchaProvider.Sms)
         {
             return await ValidateCaptcha<SmsCaptcha>(request);

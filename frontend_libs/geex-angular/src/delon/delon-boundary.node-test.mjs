@@ -43,6 +43,7 @@ describe("delon override hooks", () => {
     assert.match(src, /beforeOnRouted/);
     assert.match(src, /afterOnRouted/);
     assert.match(src, /protected isEqualToDefault/);
+    assert.match(src, /try \{[\s\S]*await this\.onRouted[\s\S]*\} finally \{[\s\S]*this\.loading\.set\(false\)/);
   });
 
   it("RoutedListComponent exposes table / batch hooks", () => {

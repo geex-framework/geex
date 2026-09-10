@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-settings",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "Geex settings extension: headless settings module and domain tokens. Aligns with Geex.Extensions.Settings.",
   "sideEffects": false,
   "peerDependencies": {

@@ -6,7 +6,7 @@ using Volo.Abp.Modularity;
 namespace Geex.Extensions.Captcha;
 
 [DependsOn(typeof(MessagingModule))]
-public class CaptchaModule : GeexModule<CaptchaModule>
+public class CaptchaModule : GeexModule<CaptchaModule, CaptchaModuleOptions>
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

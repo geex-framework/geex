@@ -22,7 +22,7 @@ import {
   templateUrl: "./payments-list.page.html",
 })
 export class PaymentsListPage implements OnInit {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   private readonly apollo = inject(Apollo);
   private readonly message = inject(NzMessageService);
   readonly loading = signal(false);

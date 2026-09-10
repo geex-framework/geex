@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-authentication-wechat",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "WeChat login extension: headless wechatAuth module for Geex Angular apps.",
   "sideEffects": false,
   "peerDependencies": {

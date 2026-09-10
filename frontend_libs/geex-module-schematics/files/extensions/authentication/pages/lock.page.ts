@@ -14,7 +14,7 @@ import { SharedModule } from "@/shared/shared.module";
   encapsulation: ViewEncapsulation.None,
 })
 export class UserLockComponent {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   f: FormGroup;
 
   get user(): User {

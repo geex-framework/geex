@@ -27,7 +27,7 @@ export class PermissionsComponent implements OnInit {
   @Input() permissions!: string[];
   @Output() readonly permissionsChange = new EventEmitter<string[]>();
 
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   private readonly appPermission = inject(GEEX_APP_PERMISSION);
   private readonly permissionFilter = inject(GEEX_PERMISSION_FILTER);
 

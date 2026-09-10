@@ -19,12 +19,9 @@ query userById($id: String) {
     }
   }
 }
-# 获取用户下拉menus
-query userMenus($filter: IUserFilterInput) {
-  users(skip: 0, take: 999, filter: $filter) {
-    items {
-      ...UserMinimal
-    }
+query usersCache {
+  usersCache {
+    ...UserMinimal
   }
 }
 # 编辑用户
@@ -78,7 +75,6 @@ fragment UserCacheDto on User {
     url
   }
 }
-# 用户 select option Menus
 fragment UserMinimal on User {
   id
   username

@@ -20,7 +20,7 @@ import SparkMD5 from "spark-md5";
   imports: [SharedModule],
 })
 export class UserRegisterComponent implements OnDestroy {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   captchaKey: string;
   constructor(
     fb: FormBuilder,

@@ -35,7 +35,7 @@ export type ClickParams = {
   imports: [FormsModule, NzButtonModule, NzIconModule, NzInputModule, NzPopoverModule, NzTabsModule],
 })
 export class ApproveButtonComponent implements OnInit {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   isReject = false;
   rejectReason = "";
   @Output() readonly nzClick = new EventEmitter<ClickParams>();

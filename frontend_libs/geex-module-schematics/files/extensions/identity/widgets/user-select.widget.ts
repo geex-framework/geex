@@ -22,10 +22,10 @@ import {
 import { ControlUIWidget, getData, SFSchemaEnum, SFSchemaEnumType, SFSelectWidgetSchema, SFValue, toBool } from "@delon/form";
 import { ArrayService } from "@delon/util/array";
 
-import { userMenus as UserMenusGql } from "../graphql/user.operations.gql";
+import { usersCache as UsersCacheGql } from "../graphql/user.operations.gql";
 import type {
-  userMenusResult as UserMenusQuery,
-  userMenusVariables as UserMenusQueryVariables,
+  usersCacheResult as UsersCacheQuery,
+  usersCacheVariables as UsersCacheQueryVariables,
   UserMinimal as UserMinimalFragment,
 } from "../graphql/user.operations.gql";
 
@@ -147,13 +147,15 @@ export class UserSelectWidget extends ControlUIWidget<SFSelectWidgetSchema> impl
     this.ui.asyncData = () => {
       return this.injector
         .get(Apollo)
-        .query<UserMenusQuery, UserMenusQueryVariables>({
-          query: UserMenusGql,
+        .query<UsersCacheQuery, UsersCacheQueryVariables>({
+          query: UsersCacheGql,
           variables: {},
         })
         .pipe(
           map(x =>
-            x.data.users.items.map(y => ({ label: y.username + (y.nickname !== null ? y.nickname : ""), value: y.id }) as SFSchemaEnumType),
+            (x.data.usersCache ?? [])
+              .filter((y): y is NonNullable<typeof y> => y != null)
+              .map(y => ({ label: y.username + (y.nickname !== null ? y.nickname : ""), value: y.id }) as SFSchemaEnumType),
           ),
         );
     };

@@ -14,7 +14,7 @@ import { blobObjects, deleteBlobObject, type BlobObjectBrief } from "../../graph
   templateUrl: "./list.page.html",
 })
 export class BlobStorageListPage implements OnInit {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   private readonly apollo = inject(Apollo);
   private readonly message = inject(NzMessageService);
   private readonly router = inject(Router);

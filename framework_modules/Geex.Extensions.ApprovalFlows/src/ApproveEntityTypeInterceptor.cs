@@ -68,25 +68,26 @@ namespace Geex.Extensions.ApprovalFlows
                 foreach (var (mutationExtType, data) in PatchedEntities)
                 {
                     var (implementation, entityName) = data;
-                    var hasApproveMutationType = mutationExtType.GetInterface(nameof(IHasApproveMutation));
-                    var submit = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.Submit));
-                    var approve = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.Approve));
-                    var unSubmit = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.UnSubmit));
-                    var unApprove = hasApproveMutationType.GetMethod(nameof(IHasApproveMutation<IApproveEntity>.UnApprove));
-                    List<MemberInfo> methods = [submit, approve, unSubmit, unApprove];
+                    var methods = mutationExtType
+                        .GetMethods()
+                        .Where(m => m.GetParameters() is { Length: 3 } parameters
+                                    && parameters[0].ParameterType == typeof(string[])
+                                    && parameters[2].ParameterType == typeof(IUnitOfWork))
+                        .ToList();
                     foreach (var method in methods)
                     {
-                        var fieldDefinition = new ObjectFieldDefinition($"{method.Name.ToCamelCase()}{entityName}",
+                        var capturedMethod = method;
+                        var fieldDefinition = new ObjectFieldDefinition($"{capturedMethod.Name.ToCamelCase()}{entityName}",
                             type: TypeReference.Parse("Boolean"),
                             resolver: async (context) =>
                             {
                                 var instance = context.Service(implementation);
-                                return await (submit.Invoke(instance, [
+                                return await (capturedMethod.Invoke(instance, [
                                     context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"),
                                     context.Service<IUnitOfWork>()
                                 ]) as Task<bool>);
                             });
-                        fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("String[]")));
+                        fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("[String!]")));
                         fieldDefinition.Arguments.Add(new InputFieldDefinition("remark", type: TypeReference.Parse("String")));
                         if (GeexTypeInterceptor.AuditTypes.Contains(mutationExtType))
                         {

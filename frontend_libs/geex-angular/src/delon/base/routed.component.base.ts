@@ -73,21 +73,24 @@ export abstract class RoutedComponent<TParams extends {}> extends BusinessCompon
   protected async handleRouteReload(): Promise<void> {
     (this.router as any).navigationReload();
     this.loading.set(true);
-    const routeParams = {
-      pathParams: await (this.route.params as any).firstValuePromise(),
-      queryParams: await (this.route.queryParams as any).firstValuePromise(),
-      fragment: await (this.route.fragment as any).firstValuePromise(),
-    };
-    const params = await this.resolve(routeParams);
-    this.paramsForm.reset(params, { emitEvent: false });
-    this.params.set(params);
-    await this.beforeOnRouted(params);
-    await this.onRouted(params);
-    await this.afterOnRouted(params);
-    this.loading.set(false);
-    const title = this.title();
-    if (title) this.reuseTabSrv.title = title;
-    this.cdr.detectChanges();
+    try {
+      const routeParams = {
+        pathParams: await (this.route.params as any).firstValuePromise(),
+        queryParams: await (this.route.queryParams as any).firstValuePromise(),
+        fragment: await (this.route.fragment as any).firstValuePromise(),
+      };
+      const params = await this.resolve(routeParams);
+      this.paramsForm.reset(params, { emitEvent: false });
+      this.params.set(params);
+      await this.beforeOnRouted(params);
+      await this.onRouted(params);
+      await this.afterOnRouted(params);
+      const title = this.title();
+      if (title) this.reuseTabSrv.title = title;
+    } finally {
+      this.loading.set(false);
+      this.cdr.detectChanges();
+    }
   }
 
   protected beforeOnRouted(_params: TParams): void | Promise<void> {}

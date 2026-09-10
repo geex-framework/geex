@@ -15,7 +15,7 @@ import { OAuthService } from "angular-oauth2-oidc";
 import { NzModalService } from "ng-zorro-antd/modal";
 import { NzNotificationService } from "ng-zorro-antd/notification";
 import { Observable, of, throwError, Subject } from "rxjs";
-import { catchError, finalize, mergeMap, debounceTime, distinctUntilChanged, switchMap, share } from "rxjs/operators";
+import { catchError, finalize, mergeMap, debounceTime, exhaustMap } from "rxjs/operators";
 
 import { geex } from "../geex";
 import {
@@ -46,8 +46,7 @@ export class GeexHttpInterceptor implements HttpInterceptor {
   constructor() {
     this.loginModal$ = this.loginTrigger$.pipe(
       debounceTime(100),
-      distinctUntilChanged(),
-      switchMap(() => {
+      exhaustMap(() => {
         return new Observable<void>(subscriber => {
           const options = this.buildLoginConfirmOptions();
           const modal = this.modalSrv.confirm({
@@ -74,7 +73,6 @@ export class GeexHttpInterceptor implements HttpInterceptor {
           };
         });
       }),
-      share(),
     );
     this.loginModal$.subscribe();
   }

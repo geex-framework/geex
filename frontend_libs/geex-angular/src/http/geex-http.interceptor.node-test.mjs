@@ -19,6 +19,14 @@ describe("GeexHttpInterceptor", () => {
     assert.match(tokens, /SILENT_REQUEST/);
   });
 
+  it("shows a new 401 login confirm after the previous modal closes", () => {
+    const source = fs.readFileSync(path.join(__dirname, "geex-http.interceptor.ts"), "utf8");
+    assert.match(source, /exhaustMap/);
+    assert.match(source, /debounceTime\(100\)/);
+    assert.doesNotMatch(source, /distinctUntilChanged/);
+    assert.doesNotMatch(source, /switchMap/);
+  });
+
   it("exposes override hooks on the interceptor", () => {
     const source = fs.readFileSync(path.join(__dirname, "geex-http.interceptor.ts"), "utf8");
     for (const hook of [

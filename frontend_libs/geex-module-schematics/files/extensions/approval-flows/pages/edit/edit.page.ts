@@ -26,7 +26,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
   readonly form = new FormGroup({
     name: new FormControl("", { nonNullable: true, validators: Validators.required }),
     description: new FormControl("", { nonNullable: true, validators: Validators.required }),
-    orgCode: new FormControl("", { nonNullable: true, validators: Validators.required }),
+    orgCode: new FormControl("", { nonNullable: true }),
     nodesJson: new FormControl("[]", { nonNullable: true, validators: Validators.required }),
   });
 
@@ -58,15 +58,16 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
       return;
     }
     const value = this.form.getRawValue();
+    const orgCode = value.orgCode || undefined;
     if (this.id) {
       await this.apollo.mutate({
         mutation: editApprovalFlowTemplate,
-        variables: { request: { id: this.id, name: value.name, description: value.description, orgCode: value.orgCode, approvalFlowNodeTemplates: nodes } },
+        variables: { request: { id: this.id, name: value.name, description: value.description, orgCode, approvalFlowNodeTemplates: nodes } },
       }).firstValuePromise();
     } else {
       await this.apollo.mutate({
         mutation: createApprovalFlowTemplate,
-        variables: { request: { name: value.name, description: value.description, orgCode: value.orgCode, approvalFlowNodeTemplates: nodes } },
+        variables: { request: { name: value.name, description: value.description, orgCode, approvalFlowNodeTemplates: nodes } },
       }).firstValuePromise();
     }
     this.message.success("Approval flow template saved");

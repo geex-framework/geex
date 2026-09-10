@@ -39,7 +39,7 @@ export class GeexUploadComponent implements ControlValueAccessor {
   private readonly apollo = inject(Apollo);
   private readonly messageService = inject(NzMessageService);
   private readonly modalService = inject(NzModalService);
-  private readonly I18N = inject(GEEX_I18N) as any;
+  private readonly I18N = inject(GEEX_I18N);
   private readonly blobStorage = geex.blobStorage;
 
   @ContentChild("uploadButton") uploadButton: any;

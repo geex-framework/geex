@@ -28,7 +28,7 @@ import SparkMD5 from "spark-md5";
   encapsulation: ViewEncapsulation.None,
 })
 export class UserLoginComponent implements OnInit, OnDestroy {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   geex = geex;
   submitting = signal(false);
   oauthLoading = signal(false);

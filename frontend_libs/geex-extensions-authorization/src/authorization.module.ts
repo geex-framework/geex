@@ -32,10 +32,10 @@ export function createAuthorizationModule(injector: Injector): AuthorizationModu
       }
 
       const multiTenant = geex["multiTenant"] as AuthorizationMultiTenantModule;
-      const currentTenantCode = multiTenant.current()?.code;
-      const tokenTenantCode = claims?.__tenant;
+      const currentTenantCode = multiTenant.current()?.code ?? "";
+      const tokenTenantCode = claims?.__tenant ?? "";
 
-      if (currentTenantCode && tokenTenantCode === currentTenantCode) {
+      if (tokenTenantCode === currentTenantCode) {
         return true;
       }
 

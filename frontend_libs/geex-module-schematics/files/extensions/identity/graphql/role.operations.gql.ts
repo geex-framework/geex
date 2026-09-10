@@ -12,12 +12,10 @@ export type roleListsVariables = Types.Exact<{
 
 export type roleListsResult = { __typename?: 'Query', roles?: { __typename?: 'RolesCollectionSegment', totalCount: number, items?: Array<{ __typename?: 'Role', createdOn: any, name: string, id: string, isStatic: boolean, isDefault: boolean } | null> | null, pageInfo: { __typename?: 'CollectionSegmentInfo', hasPreviousPage: boolean, hasNextPage: boolean } } | null };
 
-export type roleMenusVariables = Types.Exact<{
-  filter?: Types.InputMaybe<Types.IRoleFilterInput>;
-}>;
+export type rolesCacheVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type roleMenusResult = { __typename?: 'Query', roles?: { __typename?: 'RolesCollectionSegment', items?: Array<{ __typename?: 'Role', id: string, name: string } | null> | null } | null };
+export type rolesCacheResult = { __typename?: 'Query', rolesCache?: Array<{ __typename?: 'Role', id: string, name: string } | null> | null };
 
 export type roleByNameVariables = Types.Exact<{
   name?: Types.InputMaybe<Types.Scalars['String']['input']>;
@@ -106,15 +104,13 @@ export const roleLists = gql`
 }
     ${RoleBrief}
 ${PageInfo}` as unknown as DocumentNode<roleListsResult, roleListsVariables>;
-export const roleMenus = gql`
-    query roleMenus($filter: IRoleFilterInput) {
-  roles(skip: 0, take: 999, filter: $filter) {
-    items {
-      ...RoleMinimal
-    }
+export const rolesCache = gql`
+    query rolesCache {
+  rolesCache {
+    ...RoleMinimal
   }
 }
-    ${RoleMinimal}` as unknown as DocumentNode<roleMenusResult, roleMenusVariables>;
+    ${RoleMinimal}` as unknown as DocumentNode<rolesCacheResult, rolesCacheVariables>;
 export const roleByName = gql`
     query roleByName($name: String) {
   roles(skip: 0, take: 1, filter: {name: {eq: $name}}) {

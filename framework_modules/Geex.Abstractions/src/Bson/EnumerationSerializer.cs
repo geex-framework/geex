@@ -94,9 +94,13 @@ namespace Geex.Bson
                     throw this.CreateCannotDeserializeFromBsonTypeException(currentBsonType);
             }
 
-            // 使用优化的枚举创建方法
-            var result = EnumerationReflectionCache.FromValue<TEnum>(data?.ToString());
-            return result;
+            var raw = data?.ToString();
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return default;
+            }
+
+            return EnumerationReflectionCache.FromValue<TEnum>(raw);
         }
 
         /// <summary>Serializes a value.</summary>

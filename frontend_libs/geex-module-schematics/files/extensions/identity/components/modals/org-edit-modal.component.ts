@@ -43,7 +43,7 @@ import { SharedModule } from "@/shared/shared.module";
 export class OrgEditModalComponent extends ModalComponentBase implements OnInit {
   @Input() org: Partial<CreateOrgRequest & { id?: string; parentCode?: string }>;
 
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
 
   get isEditMode(): boolean {
     return !!this.org?.id;
@@ -71,6 +71,9 @@ export class OrgEditModalComponent extends ModalComponentBase implements OnInit 
               {
                 query: OrgsGql,
               },
+              {
+                query: OrgsCacheGql,
+              },
             ],
           })
           .firstValuePromise();
@@ -88,6 +91,9 @@ export class OrgEditModalComponent extends ModalComponentBase implements OnInit 
             refetchQueries: [
               {
                 query: OrgsGql,
+              },
+              {
+                query: OrgsCacheGql,
               },
             ],
           })

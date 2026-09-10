@@ -42,7 +42,7 @@ export class PermissionTransferWidget extends ControlUIWidget<PermissionTransfer
   static readonly KEY = "permission-transfer";
 
   private readonly appPermission = inject(GEEX_APP_PERMISSION);
-  private readonly i18n = inject(GEEX_I18N) as any;
+  private readonly i18n = inject(GEEX_I18N);
   private readonly permissionFilter = inject(GEEX_PERMISSION_FILTER);
 
   list: SFSchemaEnum[] = [];

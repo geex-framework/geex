@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-blob-storage",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "Blob storage extension: headless blobStorage module for Geex Angular apps. Aligns with Geex.Extensions.BlobStorage.",
   "sideEffects": false,
   "peerDependencies": {

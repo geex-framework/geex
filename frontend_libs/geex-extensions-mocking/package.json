@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-mocking",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "Mocking extension: headless mocking module for Geex Angular apps.",
   "sideEffects": false,
   "peerDependencies": {

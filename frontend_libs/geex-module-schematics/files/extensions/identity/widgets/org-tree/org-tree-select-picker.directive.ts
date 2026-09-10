@@ -26,7 +26,7 @@ type OrgCacheItem = Org & {
 export class OrgTreeSelectPickerDirective implements OnInit {
   @Input() directSelection = false;
 
-  private readonly i18n = inject(GEEX_I18N) as any;
+  private readonly i18n = inject(GEEX_I18N);
 
   private readonly ownershipFilter = inject(GEEX_ORG_OWNERSHIP_FILTER);
 

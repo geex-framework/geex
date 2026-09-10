@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-multi-tenant",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "Geex multi-tenant extension: headless tenant module and domain tokens. Aligns with Geex.Extensions.MultiTenant.",
   "sideEffects": false,
   "peerDependencies": {

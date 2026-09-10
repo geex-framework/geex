@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Geex.Abstractions;
 using Geex.Extensions.Identity.Core.Entities;
+using Geex.MultiTenant;
 using MongoDB.Bson;
 
 namespace Geex.Tests.FeatureTests
@@ -356,6 +357,45 @@ namespace Geex.Tests.FeatureTests
                 (user as User).Password.ShouldNotBe(newPassword);
                 user.CheckPassword(newPassword).ShouldBe(true);
             }
+        }
+
+        [Fact]
+        public async Task SetTenant_WhenTenantCodeIsEmpty_ShouldAssignTenant()
+        {
+            var testUsername = $"settenant_{ObjectId.GenerateNewId()}";
+            var tenantCode = "default";
+
+            using var scope = ScopedService.CreateScope();
+            var uow = scope.ServiceProvider.GetService<IUnitOfWork>();
+
+            var user = (User)await uow.Request(new CreateUserRequest
+            {
+                Username = testUsername,
+                Email = $"{testUsername}@test.com",
+                Password = "Password123!".ToMd5(),
+                Nickname = "Test User",
+                IsEnable = true,
+                RoleIds = new List<string>(),
+                OrgCodes = new List<string>()
+            });
+            user.TenantCode = "";
+            user.SetTenant(tenantCode);
+
+            user.TenantCode.ShouldBe(tenantCode);
+        }
+
+        [Fact]
+        public async Task SetTenant_WhenUserIsSuperAdmin_ShouldSkip()
+        {
+            using var scope = ScopedService.CreateScope();
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            uow.DbContext.DisableDataFilters(typeof(ITenantFilteredEntity));
+
+            var superAdmin = uow.Query<User>().First(x => x.Id == GeexConstants.SuperAdminId);
+            var originalTenantCode = superAdmin.TenantCode;
+            superAdmin.SetTenant("default");
+
+            superAdmin.TenantCode.ShouldBe(originalTenantCode);
         }
     }
 }

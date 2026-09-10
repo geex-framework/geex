@@ -10,12 +10,9 @@ query roleLists($skip: Int, $take: Int, $filter: IRoleFilterInput) {
     totalCount
   }
 }
-# 角色 selectMenu options
-query roleMenus($filter: IRoleFilterInput) {
-  roles(skip: 0, take: 999, filter: $filter) {
-    items {
-      ...RoleMinimal
-    }
+query rolesCache {
+  rolesCache {
+    ...RoleMinimal
   }
 }
 # 根据角色名称获取角色详情

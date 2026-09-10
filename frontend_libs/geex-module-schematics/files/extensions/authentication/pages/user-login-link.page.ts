@@ -21,7 +21,7 @@ import { authenticate } from "../graphql/operations.gql";
   encapsulation: ViewEncapsulation.None,
 })
 export class UserLoginLinkPage implements OnInit {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   geex = geex;
   tenant$: Signal<Tenant>;
   userLoginLinkToken = "";

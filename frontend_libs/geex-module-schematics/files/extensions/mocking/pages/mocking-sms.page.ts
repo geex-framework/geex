@@ -75,7 +75,7 @@ type MockSmsMessageRow = {
   `,
 })
 export class MockingSmsPage implements OnInit {
-  I18N = inject(GEEX_I18N) as any;
+  I18N = inject(GEEX_I18N);
   private readonly apollo = inject(Apollo);
 
   messages = signal<MockSmsMessageRow[]>([]);

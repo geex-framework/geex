@@ -11,7 +11,7 @@ import type { JobExecutionHistoryBrief, JobStateBrief } from "../graphql/operati
   templateUrl: "./job-state-list.page.html",
 })
 export class BackgroundJobListPage implements OnInit {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   readonly loading = signal(false);
   readonly data = signal<JobStateBrief[]>([]);
   readonly total = signal(0);

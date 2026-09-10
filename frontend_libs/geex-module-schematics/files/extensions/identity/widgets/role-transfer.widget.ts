@@ -6,10 +6,10 @@ import { TransferCanMove, TransferChange, TransferItem, TransferSearchChange, Tr
 import { Observable, of } from "rxjs";
 import { map } from "rxjs/operators";
 
-import { roleMenus as RoleMenusGql } from "../graphql/role.operations.gql";
+import { rolesCache as RolesCacheGql } from "../graphql/role.operations.gql";
 import {
-  roleMenusResult as RoleMenusQuery,
-  roleMenusVariables as RoleMenusQueryVariables,
+  rolesCacheResult as RolesCacheQuery,
+  rolesCacheVariables as RolesCacheQueryVariables,
 } from "../graphql/role.operations.gql";
 import { SFTransferWidgetSchema } from "@delon/form/widgets/transfer";
 import { GEEX_I18N } from "@geexcode/geex-angular";
@@ -49,7 +49,7 @@ export class RoleTransferWidget extends ControlUIWidget<RoleTransferWidgetSchema
 
   async ngOnInit() {
     const { titles, operations, itemUnit, itemsUnit, showSearch } = this.ui;
-    const i18n = this.injector.get(GEEX_I18N) as any;
+    const i18n = this.injector.get(GEEX_I18N);
     this.ui = {
       titles: titles || [i18n.Common.transfer.notOwned, i18n.Common.transfer.owned],
       operations: operations || ["", ""],
@@ -59,11 +59,17 @@ export class RoleTransferWidget extends ControlUIWidget<RoleTransferWidgetSchema
       asyncData: () => {
         return this.injector
           .get(Apollo)
-          .query<RoleMenusQuery, RoleMenusQueryVariables>({
-            query: RoleMenusGql,
+          .query<RolesCacheQuery, RolesCacheQueryVariables>({
+            query: RolesCacheGql,
             variables: {},
           })
-          .pipe(map(x => x.data.roles.items.map(x => ({ title: x.name, value: x.id }) as SFSchemaEnumType)));
+          .pipe(
+            map(x =>
+              (x.data.rolesCache ?? [])
+                .filter((y): y is NonNullable<typeof y> => y != null)
+                .map(y => ({ title: y.name, value: y.id }) as SFSchemaEnumType),
+            ),
+          );
       },
     };
   }

@@ -13,7 +13,7 @@ import { SharedModule } from "@/shared/shared.module";
   imports: [SharedModule],
 })
 export class UserRegisterResultComponent {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
 
   constructor(
     route: ActivatedRoute,

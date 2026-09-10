@@ -15,6 +15,7 @@ export const GQL_ON_PUBLIC_NOTIFY = gql`
           messageType
           severity
           createdOn
+          meta
         }
       }
     }
@@ -36,6 +37,7 @@ export const GQL_ON_PRIVATE_NOTIFY = gql`
           messageType
           severity
           createdOn
+          meta
         }
       }
     }
@@ -52,6 +54,7 @@ export const GQL_UNREAD_MESSAGES = gql`
         messageType
         severity
         createdOn
+        meta
       }
     }
   }
@@ -67,6 +70,7 @@ export const GQL_MESSAGES = gql`
         messageType
         severity
         createdOn
+        meta
       }
     }
   }

@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-audit-logs",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "Geex audit logs extension: headless audit logs module. Aligns with Geex.Extensions.AuditLogs.",
   "sideEffects": false,
   "peerDependencies": {
@@ -14,11 +14,15 @@
   "dependencies": {
     "tslib": "^2.6.3"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "module": "dist/fesm2022/geexcode-geex-extensions-audit-logs.mjs",
   "typings": "dist/index.d.ts",
   "exports": {
-    "./package.json": { "default": "./package.json" },
+    "./package.json": {
+      "default": "./package.json"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/fesm2022/geexcode-geex-extensions-audit-logs.mjs",

@@ -20,12 +20,10 @@ export type userByIdVariables = Types.Exact<{
 
 export type userByIdResult = { __typename?: 'Query', users?: { __typename?: 'UsersCollectionSegment', items?: Array<{ __typename?: 'User', isEnable: boolean, permissions: Array<string>, orgCodes: Array<string>, avatarFileId?: string | null, id: string, username: string, nickname?: string | null, phoneNumber?: string | null, email?: string | null, roleNames: Array<string>, roleIds: Array<string>, avatarFile?: { __typename?: 'BlobObject', url?: string | null, id: string, createdOn: any, fileSize: any, mimeType?: string | null, storageType: Types.BlobStorageType, fileName?: string | null, md5?: string | null } | null, orgs: Array<{ __typename?: 'Org', name: string, code: string, allParentOrgs: Array<{ __typename?: 'Org', code: string, name: string }> }>, claims: Array<{ __typename?: 'UserClaim', claimType: string, claimValue: string }> } | null> | null } | null };
 
-export type userMenusVariables = Types.Exact<{
-  filter?: Types.InputMaybe<Types.IUserFilterInput>;
-}>;
+export type usersCacheVariables = Types.Exact<{ [key: string]: never; }>;
 
 
-export type userMenusResult = { __typename?: 'Query', users?: { __typename?: 'UsersCollectionSegment', items?: Array<{ __typename?: 'User', id: string, username: string, nickname?: string | null } | null> | null } | null };
+export type usersCacheResult = { __typename?: 'Query', usersCache?: Array<{ __typename?: 'User', id: string, username: string, nickname?: string | null } | null> | null };
 
 export type editUserVariables = Types.Exact<{
   request: Types.EditUserRequest;
@@ -164,15 +162,13 @@ export const userById = gql`
   }
 }
     ${UserDetail}` as unknown as DocumentNode<userByIdResult, userByIdVariables>;
-export const userMenus = gql`
-    query userMenus($filter: IUserFilterInput) {
-  users(skip: 0, take: 999, filter: $filter) {
-    items {
-      ...UserMinimal
-    }
+export const usersCache = gql`
+    query usersCache {
+  usersCache {
+    ...UserMinimal
   }
 }
-    ${UserMinimal}` as unknown as DocumentNode<userMenusResult, userMenusVariables>;
+    ${UserMinimal}` as unknown as DocumentNode<usersCacheResult, usersCacheVariables>;
 export const editUser = gql`
     mutation editUser($request: EditUserRequest!) {
   editUser(request: $request) {

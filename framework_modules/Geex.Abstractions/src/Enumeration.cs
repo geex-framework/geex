@@ -50,6 +50,7 @@ namespace Geex
         static readonly ConcurrentDictionary<string, TEnum> _fromNameIgnoreCase = new ConcurrentDictionary<string, TEnum>();
 
         static readonly ConcurrentDictionary<string, TEnum> _fromValue = new ConcurrentDictionary<string, TEnum>();
+        static readonly ConcurrentDictionary<string, string> _aliasToValue = new ConcurrentDictionary<string, string>();
 
         private static IEnumerable<TEnum> GetAllOptions()
         {
@@ -89,6 +90,14 @@ namespace Geex
                     ValueCacheDictionary.TryAdd(enumOption.Name, enumOption);
                 }
 
+            }
+
+            foreach (var alias in _aliasToValue)
+            {
+                if (_fromValue.TryGetValue(alias.Value, out var member))
+                {
+                    _fromValue.TryAdd(alias.Key, member);
+                }
             }
 
             return options.OrderBy(t => t.Name).ToList();
@@ -209,14 +218,36 @@ namespace Geex
         /// The first item found that is associated with the specified value.
         /// If the specified value is not found, throws a <see cref="KeyNotFoundException"/>.
         /// </returns>
-        public static TEnum FromValue(string value)
+        public static TEnum FromValue(string value) => FromValue(value, []);
+
+        public static TEnum FromValue(string value, params string[] aliases)
         {
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
 
+            var item = ResolveValue(value);
+            foreach (var alias in aliases)
+            {
+                if (string.IsNullOrWhiteSpace(alias) || alias == item.Value)
+                {
+                    continue;
+                }
+                _aliasToValue[alias] = item.Value;
+                _fromValue.TryAdd(alias, item);
+            }
+            return item;
+        }
+
+        static TEnum ResolveValue(string value)
+        {
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(TEnum).TypeHandle);
+            if (_aliasToValue.TryGetValue(value, out var canonical))
+            {
+                value = canonical;
+            }
+
             if (!_fromValue.TryGetValue(value, out var result))
             {
-                // Create dynamic instance instead of throwing exception
                 return Create(value, value);
             }
             return result;
@@ -235,9 +266,14 @@ namespace Geex
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
 
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(TChildEnum).TypeHandle);
+            if (_aliasToValue.TryGetValue(value, out var canonical))
+            {
+                value = canonical;
+            }
+
             if (!_fromValue.TryGetValue(value, out var result))
             {
-                // Create dynamic instance instead of throwing exception
                 return CreateTyped<TChildEnum>(value, value);
             }
 

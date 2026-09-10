@@ -12,7 +12,7 @@ import type { MessagingBrief } from "../graphql/operations.gql";
   templateUrl: "./unread-list.page.html",
 })
 export class MessagingUnreadListPage implements OnInit {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   private readonly message = inject(NzMessageService);
   readonly loading = signal(false);
   readonly selectedIds = signal<string[]>([]);

@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-identity",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "Geex identity extension: identity headless module and domain tokens. Aligns with Geex.Extensions.Identity.",
   "sideEffects": false,
   "peerDependencies": {

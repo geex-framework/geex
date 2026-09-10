@@ -13,5 +13,5 @@ import { GEEX_I18N } from "@geexcode/geex-angular";
   `,
 })
 export class MockingPaymentsPage {
-  I18N = inject(GEEX_I18N) as any;
+  I18N = inject(GEEX_I18N);
 }

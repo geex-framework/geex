@@ -12,7 +12,7 @@ import { Geex, GEEX_I18N } from "@geexcode/geex-angular";
   imports: [SharedModule],
 })
 export class TenantSwitcherComponent implements OnInit {
-    readonly I18N = inject(GEEX_I18N) as any;
+    readonly I18N = inject(GEEX_I18N);
     private geex = inject(Geex);
     constructor(
     private apollo: Apollo,

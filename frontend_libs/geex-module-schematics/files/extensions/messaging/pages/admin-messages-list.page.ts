@@ -14,7 +14,7 @@ import type { MessagingBrief } from "../graphql/operations.gql";
   templateUrl: "./admin-messages-list.page.html",
 })
 export class MessagingAdminListPage implements OnInit {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   private readonly message = inject(NzMessageService);
   private readonly modal = inject(NzModalService);
   private readonly fb = inject(FormBuilder);

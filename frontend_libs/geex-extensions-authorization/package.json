@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-extensions-authorization",
-  "version": "0.0.1",
+  "version": "0.0.54",
   "description": "Authorization extension for Geex Angular apps (AuthorizeGuard, ACL bridge). Aligns with Geex.Extensions.Authorization.",
   "sideEffects": false,
   "peerDependencies": {

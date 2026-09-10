@@ -15,7 +15,7 @@ import { approvalFlowTemplates, deleteApprovalFlowTemplate, type ApprovalFlowTem
   templateUrl: "./list.page.html",
 })
 export class ApprovalFlowTemplateListPage implements OnInit {
-  readonly I18N = inject(GEEX_I18N) as any;
+  readonly I18N = inject(GEEX_I18N);
   private readonly apollo = inject(Apollo);
   private readonly message = inject(NzMessageService);
   private readonly router = inject(Router);
