@@ -127,8 +127,10 @@ namespace MongoDB.Entities
             var disabledFilters = new ConcurrentDictionary<Type, IDataFilter>();
             foreach (var filterInterface in filteredInterfaces)
             {
-                DataFilters.Remove(filterInterface, out var disabledDataFilter);
-                disabledFilters.TryAdd(filterInterface, disabledDataFilter);
+                if (DataFilters.TryRemove(filterInterface, out var disabledDataFilter) && disabledDataFilter is not null)
+                {
+                    disabledFilters.TryAdd(filterInterface, disabledDataFilter);
+                }
             }
             return new FilterDisabledContext(this, disabledFilters);
         }
