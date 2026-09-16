@@ -1,6 +1,6 @@
 {
   "name": "@geexcode/geex-angular",
-  "version": "0.0.54",
+  "version": "0.0.55",
   "description": "Geex Angular core: HTTP, Apollo, i18n, Delon page bases, startup, headless platform modules.",
   "module": "dist/index.js",
   "typings": "dist/index.d.ts",

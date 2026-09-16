@@ -1,9 +1,9 @@
 import type { GeexModule } from "@geexcode/geex-angular";
 
 export enum GeexApproveStatus {
-  DEFAULT = "DEFAULT",
-  SUBMITTED = "SUBMITTED",
-  APPROVED = "APPROVED",
+  Default = "Default",
+  Submitted = "Submitted",
+  Approved = "Approved",
 }
 
 export type GeexApproveStatusOption = {
@@ -12,9 +12,9 @@ export type GeexApproveStatusOption = {
 };
 
 export const DEFAULT_GEEX_APPROVE_STATUS_OPTIONS: readonly GeexApproveStatusOption[] = [
-  { label: "待上报", value: GeexApproveStatus.DEFAULT },
-  { label: "已审批", value: GeexApproveStatus.APPROVED },
-  { label: "已上报", value: GeexApproveStatus.SUBMITTED },
+  { label: "待上报", value: GeexApproveStatus.Default },
+  { label: "已审批", value: GeexApproveStatus.Approved },
+  { label: "已上报", value: GeexApproveStatus.Submitted },
 ];
 
 export interface ApprovalFlowsModule extends GeexModule<{

@@ -1,7 +1,7 @@
 import * as i0 from '@angular/core';
 import { signal, InjectionToken, runInInjectionContext, makeEnvironmentProviders, Injector, inject, Injectable, provideAppInitializer, importProvidersFrom, ChangeDetectorRef, effect, computed, Component, input, output, contentChild, untracked, isSignal } from '@angular/core';
 import { fromEvent, Subject, Observable, throwError, of, firstValueFrom, interval, filter, map, takeUntil, timer, BehaviorSubject, isObservable, lastValueFrom, switchMap as switchMap$1 } from 'rxjs';
-import { debounceTime, switchMap, distinctUntilChanged, share, mergeMap, catchError, finalize, filter as filter$1 } from 'rxjs/operators';
+import { debounceTime, switchMap, exhaustMap, mergeMap, catchError, finalize, filter as filter$1 } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpContextToken, HttpErrorResponse, HttpContext, HttpResponseBase, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { InMemoryCache, ApolloLink, CombinedGraphQLErrors } from '@apollo/client';
@@ -237,7 +237,7 @@ class GeexHttpInterceptor {
     loginTrigger$ = new Subject();
     loginModal$;
     constructor() {
-        this.loginModal$ = this.loginTrigger$.pipe(debounceTime(100), distinctUntilChanged(), switchMap(() => {
+        this.loginModal$ = this.loginTrigger$.pipe(debounceTime(100), exhaustMap(() => {
             return new Observable(subscriber => {
                 const options = this.buildLoginConfirmOptions();
                 const modal = this.modalSrv.confirm({
@@ -263,7 +263,7 @@ class GeexHttpInterceptor {
                     modal?.destroy();
                 };
             });
-        }), share());
+        }));
         this.loginModal$.subscribe();
     }
     get notification() {
@@ -1373,8 +1373,8 @@ i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImpor
 /* eslint-disable */
 // Converted from UMD rison.js for ng-packagr bundling
 var risonRegex = /^\s*(?:\([^()]*:[^()]*\)|!\([^()]*\)|!t|!f|!n|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE]\d+)?|'(?:[^'!]|!(?:'|!))*'|[A-Za-z0-9_./~-]+)\s*$/;
-const exports$1 = {};
-var rison = exports$1;
+const exports = {};
+var rison = exports;
 //////////////////////////////////////////////////
 //
 //  the stringifier is based on
@@ -1916,22 +1916,26 @@ class RoutedComponent extends BusinessComponentBase {
     async handleRouteReload() {
         this.router.navigationReload();
         this.loading.set(true);
-        const routeParams = {
-            pathParams: await this.route.params.firstValuePromise(),
-            queryParams: await this.route.queryParams.firstValuePromise(),
-            fragment: await this.route.fragment.firstValuePromise(),
-        };
-        const params = await this.resolve(routeParams);
-        this.paramsForm.reset(params, { emitEvent: false });
-        this.params.set(params);
-        await this.beforeOnRouted(params);
-        await this.onRouted(params);
-        await this.afterOnRouted(params);
-        this.loading.set(false);
-        const title = this.title();
-        if (title)
-            this.reuseTabSrv.title = title;
-        this.cdr.detectChanges();
+        try {
+            const routeParams = {
+                pathParams: await this.route.params.firstValuePromise(),
+                queryParams: await this.route.queryParams.firstValuePromise(),
+                fragment: await this.route.fragment.firstValuePromise(),
+            };
+            const params = await this.resolve(routeParams);
+            this.paramsForm.reset(params, { emitEvent: false });
+            this.params.set(params);
+            await this.beforeOnRouted(params);
+            await this.onRouted(params);
+            await this.afterOnRouted(params);
+            const title = this.title();
+            if (title)
+                this.reuseTabSrv.title = title;
+        }
+        finally {
+            this.loading.set(false);
+            this.cdr.detectChanges();
+        }
     }
     beforeOnRouted(_params) { }
     afterOnRouted(_params) { }
@@ -1939,7 +1943,7 @@ class RoutedComponent extends BusinessComponentBase {
         return this.fb.group(Object.fromEntries(Object.entries(defaults).map(x => [x[0], new FormControl(x[1])])));
     }
     decodeQueryParam(raw) {
-        return exports$1.decode(raw);
+        return exports.decode(raw);
     }
     async resolve({ pathParams, queryParams, fragment }) {
         const params = {};
@@ -2086,16 +2090,16 @@ class RoutedListComponent extends RoutedComponent {
         switch (operation) {
             case "delete":
             case "submit":
-                ids = selectedData.filter(x => x["approveStatus"] === "DEFAULT").map(x => x["id"]);
+                ids = selectedData.filter(x => x["approveStatus"] === "Default").map(x => x["id"]);
                 text = "只能操作未上报状态的数据";
                 break;
             case "approve":
             case "unSubmit":
-                ids = selectedData.filter(x => x["approveStatus"] === "SUBMITTED").map(x => x["id"]);
+                ids = selectedData.filter(x => x["approveStatus"] === "Submitted").map(x => x["id"]);
                 text = "只能操作已上报状态的数据";
                 break;
             case "unApprove":
-                ids = selectedData.filter(x => x["approveStatus"] === "APPROVED").map(x => x["id"]);
+                ids = selectedData.filter(x => x["approveStatus"] === "Approved").map(x => x["id"]);
                 text = "只能操作已审核状态的数据";
                 break;
             default:
@@ -2115,7 +2119,7 @@ class RoutedListComponent extends RoutedComponent {
         `;
         }
         return `
-      mutation ${operation}${entityType}($ids: [String], $remark:String) {
+      mutation ${operation}${entityType}($ids: [String!], $remark:String) {
         ${operation}${entityType}(ids: $ids, remark:$remark)
       }
       `;
@@ -2358,7 +2362,7 @@ class GeexRouter extends Router {
             for (const key in navigationExtras.queryParams) {
                 const value = navigationExtras.queryParams[key];
                 try {
-                    processedParams[key] = exports$1.encode(value);
+                    processedParams[key] = exports.encode(value);
                 }
                 catch (e) {
                     console.warn(e);
@@ -2476,7 +2480,7 @@ class ListPageLayoutComponent {
         (change)="tableChange.emit($event)"
       />
     </nz-card>
-  `, isInline: true, dependencies: [{ kind: "ngmodule", type: PageHeaderModule }, { kind: "component", type: i1.PageHeaderComponent, selector: "page-header", inputs: ["title", "titleSub", "loading", "wide", "home", "homeLink", "homeI18n", "autoBreadcrumb", "autoTitle", "syncTitle", "fixed", "fixedOffsetTop", "breadcrumb", "recursiveBreadcrumb", "logo", "action", "content", "extra", "tab"], exportAs: ["pageHeader"] }, { kind: "ngmodule", type: STModule }, { kind: "component", type: i2.STComponent, selector: "st", inputs: ["req", "res", "page", "data", "delay", "columns", "contextmenu", "ps", "pi", "total", "loading", "loadingDelay", "loadingIndicator", "bordered", "size", "scroll", "drag", "singleSort", "multiSort", "rowClassName", "clickRowClassName", "widthMode", "widthConfig", "resizable", "header", "showHeader", "footer", "bodyHeader", "body", "expandRowByClick", "expandAccordion", "expand", "expandIcon", "noResult", "responsive", "responsiveHideHeaderFooter", "virtualScroll", "virtualItemSize", "virtualMaxBufferPx", "virtualMinBufferPx", "customRequest", "virtualForTrackBy", "trackBy"], outputs: ["error", "change"], exportAs: ["st"] }, { kind: "ngmodule", type: NzCardModule }, { kind: "component", type: i3.NzCardComponent, selector: "nz-card", inputs: ["nzBordered", "nzLoading", "nzHoverable", "nzBodyStyle", "nzCover", "nzActions", "nzType", "nzSize", "nzTitle", "nzExtra"], exportAs: ["nzCard"] }, { kind: "ngmodule", type: NzAlertModule }, { kind: "component", type: i4.NzAlertComponent, selector: "nz-alert", inputs: ["nzAction", "nzCloseText", "nzIconType", "nzMessage", "nzDescription", "nzType", "nzCloseable", "nzShowIcon", "nzBanner", "nzNoAnimation", "nzIcon"], outputs: ["nzOnClose"], exportAs: ["nzAlert"] }, { kind: "ngmodule", type: NzDividerModule }, { kind: "component", type: i5.NzDividerComponent, selector: "nz-divider", inputs: ["nzText", "nzType", "nzOrientation", "nzVariant", "nzDashed", "nzPlain"], exportAs: ["nzDivider"] }, { kind: "ngmodule", type: NzIconModule }, { kind: "directive", type: i6.NzIconDirective, selector: "nz-icon,[nz-icon]", inputs: ["nzSpin", "nzRotate", "nzType", "nzTheme", "nzTwotoneColor", "nzIconfont"], exportAs: ["nzIcon"] }] });
+  `, isInline: true, dependencies: [{ kind: "ngmodule", type: PageHeaderModule }, { kind: "component", type: i1.PageHeaderComponent, selector: "page-header", inputs: ["title", "titleSub", "loading", "wide", "home", "homeLink", "homeI18n", "autoBreadcrumb", "autoTitle", "syncTitle", "fixed", "fixedOffsetTop", "breadcrumb", "recursiveBreadcrumb", "logo", "action", "content", "extra", "tab"], exportAs: ["pageHeader"] }, { kind: "ngmodule", type: STModule }, { kind: "component", type: i2.STComponent, selector: "st", inputs: ["req", "res", "page", "data", "delay", "columns", "contextmenu", "ps", "pi", "total", "loading", "loadingDelay", "loadingIndicator", "bordered", "size", "scroll", "drag", "singleSort", "multiSort", "rowClassName", "clickRowClassName", "widthMode", "widthConfig", "resizable", "header", "showHeader", "footer", "bodyHeader", "body", "expandRowByClick", "expandAccordion", "expand", "expandIcon", "noResult", "responsive", "responsiveHideHeaderFooter", "virtualScroll", "virtualItemSize", "virtualMaxBufferPx", "virtualMinBufferPx", "customRequest", "virtualForTrackBy", "trackBy"], outputs: ["error", "change"], exportAs: ["st"] }, { kind: "ngmodule", type: NzCardModule }, { kind: "component", type: i3.NzCardComponent, selector: "nz-card", inputs: ["nzBordered", "nzLoading", "nzHoverable", "nzBodyStyle", "nzCover", "nzActions", "nzType", "nzSize", "nzTitle", "nzExtra"], exportAs: ["nzCard"] }, { kind: "ngmodule", type: NzAlertModule }, { kind: "component", type: i4.NzAlertComponent, selector: "nz-alert", inputs: ["nzAction", "nzCloseText", "nzIconType", "nzMessage", "nzDescription", "nzType", "nzCloseable", "nzShowIcon", "nzBanner", "nzNoAnimation", "nzIcon"], outputs: ["nzOnClose"], exportAs: ["nzAlert"] }, { kind: "ngmodule", type: NzDividerModule }, { kind: "component", type: i5.NzDividerComponent, selector: "nz-divider", inputs: ["nzText", "nzType", "nzOrientation", "nzVariant", "nzSize", "nzDashed", "nzPlain"], exportAs: ["nzDivider"] }, { kind: "ngmodule", type: NzIconModule }, { kind: "directive", type: i6.NzIconDirective, selector: "nz-icon,[nz-icon]", inputs: ["nzSpin", "nzRotate", "nzType", "nzTheme", "nzTwotoneColor", "nzIconfont"], exportAs: ["nzIcon"] }] });
 }
 i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: ListPageLayoutComponent, decorators: [{
             type: Component,
@@ -3103,5 +3107,5 @@ function bindGeexGlobal() {
  * Generated bundle index. Do not edit.
  */
 
-export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports$1 as rison };
+export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports as rison };
 //# sourceMappingURL=geexcode-geex-angular.mjs.map

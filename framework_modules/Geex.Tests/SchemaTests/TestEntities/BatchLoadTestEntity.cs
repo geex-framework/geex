@@ -14,6 +14,7 @@ namespace Geex.Tests.SchemaTests.TestEntities
     {
         string ThisId { get; }
         string ParentId { get; }
+        int ChildCount { get; }
         IQueryable<IBatchLoadTestEntity> Children { get; }
     }
 

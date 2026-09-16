@@ -25,10 +25,10 @@ export class MessagingAdminListPage implements OnInit {
   readonly total = signal(0);
   pageIndex = 1;
   pageSize = 10;
-  readonly severityOptions = ["INFO", "SUCCESS", "WARN", "ERROR", "FATAL"] as const;
+  readonly severityOptions = ["Info", "Success", "Warn", "Error", "Fatal"] as const;
   readonly createForm = this.fb.nonNullable.group({
     text: ["", Validators.required],
-    severity: ["INFO" as (typeof this.severityOptions)[number], Validators.required],
+    severity: ["Info" as (typeof this.severityOptions)[number], Validators.required],
   });
   readonly sendForm = this.fb.nonNullable.group({
     userIds: ["", Validators.required],
@@ -76,7 +76,7 @@ export class MessagingAdminListPage implements OnInit {
   }
 
   openCreate(): void {
-    this.createForm.reset({ text: "", severity: "INFO" });
+    this.createForm.reset({ text: "", severity: "Info" });
     this.modal.create({
       nzTitle: this.I18N.Messaging.createModalTitle,
       nzContent: this.createTpl(),

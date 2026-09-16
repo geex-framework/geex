@@ -77,23 +77,29 @@ namespace Geex.Extensions.ApprovalFlows
                     foreach (var method in methods)
                     {
                         var capturedMethod = method;
-                        var fieldDefinition = new ObjectFieldDefinition($"{capturedMethod.Name.ToCamelCase()}{entityName}",
-                            type: TypeReference.Parse("Boolean"),
-                            resolver: async (context) =>
+                        var fieldName = $"{capturedMethod.Name.ToCamelCase()}{entityName}";
+                        var fieldDefinition = objectTypeDefinition.Fields.FirstOrDefault(x => x.Name == fieldName);
+                        if (fieldDefinition == null)
+                        {
+                            fieldDefinition = new ObjectFieldDefinition(fieldName);
+                            objectTypeDefinition.Fields.Add(fieldDefinition);
+                        }
+                        fieldDefinition.Type = TypeReference.Parse("Boolean");
+                        fieldDefinition.Resolver = async (context) =>
                             {
                                 var instance = context.Service(implementation);
                                 return await (capturedMethod.Invoke(instance, [
                                     context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"),
                                     context.Service<IUnitOfWork>()
                                 ]) as Task<bool>);
-                            });
+                            };
+                        fieldDefinition.Arguments.Clear();
                         fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("[String!]")));
                         fieldDefinition.Arguments.Add(new InputFieldDefinition("remark", type: TypeReference.Parse("String")));
-                        if (GeexTypeInterceptor.AuditTypes.Contains(mutationExtType))
+                        if (GeexTypeInterceptor.AuditTypes.Contains(implementation))
                         {
                             fieldDefinition.Directives.Add(new DirectiveDefinition(new DirectiveNode("audit")));
                         }
-                        objectTypeDefinition.Fields.Add(fieldDefinition);
                     }
                 }
             }

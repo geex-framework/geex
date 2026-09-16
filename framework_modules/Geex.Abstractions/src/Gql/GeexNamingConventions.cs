@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -51,12 +51,9 @@ namespace Geex.Gql
         /// <inheritdoc />
         public override string GetEnumValueName(object value)
         {
-            var valueStr = value.ToString();
-            if (NonAsciiRegex.IsMatch(valueStr))
-            {
-                return valueStr;
-            }
-            return base.GetEnumValueName(value);
+            var memberName = value.ToString();
+            return value.GetType().GetField(memberName)?.GetCustomAttribute<HotChocolate.GraphQLNameAttribute>()?.Name
+                ?? memberName;
         }
 
         /// <inheritdoc />

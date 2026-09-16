@@ -79,12 +79,12 @@ public static class OutputFieldExtensions
         {
             if (objectField.ResolverMember is PropertyInfo resolverProperty)
             {
-                return resolverProperty;
+                return MapToEntityProperty(entityType, resolverProperty);
             }
 
             if (objectField.Member is PropertyInfo memberProperty)
             {
-                return memberProperty;
+                return MapToEntityProperty(entityType, memberProperty);
             }
         }
 
@@ -189,6 +189,27 @@ public static class OutputFieldExtensions
     private static bool IsLazyQueryNavigation(Type entityType, PropertyInfo property) =>
         property.PropertyType.IsLazyEntityNavigation() &&
         LazyQueryMetadataRegistry.IsRegistered(entityType, property.Name);
+
+    private static PropertyInfo MapToEntityProperty(Type entityType, PropertyInfo schemaProperty)
+    {
+        if (schemaProperty.DeclaringType is { } declaringType &&
+            declaringType != entityType &&
+            declaringType.IsAssignableFrom(entityType))
+        {
+            var mapped = entityType.GetProperty(
+                             schemaProperty.Name,
+                             BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                         ?? entityType.GetProperty(
+                             schemaProperty.Name,
+                             BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            if (mapped != null)
+            {
+                return mapped;
+            }
+        }
+
+        return schemaProperty;
+    }
 
     private static PropertyInfo? FindNavigationPropertyByName(Type entityType, string fieldName) =>
         FindEntityPropertyByName(

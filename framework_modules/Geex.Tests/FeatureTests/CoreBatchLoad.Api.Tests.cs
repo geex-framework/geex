@@ -285,6 +285,36 @@ namespace Geex.Tests.FeatureTests
         }
 
         [Fact]
+        public async Task AutoBatchLoadInterfacePagedDependsOnShouldUseConcreteAttribute()
+        {
+            await SeedBatchLoadDataAsync();
+
+            await DB.RestartProfiler();
+
+            var query = """
+                query {
+                  batchLoadInterfaceEntitiesPaged(thisId: "1") {
+                    items {
+                      thisId
+                      childCount
+                    }
+                  }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query);
+            var items = responseData["data"]!["batchLoadInterfaceEntitiesPaged"]!["items"]!.AsArray();
+            items.Count.ShouldBe(1);
+            items[0]!["childCount"]!.GetValue<int>().ShouldBe(2);
+
+            DB.GetProfilerLogs().AsQueryable()
+                .Count(x => x.ns != null && x.ns.Contains(ProfilerNamespace))
+                .ShouldBe(2);
+
+            DB.StopProfiler();
+        }
+
+        [Fact]
         public async Task AutoBatchLoadFilteredQueryShouldBoundDatabaseQueries()
         {
             await SeedBatchLoadDataAsync();
