@@ -26,7 +26,7 @@
         <PackageReference Include="HotChocolate.Language" Version="13.9.14" />
         <PackageReference Include="HotChocolate.Stitching" Version="13.9.14" />
         <PackageReference Include="HotChocolate.Stitching.Redis" Version="13.9.14" />
-        <PackageReference Include="HotChocolate.Subscriptions.InMemory" Version="13.9.14" />
+        <PackageReference Include="HotChocolate.Subscriptions.Redis" Version="13.9.14" />
         <PackageReference Include="HotChocolate.Types.Scalars" Version="13.9.14" />
         <PackageReference Include="HotChocolate.Types.Scalars.Upload" Version="13.9.14" />
         <PackageReference Include="HotChocolate.Validation" Version="13.9.14" />

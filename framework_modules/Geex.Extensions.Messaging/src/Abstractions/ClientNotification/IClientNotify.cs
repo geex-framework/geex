@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using HotChocolate.Types;
 
 namespace Geex.Extensions.Messaging.ClientNotification
@@ -16,6 +16,6 @@ namespace Geex.Extensions.Messaging.ClientNotification
                 base.Configure(descriptor);
             }
         }
-        public DateTimeOffset CreatedOn { get; protected set; } = DateTimeOffset.Now;
+        public DateTimeOffset CreatedOn { get; protected internal set; } = DateTimeOffset.Now;
     }
 }

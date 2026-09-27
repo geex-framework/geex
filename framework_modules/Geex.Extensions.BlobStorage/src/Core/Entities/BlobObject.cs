@@ -19,6 +19,7 @@ using MimeKit;
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 using MongoDB.Entities;
 
 namespace Geex.Extensions.BlobStorage.Core.Entities
@@ -34,6 +35,11 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         const long MaxCacheSize = 2048L * 1024 * 1024; // 2GB
 
         public BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow = default)
+            : this(request, uow, CancellationToken.None)
+        {
+        }
+
+        public BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow, CancellationToken cancellationToken)
         {
             uow?.Attach(this);
             var file = request.File;
@@ -60,10 +66,10 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
             uow.Attach(this);
             this._streamToStorageTask = Task.Run(async () =>
             {
-                // 保存到存储
-                // 重新跟踪对象
-                await this.StreamToStorage(dataStream);
-                await dataStream.DisposeAsync();
+                await using (dataStream)
+                {
+                    await this.StreamToStorage(dataStream, cancellationToken);
+                }
             });
             uow.PreSaveChanges += async () => await this._streamToStorageTask;
             uow.PostSaveChanges += async () =>
@@ -82,6 +88,9 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         internal BlobObject()
         {
         }
+
+        [HotChocolate.GraphQLIgnore]
+        public Task WaitForStorageAsync() => _streamToStorageTask ?? Task.CompletedTask;
 
         public string? FileName { get; set; }
         public string? Md5 { get; set; }
@@ -174,27 +183,33 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                     }
                 }
 
-                var tempFileName = ObjectId.GenerateNewId().ToString();
+                var tempFileName = this.Id + ".upload";
                 var options = this.DbContext.ServiceProvider.GetService<BlobStorageModuleOptions>();
                 var tempFilePath = Path.Combine(options.FileSystemStoragePath, tempFileName);
+                try
+                {
+                    using var md5HasherFs = MD5.Create();
+                    await using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write,
+                        FileShare.None, bufferSize, FileOptions.SequentialScan | FileOptions.Asynchronous);
 
-                using var md5HasherFs = MD5.Create();
-                await using var fileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write,
-                    FileShare.None, bufferSize, FileOptions.SequentialScan | FileOptions.Asynchronous);
+                    var md5HashFs = await ProcessStreamAsync(dataStream, bufferSize, md5HasherFs,
+                        async (chunk) => await fileStream.WriteAsync(chunk, cancellationToken), cancellationToken);
 
-                var md5HashFs = await ProcessStreamAsync(dataStream, bufferSize, md5HasherFs,
-                    async (chunk) =>
-                    {
-                        await fileStream.WriteAsync(chunk, cancellationToken);
-                    }, cancellationToken);
+                    await fileStream.FlushAsync(cancellationToken);
+                    await fileStream.DisposeAsync();
 
-                await fileStream.FlushAsync(cancellationToken);
-                await fileStream.DisposeAsync();
-
-                var finalFilePath = Path.Combine(options.FileSystemStoragePath, md5HashFs);
-                File.Move(tempFilePath, finalFilePath, true);
-
-                this.Md5 = md5HashFs;
+                    // Persist the final address before publishing the file, so interrupted writes remain discoverable.
+                    this.Md5 = md5HashFs;
+                    await this.DbContext.Collection<BlobObject>().UpdateOneAsync(x => x.Id == this.Id,
+                        Builders<BlobObject>.Update.Set(x => x.Md5, md5HashFs), cancellationToken: cancellationToken);
+                    var finalFilePath = Path.Combine(options.FileSystemStoragePath, md5HashFs);
+                    File.Move(tempFilePath, finalFilePath, true);
+                }
+                finally
+                {
+                    if (File.Exists(tempFilePath))
+                        File.Delete(tempFilePath);
+                }
             }
             else if (this.StorageType == BlobStorageType.Cache)
             {
@@ -292,6 +307,11 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         /// </summary>
         private async Task TryDeleteStorageData(CancellationToken cancellationToken = default)
         {
+            if (this.StorageType == BlobStorageType.FileSystem)
+            {
+                var options = this.DbContext.ServiceProvider.GetService<BlobStorageModuleOptions>();
+                File.Delete(Path.Combine(options.FileSystemStoragePath, this.Id + ".upload"));
+            }
             if (this.StorageType == BlobStorageType.FileSystem && !string.IsNullOrEmpty(this.Md5))
             {
                 // 检查是否有其他对象引用相同的MD5

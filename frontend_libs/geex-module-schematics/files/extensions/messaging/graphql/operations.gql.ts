@@ -10,6 +10,7 @@ export const unreadMessages = gql`
         messageType
         severity
         createdOn
+        meta
       }
     }
   }
@@ -25,6 +26,7 @@ export const messages = gql`
         messageType
         severity
         createdOn
+        meta
       }
     }
   }
@@ -44,6 +46,7 @@ export const createMessage = gql`
       messageType
       severity
       createdOn
+      meta
     }
   }
 `;
@@ -66,4 +69,5 @@ export interface MessagingBrief {
   messageType?: string | null;
   severity?: string | null;
   createdOn?: unknown;
+  meta?: unknown;
 }

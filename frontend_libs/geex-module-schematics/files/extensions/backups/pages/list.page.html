@@ -1,0 +1,118 @@
+<page-header [title]="text.title" [action]="headerAction">
+  <p class="page-description">{{ text.description }}</p>
+  @if (loaded()) {
+    <div class="automatic-status">
+      <nz-tag [nzColor]="enabled() ? 'success' : 'default'">{{ enabled() ? text.enabled : text.disabledLabel }}</nz-tag>
+      <span class="secondary">{{ text.retention }}</span>
+    </div>
+  }
+</page-header>
+<ng-template #headerAction>
+  @if (acl.can('Backups_mutation_startBackup')) {
+    <button nz-button nzType="primary" type="button" data-testid="backup-start"
+      [nzLoading]="pendingAction()?.kind === 'start'" [disabled]="acting()" (click)="confirmStart()">{{ text.start }}</button>
+  }
+</ng-template>
+
+<nz-card class="backup-card">
+  @if (loadError()) {
+    <nz-alert class="page-notice" data-testid="backup-load-error" nzType="warning" nzShowIcon
+      [nzMessage]="text.loadFailed" [nzDescription]="hasResult() ? text.staleData : text.retryHint" />
+  }
+  @if (disconnected()) {
+    <nz-alert class="page-notice" data-testid="backup-disconnected" nzType="warning" nzShowIcon [nzMessage]="text.disconnected" />
+  }
+  <form nz-form nzLayout="vertical" class="backup-filters" (ngSubmit)="search()">
+    <nz-form-item>
+      <nz-form-label nzFor="backup-database">{{ text.database }}</nz-form-label>
+      <nz-form-control><input nz-input id="backup-database" [(ngModel)]="database" name="database"
+        [placeholder]="text.databasePlaceholder" /></nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <nz-form-label nzFor="backup-status">{{ text.status }}</nz-form-label>
+      <nz-form-control>
+        <nz-select nzId="backup-status" [(ngModel)]="status" name="status">
+          <nz-option nzValue="" [nzLabel]="text.all" />
+          @for (value of statuses; track value) { <nz-option [nzValue]="value" [nzLabel]="text.statuses[value]" /> }
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item class="time-filter">
+      <nz-form-label>{{ text.scheduledAt }}</nz-form-label>
+      <nz-form-control>
+        <nz-range-picker [(ngModel)]="dateRange" name="dateRange" [nzShowTime]="{ nzFormat: 'HH:mm' }" nzFormat="yyyy-MM-dd HH:mm"
+          [nzPlaceHolder]="[text.from, text.to]" />
+      </nz-form-control>
+    </nz-form-item>
+    <div class="filter-actions">
+      <button nz-button nzType="primary" type="submit" data-testid="backup-query" [nzLoading]="loading()">{{ text.search }}</button>
+      <button nz-button type="button" data-testid="backup-reset" (click)="reset()">{{ text.reset }}</button>
+    </div>
+  </form>
+
+  <div class="table-toolbar">
+    <div class="history-heading">
+      <h2>{{ text.history }}</h2>
+      @if (hasResult()) { <span class="record-count" data-testid="backup-count">{{ total() }} {{ text.records }}</span> }
+    </div>
+    <span class="secondary">{{ text.localTime }}</span>
+  </div>
+  <div class="backup-table-scroll">
+    <st data-testid="backup-table" [loading]="loading()" [total]="total()" [data]="data()" [pi]="pageIndex" [ps]="pageSize"
+      [columns]="columns" [multiSort]="false" [page]="{ front: false, showSize: true, toTop: false }"
+      [scroll]="{ x: '1205px' }" [trackBy]="trackBackup" [noResult]="empty" (change)="onTableChange($event)">
+      <ng-template st-row="database" let-item>
+        <strong class="database-name" [attr.data-backup-id]="item.id" [attr.data-testid]="'backup-row-' + item.id">{{ item.databaseName }}</strong>
+      </ng-template>
+      <ng-template st-row="source" let-item>{{ sourceLabel(item.source) }}</ng-template>
+      <ng-template st-row="status" let-item>
+        <nz-tag [nzColor]="statusColor(item.status)">{{ statusLabel(item.status) }}</nz-tag>
+        @if (item.errorMessage) {
+          <details class="error-detail"><summary>{{ item.status === 'Succeeded' ? text.cleanupError : text.error }}</summary><p>{{ item.errorMessage }}</p></details>
+        }
+      </ng-template>
+      <ng-template st-row="scheduled" let-item><span class="timestamp">{{ item.scheduledAt | date:'yyyy-MM-dd HH:mm:ss' }}</span></ng-template>
+      <ng-template st-row="execution" let-item>
+        <div class="timestamp"><span class="secondary">{{ text.startedAt }}</span> {{ item.startedAt | date:'MM-dd HH:mm:ss' }}</div>
+        <div class="timestamp secondary">{{ text.finishedAt }} {{ item.finishedAt ? (item.finishedAt | date:'MM-dd HH:mm:ss') : '—' }}</div>
+      </ng-template>
+      <ng-template st-row="archive" let-item>
+        @if (item.file) { <span>{{ formatSize(item.file.fileSize) }}</span><div class="secondary">{{ text.archiveFormat }}</div> }
+        @else { <span class="secondary">{{ item.status === 'Expired' ? text.archiveRemoved : '—' }}</span> }
+      </ng-template>
+      <ng-template st-row="actions" let-item>
+        <div class="row-actions" [attr.data-backup-id]="item.id">
+          @if (item.status === 'Succeeded') {
+            @if (canDownload(item)) {
+              <a nz-button nzType="link" [attr.data-testid]="'backup-download-' + item.id"
+                [href]="item.file.url" target="_blank" rel="noopener noreferrer">{{ text.download }}</a>
+            } @else {
+              <button nz-button nzType="link" type="button" disabled [attr.data-testid]="'backup-download-' + item.id">{{ text.download }}</button>
+            }
+            @if (acl.can('Backups_mutation_expireBackup')) {
+              <button nz-button nzType="link" nzDanger type="button" [attr.data-testid]="'backup-expire-' + item.id"
+                [nzLoading]="isCleaning(item)" [disabled]="acting() || loadError()" (click)="confirmExpire(item)">{{ text.expire }}</button>
+            }
+          } @else { <span class="secondary">—</span> }
+        </div>
+      </ng-template>
+    </st>
+  </div>
+  <ng-template #empty>
+    <nz-empty nzNotFoundImage="simple" [nzNotFoundContent]="emptyDescription" />
+    <ng-template #emptyDescription>
+      <strong>{{ loadError() ? text.loadFailed : emptyTitle() }}</strong>
+      <p class="secondary">{{ loadError() ? text.retryHint : acl.can('Backups_mutation_startBackup') ? text.emptyHint : text.emptyReadOnlyHint }}</p>
+    </ng-template>
+  </ng-template>
+</nz-card>
+
+<ng-template #expireDetails let-item>
+  <p>{{ text.expireWarning }}</p>
+  <dl class="confirm-details">
+    <dt>{{ text.database }}</dt><dd>{{ item.databaseName }}</dd>
+    <dt>{{ text.scheduledAt }}</dt><dd>{{ item.scheduledAt | date:'yyyy-MM-dd HH:mm:ss' }}</dd>
+    <dt>{{ text.source }}</dt><dd>{{ sourceLabel(item.source) }}</dd>
+    @if (item.file?.fileName) { <dt>{{ text.archive }}</dt><dd>{{ item.file.fileName }}</dd> }
+  </dl>
+</ng-template>

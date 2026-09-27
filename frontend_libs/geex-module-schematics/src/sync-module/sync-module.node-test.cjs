@@ -35,6 +35,7 @@ describe("sync-module schematic", () => {
   for (const [name, ownedFile] of Object.entries({
     identity: "pages/user/list.page.ts",
     "blob-storage": "graphql/operations.gql",
+    "backups": "pages/list.page.ts",
     "approval-flows": "pages/edit/edit.page.html",
     mocking: "pages/mocking-home.page.ts",
     authentication: "pages/login.page.ts",

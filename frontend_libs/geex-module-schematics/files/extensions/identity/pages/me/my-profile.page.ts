@@ -1,3 +1,5 @@
+import { toSignal } from "@angular/core/rxjs-interop";
+import { GeexSubscriptionConnection } from "@geexcode/geex-angular";
 import { Component, Signal, computed, inject, signal } from "@angular/core";
 import { FormGroup } from "@angular/forms";
 import { SettingsService } from "@delon/theme";
@@ -12,6 +14,7 @@ import type { ChangePasswordRequest } from "@/gql";
 import { changePassword } from "../../graphql/user.operations.gql";
 import type { User, Org } from "@geexcode/geex-extensions-identity";
 import { generatePersonalAccessToken } from "../../graphql/me.operations.gql";
+import { GeexMessageActions } from "@geexcode/geex-extensions-messaging";
 
 type UnreadMessageBrief = {
   id: string;
@@ -19,6 +22,7 @@ type UnreadMessageBrief = {
   messageType?: string | null;
   severity?: string | null;
   createdOn?: unknown;
+  meta?: unknown;
 };
 
 @Component({
@@ -30,7 +34,7 @@ type UnreadMessageBrief = {
 export class MyProfilePage extends RoutedComponent<{}> {
   override routeParamsMappings: {} = {};
   override onRouted(params: {}): void | Promise<void> {
-    return;
+    return this.loadUnreadMessages();
   }
   userData$: Signal<User>;
   orgs$: Signal<Org[]>;
@@ -50,6 +54,7 @@ export class MyProfilePage extends RoutedComponent<{}> {
   isTokenModalVisible$ = signal<boolean>(false);
   generatedToken$ = signal<string>("");
   tokenExpireDays$ = signal<number>(30);
+  readonly subscriptionState = toSignal(inject(GeexSubscriptionConnection).changes);
   readonly unreadLoading = signal(false);
   readonly unreadSelectedIds = signal<string[]>([]);
   readonly messagingEnabled = computed(() => this.messaging != null);
@@ -71,6 +76,7 @@ export class MyProfilePage extends RoutedComponent<{}> {
   }
   private settings = inject(SettingsService);
   private arrService = inject(ArrayService);
+  private readonly messageActions = inject(GeexMessageActions);
   private readonly notifyMessage = inject(NzMessageService);
 
   private get messaging():
@@ -104,6 +110,14 @@ export class MyProfilePage extends RoutedComponent<{}> {
       { title: this.I18N.Messaging?.columnType ?? "Type", index: "messageType" },
       { title: this.I18N.Messaging?.columnSeverity ?? "Severity", index: "severity" },
       { title: this.I18N.Messaging?.columnCreatedOn ?? "Created", index: "createdOn", type: "date" },
+      {
+        title: this.I18N.Messaging?.columnActions ?? "Actions",
+        buttons: this.messageActions.registered.map(action => ({
+          text: this.messageActions.label(action),
+          iif: item => this.messageActions.available(action, item),
+          click: item => this.executeMessageAction(action.key, item),
+        })),
+      },
     ];
     this.orgs$ = geex.identity.orgs;
     this.userData$ = geex.authentication.user;
@@ -250,5 +264,12 @@ export class MyProfilePage extends RoutedComponent<{}> {
     await messaging.markMessagesRead(ids, userId);
     this.notifyMessage.success(this.I18N.Messaging?.markReadSuccess ?? "已标记为已读");
     this.unreadSelectedIds.set([]);
+  }
+
+  async executeMessageAction(key: string, item: UnreadMessageBrief): Promise<void> {
+    try {
+      if (await this.messageActions.execute(key, item, geex.authentication.user()?.id)) return;
+    } catch { }
+    this.notifyMessage.error(this.I18N.Messaging?.actionFailed ?? "Action failed. Please retry.");
   }
 }

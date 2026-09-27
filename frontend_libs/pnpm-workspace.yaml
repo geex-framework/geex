@@ -9,6 +9,7 @@ packages:
   - geex-extensions-authentication-wechat
   - geex-extensions-mocking
   - geex-extensions-blob-storage
+  - geex-extensions-backups
   - geex-extensions-approval-flows
   - geex-extensions-messaging
   - geex-extensions-captcha

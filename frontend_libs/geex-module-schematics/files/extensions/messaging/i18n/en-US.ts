@@ -1,4 +1,6 @@
 export default {
+  disconnected: "Live notifications disconnected. Messages will reload after reconnection; you can also refresh manually.",
+  actionFailed: "The action or marking as read failed. Please retry.",
   title: "Messaging",
   unreadTitle: "Unread",
   adminTitle: "Messages",

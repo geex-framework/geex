@@ -28,8 +28,14 @@ namespace Geex.Extensions.BackgroundJob.Core
         /// <param name="sp"></param>
         /// <param name="cronExp"></param>
         public CronJob(IServiceProvider sp, string cronExp)
-            : base(cronExp, TimeZoneInfo.Local, cronExp.Trim().Count(x => x == ' ') == 5 ? CronFormat.IncludeSeconds : CronFormat.Standard)
+            : this(sp, cronExp, TimeZoneInfo.Local)
         {
+        }
+
+        protected CronJob(IServiceProvider sp, string cronExp, TimeZoneInfo timeZone)
+            : base(cronExp, timeZone, cronExp.Trim().Count(x => x == ' ') == 5 ? CronFormat.IncludeSeconds : CronFormat.Standard)
+        {
+            ScheduleTimeZone = timeZone;
             this._logger = sp.GetService<ILogger<CronJobService>>();
             this.Cron = CronExpression.Parse(cronExp, cronExp.Trim().Count(x => x == ' ') == 5 ? CronFormat.IncludeSeconds : CronFormat.Standard);
             this.ServiceProvider = sp;
@@ -37,12 +43,14 @@ namespace Geex.Extensions.BackgroundJob.Core
 
         public CronExpression Cron { get; private set; }
 
+        public TimeZoneInfo ScheduleTimeZone { get; }
+
         private IServiceProvider ServiceProvider { get; set; }
 
         /// <inheritdoc />
         protected override Task ScheduleJob(CancellationToken cancellationToken)
         {
-            var next = this.Cron.GetNextOccurrence(DateTime.UtcNow, TimeZoneInfo.Local).GetValueOrDefault().ToLocalTime();
+            var next = this.Cron.GetNextOccurrence(DateTime.UtcNow, ScheduleTimeZone).GetValueOrDefault().ToLocalTime();
             _logger.LogInformation("Job scheduled: [{JobName}], next execution will be at {next}", typeof(TImplementation).Name, next);
             return base.ScheduleJob(cancellationToken);
         }

@@ -1,56 +1,72 @@
-﻿using System.Security.Claims;
+using System.Collections.Generic;
+using System.Linq;
+using HotChocolate.Execution;
+using System.Runtime.CompilerServices;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using Geex.Extensions.Messaging.ClientNotification;
+using Geex.Extensions.Messaging.Core.Entities;
 using Geex.Gql.Types;
 using HotChocolate;
-using HotChocolate.Execution;
 using HotChocolate.Subscriptions;
 using HotChocolate.Types;
+using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Entities;
 
-namespace Geex.ClientNotification
+namespace Geex.ClientNotification;
+
+public class ClientNotifySubscription : SubscriptionExtension<ClientNotifySubscription>
 {
-    public class ClientNotifySubscription : SubscriptionExtension<ClientNotifySubscription>
+    [SubscribeAndResolve]
+    public IAsyncEnumerable<ClientNotify> OnPrivateNotify([Service] ITopicEventReceiver receiver,
+        [Service] ClaimsPrincipal claimsPrincipal, [Service] IServiceScopeFactory scopes, CancellationToken cancellationToken)
     {
-        /// <summary>
-        /// 订阅服务器对单个用户的前端调用
-        /// </summary>
-        /// <param name="receiver"></param>
-        /// <param name="claimsPrincipal"></param>
-        /// <returns></returns>
-        [SubscribeAndResolve]
-        public ValueTask<ISourceStream<ClientNotify>> OnPrivateNotify([Service] ITopicEventReceiver receiver, [Service] ClaimsPrincipal claimsPrincipal)
-        {
-            return receiver.SubscribeAsync<ClientNotify>($"{nameof(OnPrivateNotify)}:{claimsPrincipal.FindUserId()}");
-        }
+        var userId = claimsPrincipal.FindUserId();
+        if (string.IsNullOrWhiteSpace(userId)) throw new GraphQLException("Authentication required.");
+        return Receive(receiver, scopes, $"{nameof(OnPrivateNotify)}:{userId}", cancellationToken);
+    }
 
-        /// <summary>
-        /// 订阅广播
-        /// </summary>
-        /// <param name="receiver"></param>
-        /// <returns></returns>
-        [SubscribeAndResolve]
-        public ValueTask<ISourceStream<ClientNotify>> OnPublicNotify([Service] ITopicEventReceiver receiver)
-        {
-            return receiver.SubscribeAsync<ClientNotify>(nameof(OnPublicNotify));
-        }
+    [SubscribeAndResolve]
+    public IAsyncEnumerable<ClientNotify> OnPublicNotify([Service] ITopicEventReceiver receiver,
+        [Service] IServiceScopeFactory scopes, CancellationToken cancellationToken) =>
+        Receive(receiver, scopes, nameof(OnPublicNotify), cancellationToken);
 
-        /// <summary>
-        /// 测试
-        /// </summary>
-        /// <returns></returns>
-        [SubscribeAndResolve]
-        public ValueTask<ISourceStream<string>> Echo(string text, [Service] ITopicEventReceiver receiver, [Service] ITopicEventSender sender)
+    private static async IAsyncEnumerable<ClientNotify> Receive(ITopicEventReceiver receiver,
+        IServiceScopeFactory scopes, string topic, [EnumeratorCancellation] CancellationToken token)
+    {
+        await using var stream = await receiver.SubscribeAsync<ClientNotifyEnvelope>(topic, token);
+        yield return new SubscriptionReadyClientNotify();
+        await foreach (var envelope in stream.ReadEventsAsync().WithCancellation(token))
         {
-            Task.Run(async () =>
+            using var scope = scopes.CreateScope();
+            ClientNotify notification;
+            if (envelope.Kind == nameof(NewMessageClientNotify))
             {
-                for (var i = 0; i < 2; i++)
-                {
-                    await Task.Delay(1000);
-                    await sender.SendAsync(nameof(Echo), text);
-                }
-                await sender.CompleteAsync(nameof(Echo));
-            });
-            return receiver.SubscribeAsync<string>(nameof(Echo));
+                var message = await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().Query<Message>().OneAsync(envelope.Value);
+                if (message == null) continue;
+                notification = new NewMessageClientNotify(message);
+            }
+            else if (envelope.Kind == nameof(DataChangeClientNotify))
+                notification = new DataChangeClientNotify(DataChangeType.FromValue(envelope.Value));
+            else continue;
+            notification.CreatedOn = envelope.CreatedOn;
+            yield return notification;
         }
+    }
+
+    [SubscribeAndResolve]
+    public ValueTask<ISourceStream<string>> Echo(string text, [Service] ITopicEventReceiver receiver, [Service] ITopicEventSender sender)
+    {
+        Task.Run(async () =>
+        {
+            for (var i = 0; i < 2; i++)
+            {
+                await Task.Delay(1000);
+                await sender.SendAsync(nameof(Echo), text);
+            }
+            await sender.CompleteAsync(nameof(Echo));
+        });
+        return receiver.SubscribeAsync<string>(nameof(Echo));
     }
 }

@@ -1,0 +1,41 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../.test-evidence/database-backup/page",
+    "declaration": false,
+    "declarationMap": false,
+    "paths": {
+      "tslib": [
+        "./node_modules/tslib/tslib.d.ts"
+      ],
+      "@angular/*": [
+        "../geex-angular/node_modules/@angular/*"
+      ],
+      "@delon/*": [
+        "../geex-angular/node_modules/@delon/*"
+      ],
+      "ng-zorro-antd/*": [
+        "../geex-angular/node_modules/ng-zorro-antd/*"
+      ],
+      "@geexcode/geex-angular": [
+        "../geex-angular/dist/index.d.ts"
+      ],
+      "@geexcode/geex-extensions-backups": [
+        "./dist/index.d.ts"
+      ],
+      "angular-oauth2-oidc": [
+        "../geex-angular/node_modules/angular-oauth2-oidc"
+      ],
+      "rxjs": [
+        "./node_modules/rxjs"
+      ],
+      "@geexcode/geex-extensions-messaging": [
+        "../geex-extensions-messaging/dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "../geex-module-schematics/files/extensions/backups/pages/list.page.ts"
+  ],
+  "include": []
+}

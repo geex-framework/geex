@@ -1,0 +1,51 @@
+{
+  "name": "@geexcode/geex-extensions-backups",
+  "version": "0.0.55",
+  "description": "Database backup management for Geex Angular apps. Aligns with Geex.Extensions.Backups.",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/core": "^20.0.0",
+    "@geexcode/geex-angular": ">=0.0.41",
+    "apollo-angular": "^14.0.0",
+    "graphql": "^16.8.0",
+    "rxjs": "^7.8.0"
+  },
+  "dependencies": {
+    "tslib": "^2.6.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "module": "dist/fesm2022/geexcode-geex-extensions-backups.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fesm2022/geexcode-geex-extensions-backups.mjs",
+      "default": "./dist/fesm2022/geexcode-geex-extensions-backups.mjs"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
+    "build:page": "ngc -p tsconfig.page.json",
+    "test": "node --test tests/module.test.mjs tests/page.test.mjs",
+    "prepublishOnly": "npm run build",
+    "publish:public": "npm publish ./dist --access public"
+  },
+  "devDependencies": {
+    "@angular/compiler": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@geexcode/geex-angular": "workspace:*",
+    "apollo-angular": "^14.1.0",
+    "graphql": "^16.9.0",
+    "ng-packagr": "^20.0.0",
+    "rimraf": "^5.0.5",
+    "rxjs": "^7.8.2",
+    "typescript": "~5.8.3"
+  }
+}

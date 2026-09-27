@@ -1,5 +1,8 @@
 <page-header [title]="I18N.Messaging.unreadTitle" [autoBreadcrumb]="true" />
 <nz-card [nzBordered]="false">
+  @if (subscriptionState() !== "connected") {
+    <nz-alert nzType="warning" nzShowIcon [nzMessage]="I18N.Messaging.disconnected" />
+  }
   <div class="mb-md">
     <button nz-button nzType="primary" [disabled]="!selectedIds().length" (click)="markRead()">
       {{ I18N.Messaging.markRead }}

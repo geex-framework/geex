@@ -40,6 +40,7 @@ export interface MessagingModule extends GeexModule<{
   unreadMessages: WritableSignal<MessagingMessage[]>;
   onPublicNotify(notify: MessagingNotify): void;
   onPrivateNotify(notify: MessagingNotify): void;
+  watchPrivateNotifications(listener: (notify: MessagingNotify) => void): { unsubscribe(): void };
   loadUnreadMessages(): Promise<MessagingMessage[]>;
   loadMessages(options?: { skip?: number; take?: number }): Promise<{
     items: MessagingMessage[];

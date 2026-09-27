@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+    <StartupObject>Geex.Extensions.Backups.Tests.RedisWorker</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../../frontend_libs/geex-extensions-backups/src/backups.module.ts" Link="backups.module.ts" CopyToOutputDirectory="PreserveNewest" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.0" PrivateAssets="all" />
+    <ProjectReference Include="../src/Geex.Extensions.Backups.csproj" />
+  </ItemGroup>
+</Project>

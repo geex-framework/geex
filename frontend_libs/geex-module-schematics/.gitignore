@@ -1,0 +1,4 @@
+!bin/
+!bin/geex.mjs
+!files/extensions/backups/
+!files/extensions/backups/**

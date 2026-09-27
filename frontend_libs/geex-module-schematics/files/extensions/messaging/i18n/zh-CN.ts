@@ -1,4 +1,6 @@
 export default {
+  disconnected: "实时消息连接已断开, 重连后将重新加载. 也可手动刷新.",
+  actionFailed: "操作或标记已读失败, 请重试.",
   title: "消息",
   unreadTitle: "未读消息",
   adminTitle: "消息管理",

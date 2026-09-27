@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj" />
+    <ProjectReference Include="../../Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj" />
+    <ProjectReference Include="../../Geex.Extensions.Messaging/src/Geex.Extensions.Messaging.csproj" />
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>Geex.Extensions.Backups.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

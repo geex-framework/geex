@@ -258,6 +258,9 @@
       nzSpan="24">
       <nz-card [nzTitle]="I18N.Identity.profile.unreadMessagesTitle"
         [nzExtra]="unreadExtra">
+        @if (subscriptionState() !== "connected") {
+          <nz-alert nzType="warning" nzShowIcon [nzMessage]="I18N.Messaging?.disconnected ?? 'Live notifications disconnected.'" />
+        }
         <ng-template #unreadExtra>
           <button nz-button
             nzType="primary"

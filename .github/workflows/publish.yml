@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       tags:
-        description: 'Test tags in format of refs/tags/v*'
+        description: 'Existing release tag, e.g. v10.0.10 or refs/tags/v10.0.10-rc1'
         required: true
         type: string
   push:
@@ -11,7 +11,38 @@ on:
       - 'v*.*.*'
 
 jobs:
+  release-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      ref: ${{ steps.version.outputs.ref }}
+      version: ${{ steps.version.outputs.version }}
+      suffix: ${{ steps.version.outputs.suffix }}
+      npm-tag: ${{ steps.version.outputs.npm-tag }}
+    steps:
+      - name: Resolve shared release version
+        id: version
+        shell: pwsh
+        env:
+          RELEASE_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.tags || github.ref }}
+        run: |
+          $ref = $env:RELEASE_REF -creplace '^refs/tags/', ''
+          $number = '(0|[1-9][0-9]*)'
+          $identifier = '(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)'
+          if ($ref -cnotmatch "^v(?<version>$number\.$number\.$number(?:-(?<suffix>$identifier(?:\.$identifier)*))?)$") {
+            throw "Invalid release tag '$ref'. Expected vMAJOR.MINOR.PATCH with an optional SemVer prerelease suffix."
+          }
+          $version = $Matches.version
+          $suffix = $Matches.suffix
+          $npmTag = if ($suffix) { 'next' } else { 'latest' }
+          "ref=refs/tags/$ref" >> $env:GITHUB_OUTPUT
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "suffix=$suffix" >> $env:GITHUB_OUTPUT
+          "npm-tag=$npmTag" >> $env:GITHUB_OUTPUT
+
   build-and-publish-nuget-package:
+    needs: release-version
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -27,33 +58,10 @@ jobs:
       PACKAGE_REPOSITORY_URL: "https://github.com/geex-framework/geex"
       PACKAGE_TAGS: "geex framework dotnet mongodb graphql cqrs"
     steps:
-      - name: extract-version-from-input
-        if: ${{ '$GITHUB_REF' == '' }}
-        run: |
-            echo "ref=$VERSION" >> $GITHUB_ENV
-
-      - name: extract-version-from-ref
-        if: ${{ '$GITHUB_REF' != '' }}
-        run: |
-            echo "ref=$GITHUB_REF" >> $GITHUB_ENV
-
-      - name: Extract version number
-        id: version
-        run: |
-          REF=${{env.ref}}
-          echo "Ref name is $REF"
-          if [[ "${REF#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
-            VERSION="${BASH_REMATCH[1]}"
-            SUFFIX="${BASH_REMATCH[2]}"
-            echo "Extracted version and suffix from prerelease tag."
-            echo "version=$VERSION"
-            echo "suffix=$SUFFIX"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.release-version.outputs.ref }}
 
       - name: Setup .NET Core SDK
         uses: actions/setup-dotnet@v1
@@ -67,11 +75,13 @@ jobs:
         run: |
           dotnet build --configuration Release ./framework_modules/Geex.Analyzer/src/Geex.Analyzer.csproj
           dotnet build --configuration Release ./framework_modules/framework_modules.sln /p:IncludeSourceGeneratedFiles=true
+      - name: Validate Backups without external services
+        run: dotnet test ./framework_modules/Geex.Extensions.Backups/tests/Geex.Extensions.Backups.Tests.csproj --configuration Release --no-build --no-restore --filter 'FullyQualifiedName~BackupSchemaTests|FullyQualifiedName~BackupOptionsTests|FullyQualifiedName~MongodumpDiagnosticsTests|FullyQualifiedName~SubscriptionContextTests|FullyQualifiedName~DownloadResponseTests' --results-directory ./artifacts/backups/release --logger 'trx;LogFileName=results.trx'
       - name: Generate NuGet release packages
-        if: ${{ steps.version.outputs.suffix == '' }}
+        if: ${{ needs.release-version.outputs.suffix == '' }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          SUFFIX: ${{ steps.version.outputs.suffix }}
+          VERSION: ${{ needs.release-version.outputs.version }}
+          SUFFIX: ${{ needs.release-version.outputs.suffix }}
         run: |
           dotnet pack ./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
@@ -85,6 +95,7 @@ jobs:
           dotnet pack ./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:PackageLicenseUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
+          dotnet pack ./framework_modules/Geex.Extensions.Backups/src/Geex.Extensions.Backups.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Captcha/src/Geex.Extensions.Captcha.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Identity/src/Geex.Extensions.Identity.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Logging/src/Geex.Extensions.Logging.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
@@ -99,10 +110,10 @@ jobs:
           dotnet pack ./framework_modules/Geex.MediatX/MediatX.RabbitMQ/MediatX.RabbitMQ.csproj --configuration Release --no-build --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
 
       - name: Generate NuGet prerelease packages
-        if: ${{ steps.version.outputs.suffix != '' }}
+        if: ${{ needs.release-version.outputs.suffix != '' }}
         env:
-          VERSION: ${{ steps.version.outputs.version }}
-          SUFFIX: ${{ steps.version.outputs.suffix }}
+          VERSION: ${{ needs.release-version.outputs.version }}
+          SUFFIX: ${{ needs.release-version.outputs.suffix }}
         run: |
           dotnet pack ./framework_modules/Geex.Casbin/src/Geex.Casbin.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.MongoDB.Entities/src/Geex.MongoDB.Entities.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
@@ -116,6 +127,7 @@ jobs:
           dotnet pack ./framework_modules/Geex.Extensions.Authorization/src/Geex.Extensions.Authorization.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.BackgroundJob/src/Geex.Extensions.BackgroundJob.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.BlobStorage/src/Geex.Extensions.BlobStorage.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
+          dotnet pack ./framework_modules/Geex.Extensions.Backups/src/Geex.Extensions.Backups.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Captcha/src/Geex.Extensions.Captcha.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Identity/src/Geex.Extensions.Identity.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
           dotnet pack ./framework_modules/Geex.Extensions.Logging/src/Geex.Extensions.Logging.csproj --configuration Release --no-build --version-suffix ${{env.SUFFIX}} --output ./nupkg /p:PackageVersion=${{env.VERSION}} /p:Description="${{env.PACKAGE_DESCRIPTION}}" /p:Authors="${{env.PACKAGE_AUTHOR}}" /p:Company="${{env.PACKAGE_COMPANY}}" /p:Copyright="${{env.PACKAGE_COPYRIGHT}}" /p:PackageIconUrl="${{env.PACKAGE_LOGO_URL}}" /p:PackageProjectUrl="${{env.PACKAGE_PROJECT_URL}}" /p:RepositoryUrl="${{env.PACKAGE_REPOSITORY_URL}}" /p:PackageTags="${{env.PACKAGE_TAGS}}"
@@ -139,90 +151,68 @@ jobs:
         run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
 
   build-and-publish-npm-package:
+    needs: release-version
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: ./frontend_libs
+    env:
+      RELEASE_VERSION: ${{ needs.release-version.outputs.version }}
+      NPM_DIST_TAG: ${{ needs.release-version.outputs.npm-tag }}
     steps:
-      - name: extract-version-from-input
-        if: ${{ '$GITHUB_REF' == '' }}
-        run: |
-            echo "ref=$VERSION" >> $GITHUB_ENV
-
-      - name: extract-version-from-ref
-        if: ${{ '$GITHUB_REF' != '' }}
-        run: |
-            echo "ref=$GITHUB_REF" >> $GITHUB_ENV
-
-      - name: Extract version number
-        id: version
-        run: |
-          REF=${{env.ref}}
-          echo "Ref name is $REF"
-          if [[ "${REF#refs/tags/v}" =~ ^([0-9|\.]+)-?([a-z]+[0-9]*)?$ ]]; then
-            VERSION="${BASH_REMATCH[1]}"
-            SUFFIX="${BASH_REMATCH[2]}"
-            if [ -n "$SUFFIX" ]; then
-              NPM_VERSION="${VERSION}-${SUFFIX}"
-            else
-              NPM_VERSION="${VERSION}"
-            fi
-            echo "version=$VERSION"
-            echo "suffix=$SUFFIX"
-            echo "npm_version=$NPM_VERSION"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
-            echo "npm_version=$NPM_VERSION" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-version.outputs.ref }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend_libs/package.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+          cache-dependency-path: frontend_libs/pnpm-lock.yaml
 
-      - name: Publish @geexcode/geex-angular
-        working-directory: ./frontend_libs/geex-angular
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_VERSION: ${{ steps.version.outputs.npm_version }}
+      - name: Setup npm for trusted publishing
         run: |
-          npm version "$NPM_VERSION" --no-git-tag-version --allow-same-version
-          npm install
-          npm run build
-          npm publish --access public
+          npm install --global npm@11
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to install npm for trusted publishing.' }
+          $npmVersion = npm --version
+          if ($LASTEXITCODE -ne 0 -or [version]$npmVersion -lt [version]'11.5.1') {
+            throw 'Trusted publishing requires npm 11.5.1 or later.'
+          }
+          Write-Host "Using npm $npmVersion for trusted publishing."
 
-      - name: Publish @geexcode/geex-extensions-authentication-wechat
-        working-directory: ./frontend_libs/geex-extensions-authentication-wechat
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_VERSION: ${{ steps.version.outputs.npm_version }}
-        run: |
-          npm version "$NPM_VERSION" --no-git-tag-version --allow-same-version
-          npm install
-          npm run build
-          npm publish --access public
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Publish @geexcode/geex-extensions-identity
-        working-directory: ./frontend_libs/geex-extensions-identity
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_VERSION: ${{ steps.version.outputs.npm_version }}
-        run: |
-          npm version "$NPM_VERSION" --no-git-tag-version --allow-same-version
-          npm install
-          npm run build
-          npm publish ./dist --access public
+      - name: Set all frontend versions from the release tag
+        run: ./release.ps1 -Version $env:RELEASE_VERSION -Mode Prepare
 
-      - name: Publish @geexcode/geex-extensions-mocking
-        working-directory: ./frontend_libs/geex-extensions-mocking
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_VERSION: ${{ steps.version.outputs.npm_version }}
+      - name: Build all libraries in dependency order
+        run: pnpm -r --workspace-concurrency=1 run build
+
+      - name: Validate all release packages
+        run: ./release.ps1 -Version $env:RELEASE_VERSION -Mode Verify
+
+      - name: Validate Backups UI and regression tests
+        shell: pwsh
         run: |
-          npm version "$NPM_VERSION" --no-git-tag-version --allow-same-version
-          npm install
-          npm run build
-          npm publish ./dist --access public
+          pnpm --filter '@geexcode/geex-extensions-backups' run build:page
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm --filter '@geexcode/geex-extensions-backups' test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm --filter '@geexcode/geex-module-schematics' test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Publish all frontend packages to npm with OIDC
+        run: pnpm -r publish --access public --no-git-checks --ignore-scripts --tag $env:NPM_DIST_TAG

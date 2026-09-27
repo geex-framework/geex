@@ -1,4 +1,6 @@
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Extensions.Authentication;
@@ -68,7 +70,22 @@ namespace Geex.Extensions.Messaging.Core.Handlers
             var message = Uow.Query<Message>().First(x => x.Id == request.MessageId);
             await message.DistributeAsync(request.ToUserIds.ToArray());
 
-            await Uow.ClientNotify(new NewMessageClientNotify(message), request.ToUserIds.ToArray());
+            var published = false;
+            Uow.PostSaveChanges += async () =>
+            {
+                if (published) return;
+                try
+                {
+                    using var timeout = new CancellationTokenSource(System.TimeSpan.FromSeconds(5));
+                    await Uow.ClientNotify(new NewMessageClientNotify(message), timeout.Token, request.ToUserIds.ToArray());
+                    published = true;
+                }
+                catch (System.Exception exception)
+                {
+                    Uow.ServiceProvider.GetService<ILogger<MessageHandler>>()?.LogWarning(
+                        exception, "Message {MessageId} saved but realtime delivery failed.", message.Id);
+                }
+            };
         }
 
         public async Task<IMessage> Handle(CreateMessageRequest request, CancellationToken cancellationToken)

@@ -596,7 +596,10 @@ namespace MongoDB.Entities
 
             if (this.PreSaveChanges != default)
             {
-                await this.PreSaveChanges();
+                foreach (Func<Task> callback in this.PreSaveChanges.GetInvocationList())
+                {
+                    await callback();
+                }
             }
             var result = new MergedBulkWriteResult();
             if (!Session.IsInTransaction && this.SupportTransaction && !IsInExplicitTransaction)
@@ -664,7 +667,10 @@ namespace MongoDB.Entities
             //this.DbDataCache.TypedCacheDictionary.Clear();
             if (this.PostSaveChanges != default)
             {
-                await this.PostSaveChanges();
+                foreach (Func<Task> callback in this.PostSaveChanges.GetInvocationList())
+                {
+                    await callback();
+                }
             }
             return result;
         }

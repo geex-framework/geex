@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -76,10 +76,9 @@ namespace Geex
             var schemaBuilder = context.Services
                 .AddGraphQLServer()
                 .AllowIntrospection(!moduleOptions.DisableIntrospection);
-            if (moduleOptions.Redis != default)
-            {
-                context.Services.AddStackExchangeRedisExtensions();
-            }
+            if (moduleOptions.Redis == null)
+                throw new InvalidOperationException("GeexCoreModuleOptions.Redis is required for distributed subscriptions.");
+            context.Services.AddStackExchangeRedisExtensions();
             context.Services.AddSingleton(schemaBuilder);
             context.Services.AddHttpResultSerializer(x => new GeexHttpResponseFormatter(x));
             IReadOnlySchemaOptions capturedSchemaOptions = default;
@@ -127,7 +126,11 @@ namespace Geex
                 })
                 .AddErrorFilter<LoggingErrorFilter>(_ =>
                     new LoggingErrorFilter(_.GetService<ILoggerFactory>()))
-                .AddInMemorySubscriptions()
+                .AddRedisSubscriptions(sp => sp.GetRequiredService<StackExchange.Redis.Extensions.Core.Abstractions.IRedisConnectionPoolManager>().GetConnection(),
+                    new HotChocolate.Subscriptions.SubscriptionOptions
+                    {
+                        TopicPrefix = GeexSubscriptionTopics.Prefix(moduleOptions, Env.EnvironmentName)
+                    })
                 .AddValidationVisitor<ExtraArgsTolerantValidationVisitor>()
                 .AddTransactionScopeHandler<GeexTransactionScopeHandler>()
                 .UseRequest(next => context =>

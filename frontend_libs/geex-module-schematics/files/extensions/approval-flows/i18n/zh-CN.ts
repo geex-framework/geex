@@ -1,4 +1,5 @@
 export default {
+  handleMessage: "去处理",
   title: "审批流",
   listTitle: "审批流模板",
   name: "名称",

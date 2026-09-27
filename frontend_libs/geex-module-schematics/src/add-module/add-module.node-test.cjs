@@ -100,6 +100,7 @@ describe("add-module schematic", () => {
       "components/upload/geex-upload.component.ts",
       "widgets/upload/geex-upload.widget.ts",
     ],
+    "backups": ["backups.routes.ts", "backups.menu.ts", "pages/list.page.ts", "pages/list.page.html", "i18n/zh-CN.ts"],
     "approval-flows": [
       "approval-flows.routes.ts",
       "graphql/operations.gql.ts",
@@ -134,4 +135,3 @@ describe("add-module schematic", () => {
     });
   }
 });
-

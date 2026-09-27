@@ -20,3 +20,5 @@ export * from "./extensions";
 export * from "./tokens";
 export { bindGeexGlobal } from "./bind-geex-global";
 export { default, rison } from "./rison";
+
+export * from "./subscription-connection";

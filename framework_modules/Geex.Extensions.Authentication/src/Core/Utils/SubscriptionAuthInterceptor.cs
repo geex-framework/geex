@@ -15,6 +15,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
 {
     public class SubscriptionAuthInterceptor : ISocketSessionInterceptor
     {
+        private static readonly DefaultSocketSessionInterceptor DefaultInterceptor = new();
         // This is the key to the auth token in the HTTP Context
         public static readonly string HTTP_CONTEXT_WEBSOCKET_AUTH_KEY = "websocket-auth-token";
         // This is the key that apollo uses in the connection init request
@@ -87,6 +88,7 @@ namespace Geex.Extensions.Authentication.Core.Utils
         public async ValueTask OnRequestAsync(ISocketSession session, string operationSessionId, IQueryRequestBuilder requestBuilder,
             CancellationToken cancellationToken = new CancellationToken())
         {
+            await DefaultInterceptor.OnRequestAsync(session, operationSessionId, requestBuilder, cancellationToken);
         }
 
         /// <inheritdoc />

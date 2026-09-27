@@ -6,6 +6,7 @@ const { version: packageVersion } = require("../package.json");
 const OVERLAY_TEMPLATES = new Set([
   "identity",
   "blob-storage",
+  "backups",
   "approval-flows",
   "mocking",
   "authentication",

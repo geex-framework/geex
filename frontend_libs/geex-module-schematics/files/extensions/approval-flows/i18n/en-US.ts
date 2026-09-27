@@ -1,4 +1,5 @@
 export default {
+  handleMessage: "Handle approval",
   title: "Approval flows",
   listTitle: "Approval flow templates",
   name: "Name",

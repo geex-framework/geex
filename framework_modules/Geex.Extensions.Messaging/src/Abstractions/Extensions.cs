@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Geex.ClientNotification;
 using Geex.Extensions.Messaging.ClientNotification;
@@ -10,16 +11,19 @@ namespace Geex.Extensions.Messaging
 {
     public static class Extensions
     {
-        public static async Task ClientNotify<T>(this IUnitOfWork uow, T clientNotify, params string[] userIds) where T : ClientNotify
+        public static Task ClientNotify<T>(this IUnitOfWork uow, T clientNotify, params string[] userIds) where T : ClientNotify =>
+            uow.ClientNotify(clientNotify, CancellationToken.None, userIds);
+
+        public static async Task ClientNotify<T>(this IUnitOfWork uow, T clientNotify, CancellationToken token, params string[] userIds) where T : ClientNotify
         {
-            var topicEventSender = uow.ServiceProvider.GetService<ITopicEventSender>();
+            var topicEventSender = uow.ServiceProvider.GetRequiredService<ITopicEventSender>();
             if (!userIds.IsNullOrEmpty())
             {
-                await Task.WhenAll(userIds.Select(userId => topicEventSender.SendAsync($"{nameof(ClientNotifySubscription.OnPrivateNotify)}:{userId}", (ClientNotify)clientNotify).AsTask()));
+                await Task.WhenAll(userIds.Select(userId => topicEventSender.SendAsync($"{nameof(ClientNotifySubscription.OnPrivateNotify)}:{userId}", ClientNotifyEnvelope.From(clientNotify), token).AsTask()));
             }
             else
             {
-                await topicEventSender.SendAsync(nameof(ClientNotifySubscription.OnPublicNotify), (ClientNotify)clientNotify);
+                await topicEventSender.SendAsync(nameof(ClientNotifySubscription.OnPublicNotify), ClientNotifyEnvelope.From(clientNotify), token);
             }
         }
     }

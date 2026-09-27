@@ -9,6 +9,7 @@ import extractFiles from "extract-files/extractFiles.mjs";
 import isExtractableFile from "extract-files/isExtractableFile.mjs";
 import { createClient } from "graphql-ws";
 import json5 from "json5";
+import { GeexSubscriptionConnection } from "./subscription-connection";
 
 import { GeexHttpInterceptor } from "./http/geex-http.interceptor";
 import { SILENT_REQUEST } from "./http/tokens";
@@ -184,6 +185,7 @@ export function createGeexWsApolloOptions(options: {
   connectionParams?: () => Promise<Record<string, string>> | Record<string, string>;
   retryAttempts?: number;
   onOpened?: () => void;
+  connection?: GeexSubscriptionConnection;
   onError?: (err: unknown) => void;
 }): ApolloClient.Options {
   const url =
@@ -193,9 +195,12 @@ export function createGeexWsApolloOptions(options: {
   const client = createClient({
     url,
     lazy: true,
-    retryAttempts: options.retryAttempts ?? 3,
+    retryAttempts: options.retryAttempts ?? Infinity,
     connectionParams: options.connectionParams,
     on: {
+      connecting: () => options.connection?.update("connecting"),
+      connected: () => options.connection?.update("connected"),
+      closed: () => options.connection?.update("disconnected"),
       opened: options.onOpened ?? (() => console.log("ws connected.")),
       error: options.onError ?? ((err: unknown) => console.error("ws connect failed.", err)),
     },
@@ -288,8 +293,10 @@ export function provideGeexApollo(options: ProvideGeexApolloOptions): Provider[]
       provide: APOLLO_NAMED_OPTIONS,
       useFactory: (cache: InMemoryCache, httpLink: HttpLink, interceptor: GeexHttpInterceptor): NamedOptions => {
         const handler = options.errorHandler ?? interceptor;
+        const connection = inject(GeexSubscriptionConnection);
         return {
           subscription: createGeexWsApolloOptions({
+            connection,
             baseUrl: options.baseUrl,
             cache,
             connectionParams: async () => handler.buildCommonHeaders?.() ?? interceptor.buildCommonHeaders(),
