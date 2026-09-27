@@ -70,7 +70,7 @@ public interface IApproveEntity : IEntity
         {
             this.ApproveStatus |= ApproveStatus.Approved;
             this.ApproveRemark = remark;
-            (this as IEntity)?.AddDomainEvent(new EntityApprovedNotification<TEntity>(this));
+            (this as IEntity)?.AddDomainEvent(new EntityApprovedEvent<TEntity>(this));
         }
         else
         {
@@ -90,7 +90,7 @@ public interface IApproveEntity : IEntity
         {
             this.ApproveStatus |= ApproveStatus.Approved;
             this.ApproveRemark = remark;
-            var entity = Activator.CreateInstance(typeof(EntityApprovedNotification<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as IEvent;
+            var entity = Activator.CreateInstance(typeof(EntityApprovedEvent<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as IEvent;
             (this as IEntity)?.AddDomainEvent(entity);
         }
         else
@@ -111,7 +111,7 @@ public interface IApproveEntity : IEntity
         {
             this.ApproveStatus ^= ApproveStatus.Submitted;
             this.ApproveRemark = remark;
-            (this as IEntity)?.AddDomainEvent(new EntityUnSubmittedNotification<TEntity>(this));
+            (this as IEntity)?.AddDomainEvent(new EntityUnSubmittedEvent<TEntity>(this));
         }
         else if (this.ApproveStatus == ApproveStatus.Approved)
         {
@@ -137,7 +137,7 @@ public interface IApproveEntity : IEntity
                 this.ApproveStatus ^= ApproveStatus.Approved;
             }
             this.ApproveRemark = remark;
-            (this as IEntity)?.AddDomainEvent(new EntityUnApprovedNotification<TEntity>(this));
+            (this as IEntity)?.AddDomainEvent(new EntityUnApprovedEvent<TEntity>(this));
         }
     }
     /// <summary>

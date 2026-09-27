@@ -1,6 +1,6 @@
 ﻿using MediatX;
 
-namespace Geex.Extensions.ApprovalFlows.Notifications;
+namespace Geex.Extensions.ApprovalFlows.Events;
 
 public class EntitySubmittedEvent<TEntity> : IEvent
 {
