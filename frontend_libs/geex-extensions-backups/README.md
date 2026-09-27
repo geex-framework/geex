@@ -12,6 +12,8 @@ Install the page source with `geex add backups`. Include its menu, routes and zh
 
 For local source dependencies, build the package before installing or building the consuming application.
 
+For manual npm publication, first run `./release.ps1 -Version <version> -Mode Prepare`, `pnpm -r --workspace-concurrency=1 run build`, and `./release.ps1 -Version <version> -Mode Verify` from `frontend_libs`. Then run `pnpm --dir geex-extensions-backups publish:public` from that directory. Publish from the package root: its manifest exports and `files` list include the built `dist` directory; publishing `./dist` with that manifest omits the exported code.
+
 ## API and permissions
 
 | Frontend method | GraphQL operation | Result | Permission |

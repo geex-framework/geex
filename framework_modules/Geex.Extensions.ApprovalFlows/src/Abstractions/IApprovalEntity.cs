@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Geex.Extensions.ApprovalFlows.Notifications;
+using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Storage;
 using MediatX;
 

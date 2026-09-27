@@ -34,7 +34,7 @@
     "build:page": "ngc -p tsconfig.page.json",
     "test": "node --test tests/module.test.mjs tests/page.test.mjs",
     "prepublishOnly": "npm run build",
-    "publish:public": "npm publish ./dist --access public"
+    "publish:public": "npm publish --access public"
   },
   "devDependencies": {
     "@angular/compiler": "^20.0.0",
