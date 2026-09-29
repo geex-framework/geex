@@ -62,7 +62,7 @@ namespace Geex.Gql
 
             if (enumType.IsAssignableTo<IEnumeration>())
             {
-                var genericImplementation = enumType.GetBaseClasses().FirstOrDefault(x => x.Name == (typeof(Enumeration<>).Name));
+                var genericImplementation = enumType.GetEnumerationFamilyType();
                 var values = ((System.Collections.IEnumerable)genericImplementation?.GetProperty(nameof(Enumeration.List))?.GetValue(null)).Cast<object>().Where(x => x.GetType().IsAssignableTo(enumType));
                 if (!values.Any())
                 {

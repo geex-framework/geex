@@ -9,6 +9,10 @@ namespace Geex.Extensions.Identity
         public IdentityPermission(string value) : base($"{Prefix}_{value}")
         {
         }
+
+        internal IdentityPermission(string name, string value) : base(name, value)
+        {
+        }
         public class UserPermission : IdentityPermission
         {
             public static UserPermission Query { get; } = new("query_users");
@@ -16,6 +20,10 @@ namespace Geex.Extensions.Identity
             public static UserPermission Edit { get; } = new("mutation_editUser");
 
             public UserPermission([NotNull] string value) : base(value)
+            {
+            }
+
+            internal UserPermission(string name, string value) : base(name, value)
             {
             }
         }
@@ -28,6 +36,10 @@ namespace Geex.Extensions.Identity
             public RolePermission([NotNull] string value) : base(value)
             {
             }
+
+            internal RolePermission(string name, string value) : base(name, value)
+            {
+            }
         }
         public class OrgPermission : IdentityPermission
         {
@@ -35,6 +47,10 @@ namespace Geex.Extensions.Identity
             public static OrgPermission Edit { get; } = new("mutation_editOrg");
 
             public OrgPermission([NotNull] string value) : base(value)
+            {
+            }
+
+            internal OrgPermission(string name, string value) : base(name, value)
             {
             }
         }

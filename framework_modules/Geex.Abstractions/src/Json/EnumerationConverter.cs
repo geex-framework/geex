@@ -14,11 +14,9 @@ namespace Geex.Json
 
         public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
-            Type enumType = typeToConvert.GetClassEnumRealType();
-
             JsonConverter converter = (JsonConverter)Activator.CreateInstance(
                 typeof(EnumerationConverter<>)
-                    .MakeGenericType(new Type[] { enumType }),
+                    .MakeGenericType(new Type[] { typeToConvert }),
                 BindingFlags.Instance | BindingFlags.Public,
                 binder: null,
                 args: null,

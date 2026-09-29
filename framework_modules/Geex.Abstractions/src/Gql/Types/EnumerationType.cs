@@ -18,6 +18,5 @@ namespace Geex.Gql.Types
             var tryCreateEnumValue = base.TryCreateEnumValue(context, definition, out enumValue);
             return tryCreateEnumValue;
         }
-
     }
 }

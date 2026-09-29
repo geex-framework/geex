@@ -6,6 +6,10 @@ public class AuditLogsPermission : AppPermission<AuditLogsPermission>
     {
     }
 
+    internal AuditLogsPermission(string name, string value) : base(name, value)
+    {
+    }
+
     public static AuditLogsPermission Query { get; } = new("query_auditLogs");
     public static AuditLogsPermission Delete { get; } = new("mutation_deleteAuditLogs");
 }

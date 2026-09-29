@@ -9,6 +9,10 @@ namespace Geex.Extensions.Settings
         public SettingsPermission([NotNull] string value) : base($"{Prefix}_{value}")
         {
         }
+
+        internal SettingsPermission(string name, string value) : base(name, value)
+        {
+        }
         // 取消setting的权限控制, 只限制登录即可
         //public static SettingsPermission Query { get; } = new SettingsPermission("query_settings");
         public static SettingsPermission Edit { get; } = new SettingsPermission("mutation_editSetting");

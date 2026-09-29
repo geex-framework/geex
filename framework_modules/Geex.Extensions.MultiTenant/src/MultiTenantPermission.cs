@@ -8,6 +8,10 @@ namespace Geex.Extensions.MultiTenant.Api
         public MultiTenantPermission(string value) : base($"{typeof(MultiTenantPermission).DomainName()}_{value}")
         {
         }
+
+        internal MultiTenantPermission(string name, string value) : base(name, value)
+        {
+        }
         public class TenantPermission : MultiTenantPermission
         {
             public static TenantPermission Query { get; } = new("query_tenants");
@@ -17,6 +21,10 @@ namespace Geex.Extensions.MultiTenant.Api
 
             /// <inheritdoc />
             public TenantPermission(string value) : base(value)
+            {
+            }
+
+            internal TenantPermission(string name, string value) : base(name, value)
             {
             }
         }

@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+提交/创建分支/issue/pr的时候, 需要参考已有的典型提交(#<issueId> <change_type>:<message>)/分支(`feature/<issueId>-feature-description`)/issue/pr作为规范

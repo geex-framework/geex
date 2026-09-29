@@ -2,7 +2,11 @@
 {
     public class AppPermission : Enumeration<AppPermission>
     {
-        public AppPermission(string value) : base(value)
+        public AppPermission(string value) : this(value, value)
+        {
+        }
+
+        internal AppPermission(string name, string value) : base(name, value)
         {
             var split = value.Split('_');
             this.Mod = split[0];
@@ -19,6 +23,10 @@
 
     public abstract class AppPermission<TImplementation> : AppPermission
     {
+        protected AppPermission(string name, string value) : base(name, value)
+        {
+        }
+
         protected AppPermission(string value) : base((PermissionString)value)
         {
 
