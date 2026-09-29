@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -51,6 +51,7 @@ namespace Geex
 
         static readonly ConcurrentDictionary<string, TEnum> _fromValue = new ConcurrentDictionary<string, TEnum>();
         static readonly ConcurrentDictionary<string, string> _aliasToValue = new ConcurrentDictionary<string, string>();
+        private static readonly ConcurrentDictionary<Type, Func<string, string, TEnum>> _instanceFactoryCache = new();
 
         private static IEnumerable<TEnum> GetAllOptions()
         {
@@ -194,6 +195,8 @@ namespace Geex
             if (String.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
+            RuntimeHelpers.RunClassConstructor(typeof(TEnum).TypeHandle);
+
             if (ignoreCase)
                 return FromName(_fromNameIgnoreCase);
             else
@@ -301,6 +304,8 @@ namespace Geex
             if (String.IsNullOrEmpty(name))
                 throw new ArgumentNullException(nameof(name));
 
+            RuntimeHelpers.RunClassConstructor(typeof(TChildEnum).TypeHandle);
+
             var dictionary = ignoreCase ? _fromNameIgnoreCase : _fromName;
             if (!dictionary.TryGetValue(name, out var result))
             {
@@ -332,6 +337,8 @@ namespace Geex
                 throw new ArgumentNullException(nameof(name));
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
+
+            RuntimeHelpers.RunClassConstructor(typeof(TEnum).TypeHandle);
 
             // 优先通过Value查找
             var byValue = FromExistedValue(value, true);
@@ -373,6 +380,8 @@ namespace Geex
                 throw new ArgumentNullException(nameof(name));
             if (value == null)
                 throw new ArgumentNullException(nameof(value));
+
+            RuntimeHelpers.RunClassConstructor(typeof(TChildEnum).TypeHandle);
 
             // 优先通过Value查找
             var byValue = FromExistedValue(value, true);
@@ -629,6 +638,8 @@ namespace Geex
         /// </summary>
         private static TEnum Create(string name, string value)
         {
+            RuntimeHelpers.RunClassConstructor(typeof(TEnum).TypeHandle);
+
             if (_fromValue.TryGetValue(value, out var existed))
             {
                 if (existed.Name != name)
@@ -647,26 +658,14 @@ namespace Geex
                 return existed;
             }
 
-            // Try to create an instance of the concrete enumeration type using high-performance cache
-            var concreteType = typeof(TEnum);
-            try
-            {
-                var instance = (TEnum)concreteType.CreateInstanceFast();
-                (instance as Enumeration<TEnum>).SetEnum(name, value);
-                // Cache the new instance
-                _fromName.TryAdd(name, instance);
-                _fromNameIgnoreCase.TryAdd(name, instance);
-                _fromValue.TryAdd(value, instance);
-                ValueCacheDictionary.TryAdd(name, instance);
-                IEnumeration.ValueCacheDictionary.TryAdd($"{typeof(TEnum).Name}.{name}", instance);
+            var instance = CreateInstance(typeof(TEnum), name, value);
+            _fromName.TryAdd(name, instance);
+            _fromNameIgnoreCase.TryAdd(name, instance);
+            _fromValue.TryAdd(value, instance);
+            ValueCacheDictionary.TryAdd(name, instance);
+            IEnumeration.ValueCacheDictionary.TryAdd($"{typeof(TEnum).Name}.{name}", instance);
 
-                return instance;
-            }
-            catch
-            {
-                // If we can't create an instance, fall back to throwing the original exception
-                throw new InvalidOperationException($"Cannot create enumeration with name '{name}' and value '{value}'");
-            }
+            return instance;
         }
 
         /// <summary>
@@ -674,6 +673,8 @@ namespace Geex
         /// </summary>
         private static TChildEnum CreateTyped<TChildEnum>(string name, string value) where TChildEnum : class, TEnum
         {
+            RuntimeHelpers.RunClassConstructor(typeof(TChildEnum).TypeHandle);
+
             // First check if it already exists in the cache
             if (_fromValue.TryGetValue(value, out var existed))
             {
@@ -707,27 +708,72 @@ namespace Geex
                 }
             }
 
-            // Try to create an instance of the concrete enumeration type using high-performance cache
-            var concreteType = typeof(TChildEnum);
+            var instance = (TChildEnum)CreateInstance(typeof(TChildEnum), name, value);
+            _fromName.TryAdd(name, instance);
+            _fromNameIgnoreCase.TryAdd(name, instance);
+            _fromValue.TryAdd(value, instance);
+            ValueCacheDictionary.TryAdd(name, instance);
+            IEnumeration.ValueCacheDictionary.TryAdd($"{typeof(TChildEnum).Name}.{name}", instance);
+
+            return instance;
+        }
+
+        private static TEnum CreateInstance(Type concreteType, string name, string value)
+        {
             try
             {
-                var instance = (TChildEnum)concreteType.CreateInstanceFast();
-                (instance as Enumeration<TEnum>).SetEnum(name, value);
-                // Cache the new instance
-                _fromName.TryAdd(name, instance);
-                _fromNameIgnoreCase.TryAdd(name, instance);
-                _fromValue.TryAdd(value, instance);
-                ValueCacheDictionary.TryAdd(name, instance);
-                IEnumeration.ValueCacheDictionary.TryAdd($"{typeof(TChildEnum).Name}.{name}", instance);
+                var factory = _instanceFactoryCache.GetOrAdd(concreteType, CreateInstanceFactory);
+                var instance = factory(name, value);
+                if (instance is null || !concreteType.IsInstanceOfType(instance))
+                {
+                    throw new InvalidOperationException($"The enumeration factory must return a non-null instance of {concreteType.FullName}.");
+                }
+                if (instance.Name != name || instance.Value != value)
+                {
+                    throw new InvalidOperationException("The enumeration factory must preserve the requested name and value.");
+                }
 
                 return instance;
             }
-            catch
+            catch (Exception exception)
             {
-                // If we can't create an instance, fall back to throwing the original exception
-                throw new InvalidOperationException($"Cannot create enumeration with name '{name}' and value '{value}' of type {typeof(TChildEnum).Name}");
+                throw new InvalidOperationException(
+                    $"Cannot create enumeration with name '{name}' and value '{value}' of type {concreteType.FullName}. {exception.Message}",
+                    exception);
             }
         }
+
+        private static Func<string, string, TEnum> CreateInstanceFactory(Type concreteType)
+        {
+            var factoryType = typeof(IEnumerationFactory<>).MakeGenericType(concreteType);
+            if (factoryType.IsAssignableFrom(concreteType))
+            {
+                return typeof(Enumeration<TEnum>)
+                    .GetMethod(nameof(CreateWithFactory), BindingFlags.NonPublic | BindingFlags.Static)!
+                    .MakeGenericMethod(concreteType)
+                    .CreateDelegate<Func<string, string, TEnum>>();
+            }
+
+            if (concreteType.IsAbstract || concreteType.IsInterface ||
+                !typeof(Enumeration<TEnum>).IsAssignableFrom(concreteType) ||
+                concreteType.GetConstructor(Type.EmptyTypes) is null)
+            {
+                throw new InvalidOperationException(
+                    $"Type {concreteType.FullName} has no usable public parameterless constructor. " +
+                    $"Implement IEnumerationFactory<{concreteType.Name}>.CreateEnumeration(string name, string value) to enable dynamic creation.");
+            }
+
+            return (name, value) =>
+            {
+                var instance = (TEnum)concreteType.CreateInstanceFast();
+                ((Enumeration<TEnum>)(object)instance).SetEnum(name, value);
+                return instance;
+            };
+        }
+
+        private static TEnum CreateWithFactory<TActual>(string name, string value)
+            where TActual : class, TEnum, IEnumerationFactory<TActual>
+            => TActual.CreateEnumeration(name, value);
     }
 
     public static class EnumerationExtensions
