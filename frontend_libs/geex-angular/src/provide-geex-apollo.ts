@@ -58,7 +58,7 @@ export interface GeexGraphqlErrorHandler {
 
 export const geexApolloDefaultOptions = {
   query: {
-    fetchPolicy: "network-only" as const,
+    fetchPolicy: "no-cache" as const,
     errorPolicy: "ignore" as const,
   },
   mutate: {

@@ -3,7 +3,6 @@
 import { Component, ContentChild, forwardRef, inject, Input } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
-import { Apollo } from "apollo-angular";
 import * as _ from "lodash-es";
 import { NzMessageService } from "ng-zorro-antd/message";
 import { NzModalService } from "ng-zorro-antd/modal";
@@ -17,10 +16,11 @@ import {
   UploadFilter,
 } from "ng-zorro-antd/upload";
 import { NzUploadModule } from "ng-zorro-antd/upload";
-import { from, Observable, Subscription } from "rxjs";
+import { Observable, Subscription } from "rxjs";
 import { switchMap } from "rxjs/operators";
 
 import { GEEX_I18N, geex } from "@geexcode/geex-angular";
+import { attachBlob } from "@geexcode/geex-extensions-blob-storage";
 
 @Component({
   selector: "geex-upload",
@@ -36,7 +36,6 @@ import { GEEX_I18N, geex } from "@geexcode/geex-angular";
   ],
 })
 export class GeexUploadComponent implements ControlValueAccessor {
-  private readonly apollo = inject(Apollo);
   private readonly messageService = inject(NzMessageService);
   private readonly modalService = inject(NzModalService);
   private readonly I18N = inject(GEEX_I18N);
@@ -139,7 +138,7 @@ export class GeexUploadComponent implements ControlValueAccessor {
     if (this.deleteRemoteFile) {
       return this.deleteRemoteFile.pipe(
         switchMap(isDelete => {
-          if (isDelete) {
+          if (isDelete === true) {
             const ids = [file.uid];
             return geex.blobStorage
               .delete({
@@ -180,38 +179,18 @@ export class GeexUploadComponent implements ControlValueAccessor {
   };
 
   uploadGeexBlobObject = (args: NzUploadXHRArgs): Subscription => {
-    const createDocument = this.blobStorage.createDocument;
-    if (!createDocument) {
-      return Subscription.EMPTY;
-    }
     const postFile = args.postFile;
     if (!(postFile instanceof Blob)) {
       return Subscription.EMPTY;
     }
-    return from(postFile.slice().computeChecksumMd5())
-      .pipe(
-        switchMap(md5 => {
-          args.onProgress?.({ percent: 50 }, args.file);
-          return this.apollo
-            .mutate({
-              mutation: createDocument,
-              variables: {
-                request: {
-                  file: args.file as any,
-                  md5,
-                  storageType: this.storageType ?? this.blobStorage.defaultStorageType,
-                },
-              },
-              context: {
-                useMultipart: true,
-              },
-            })
-            .firstValuePromise();
-        }),
-      )
-      .subscribe(x => {
-        args.onProgress?.({ percent: 100 }, args.file);
-        args.onSuccess?.((x?.data as { createBlobObject: unknown } | undefined)?.createBlobObject, args.file, null);
+    args.onProgress?.({ percent: 0 }, args.file);
+    return attachBlob(this.blobStorage, postFile, args.file.name, this.storageType ?? this.blobStorage.defaultStorageType)
+      .subscribe({
+        next: blob => {
+          args.onProgress?.({ percent: 100 }, args.file);
+          args.onSuccess?.(blob, args.file, null);
+        },
+        error: error => args.onError?.(error, args.file),
       });
   };
 

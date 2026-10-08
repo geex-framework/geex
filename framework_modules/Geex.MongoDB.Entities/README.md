@@ -4,6 +4,10 @@
 # MongoDB.Entities
 A light-weight .net standard library which simplifies access to mongodb by abstracting away the official .net mongodb driver and providing some additional features on top of it. The API is clean and intuitive resulting in less lines of code that is more human friendly than driver code.
 
+## Geex query expressions
+
+`ExpressionSimplifier` translates array-backed `MemoryExtensions.Contains` calls to `Enumerable.Contains`. The three-argument overload is translated when the comparer is explicitly `null`, preserving default equality for .NET 10 enumeration queries. Calls with an explicit comparer retain their original expression.
+
 ## More Info:
 please visit the official website for detailed documentation:
 ## [https://mongodb-entities.com](https://mongodb-entities.com)

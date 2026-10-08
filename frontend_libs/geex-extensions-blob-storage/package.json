@@ -31,7 +31,7 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
-    "test": "node --test src/provide-geex-blob-storage.node-test.mjs",
+    "test": "node --test src/provide-geex-blob-storage.node-test.mjs src/attach-blob.node-test.mjs",
     "prepublishOnly": "npm run build",
     "publish:public": "npm publish ./dist --access public"
   },

@@ -1,6 +1,6 @@
 import * as i0 from '@angular/core';
 import { signal, InjectionToken, runInInjectionContext, makeEnvironmentProviders, Injector, inject, Injectable, provideAppInitializer, importProvidersFrom, ChangeDetectorRef, effect, computed, Component, input, output, contentChild, untracked, isSignal } from '@angular/core';
-import { fromEvent, Subject, Observable, throwError, of, firstValueFrom, interval, filter, map, takeUntil, timer, BehaviorSubject, isObservable, lastValueFrom, switchMap as switchMap$1 } from 'rxjs';
+import { fromEvent, BehaviorSubject, Subject, Observable, throwError, of, firstValueFrom, interval, filter, map, takeUntil, timer, isObservable, lastValueFrom, switchMap as switchMap$1 } from 'rxjs';
 import { debounceTime, switchMap, exhaustMap, mergeMap, catchError, finalize, filter as filter$1 } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpContextToken, HttpErrorResponse, HttpContext, HttpResponseBase, HTTP_INTERCEPTORS } from '@angular/common/http';
@@ -179,6 +179,18 @@ function provideGeex(overrides = {}, extensions = {}) {
 function provideGeexCommon(overrides = {}, extensions = {}) {
     return provideGeex(overrides, extensions);
 }
+
+class GeexSubscriptionConnection {
+    state = new BehaviorSubject("disconnected");
+    changes = this.state.asObservable();
+    update(state) { this.state.next(state); }
+    static ɵfac = i0.ɵɵngDeclareFactory({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexSubscriptionConnection, deps: [], target: i0.ɵɵFactoryTarget.Injectable });
+    static ɵprov = i0.ɵɵngDeclareInjectable({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexSubscriptionConnection, providedIn: "root" });
+}
+i0.ɵɵngDeclareClassMetadata({ minVersion: "12.0.0", version: "20.3.0", ngImport: i0, type: GeexSubscriptionConnection, decorators: [{
+            type: Injectable,
+            args: [{ providedIn: "root" }]
+        }] });
 
 function clearHistory() {
     history.pushState(null, "", location.href);
@@ -429,7 +441,7 @@ function provideGeexApolloTypePolicies(contribution) {
 }
 const geexApolloDefaultOptions = {
     query: {
-        fetchPolicy: "network-only",
+        fetchPolicy: "no-cache",
         errorPolicy: "ignore",
     },
     mutate: {
@@ -541,9 +553,12 @@ function createGeexWsApolloOptions(options) {
     const client = createClient({
         url,
         lazy: true,
-        retryAttempts: options.retryAttempts ?? 3,
+        retryAttempts: options.retryAttempts ?? Infinity,
         connectionParams: options.connectionParams,
         on: {
+            connecting: () => options.connection?.update("connecting"),
+            connected: () => options.connection?.update("connected"),
+            closed: () => options.connection?.update("disconnected"),
             opened: options.onOpened ?? (() => console.log("ws connected.")),
             error: options.onError ?? ((err) => console.error("ws connect failed.", err)),
         },
@@ -605,8 +620,10 @@ function provideGeexApollo(options) {
             provide: APOLLO_NAMED_OPTIONS,
             useFactory: (cache, httpLink, interceptor) => {
                 const handler = options.errorHandler ?? interceptor;
+                const connection = inject(GeexSubscriptionConnection);
                 return {
                     subscription: createGeexWsApolloOptions({
+                        connection,
                         baseUrl: options.baseUrl,
                         cache,
                         connectionParams: async () => handler.buildCommonHeaders?.() ?? interceptor.buildCommonHeaders(),
@@ -3107,5 +3124,5 @@ function bindGeexGlobal() {
  * Generated bundle index. Do not edit.
  */
 
-export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports as rison };
+export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexSubscriptionConnection, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports as rison };
 //# sourceMappingURL=geexcode-geex-angular.mjs.map

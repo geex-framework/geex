@@ -30,6 +30,14 @@ Geex 是一个模块化、业务友好、以绝佳开发体验为终极目标的
 
 详细教程请参考我们的[🔗官方文档](https://docs.geexcode.com/), 或者观看我们的[🔗视频教程](https://www.bilibili.com/video/BV1QF4m1u7iB/)
 
+## 仓库文档
+
+- 公共能力: [Enumeration API](docs/enumeration.md) / [MongoDB 查询](framework_modules/Geex.MongoDB.Entities/README.md).
+- 模块与前端: [BlobStorage](framework_modules/Geex.Extensions.BlobStorage/README.md) / [Backups](framework_modules/Geex.Extensions.Backups/README.md) / [Geex Angular](frontend_libs/geex-angular/README.md).
+- 开发验证: [测试规范](docs/Geex项目AI测试硬性规范.md) / [测试编写指南](scripts/testing/README.md).
+
+文档按公共能力和模块维护当前 API/配置/使用约束. 普通修复按影响维护测试代码, 文档仅在所属契约/使用说明或通用编写方法变化时更新, 不按单次任务新增改动说明或测试专项文档. 本次验证范围/结果/缺陷保存在运行证据包中, 变更经过由提交记录或 PR 说明承载.
+
 ## 贡献指南
 
 欢迎对Geex框架做出贡献！请遵循以下步骤：

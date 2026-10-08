@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -30,7 +31,6 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
     public class BlobObject : Entity<BlobObject>, IBlobObject
     {
         private readonly Task? _streamToStorageTask = null;
-        private static readonly ThreadLocal<byte[]> _bufferCache = new ThreadLocal<byte[]>(() => new byte[512 * 1024]);
 
         const long MaxCacheSize = 2048L * 1024 * 1024; // 2GB
 
@@ -41,27 +41,19 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
 
         public BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             uow?.Attach(this);
             var file = request.File;
-
-            // 使用同步版本避免构造函数中的异步等待
-            var existed = uow.Query<BlobObject>().Any(x => x.Md5 == request.Md5 && x.FileName == file.Name && x.MimeType == file.ContentType && x.StorageType == request.StorageType);
-            if (existed)
-            {
-                throw new BusinessException("A blob object with the same filename and MD5 already exists for this storage type.");
-            }
 
             var dataStream = file.OpenReadStream();
             var fileName = dataStream is FileStream fs ? Path.GetFileName(fs.Name) : file.Name;
             this.FileName = fileName;
 
-            if (!string.IsNullOrEmpty(file.ContentType))
-                this.MimeType = file.ContentType;
-            else if (!string.IsNullOrEmpty(fileName))
-                this.MimeType = GetContentType(fileName);
+            this.MimeType = NormalizeContentType(file.ContentType, fileName);
             this.Md5 = request.Md5;
             this.StorageType = request.StorageType;
             this.FileSize = file.Length ?? dataStream.Length;
+            this.UploadPending = true;
             this.SaveAsync().GetAwaiter().GetResult();
             uow.Attach(this);
             this._streamToStorageTask = Task.Run(async () =>
@@ -69,6 +61,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                 await using (dataStream)
                 {
                     await this.StreamToStorage(dataStream, cancellationToken);
+                    this.UploadPending = false;
                 }
             });
             uow.PreSaveChanges += async () => await this._streamToStorageTask;
@@ -101,6 +94,10 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         public BlobStorageType StorageType { get; set; }
         public DateTimeOffset? ExpireAt { get; set; }
 
+        // Legacy records have no pending marker and remain queryable without a data migration.
+        [HotChocolate.GraphQLIgnore]
+        public bool? UploadPending { get; private set; }
+
         /// <summary>
         /// Calculates appropriate buffer size based on file size
         /// </summary>
@@ -129,22 +126,24 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         /// </summary>
         public static async Task<string> ProcessStreamAsync(Stream inputStream, int bufferSize, MD5 md5Hasher, Func<ReadOnlyMemory<byte>, Task> writeAction, CancellationToken cancellationToken)
         {
-            // Reuse buffer from thread-local cache if size matches
-            var buffer = _bufferCache.Value.Length >= bufferSize ? _bufferCache.Value : new byte[bufferSize];
-            int bytesRead;
-
-            while ((bytesRead = await inputStream.ReadAsync(buffer.AsMemory(0, bufferSize), cancellationToken)) > 0)
+            var buffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+            try
             {
-                var dataToProcess = buffer.AsMemory(0, bytesRead);
-                md5Hasher.TransformBlock(buffer, 0, bytesRead, null, 0);
-                if (writeAction != null)
+                int bytesRead;
+                while ((bytesRead = await inputStream.ReadAsync(buffer.AsMemory(0, bufferSize), cancellationToken)) > 0)
                 {
-                    await writeAction(dataToProcess);
+                    var dataToProcess = buffer.AsMemory(0, bytesRead);
+                    md5Hasher.TransformBlock(buffer, 0, bytesRead, null, 0);
+                    if (writeAction != null)
+                        await writeAction(dataToProcess);
                 }
+                md5Hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                return Convert.ToHexStringLower(md5Hasher.Hash!);
             }
-
-            md5Hasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-            return BitConverter.ToString(md5Hasher.Hash).Replace("-", "").ToLowerInvariant();
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
         /// <summary>
@@ -157,7 +156,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
 
             if (this.StorageType == BlobStorageType.Db)
             {
-                if (!this.Md5.IsNullOrEmpty() && this.DbContext.Query<DbFile>().Any(x => x.Md5 == this.Md5))
+                if (!this.Md5.IsNullOrEmpty() && await FindStoredDbFileAsync(cancellationToken) != null)
                 {
                     return;
                 }
@@ -170,6 +169,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
 
                 this.Md5 = md5HashDb;
                 dbFile.Md5 = md5HashDb;
+                await dbFile.SaveAsync(cancellationToken);
             }
             else if (this.StorageType == BlobStorageType.FileSystem)
             {
@@ -177,7 +177,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                 if (!this.Md5.IsNullOrEmpty())
                 {
                     var filePath = this.GetFilePath();
-                    if (File.Exists(filePath))
+                    if (File.Exists(filePath) && new FileInfo(filePath).Length == this.FileSize)
                     {
                         return;
                     }
@@ -289,6 +289,13 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
             return "application/octet-stream";
         }
 
+        private static string NormalizeContentType(string? contentType, string? fileName) =>
+            (string.IsNullOrWhiteSpace(contentType) ? GetContentType(fileName!) : contentType).Trim().ToLowerInvariant();
+
+        private Task<DbFile> FindStoredDbFileAsync(CancellationToken cancellationToken) => DbContext.Find<DbFile>()
+            .Match(f => f.Eq(x => x.Md5, Md5) & f.Eq(x => x.FileSize, FileSize) & f.Eq(x => x.UploadSuccessful, true))
+            .ExecuteFirstAsync(cancellationToken);
+
         /// <summary>
         /// Overrides the base DeleteAsync method to handle storage cleanup
         /// </summary>
@@ -315,7 +322,8 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
             if (this.StorageType == BlobStorageType.FileSystem && !string.IsNullOrEmpty(this.Md5))
             {
                 // 检查是否有其他对象引用相同的MD5
-                var duplicateCount = await this.DbContext.CountAsync<BlobObject>(x => x.Md5 == this.Md5, cancellationToken);
+                var duplicateCount = await this.DbContext.CountAsync<BlobObject>(
+                    x => x.Md5 == this.Md5 && x.StorageType == this.StorageType, cancellationToken);
                 if (duplicateCount <= 1)
                 {
                     var filePath = this.GetFilePath();
@@ -328,14 +336,15 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
             else if (this.StorageType == BlobStorageType.Db && !string.IsNullOrEmpty(this.Md5))
             {
                 // 检查是否有其他对象引用相同的MD5
-                var duplicateCount = await this.DbContext.CountAsync<BlobObject>(x => x.Md5 == this.Md5, cancellationToken);
+                var duplicateCount = await this.DbContext.CountAsync<BlobObject>(
+                    x => x.Md5 == this.Md5 && x.StorageType == this.StorageType, cancellationToken);
                 if (duplicateCount <= 1)
                 {
-                    var dbFile = this.DbContext.Query<DbFile>().FirstOrDefault(x => x.Md5 == this.Md5);
-                    if (dbFile != null)
+                    var dbFiles = await this.DbContext.Find<DbFile>()
+                        .Match(x => x.Md5 == this.Md5).ExecuteAsync(cancellationToken);
+                    foreach (var dbFile in dbFiles)
                     {
-                        await dbFile.Data.ClearAsync(cancellationToken);
-                        await dbFile.DeleteAsync();
+                        await dbFile.DeleteAsync(cancellationToken);
                     }
                 }
             }
@@ -360,7 +369,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
                 }
 
                 // 使用异步查询
-                var dbFile = this.DbContext.Query<DbFile>().FirstOrDefault(x => x.Md5 == this.Md5);
+                var dbFile = await FindStoredDbFileAsync(cancellationToken);
                 if (dbFile == default)
                 {
                     await this.HandleInvalidBlobAsync(cancellationToken);

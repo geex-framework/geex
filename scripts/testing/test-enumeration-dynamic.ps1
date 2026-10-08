@@ -11,7 +11,7 @@ $repository = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $project = 'framework_modules/Geex.Tests/Geex.Tests.csproj'
 $testSource = 'framework_modules/Geex.Tests/UnitTests/EnumerationDynamicTests.cs'
 $scopeId = 'enumeration-dynamic'
-$scopeDocument = 'docs/testing/scopes/enumeration-dynamic.md'
+$scopeDocument = 'docs/enumeration.md'
 $schemaSource = Join-Path $PSScriptRoot 'schemas/enumeration-dynamic-evidence.schema.json'
 $sourcePaths = @('framework_modules/Geex.Abstractions/src/Enumeration.cs',
     'framework_modules/Geex.Abstractions/src/Enumeration.Definition.cs',

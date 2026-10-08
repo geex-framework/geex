@@ -69,9 +69,9 @@ var after = pending.Definition;
 
 ## 继承家族/静态成员与别名
 
-家族由实际继承的 `Enumeration<TRoot>` 确定. `Root.FromValue<Child>(value)` 与反射/序列化的 Child 入口共享该家族缓存. 已存在兼容的派生实例可以作为根类型复用; 不兼容类型不能占用同一个 Value 创建第二个实例. 同 Value/不同 Name 保留既有名称并警告, 同 Name/不同 Value 拒绝.
+家族由实际继承的 `Enumeration<TRoot>` 确定, 不跨不同泛型家族合并缓存. `Root.FromValue<Child>(value)` 与反射/序列化的 Child 入口共享该家族缓存. 已存在兼容的派生实例可以作为根类型复用; 请求类型与实例类型兼容但不同时记录警告并复用, 不兼容类型不能占用同一个 Value 创建第二个实例. 同 Value/不同 Name 保留既有名称并警告, 同 Name/不同 Value 拒绝.
 
-静态成员可通过 public static readonly 字段或 public 静态属性声明. 发现过程先登记已赋值的 readonly 字段/自动属性 backing field. 已知成员查找可直接复用, 不强制执行计算属性; `List` 或未命中的查找继续完整发现. 框架发起的初始化重入只读取已赋值存储. 计算属性仍需遵循 CLR 静态初始化顺序, 不应依赖正在初始化且尚未赋值的成员; 不在静态构造中对这种计算属性执行列表或未知值查询. 程序集重新发现不会清空动态实例或别名.
+静态成员可通过 public static readonly 字段或 public 静态属性声明. 自动发现限于已登记程序集中的后代类型, 不扫描或加载所有程序集. 发现过程先登记已赋值的 readonly 字段/自动属性 backing field. 已知成员查找可直接复用, 不强制执行计算属性; `List` 或未命中的查找继续完整发现. 框架发起的初始化重入只读取已赋值存储. 计算属性仍需遵循 CLR 静态初始化顺序, 不应依赖正在初始化且尚未赋值的成员; 不在静态构造中对这种计算属性执行列表或未知值查询. 程序集重新发现不会清空动态实例或别名.
 
 `FromValue(value, aliases)` 将别名关联到规范实例. 一批别名全部通过校验后才写入, 冲突不会留下部分别名绑定; 此前成功解析的规范实例仍然保留. 直接 `new` 不提供缓存复用保证, 需要身份稳定时使用查找/定义入口.
 
@@ -85,4 +85,4 @@ BSON 保持 Value 字符串表示. JSON/BSON 都不保存 `Definition` 属性快
 
 GraphQL ENUM 的可用值仍由 schema 声明范围决定. CLR 中创建未知动态值不会自动扩展已经生成的 GraphQL schema.
 
-验证入口和范围见 [Enumeration 动态枚举专项](testing/scopes/enumeration-dynamic.md) 与 [测试入口](testing/README.md). 文档描述接口契约, 实际验证状态以各次冻结证据包为准.
+验证入口见 [执行脚本](../scripts/testing/test-enumeration-dynamic.ps1), 回归断言位于 [EnumerationDynamicTests.cs](../framework_modules/Geex.Tests/UnitTests/EnumerationDynamicTests.cs). 本文是运行记录中 `ENUM-DYNAMIC` 规则的契约依据, 实际验证状态以各次冻结证据包为准.

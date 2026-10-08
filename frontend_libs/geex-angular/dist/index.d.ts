@@ -4,9 +4,10 @@ import { HttpContextToken, HttpInterceptor, HttpRequest, HttpResponseBase, HttpH
 import { TypePolicies, ApolloLink, InMemoryCache, ApolloClient } from '@apollo/client';
 import { ApolloBase, Apollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
+import * as rxjs from 'rxjs';
+import { Observable, ObservableInput, ObservedValueOf } from 'rxjs';
 import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
 import { TranslateLoader, TranslationObject } from '@ngx-translate/core';
-import { Observable, ObservableInput, ObservedValueOf } from 'rxjs';
 import { AlainI18NService, ModalHelper, TitleService } from '@delon/theme';
 import { DocumentNode } from 'graphql';
 import { NzModalService, NzModalRef } from 'ng-zorro-antd/modal';
@@ -54,6 +55,15 @@ declare function provideGeex<TExtensionModules extends Record<string, GeexModule
  */
 declare function provideGeexCommon<TExtensionModules extends Record<string, GeexModule> = {}>(overrides?: Partial<GeexModules>, extensions?: TExtensionModules): Provider[];
 
+type SubscriptionConnectionState = "connecting" | "connected" | "disconnected";
+declare class GeexSubscriptionConnection {
+    private readonly state;
+    readonly changes: rxjs.Observable<SubscriptionConnectionState>;
+    update(state: SubscriptionConnectionState): void;
+    static ɵfac: i0.ɵɵFactoryDeclaration<GeexSubscriptionConnection, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<GeexSubscriptionConnection>;
+}
+
 type GeexTypePolicies = TypePolicies | Record<string, unknown>;
 type GeexApolloTypePolicyContribution = () => GeexTypePolicies;
 declare const GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS: InjectionToken<readonly GeexApolloTypePolicyContribution[]>;
@@ -87,7 +97,7 @@ interface GeexGraphqlErrorHandler {
 }
 declare const geexApolloDefaultOptions: {
     query: {
-        fetchPolicy: "network-only";
+        fetchPolicy: "no-cache";
         errorPolicy: "ignore";
     };
     mutate: {
@@ -118,6 +128,7 @@ declare function createGeexWsApolloOptions(options: {
     connectionParams?: () => Promise<Record<string, string>> | Record<string, string>;
     retryAttempts?: number;
     onOpened?: () => void;
+    connection?: GeexSubscriptionConnection;
     onError?: (err: unknown) => void;
 }): ApolloClient.Options;
 /**
@@ -1010,6 +1021,6 @@ declare function bindGeexGlobal(): void;
 
 declare const exports: Record<string, any>;
 
-export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports as rison };
-export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexAppPermission, GeexDelonProvideOptions, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexHttpProvideOptions, GeexI18n, GeexI18nProvideOptions, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexSessionTerminatedCopy, GeexStartupI18nAdapter, GeexStartupOptions, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, UiModule, WritableDeepSignal };
+export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexSubscriptionConnection, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports as rison };
+export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexAppPermission, GeexDelonProvideOptions, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexHttpProvideOptions, GeexI18n, GeexI18nProvideOptions, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexSessionTerminatedCopy, GeexStartupI18nAdapter, GeexStartupOptions, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, SubscriptionConnectionState, UiModule, WritableDeepSignal };
 //# sourceMappingURL=index.d.ts.map

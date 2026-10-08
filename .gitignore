@@ -358,3 +358,15 @@ MigrationBackup/
 .ionide/
 
 .test-evidence/
+
+# Frontend extension build outputs
+/frontend_libs/geex-extensions-*/dist/
+
+# Local workspace settings and review artifacts
+/.vscode/settings.json
+/*.patch
+/schema.example.graphql
+
+# Local standalone application checkouts
+/private/AiSight/
+/private/example/

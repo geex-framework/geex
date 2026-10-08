@@ -64,6 +64,12 @@ bootstrapApplication(AppComponent, {
 - `provideGeexApollo` — default typePolicies + error/silent/WS links + **multipart upload** (`extract-files`); host must pass `baseUrl` + `possibleTypes`. Opt out: `enableUpload: false` or custom `createHttpLinkInstance`.
 - `loadEnvironmentOverrides` — merges `/assets/environment.override.js` into host `environment`.
 
+## Apollo cache policy
+
+`provideGeexApollo` defaults `query.fetchPolicy` to `no-cache`: each query reads from the network without writing its result to the Apollo cache. `watchQuery` defaults to `cache-first`. Callers can override either policy per operation.
+
+The default `errorPolicy` is `ignore` for query/watchQuery/mutate. Operations that must reject partial GraphQL errors should explicitly use `errorPolicy: "none"`; the BlobStorage list/create operations apply this policy. See the [BlobStorage contract](../../framework_modules/Geex.Extensions.BlobStorage/README.md) for attachment lookup and reuse behavior.
+
 ## Delon surface
 
 | Export | Role |
