@@ -15,7 +15,9 @@ public static class AutoBatchLoadFeature
   {
     public AutoBatchLoadFeatureConfig? AutoBatchLoad
     {
-      get => features.GetFeatureConfig<AutoBatchLoadFeatureConfig>(GeexFeature.AutoBatchLoad);
+      get => features.GetFeatureConfig<FeatureConfig>(GeexFeature.AutoBatchLoad) is AutoBatchLoadFeatureConfig config
+        ? config
+        : null;
       set => features.SetFeatureConfig(GeexFeature.AutoBatchLoad, value);
     }
   }
