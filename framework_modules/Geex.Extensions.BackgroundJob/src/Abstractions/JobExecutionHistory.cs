@@ -12,7 +12,7 @@ public class JobExecutionHistory : Entity<JobExecutionHistory>
     public DateTimeOffset ExecutionStartTime { get; set; }
     public DateTimeOffset? ExecutionEndTime { get; set; }
     public bool IsSuccess { get; set; }
-    public string Message { get; set; }
+    public string? Message { get; set; }
     public class JobExecutionHistoryGqlConfig : GqlConfig.Object<JobExecutionHistory>
     {
 
