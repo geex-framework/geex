@@ -16,11 +16,17 @@ Cold initialization constructs one detached instance per concrete type and publi
 
 GraphQL automatic batch loading uses `GeexCoreModuleOptions.AutoBatchLoad` when the field has no setting. An explicit `UseAutoBatchLoad(true)` or `UseAutoBatchLoad(false)` overrides that default.
 
-Regression tests are in `test/TestLazyQueryMetadata.cs` and `test/TestBatchLoadColdStart.cs`, alongside the existing BatchLoad tests. Run the following inside a Linux .NET 10 SDK container connected to a dedicated MongoDB instance at `localhost:27017`. The test command builds the project and its dependencies before running. The integration tests use `mongodb-entities-test` and MongoDB profiling, so the database must be disposable and isolated.
+Automatic navigation plans use the compiled GraphQL selections and each object type's CLR `RuntimeType`. Interface implementations, renamed GraphQL types, fragments, aliases and directives retain their selection scope. The BSON storage root does not need a GraphQL object type. Manual `BatchLoad`/`ThenBatchLoad` paths merge with automatic paths, including nested paths omitted from the GraphQL selection.
+
+Execution groups compatible navigation queries by the actual entity type and `DbContext`, preserving the navigation's parent and related generic types. Framework default sources with equivalent batch rules can share a batch. Custom sources and rules that capture instance state are evaluated separately to preserve each instance's data source and filtering semantics. Scalar `Count`/`LongCount` execution skips batch preloading while retaining the context's local entity view. Offset pagination retains Hot Chocolate's standard extra-row lookahead.
+
+Regression tests are in `test/TestLazyQueryMetadata.cs`, `test/TestBatchLoadColdStart.cs` and `test/TestBatchLoadPolymorphism.cs`, alongside the existing BatchLoad tests and `Geex.Tests/FeatureTests/CoreBatchLoad.Api.Tests.cs`. From the repository root, run the PowerShell 7 runner below. It snapshots the source, builds both test projects and their dependencies, and runs the selected tests inside Linux .NET 10 SDK containers with dedicated MongoDB and Redis instances. No host ports are published. The databases and profiling state are disposable and isolated. Each run saves its scope, source hash, discovered case IDs, build logs and TRX results under `.test-evidence/<runId>/`, and checks that the planned and executed case sets match.
 
 ```powershell
-dotnet test framework_modules/Geex.MongoDB.Entities/test/Tests.csproj --configuration Release --filter 'FullyQualifiedName~MongoDB.Entities.Tests.TestBatchLoad|FullyQualifiedName~MongoDB.Entities.Tests.TestLazyQueryMetadata'
+./scripts/testing/test-batchload.ps1
 ```
+
+The runner reads the local NuGet cache and restores missing packages from NuGet. An independent reviewer uses `-Stage INDEPENDENT_ACCEPTANCE` for a separate run of this scope. These regressions cover framework behavior and the GraphQL HTTP API; they do not replace deployed application or final project acceptance.
 
 ## More Info:
 please visit the official website for detailed documentation:

@@ -15,6 +15,13 @@ namespace MongoDB.Entities.Utilities
         object Value { get; }
         IQueryable Source { get; set; }
     }
+    internal interface IBatchLoadQueryMetadata
+    {
+        Type SourceEntityType { get; }
+        Type RelatedEntityType { get; }
+        LambdaExpression BatchExpression { get; }
+        bool UsesDefaultSource { get; }
+    }
     internal interface ILazyMultipleQuery : ILazyQuery
     {
         IQueryable Value { get; }
@@ -24,9 +31,14 @@ namespace MongoDB.Entities.Utilities
     {
         object ILazyQuery.Value => Value;
     }
-    public class LazyMultiQuery<T, TRelated> : ILazyMultipleQuery, IQueryable<TRelated> where TRelated : IEntityBase where T : IEntityBase
+    public class LazyMultiQuery<T, TRelated> : ILazyMultipleQuery, IQueryable<TRelated>, IBatchLoadQueryMetadata where TRelated : IEntityBase where T : IEntityBase
     {
         private IQueryable<TRelated>? _source;
+        internal Func<IQueryable<TRelated>>? BatchDefaultSource { get; set; }
+        Type IBatchLoadQueryMetadata.SourceEntityType => typeof(T);
+        Type IBatchLoadQueryMetadata.RelatedEntityType => typeof(TRelated);
+        LambdaExpression IBatchLoadQueryMetadata.BatchExpression => Batch;
+        bool IBatchLoadQueryMetadata.UsesDefaultSource => ReferenceEquals(BatchDefaultSource, DefaultSourceProvider);
 
         public LazyMultiQuery(Expression<Func<TRelated, bool>> lazy, Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batch, Func<IQueryable<TRelated>> sourceProvider)
         {
@@ -106,9 +118,14 @@ namespace MongoDB.Entities.Utilities
         public IQueryProvider Provider => this.Value.Provider;
     }
 
-    public class LazySingleQuery<T, TRelated> : ILazySingleQuery where TRelated : IEntityBase where T : IEntityBase
+    public class LazySingleQuery<T, TRelated> : ILazySingleQuery, IBatchLoadQueryMetadata where TRelated : IEntityBase where T : IEntityBase
     {
         private IQueryable<TRelated>? _source;
+        internal Func<IQueryable<TRelated>>? BatchDefaultSource { get; set; }
+        Type IBatchLoadQueryMetadata.SourceEntityType => typeof(T);
+        Type IBatchLoadQueryMetadata.RelatedEntityType => typeof(TRelated);
+        LambdaExpression IBatchLoadQueryMetadata.BatchExpression => Batch;
+        bool IBatchLoadQueryMetadata.UsesDefaultSource => ReferenceEquals(BatchDefaultSource, DefaultSourceProvider);
 
         public LazySingleQuery(Expression<Func<TRelated, bool>> lazy, Expression<Func<IQueryable<T>, Expression<Func<TRelated, bool>>>> batch, Func<IQueryable<TRelated>> sourceProvider)
         {

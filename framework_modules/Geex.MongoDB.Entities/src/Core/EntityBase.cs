@@ -24,6 +24,7 @@ namespace MongoDB.Entities
         {
             var lazyObj = new LazyMultiQuery<TEntity, TRelated>(loadCondition, batchLoadRule, sourceProvider ??
                                                                            (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
+            lazyObj.BatchDefaultSource = sourceProvider == null ? lazyObj.DefaultSourceProvider : null;
             var propertyMember = propToLoad.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             LazyQueryMetadataRegistry.Register(typeof(TEntity), propertyMember.Name);
@@ -42,6 +43,7 @@ namespace MongoDB.Entities
         {
             var lazyObj = new LazySingleQuery<TEntity, TRelated>(lazyQuery, batchQuery, sourceProvider ??
                                                                           (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
+            lazyObj.BatchDefaultSource = sourceProvider == null ? lazyObj.DefaultSourceProvider : null;
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             LazyQueryMetadataRegistry.Register(typeof(TEntity), propertyMember.Name);
@@ -55,6 +57,7 @@ namespace MongoDB.Entities
         {
             var lazyObj = new LazyMultiQuery<T, TRelated>(loadCondition, batchLoadRule, sourceProvider ??
                                                                            (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
+            lazyObj.BatchDefaultSource = sourceProvider == null ? lazyObj.DefaultSourceProvider : null;
             var propertyMember = propToLoad.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             LazyQueryMetadataRegistry.Register(typeof(T), propertyMember.Name);
@@ -73,6 +76,7 @@ namespace MongoDB.Entities
         {
             var lazyObj = new LazySingleQuery<T, TRelated>(lazyQuery, batchQuery, sourceProvider ??
                                                                           (() => DbContext == null? throw new InvalidOperationException(UnattachedErrorMessage): DbContext.Query<TRelated>()));
+            lazyObj.BatchDefaultSource = sourceProvider == null ? lazyObj.DefaultSourceProvider : null;
             var propertyMember = propExpression.Body.As<MemberExpression>().Member.As<PropertyInfo>();
             LazyQueryCache[propertyMember.Name] = lazyObj;
             LazyQueryMetadataRegistry.Register(typeof(T), propertyMember.Name);

@@ -44,6 +44,9 @@ namespace MongoDB.Entities.Utilities
         /// <param name="expression"></param>
         /// <returns></returns>
         public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
+            => CreateQuery<TElement>(expression, false);
+
+        private IQueryable<TElement> CreateQuery<TElement>(Expression expression, bool skipBatchLoad)
         {
             if (!this.PreFiltered)
             {
@@ -65,7 +68,7 @@ namespace MongoDB.Entities.Utilities
 
                 this.PreFiltered = true;
             }
-            return new CachedDbContextQueryable<T, TElement>(this, expression);
+            return new CachedDbContextQueryable<T, TElement>(this, expression, skipBatchLoad);
         }
 
         object IQueryProvider.Execute(Expression expression) => (object)this.InnerProvider.Execute<T>(expression);
@@ -113,7 +116,8 @@ namespace MongoDB.Entities.Utilities
 
                         var localEntities = this.DbContext.MemoryDataCache[rootType].Values.OfType<T>();
                         IQueryable<T> entities;
-                        var dbQuery = this.CreateQuery<T>(visitor.PreSelectExpression);
+                        var skipBatchLoad = ShouldSkipBatchLoadOnExecute(expression, visitor);
+                        var dbQuery = this.CreateQuery<T>(visitor.PreSelectExpression, skipBatchLoad);
                         if (localEntities.Any())
                         {
                             var dbEntities = dbQuery
@@ -139,7 +143,7 @@ namespace MongoDB.Entities.Utilities
                             entities = dbEntities.AsQueryable();
                         }
 
-                        if (!ShouldSkipBatchLoadOnExecute(expression, visitor))
+                        if (!skipBatchLoad)
                         {
                             entities.BatchLoadLazyQueries(this.BatchLoadConfig);
                         }

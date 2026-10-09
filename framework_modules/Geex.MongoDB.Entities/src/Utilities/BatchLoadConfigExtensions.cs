@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 using MongoDB.Entities;
@@ -11,16 +12,23 @@ namespace MongoDB.Entities.Utilities
             this BatchLoadConfig config,
             PropertyInfo property,
             Type declaringEntityType)
+            => config.RegisterBatchLoad(property, declaringEntityType, Array.Empty<Type>());
+
+        internal static BatchLoadConfig RegisterBatchLoad(
+            this BatchLoadConfig config,
+            PropertyInfo property,
+            Type declaringEntityType,
+            IEnumerable<Type> excludedEntityTypes)
         {
             property.EnsureBatchLoadable(declaringEntityType);
 
             var canonicalProperty = declaringEntityType.ResolveBatchLoadProperty(
                 property.Name) ?? property;
-            var key = new BatchLoadPathKey(declaringEntityType, property.Name);
+            var key = new BatchLoadPathKey(declaringEntityType, property.Name, excludedEntityTypes);
 
             if (!config.SubBatchLoadConfigs.TryGetValue(key, out var node))
             {
-                node = new BatchLoadPathNode(canonicalProperty, declaringEntityType);
+                node = new BatchLoadPathNode(canonicalProperty, key);
                 config.SubBatchLoadConfigs[key] = node;
             }
 
@@ -49,7 +57,7 @@ namespace MongoDB.Entities.Utilities
 
             foreach (var node in selectionTree.SubBatchLoadConfigs.Values)
             {
-                var subConfig = target.RegisterBatchLoad(node.Property, node.DeclaringEntityType);
+                var subConfig = target.RegisterBatchLoad(node.Property, node.DeclaringEntityType, node.Key.ExcludedEntityTypes);
                 subConfig.ApplySelectionBatchLoad(node.Children);
             }
         }

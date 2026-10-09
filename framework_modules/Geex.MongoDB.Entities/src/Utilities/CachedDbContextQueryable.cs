@@ -16,6 +16,7 @@ namespace MongoDB.Entities.Utilities
         private readonly Type _selectType = typeof(TSelect);
         private readonly Type _sourceType = typeof(T);
         private readonly Type _rootType;
+        private readonly bool _skipBatchLoad;
 
         public Type ElementType { get; } = typeof(T);
         public Expression Expression { get; }
@@ -25,7 +26,11 @@ namespace MongoDB.Entities.Utilities
         public CachedDbContextQueryProvider<T> TypedProvider { get; }
 
         public CachedDbContextQueryable(IQueryProvider provider, Expression expression)
+            : this(provider, expression, false) { }
+
+        internal CachedDbContextQueryable(IQueryProvider provider, Expression expression, bool skipBatchLoad)
         {
+            _skipBatchLoad = skipBatchLoad;
             this.TypedProvider = provider as CachedDbContextQueryProvider<T>;
             this.InnerProvider = TypedProvider.InnerProvider;
             var visitor = new StandardizeQueryExpressionVisitor();
@@ -183,7 +188,7 @@ namespace MongoDB.Entities.Utilities
 
         private void RunBatchLoad(IQueryable entities)
         {
-            entities.BatchLoadLazyQueries(this.TypedProvider.BatchLoadConfig);
+            if (!_skipBatchLoad) entities.BatchLoadLazyQueries(this.TypedProvider.BatchLoadConfig);
         }
 
         IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();

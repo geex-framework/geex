@@ -58,15 +58,15 @@ public static class OutputFieldExtensions
         if (field is IObjectField objectField)
         {
             if (objectField.ResolverMember is PropertyInfo resolverProperty &&
-                IsLazyQueryNavigation(entityType, resolverProperty))
+                IsLazyQueryNavigation(entityType, MapToEntityProperty(entityType, resolverProperty)))
             {
-                return resolverProperty;
+                return MapToEntityProperty(entityType, resolverProperty);
             }
 
             if (objectField.Member is PropertyInfo memberProperty &&
-                IsLazyQueryNavigation(entityType, memberProperty))
+                IsLazyQueryNavigation(entityType, MapToEntityProperty(entityType, memberProperty)))
             {
-                return memberProperty;
+                return MapToEntityProperty(entityType, memberProperty);
             }
         }
 

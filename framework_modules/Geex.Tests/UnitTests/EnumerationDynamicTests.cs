@@ -1209,7 +1209,7 @@ public sealed class EnumerationDynamicTests
     private static string KnownValue<TMarker>() => typeof(TMarker).Name + "-value";
 
     private const string RegisteredLoginProviderValue = "EnumerationDynamicTests_RegisteredLoginProvider";
-    private const string RegisteredConstructorLoginProviderName = "Enumeration constructor login provider";
+    private const string RegisteredConstructorLoginProviderName = "EnumerationConstructorLoginProvider";
     private const string RegisteredConstructorLoginProviderValue = "EnumerationDynamicTests_RegisteredConstructorLoginProvider";
     private const string DiscoveredConstructorName = "Enumeration constructor discovered child";
     private const string DiscoveredConstructorValue = "EnumerationDynamicTests_DiscoveredConstructorChild";

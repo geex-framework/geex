@@ -40,13 +40,14 @@ namespace HotChocolate.Types
             IMiddlewareContext context,
             out IObjectType objectType)
         {
-            foreach (var typeName in GetGraphQLTypeNameCandidates(entityType))
+            var matches = context.Schema.Types.OfType<IObjectType>()
+                .Where(type => entityType.IsAssignableFrom(type.RuntimeType))
+                .Take(2)
+                .ToArray();
+            if (matches.Length == 1)
             {
-                if (context.Schema.GetType<IObjectType>(typeName) is { } resolvedType)
-                {
-                    objectType = resolvedType;
-                    return true;
-                }
+                objectType = matches[0];
+                return true;
             }
 
             objectType = null!;
@@ -157,20 +158,6 @@ namespace HotChocolate.Types
             }
 
             return false;
-        }
-
-        private static IEnumerable<string> GetGraphQLTypeNameCandidates(Type entityType)
-        {
-            var typeName = entityType.Name;
-            if (entityType.IsInterface &&
-                typeName.StartsWith('I') &&
-                typeName.Length > 1 &&
-                char.IsUpper(typeName[1]))
-            {
-                yield return typeName[1..];
-            }
-
-            yield return typeName;
         }
 
         private static bool IsEntityType(Type? type) =>

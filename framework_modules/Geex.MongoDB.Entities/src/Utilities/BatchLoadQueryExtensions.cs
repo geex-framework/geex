@@ -5,104 +5,161 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-using MongoDB.Bson.Serialization;
-using MongoDB.Entities;
+using Neleus.LambdaCompare;
 
 namespace MongoDB.Entities.Utilities
 {
     public static class BatchLoadQueryExtensions
     {
-        private static readonly Type ListType = typeof(List<>);
         private static readonly MethodInfo QueryableWhereMethodInfo = typeof(Queryable)
             .GetMethods()
-            .First(m => m.Name == nameof(Queryable.Where) && m.GetParameters().Length == 2);
+            .First(method => method.Name == nameof(Queryable.Where) && method.GetParameters().Length == 2);
 
         public static void BatchLoadLazyQueries(this IQueryable entities, BatchLoadConfig batchLoadConfig)
         {
-            if (batchLoadConfig?.SubBatchLoadConfigs.Count == 0)
+            if (batchLoadConfig == null || batchLoadConfig.SubBatchLoadConfigs.Count == 0) return;
+
+            var groups = new Dictionary<(Type RuntimeType, string Navigation), List<LoadGroup>>();
+            foreach (var entity in entities.Cast<IEntityBase>().Distinct<IEntityBase>(ReferenceEqualityComparer.Instance))
             {
-                return;
+                foreach (var node in batchLoadConfig.SubBatchLoadConfigs.Values)
+                {
+                    if (!node.AppliesTo(entity)) continue;
+                    if (!entity.LazyQueryCache.TryGetValue(node.Property.Name, out var lazyQuery))
+                    {
+                        throw BatchLoadException.ExecutionFailed(node.Property, entity.GetType(),
+                            "实体实例未配置已注册的 LazyQuery 导航");
+                    }
+
+                    var key = (entity.GetType(), node.Property.Name);
+                    if (!groups.TryGetValue(key, out var candidates))
+                    {
+                        candidates = new List<LoadGroup>();
+                        groups.Add(key, candidates);
+                    }
+
+                    var group = candidates.FirstOrDefault(candidate => candidate.CanInclude(entity, lazyQuery));
+                    if (group == null)
+                    {
+                        group = new LoadGroup(entity, lazyQuery, node.Property);
+                        candidates.Add(group);
+                    }
+
+                    group.Entities.Add(entity);
+                    group.Queries.Add(lazyQuery);
+                    group.Children.ApplySelectionBatchLoad(node.Children);
+                }
             }
 
-            foreach (var node in batchLoadConfig.SubBatchLoadConfigs.Values)
+            foreach (var group in groups.Values.SelectMany(value => value)) Execute(group);
+        }
+
+        private static void Execute(LoadGroup group)
+        {
+            var first = group.FirstQuery;
+            var metadata = first as IBatchLoadQueryMetadata;
+            var sourceType = metadata?.SourceEntityType ?? ResolveSourceType(group);
+            var relatedType = metadata?.RelatedEntityType;
+            if (relatedType == null && !group.Property.TryGetRelatedEntityType(out relatedType))
             {
-                var propertyInfo = node.Property;
-                var entityType = node.DeclaringEntityType;
-                var subBatchLoadConfig = node.Children;
+                throw BatchLoadException.ExecutionFailed(group.Property, group.FirstEntity.GetType(),
+                    "属性类型无法解析为实体 IQueryable/Lazy 导航");
+            }
 
-                if (!TryGetSubQueryEntityType(propertyInfo, out var subQueryEntityType))
+            var sources = CreateTypedList(sourceType, group.Entities).AsQueryable();
+            var filter = first.BatchQuery.DynamicInvoke(sources) as LambdaExpression;
+            if (filter == null)
+            {
+                throw BatchLoadException.ExecutionFailed(group.Property, group.FirstEntity.GetType(),
+                    "BatchQuery 未返回有效的 LambdaExpression");
+            }
+
+            // 保留导航的泛型类型, 持久化根类型转换由查询 Provider 处理.
+            var allQuery = first.DefaultSourceProvider().OfType(relatedType);
+            var filteredQuery = (IQueryable)QueryableWhereMethodInfo.MakeGenericMethod(relatedType)
+                .Invoke(null, new object[] { allQuery, filter.CastParamType(relatedType) })!;
+            var results = CreateTypedList(relatedType, filteredQuery).AsQueryable();
+            if (group.Children.SubBatchLoadConfigs.Count != 0)
+            {
+                results.BatchLoadLazyQueries(group.Children);
+            }
+
+            foreach (var query in group.Queries) query.Source = results;
+        }
+
+        private static Type ResolveSourceType(LoadGroup group)
+        {
+            var parameters = group.FirstQuery.BatchQuery.GetType().GetMethod("Invoke")?.GetParameters();
+            if (parameters is { Length: 1 } && parameters[0].ParameterType.IsGenericType &&
+                parameters[0].ParameterType.GetGenericTypeDefinition() == typeof(IQueryable<>))
+            {
+                return parameters[0].ParameterType.GetGenericArguments()[0];
+            }
+
+            throw BatchLoadException.ExecutionFailed(group.Property, group.FirstEntity.GetType(),
+                "BatchQuery 必须接收一个 IQueryable<TEntity> 参数");
+        }
+
+        private static IList CreateTypedList(Type elementType, IEnumerable values)
+        {
+            var list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(elementType))!;
+            foreach (var value in values) list.Add(value);
+            return list;
+        }
+
+        private sealed class LoadGroup
+        {
+            public LoadGroup(IEntityBase entity, ILazyQuery query, PropertyInfo property)
+            {
+                FirstEntity = entity;
+                FirstQuery = query;
+                Property = property;
+            }
+
+            public IEntityBase FirstEntity { get; }
+            public ILazyQuery FirstQuery { get; }
+            public PropertyInfo Property { get; }
+            public HashSet<IEntityBase> Entities { get; } = new(ReferenceEqualityComparer.Instance);
+            public HashSet<ILazyQuery> Queries { get; } = new(ReferenceEqualityComparer.Instance);
+            public BatchLoadConfig Children { get; } = new();
+
+            public bool CanInclude(IEntityBase entity, ILazyQuery query)
+            {
+                if (ReferenceEquals(FirstQuery, query)) return true;
+                if (FirstQuery is not IBatchLoadQueryMetadata first || query is not IBatchLoadQueryMetadata next ||
+                    !first.UsesDefaultSource || !next.UsesDefaultSource ||
+                    !ReferenceEquals(FirstEntity.DbContext, entity.DbContext) ||
+                    first.SourceEntityType != next.SourceEntityType || first.RelatedEntityType != next.RelatedEntityType)
                 {
-                    throw BatchLoadException.ExecutionFailed(
-                        propertyInfo,
-                        entityType,
-                        $"属性类型 '{propertyInfo.PropertyType.Name}' 无法解析为实体 IQueryable/Lazy 导航");
+                    return false;
                 }
 
-                var lazyQueries = new List<ILazyQuery>();
-
-                foreach (var entity in entities)
-                {
-                    if (entity is IEntityBase entityBase &&
-                        entityBase.LazyQueryCache.TryGetValue(propertyInfo.Name, out var lazyQuery))
-                    {
-                        lazyQueries.Add(lazyQuery);
-                    }
-                }
-
-                if (lazyQueries.Count == 0)
-                {
-                    continue;
-                }
-
-                var listType = ListType.MakeGenericTypeFast(subQueryEntityType);
-                var first = lazyQueries.First();
-                var allQuery = first.DefaultSourceProvider().OfType(subQueryEntityType);
-                var filterExpression = first.BatchQuery.DynamicInvoke(entities) as LambdaExpression;
-                if (filterExpression == null)
-                {
-                    throw BatchLoadException.ExecutionFailed(
-                        propertyInfo,
-                        entityType,
-                        "BatchQuery 未返回有效的 LambdaExpression");
-                }
-
-                filterExpression = filterExpression.CastParamType(subQueryEntityType);
-
-                var filteredQuery = (IQueryable)QueryableWhereMethodInfo
-                    .MakeGenericMethodFast(subQueryEntityType)
-                    .Invoke(null, [allQuery, filterExpression])!;
-
-                var list = (IList)Activator.CreateInstance(listType, filteredQuery)!;
-                var batchLoadResult = list.AsQueryable();
-
-                if (list.Count > 0 && subBatchLoadConfig.SubBatchLoadConfigs.Count != 0)
-                {
-                    batchLoadResult.BatchLoadLazyQueries(subBatchLoadConfig);
-                }
-
-                foreach (var lazyQuery in lazyQueries)
-                {
-                    lazyQuery.Source = batchLoadResult;
-                }
+                // 捕获实例状态的规则和自定义来源不能由首个实体代表整组.
+                return !CapturedValueDetector.ContainsCapture(first.BatchExpression) &&
+                       !CapturedValueDetector.ContainsCapture(next.BatchExpression) &&
+                       Lambda.ExpressionsEqual(first.BatchExpression, next.BatchExpression);
             }
         }
 
-        private static bool TryGetSubQueryEntityType(PropertyInfo propertyInfo, out Type subQueryEntityType)
+        private sealed class CapturedValueDetector : ExpressionVisitor
         {
-            if (!propertyInfo.TryGetRelatedEntityType(out var relatedEntityType))
+            private bool _containsCapture;
+
+            public static bool ContainsCapture(Expression expression)
             {
-                subQueryEntityType = null!;
-                return false;
+                var visitor = new CapturedValueDetector();
+                visitor.Visit(expression);
+                return visitor._containsCapture;
             }
 
-            if (!typeof(IEntityBase).IsAssignableFrom(relatedEntityType))
+            protected override Expression VisitConstant(ConstantExpression node)
             {
-                subQueryEntityType = null!;
-                return false;
+                if (node.Value != null && node.Value is not string && !node.Type.IsValueType)
+                {
+                    _containsCapture = true;
+                }
+                return node;
             }
-
-            subQueryEntityType = relatedEntityType.GetRootBsonClassMap().ClassType;
-            return true;
         }
     }
 }
