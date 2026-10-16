@@ -36,6 +36,7 @@ public partial class ApprovalFlowNodeLog : Entity<ApprovalFlowNodeLog>
             ApprovalFlowNodeLogType.Reject => $"流程节点被退回: {message}",
             ApprovalFlowNodeLogType.Chat => message,
             ApprovalFlowNodeLogType.ConsultChat => message,
+            ApprovalFlowNodeLogType.Edit => message,
             _ => throw new ArgumentOutOfRangeException(nameof(auditType), auditType, null)
         };
     }

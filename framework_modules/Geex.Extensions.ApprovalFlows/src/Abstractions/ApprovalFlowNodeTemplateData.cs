@@ -5,6 +5,9 @@ namespace Geex.Extensions.ApprovalFlows;
 
 public class ApprovalFlowNodeTemplateData:IApprovalFlowNodeTemplateData
 {
+    public string? AuditUserId { get; set; }
+    public string? Description { get; set; }
+    public List<ApprovalFormField> FormFields { get; set; } = [];
     public string Id { get; set; }
     public string AuditRole { get; set; }
     public string Name { get; set; }

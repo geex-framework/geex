@@ -1,5 +1,11 @@
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System;
+using Geex.Extensions.Authentication;
+using Geex.Extensions.Settings;
+using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp;
 using Geex.Abstractions;
 using Geex.Extensions.ApprovalFlows.Core.Entities;
 using Geex.Extensions.ApprovalFlows.Requests;
@@ -8,10 +14,12 @@ using HotChocolate.Types;
 
 namespace Geex.Extensions.ApprovalFlows.Gql;
 
-public class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutation>
+public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutation>
 {
     protected override void Configure(IObjectTypeDescriptor<ApprovalFlowMutation> descriptor)
     {
+        descriptor.Authorize();
+        descriptor.Field(x => x.SaveApprovalFlowCategories(default)).Authorize(SettingsPermission.Edit);
         base.Configure(descriptor);
     }
 
@@ -21,7 +29,32 @@ public class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutation>
 
     public async Task<ApprovalFlow> CreateApprovalFlow(CreateApprovalFlowRequest request)
     {
+        if ((request.AssociatedEntityType == null) != string.IsNullOrWhiteSpace(request.AssociatedEntityId))
+            throw new UserFriendlyException("请同时提供关联对象类型和编号.");
+        if (request.AssociatedEntityType != null && !typeof(IApproveEntity).IsAssignableFrom(request.AssociatedEntityType.Type))
+            throw new UserFriendlyException("关联对象类型不支持审批.");
+        ApprovalFlow? previous = null;
+        ApprovalFlowAssociation? association = null;
+        if (!string.IsNullOrWhiteSpace(request.AssociatedEntityId))
+        {
+            var existing = _uow.Query<ApprovalFlow>().Where(x => x.AssociatedEntityType == request.AssociatedEntityType
+                && x.AssociatedEntityId == request.AssociatedEntityId && x.Status != ApprovalFlowStatus.Archived).ToList();
+            if (existing.Count > 1) throw new UserFriendlyException("该对象存在多个非归档流程, 请先核对关联记录.");
+            previous = existing.SingleOrDefault();
+            if (previous != null && previous.Status != ApprovalFlowStatus.Canceled)
+                throw new UserFriendlyException("该对象已有关联审批流程.");
+            var key = $"{request.AssociatedEntityType!.Value}:{request.AssociatedEntityId}";
+            association = _uow.Query<ApprovalFlowAssociation>().FirstOrDefault(x => x.Key == key)
+                ?? _uow.Attach(new ApprovalFlowAssociation { Key = key });
+            if (!string.IsNullOrEmpty(association.FlowId) && association.FlowId != previous?.Id)
+                throw new UserFriendlyException("关联流程不可访问或已发生变化, 请刷新后重试.");
+        }
         var entity = _uow.Create(request);
+        if (association != null)
+        {
+            association.FlowId = entity.Id;
+            previous?.Archive(entity.Id);
+        }
         await entity.Start();
         return entity;
     }
@@ -29,6 +62,7 @@ public class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutation>
     public async Task<ApprovalFlow> EditApprovalFlow(EditApprovalFlowRequest request)
     {
         var entity = _uow.Query<ApprovalFlow>().GetById(request.Id);
+        EnsureCreator(entity);
         entity.Edit(request);
         return entity;
     }
@@ -36,6 +70,7 @@ public class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutation>
     public async Task<bool> CancelApprovalFlow(string id)
     {
         var entity = _uow.Query<ApprovalFlow>().GetById(id);
+        EnsureCreator(entity);
         await entity.CancelAsync();
         return true;
     }
@@ -43,6 +78,7 @@ public class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutation>
     public async Task<bool> FinishApprovalFlow(string id)
     {
         var entity = _uow.Query<ApprovalFlow>().GetById(id);
+        EnsureCreator(entity);
         await entity.Finish();
         return true;
     }
@@ -128,5 +164,11 @@ public class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutation>
         var entities = _uow.Query<ApprovalFlowTemplate>().Where(x => ids.Contains(x.Id));
         await entities.DeleteAsync();
         return true;
+    }
+
+    private void EnsureCreator(ApprovalFlow flow)
+    {
+        if (flow.CreatorUserId != _uow.ServiceProvider.GetRequiredService<ICurrentUser>().UserId)
+            throw new UserFriendlyException("仅流程发起人可执行此操作.");
     }
 }

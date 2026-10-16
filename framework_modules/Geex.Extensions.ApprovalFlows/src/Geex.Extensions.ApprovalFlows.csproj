@@ -6,6 +6,7 @@
         <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb;.xml</AllowedOutputExtensionsInPackageBuildOutputFolder>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\Geex.Extensions.Settings\src\Geex.Extensions.Settings.csproj" />
         <ProjectReference Include="..\..\Geex.Abstractions\src\Geex.Abstractions.csproj" />
         <PackageReference Include="Geex.Analyzer" Version="*" />
         <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />

@@ -31,11 +31,25 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.AssociatedEntityId = data.AssociatedEntityId;
         uow?.Attach(this);
         this.CreatorUserId = uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId;
-
+        var template = InitializeSnapshot(data);
         data.Nodes.Select((x, i) =>
         {
             x.ApprovalFlowId = this.Id;
-            return uow.Create(x);
+            x.Index = i;
+            if (template != null)
+            {
+                var definition = template.Nodes.OrderBy(n => n.Index).ElementAt(i);
+                x.Name = definition.Name;
+                x.Description = definition.Description;
+                x.AuditRole = definition.AuditRole;
+                x.AuditUserId = string.IsNullOrWhiteSpace(x.AuditUserId) ? definition.AuditUserId : x.AuditUserId;
+                x.CarbonCopyUserIds = [.. definition.CarbonCopyUserIds];
+                x.IsFromTemplate = true;
+            }
+            var node = uow.Create(x);
+            if (template != null)
+                node.FormFields = template.Nodes.OrderBy(n => n.Index).ElementAt(i).FormFields.Select(f => f.Copy()).ToList();
+            return node;
         }).ToList();
 
         this.EnsureStakeholder(uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create);
@@ -51,8 +65,11 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public async Task Start()
     {
-        var entity = this.AssociatedEntity.Value;
-        await entity.Submit(this.AssociatedEntityType.Type, "审批流自动触发上报.");
+        if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
+        {
+            var entity = this.AssociatedEntity.Value ?? throw new UserFriendlyException("关联对象不存在或无权访问.");
+            await entity.Submit(this.AssociatedEntityType.Type, "审批流自动触发上报.");
+        }
         await this.ActiveNode.Start();
 
     }
@@ -66,13 +83,16 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.CreatorUserId = uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId;
         template.Nodes.Select((x) =>
         {
-            var node = new ApprovalFlowNode(x);
+            var node = new ApprovalFlowNode(x, uow);
             node.ApprovalFlowId = this.Id;
             return node;
         }).ToList();
         this.EnsureStakeholder(Uow.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create);
         this.OrgCode = template.OrgCode;
         this.TemplateId = template.Id;
+        this.TemplateName = template.Name;
+        this.Categories = [.. template.Categories];
+        this.FormFields = template.FormFields.Select(x => x.Copy()).ToList();
     }
 
     protected ApprovalFlow()
@@ -83,7 +103,9 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.ConfigLazyQuery(x => x.AssociatedEntity, approveEntity => approveEntity.Id == AssociatedEntityId, approvalFlows => approveEntity => approvalFlows.SelectList(x => x.AssociatedEntityId).Contains(approveEntity.Id),
             () =>
             {
-                var type = this.AssociatedEntityType.Type;
+                var type = this.AssociatedEntityType?.Type;
+                if (type == null || string.IsNullOrWhiteSpace(AssociatedEntityId))
+                    return Enumerable.Empty<IApproveEntity>().AsQueryable();
                 var method = typeof(IRepository).GetMethod(nameof(IRepository.Query)).MakeGenericMethod(type);
                 var query = method.Invoke(Uow, []) as IQueryable<IApproveEntity>;
                 return query as IQueryable<IApproveEntity>;
@@ -117,7 +139,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     public bool CanEdit
     {
         //这里判断第一个start的log
-        get { return this.ActiveIndex == 0 && !this.ActiveNode.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved); }
+        get { return Status == ApprovalFlowStatus.Processing && this.ActiveIndex == 0
+            && this.ActiveNode?.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved) == false; }
     }
 
     public ApprovalFlowUserRef? EnsureStakeholder(string? userId, ApprovalFlowOwnershipType ownershipType)
@@ -138,6 +161,9 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public async Task Finish()
     {
+        if (Status != ApprovalFlowStatus.Processing || Nodes.Any(x =>
+            (x.NodeStatus & (ApprovalFlowNodeStatus.Approved | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred)) == 0))
+            throw new UserFriendlyException("全部有效节点通过后才能完成流程.");
         this.Status = ApprovalFlowStatus.Finished;
         if (this.AssociatedEntityId != default)
         {
@@ -157,6 +183,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public async Task CancelAsync()
     {
+        if (Status != ApprovalFlowStatus.Processing)
+            throw new UserFriendlyException("仅办理中的流程可取消.");
         this.Status = ApprovalFlowStatus.Canceled;
         this.AddDomainEvent(new ApprovalFlowCanceledEvent(this, this.Id));
     }
@@ -187,8 +215,9 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         {
             this.Name = request.Name;
             this.Description = request.Description;
-            this.AssociatedEntityType = request.AssociatedEntityType;
-            this.AssociatedEntityId = request.AssociatedEntityId;
+            if ((request.AssociatedEntityType != null && request.AssociatedEntityType != AssociatedEntityType)
+                || (request.AssociatedEntityId != null && request.AssociatedEntityId != AssociatedEntityId))
+                throw new UserFriendlyException("流程创建后关联对象保持固定.");
             var nodes = this.Nodes.ToList();
             foreach (var (node, requestNode) in nodes.Join(request.Nodes, l => l.Index, r => r.Index, (l, r) => (node: l, requestNode: r)))
             {
@@ -215,5 +244,6 @@ public enum ApprovalFlowStatus
 {
     Processing = 0,
     Finished = 1,
-    Canceled = -1
+    Canceled = -1,
+    Archived = 2
 }

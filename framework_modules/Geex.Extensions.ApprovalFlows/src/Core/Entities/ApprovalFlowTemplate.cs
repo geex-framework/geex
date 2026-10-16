@@ -17,6 +17,9 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     public ApprovalFlowTemplate(IApprovalFlowTemplateDate data, IUnitOfWork uow = default)
         : this()
     {
+        ApprovalFormValidation.Definitions(data.FormFields);
+        this.Categories = data.Categories.Distinct().ToList();
+        this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
         this.Name = data.Name;
         this.Description = data.Description;
         this.OrgCode = data.OrgCode;
@@ -31,9 +34,14 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     public string Description { get; set; }
     public List<ApprovalFlowNodeTemplate> Nodes { get; set; } = new List<ApprovalFlowNodeTemplate>();
     public string? OrgCode { get; set; }
+    public List<string> Categories { get; set; } = [];
+    public List<ApprovalFlowFormField> FormFields { get; set; } = [];
 
     public void Edit(IApprovalFlowTemplateDate request)
     {
+        ApprovalFormValidation.Definitions(request.FormFields);
+        this.Categories = request.Categories.Distinct().ToList();
+        this.FormFields = request.FormFields.Select(x => x.Copy()).ToList();
         if (!request.Name.IsNullOrEmpty()) this.Name = request.Name;
         if (!request.Description.IsNullOrEmpty()) this.Description = request.Description;
         if (!request.OrgCode.IsNullOrEmpty()) this.OrgCode = request.OrgCode;
@@ -52,6 +60,10 @@ public class ApprovalFlowNodeTemplate
     }
     public ApprovalFlowNodeTemplate(IApprovalFlowNodeTemplateData data, int i)
     {
+        ApprovalFormValidation.Definitions(data.FormFields);
+        this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
+        this.AuditUserId = data.AuditUserId;
+        this.Description = data.Description;
         this.Id = data.Id;
         this.AuditRole = data.AuditRole;
         this.Name = data.Name;
@@ -60,6 +72,9 @@ public class ApprovalFlowNodeTemplate
     }
 
     public string Id { get; set; }
+    public string? AuditUserId { get; set; }
+    public string? Description { get; set; }
+    public List<ApprovalFormField> FormFields { get; set; } = [];
     public string AuditRole { get; set; }
     public List<string> CarbonCopyUserIds { get; set; } = new List<string>();
     public int Index { get; set; }
