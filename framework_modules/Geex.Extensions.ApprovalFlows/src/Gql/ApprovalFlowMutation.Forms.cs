@@ -40,10 +40,11 @@ public partial class ApprovalFlowMutation
         if (normalized.Any(string.IsNullOrWhiteSpace) || normalized.Distinct().Count() != normalized.Count)
             throw new UserFriendlyException("流程分类不能为空或重复.");
         var tenant = _uow.ServiceProvider.GetService<ICurrentTenant>()?.Code;
+        var scopeKey = string.IsNullOrEmpty(tenant) ? null : tenant;
         var settings = _uow.ServiceProvider.GetRequiredService<ISettingService>();
         await settings.SetAsync(ApprovalFlowSettings.Categories,
-            string.IsNullOrEmpty(tenant) ? SettingScopeEnumeration.Global : SettingScopeEnumeration.Tenant,
-            tenant, JsonSerializer.SerializeToNode(normalized));
+            scopeKey == null ? SettingScopeEnumeration.Global : SettingScopeEnumeration.Tenant,
+            scopeKey, JsonSerializer.SerializeToNode(normalized));
         return normalized;
     }
 }

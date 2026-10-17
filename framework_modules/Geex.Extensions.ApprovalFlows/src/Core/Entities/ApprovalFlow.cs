@@ -35,7 +35,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
         {
             var associated = AssociatedEntity.Value ?? throw new UserFriendlyException("关联对象不存在或无权访问.");
-            if (associated is IOrgFilteredEntity scoped) OrgCode = scoped.OrgCode;
+            OrgCode = AssociatedEntityType.ResolveOrgCode(associated, OrgCode);
         }
         var template = InitializeSnapshot(data);
         data.Nodes.Select((x, i) =>
@@ -103,6 +103,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.TemplateName = template.Name;
         this.Categories = [.. template.Categories];
         this.FormFields = template.FormFields.Select(x => x.Copy()).ToList();
+        ApprovalFormValidation.Users(Uow, Nodes.Select(x => x.AuditUserId)
+            .Concat(Nodes.SelectMany(x => x.CarbonCopyUserIds)).Append(CreatorUserId), OrgCode);
     }
 
     protected ApprovalFlow()
@@ -171,7 +173,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public async Task Finish()
     {
-        if (Status != ApprovalFlowStatus.Processing || Nodes.Any(x =>
+        if (Status != ApprovalFlowStatus.Processing || Nodes.AsEnumerable().Any(x =>
             (x.NodeStatus & (ApprovalFlowNodeStatus.Approved | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred)) == 0))
             throw new UserFriendlyException("全部有效节点通过后才能完成流程.");
         this.Status = ApprovalFlowStatus.Finished;
@@ -262,6 +264,8 @@ public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociat
     public Type Type { get; }
 
     public virtual Task OnCancel(IApproveEntity entity) => Task.CompletedTask;
+    public virtual string? ResolveOrgCode(IApproveEntity entity, string? requestedOrgCode)
+        => entity is IOrgFilteredEntity scoped ? scoped.OrgCode : requestedOrgCode;
     public virtual ApprovalFlowEntitySummary Summarize(IApproveEntity entity) => new()
     {
         Id = entity.Id, Name = entity.Id, TypeName = Value, ApproveStatus = entity.ApproveStatus
