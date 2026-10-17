@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using MongoDB.Entities;
 using MongoDB.Entities.Interceptors;
 using Volo.Abp;
+using Geex.Gql.Attributes;
 
 namespace Geex.Extensions.ApprovalFlows.Core.Entities;
 
@@ -38,14 +39,18 @@ public partial class ApprovalFlowNode : ISaveIntercepted
     public List<ApprovalFormField> FormFields { get; set; } = [];
     public List<ApprovalFormValue> FormValues { get; set; } = [];
     public List<ApprovalFlowConsultation> Consultations { get; set; } = [];
+    [AutoBatchLoadDependsOn(nameof(ApprovalFlow))]
     public bool IsActive => ApprovalFlow.Value.Status == ApprovalFlowStatus.Processing
         && ApprovalFlow.Value.ActiveIndex == Index
         && (NodeStatus & (ApprovalFlowNodeStatus.Approved | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred)) == 0;
+    [AutoBatchLoadDependsOn(nameof(ApprovalFlow))]
     public bool CanOperate => IsActive && !string.IsNullOrWhiteSpace(AuditUserId)
         && AuditUserId == CurrentUser.UserId;
+    [AutoBatchLoadDependsOn(nameof(ApprovalFlow))]
     public bool CanReply => IsActive && NodeStatus.HasFlag(ApprovalFlowNodeStatus.Consulting)
         && (Consultations.Any(x => x.UserId == CurrentUser.UserId && x.RepliedAt == null)
             || (Consultations.Count == 0 && !string.IsNullOrEmpty(ConsultUserId) && ConsultUserId == CurrentUser.UserId));
+    [AutoBatchLoadDependsOn(nameof(ApprovalFlow))]
     public bool CanEditForm => ApprovalFlow.Value.Status == ApprovalFlowStatus.Processing
         && !string.IsNullOrWhiteSpace(AuditUserId) && AuditUserId == CurrentUser.UserId
         && !NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved);

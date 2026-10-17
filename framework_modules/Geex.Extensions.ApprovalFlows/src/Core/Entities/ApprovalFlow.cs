@@ -9,6 +9,7 @@ using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.MultiTenant;
 using Geex.Storage;
+using Geex.Gql.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 
@@ -192,6 +193,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     /// </summary>
     public ApprovalFlowAssociatedEntityType? AssociatedEntityType { get; set; }
     public string? AssociatedEntityId { get; set; }
+    [AutoBatchLoadDependsOn(nameof(AssociatedEntity))]
     public ApprovalFlowEntitySummary? AssociatedEntitySummary => AssociatedEntityType != null && AssociatedEntity.Value is { } entity
         ? AssociatedEntityType.Summarize(entity) : null;
 
