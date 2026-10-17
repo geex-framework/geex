@@ -1,4 +1,4 @@
-import { Component, inject, Injectable, OnInit, ViewChild } from "@angular/core";
+import { ChangeDetectorRef, Component, inject, Injectable, OnInit, ViewChild } from "@angular/core";
 import { FormControl, FormGroup, Validators } from "@angular/forms";
 import { Apollo } from "apollo-angular";
 import { NzEmptyModule } from "ng-zorro-antd/empty";
@@ -167,6 +167,7 @@ export class StartApprovalFlowComponent implements OnInit {
   private readonly apollo = inject(Apollo);
   private readonly modal = inject(NzModalRef);
   private readonly message = inject(NzMessageService);
+  private readonly cdr = inject(ChangeDetectorRef);
   @ViewChild(ApprovalDynamicFormComponent) dynamicForm?: ApprovalDynamicFormComponent;
   readonly form = new FormGroup({
     name: new FormControl("", { nonNullable: true, validators: Validators.required }),
@@ -193,6 +194,7 @@ export class StartApprovalFlowComponent implements OnInit {
     this.selectedId = this.context.templateId;
     const result = await this.apollo.query({ query: approvalFlowCategories, fetchPolicy: "no-cache" }).firstValuePromise();
     this.categories = result.data.approvalFlowCategories;
+    this.cdr.markForCheck();
     await this.loadTemplates();
   }
 
@@ -213,6 +215,7 @@ export class StartApprovalFlowComponent implements OnInit {
       this.total = result.data.approvalFlowTemplate?.totalCount ?? 0;
     } finally {
       if (sequence === this.loadSequence) this.loading = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -235,6 +238,7 @@ export class StartApprovalFlowComponent implements OnInit {
     };
     this.form.setValue({ name: this.draft.name, description: this.draft.description });
     this.step = 1;
+    this.cdr.markForCheck();
   }
 
   back(): void {
@@ -289,6 +293,7 @@ export class StartApprovalFlowComponent implements OnInit {
       }
     } finally {
       this.saving = false;
+      this.cdr.markForCheck();
     }
   }
 

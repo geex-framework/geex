@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from "@angular/core";
+import { ChangeDetectorRef, Component, inject, OnInit, signal } from "@angular/core";
 import { FormArray, FormControl, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { GEEX_I18N } from "@geexcode/geex-angular";
@@ -31,6 +31,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly message = inject(NzMessageService);
   private readonly modal = inject(NzModalService);
+  private readonly cdr = inject(ChangeDetectorRef);
   readonly router = inject(Router);
   readonly id = this.route.snapshot.paramMap.get("id");
   readonly saving = signal(false);
@@ -56,6 +57,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
     if (!this.id) {
       this.nodes.push(createApprovalFlowNodeGroup("template"));
       this.form.markAsPristine();
+      this.cdr.markForCheck();
       return;
     }
     const result = await this.apollo
@@ -103,6 +105,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
       }
     }
     this.form.markAsPristine();
+    this.cdr.markForCheck();
   }
 
   async cancel(): Promise<void> {

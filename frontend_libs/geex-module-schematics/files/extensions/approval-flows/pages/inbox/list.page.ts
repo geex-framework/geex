@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, inject, OnInit, signal, TemplateRef, viewChild } from "@angular/core";
+import { AfterViewInit, ChangeDetectorRef, Component, inject, OnInit, signal, TemplateRef, viewChild } from "@angular/core";
 import { Router } from "@angular/router";
 import type { STChange, STColumn } from "@delon/abc/st";
 import { GEEX_I18N } from "@geexcode/geex-angular";
@@ -21,6 +21,7 @@ export class InboxListPage implements OnInit, AfterViewInit {
   private readonly apollo = inject(Apollo);
   private readonly router = inject(Router);
   private readonly startFlow = inject(StartApprovalFlowService);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly progressTpl = viewChild.required<TemplateRef<{ $implicit: ApprovalFlowBrief; index: number }>>("progressTpl");
   readonly loading = signal(false);
   readonly data = signal<ApprovalFlowBrief[]>([]);
@@ -44,7 +45,10 @@ export class InboxListPage implements OnInit, AfterViewInit {
     void this.apollo
       .query({ query: approvalFlowCategories, fetchPolicy: "no-cache" })
       .firstValuePromise()
-      .then(result => (this.categories = result.data.approvalFlowCategories));
+      .then(result => {
+        this.categories = result.data.approvalFlowCategories;
+        this.cdr.markForCheck();
+      });
     void this.load();
   }
 

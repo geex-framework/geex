@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, inject, OnInit } from "@angular/core";
 import { Apollo } from "apollo-angular";
 import { NzMessageService } from "ng-zorro-antd/message";
 
@@ -29,6 +29,7 @@ import { SharedModule } from "@/shared/shared.module";
 export class ApprovalCategoriesPage implements OnInit {
   private readonly apollo = inject(Apollo);
   private readonly message = inject(NzMessageService);
+  private readonly cdr = inject(ChangeDetectorRef);
   readonly permission = AppPermission.settings_mutation_editSetting;
   loading = false;
   saving = false;
@@ -40,6 +41,7 @@ export class ApprovalCategoriesPage implements OnInit {
       this.text = result.data.approvalFlowCategories.join("\n");
     } finally {
       this.loading = false;
+      this.cdr.markForCheck();
     }
   }
   async save(): Promise<void> {
@@ -58,6 +60,7 @@ export class ApprovalCategoriesPage implements OnInit {
       this.message.success("流程分类已保存");
     } finally {
       this.saving = false;
+      this.cdr.markForCheck();
     }
   }
 }
