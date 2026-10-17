@@ -53,7 +53,9 @@ public partial class ApprovalFlowNode : ISaveIntercepted
     public void SaveForm(List<ApprovalFormValue> values)
     {
         if (!CanEditForm) throw new UserFriendlyException("仅节点审批人可在节点通过前修改节点表单.");
-        FormValues = ApprovalFormValidation.Values(FormFields, values, false);
+        var validated = ApprovalFormValidation.Values(FormFields, values, false);
+        ApprovalFormValidation.References(Uow, FormFields, validated);
+        FormValues = validated;
         Touch();
         Uow.Create(Id, ApprovalFlowNodeLogType.Edit, CurrentUser.UserId, "", "更新节点表单");
     }

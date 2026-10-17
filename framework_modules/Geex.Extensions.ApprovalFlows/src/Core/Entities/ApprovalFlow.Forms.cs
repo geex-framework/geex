@@ -47,6 +47,7 @@ public partial class ApprovalFlow : ISaveIntercepted
         Categories = [.. template.Categories];
         FormFields = template.FormFields.Select(x => x.Copy()).ToList();
         FormValues = ApprovalFormValidation.Values(FormFields, data.FormValues, true);
+        ApprovalFormValidation.References(Uow, FormFields, FormValues);
         TemplateName = template.Name;
         return template;
     }
@@ -55,6 +56,7 @@ public partial class ApprovalFlow : ISaveIntercepted
     {
         if (!CanEditForm) throw new UserFriendlyException("仅流程发起人可在办理期间修改流程表单.");
         var validated = ApprovalFormValidation.Values(FormFields, values, true);
+        ApprovalFormValidation.References(Uow, FormFields, validated);
         foreach (var field in FormFields.Where(x => !x.AllowEdit))
         {
             var previous = FormValues.FirstOrDefault(x => x.Key == field.Key)?.Values ?? [];

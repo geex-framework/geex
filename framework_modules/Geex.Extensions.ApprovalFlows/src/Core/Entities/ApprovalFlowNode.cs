@@ -117,6 +117,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckAuditUser();
         CheckNotConsulting();
         ApprovalFormValidation.Values(FormFields, FormValues, true);
+        ApprovalFormValidation.References(Uow, FormFields, FormValues);
         this.NodeStatus |= ApprovalFlowNodeStatus.Approved;
         Touch();
         Uow.Create(this.Id, ApprovalFlowNodeLogType.Approve, CurrentUser.UserId, "", message);
@@ -163,6 +164,8 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckActive();
         CheckIntegrity();
         CheckAuditUser();
+        if (string.IsNullOrWhiteSpace(userId)) throw new UserFriendlyException("请选择抄送人.");
+        ApprovalFormValidation.Users(Uow, [userId]);
 
         if (this.CarbonCopyUserIds.Contains(userId))
         {
@@ -232,6 +235,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
             || recipients.Contains(AuditUserId) || string.IsNullOrWhiteSpace(message)
             || Uow.Query<IUser>().Count(x => recipients.Contains(x.Id)) != recipients.Count)
             throw new UserFriendlyException("请选择有效的征询对象并填写征询内容.");
+        ApprovalFormValidation.Users(Uow, recipients);
         foreach (var recipient in recipients)
         {
             this.ApprovalFlow.Value.EnsureStakeholder(recipient, ApprovalFlowOwnershipType.Consult);
@@ -275,7 +279,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         this.CarbonCopyUserIds = approvalFlowNodeData.CarbonCopyUserIds;
     }
 
-    public async void MarkAsViewed()
+    public void MarkAsViewed()
     {
         if (!CanOperate || NodeStatus.HasFlag(ApprovalFlowNodeStatus.Viewed)) return;
         Touch();
@@ -338,6 +342,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckAuditUser();
         if (string.IsNullOrWhiteSpace(userId) || userId == AuditUserId || Uow.Query<IUser>().GetById(userId) == null)
             throw new UserFriendlyException("请选择有效的转交对象.");
+        ApprovalFormValidation.Users(Uow, [userId]);
         var originUserId = AuditUserId;
         this.NodeStatus |= ApprovalFlowNodeStatus.Transferred;
         Touch();
@@ -357,7 +362,9 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckAuditUser();
         if (ApprovalFlow.Value.Status != ApprovalFlowStatus.Processing || !NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved))
             throw new UserFriendlyException("仅办理中的已通过节点可撤回.");
-        if (this.NextNode?.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Viewed) != false)
+        if (ApprovalFlow.Value.ActiveIndex != Index + 1 || this.NextNode == null
+            || (NextNode.NodeStatus & (ApprovalFlowNodeStatus.Viewed | ApprovalFlowNodeStatus.Approved
+                | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred | ApprovalFlowNodeStatus.Consulting)) != 0)
         {
             throw new UserFriendlyException($"下一节点已被审批人查阅, 无法撤回.");
         }

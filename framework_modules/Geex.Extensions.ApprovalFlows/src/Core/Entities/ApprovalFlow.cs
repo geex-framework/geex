@@ -52,6 +52,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             return node;
         }).ToList();
 
+        ApprovalFormValidation.Users(Uow, Nodes.Select(x => x.AuditUserId).Concat(Nodes.SelectMany(x => x.CarbonCopyUserIds)));
         this.EnsureStakeholder(uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create);
         foreach (var userId in this.Nodes.Select(x => x.AuditUserId).Where(x => !x.IsNullOrEmpty()).Distinct())
         {
@@ -186,6 +187,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     /// </summary>
     public ApprovalFlowAssociatedEntityType? AssociatedEntityType { get; set; }
     public string? AssociatedEntityId { get; set; }
+    public ApprovalFlowEntitySummary? AssociatedEntitySummary => AssociatedEntityType != null && AssociatedEntity.Value is { } entity
+        ? AssociatedEntityType.Summarize(entity) : null;
 
     public async Task CancelAsync()
     {
@@ -223,20 +226,27 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public void Edit(EditApprovalFlowRequest request)
     {
-        if (this.CanEdit)
-        {
+        if (!CanEdit) throw new UserFriendlyException("当前流程状态不支持修改基础配置.");
+        if (string.IsNullOrWhiteSpace(request.Name)) throw new UserFriendlyException("请填写流程名称.");
+        var nodes = Nodes.ToList();
+        if (request.Nodes.Count != nodes.Count || request.Nodes.Select(x => x.Id).Distinct().Count() != nodes.Count
+            || nodes.Any(node => !request.Nodes.Any(x => x.Id == node.Id && x.Index == node.Index)))
+            throw new UserFriendlyException("流程实例的节点结构已确定, 请保持节点及顺序.");
+        if (request.Nodes.Any(x => string.IsNullOrWhiteSpace(x.AuditUserId) || string.IsNullOrWhiteSpace(x.Name)))
+            throw new UserFriendlyException("请确定各节点审批人.");
+        ApprovalFormValidation.Users(Uow, request.Nodes.Select(x => x.AuditUserId).Concat(request.Nodes.SelectMany(x => x.CarbonCopyUserIds ?? [])));
             Touch();
             this.Name = request.Name;
             this.Description = request.Description;
             if ((request.AssociatedEntityType != null && request.AssociatedEntityType != AssociatedEntityType)
                 || (request.AssociatedEntityId != null && request.AssociatedEntityId != AssociatedEntityId))
                 throw new UserFriendlyException("流程创建后关联对象保持固定.");
-            var nodes = this.Nodes.ToList();
-            foreach (var (node, requestNode) in nodes.Join(request.Nodes, l => l.Index, r => r.Index, (l, r) => (node: l, requestNode: r)))
+            foreach (var (node, requestNode) in nodes.Join(request.Nodes, l => l.Id, r => r.Id, (l, r) => (node: l, requestNode: r)))
             {
                 node.Edit(requestNode);
+                EnsureStakeholder(node.AuditUserId, ApprovalFlowOwnershipType.Participate);
+                foreach (var userId in node.CarbonCopyUserIds) EnsureStakeholder(userId, ApprovalFlowOwnershipType.CarbonCopy);
             }
-        }
     }
 }
 
@@ -245,6 +255,10 @@ public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociat
     public Type Type { get; }
 
     public virtual Task OnCancel(IApproveEntity entity) => Task.CompletedTask;
+    public virtual ApprovalFlowEntitySummary Summarize(IApproveEntity entity) => new()
+    {
+        Id = entity.Id, Name = entity.Id, TypeName = Value, ApproveStatus = entity.ApproveStatus
+    };
 
     /// <inheritdoc />
     public ApprovalFlowAssociatedEntityType(string value, Type type) : base(value)
@@ -253,6 +267,15 @@ public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociat
     }
 
     public static ApprovalFlowAssociatedEntityType Object { get; } = new(nameof(Object), typeof(object));
+}
+
+public class ApprovalFlowEntitySummary
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string TypeName { get; set; } = "";
+    public ApproveStatus ApproveStatus { get; set; }
+    public string? DetailUrl { get; set; }
 }
 
 public enum ApprovalFlowStatus

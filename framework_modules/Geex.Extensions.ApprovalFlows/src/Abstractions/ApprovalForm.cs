@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Geex.Extensions.Identity;
+using Geex.Extensions.BlobStorage.Core.Entities;
 using Volo.Abp;
 
 namespace Geex.Extensions.ApprovalFlows;
@@ -44,6 +46,26 @@ public class ApprovalFormValue
 
 public static class ApprovalFormValidation
 {
+    public static void Users(IUnitOfWork uow, IEnumerable<string?> userIds)
+    {
+        var ids = userIds.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+        if (uow.Query<IUser>().Count(x => ids.Contains(x.Id) && x.IsEnable) != ids.Count)
+            throw new UserFriendlyException("所选人员不存在或已停用, 请重新选择.");
+    }
+
+    public static void References(IUnitOfWork uow, IEnumerable<ApprovalFormField> fields, IEnumerable<ApprovalFormValue> values)
+    {
+        var supplied = values.ToDictionary(x => x.Key, x => x.Values);
+        foreach (var field in fields.Where(x => x.Type is ApprovalFormFieldType.User or ApprovalFormFieldType.File))
+        {
+            if (!supplied.TryGetValue(field.Key, out var entries)) continue;
+            var ids = entries.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+            if (field.Type == ApprovalFormFieldType.User) Users(uow, ids);
+            else if (uow.Query<BlobObject>().Count(x => ids.Contains(x.Id) && x.UploadPending != true) != ids.Count)
+                throw new UserFriendlyException($"{field.Name} 包含不存在或尚未上传完成的文件.");
+        }
+    }
+
     public static void Definitions(IEnumerable<ApprovalFormField> fields)
     {
         var keys = new HashSet<string>(StringComparer.Ordinal);
