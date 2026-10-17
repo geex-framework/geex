@@ -8,6 +8,7 @@ using Geex.Extensions.ApprovalFlows.Core.Entities;
 using Geex.Extensions.ApprovalFlows.Requests;
 using Geex.Gql.Types;
 using HotChocolate.Types;
+using MongoDB.Bson;
 
 namespace Geex.Extensions.ApprovalFlows.Gql;
 
@@ -54,8 +55,11 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
     public ApprovalFlow? ApprovalFlowById(string id) => _uow.Query<ApprovalFlow>().GetById(id);
 
     public ApprovalFlow? ApprovalFlowByEntity(ApprovalFlowAssociatedEntityType entityType, string entityId)
-        => _uow.Query<ApprovalFlow>().SingleOrDefault(x => x.AssociatedEntityType == entityType
+    {
+        if (ObjectId.TryParse(entityId, out var objectId)) entityId = objectId.ToString();
+        return _uow.Query<ApprovalFlow>().SingleOrDefault(x => x.AssociatedEntityType == entityType
             && x.AssociatedEntityId == entityId && x.Status != ApprovalFlowStatus.Archived);
+    }
 
     public async Task<List<string>> ApprovalFlowCategories()
     {

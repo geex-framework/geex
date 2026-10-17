@@ -35,6 +35,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
         {
             var associated = AssociatedEntity.Value ?? throw new UserFriendlyException("关联对象不存在或无权访问.");
+            AssociatedEntityId = associated.Id;
             OrgCode = AssociatedEntityType.ResolveOrgCode(associated, OrgCode);
         }
         var template = InitializeSnapshot(data);

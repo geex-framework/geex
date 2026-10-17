@@ -45,12 +45,12 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
             // 构造实例已校验关联对象可访问, 同一对象的历史流程按租户边界查询.
             using (var scope = _uow.DbContext.DisableDataFilters(typeof(IOrgFilteredEntity)))
                 existing = _uow.Query<ApprovalFlow>().Where(x => x.Id != entity.Id && x.AssociatedEntityType == request.AssociatedEntityType
-                    && x.AssociatedEntityId == request.AssociatedEntityId && x.Status != ApprovalFlowStatus.Archived).ToList();
+                    && x.AssociatedEntityId == entity.AssociatedEntityId && x.Status != ApprovalFlowStatus.Archived).ToList();
             if (existing.Count > 1) throw new UserFriendlyException("该对象存在多个非归档流程, 请先核对关联记录.");
             previous = existing.SingleOrDefault();
             if (previous != null && previous.Status != ApprovalFlowStatus.Canceled)
                 throw new UserFriendlyException("该对象已有关联审批流程.");
-            var key = $"{request.AssociatedEntityType!.Value}:{request.AssociatedEntityId}";
+            var key = $"{request.AssociatedEntityType!.Value}:{entity.AssociatedEntityId}";
             if (!_uow.DbContext.SupportTransaction)
                 throw new UserFriendlyException("关联流程需要数据库事务支持.");
             // 每个前序流程只能产生一个替代流程, 唯一索引与归档操作在同一事务内提交.
