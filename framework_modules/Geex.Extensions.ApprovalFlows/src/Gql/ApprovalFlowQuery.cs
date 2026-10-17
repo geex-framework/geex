@@ -15,7 +15,9 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
 {
     protected override void Configure(IObjectTypeDescriptor<ApprovalFlowQuery> descriptor)
     {
-        descriptor.Authorize();
+        foreach (var method in typeof(ApprovalFlowQuery).GetMethods(System.Reflection.BindingFlags.Public
+            | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
+            descriptor.Field(method).Authorize();
         descriptor.Field(x => x.ApprovalFlowById(default)).Authorize();
         descriptor.Field(x => x.ApprovalFlowTemplateById(default)).Authorize();
         descriptor.Field(x => x.ApprovalFlow(default))

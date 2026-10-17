@@ -19,7 +19,9 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
 {
     protected override void Configure(IObjectTypeDescriptor<ApprovalFlowMutation> descriptor)
     {
-        descriptor.Authorize();
+        foreach (var method in typeof(ApprovalFlowMutation).GetMethods(System.Reflection.BindingFlags.Public
+            | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
+            descriptor.Field(method).Authorize();
         descriptor.Field(x => x.SaveApprovalFlowCategories(default)).Authorize(SettingsPermission.Edit);
         base.Configure(descriptor);
     }
