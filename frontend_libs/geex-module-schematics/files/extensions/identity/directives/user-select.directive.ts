@@ -1,4 +1,4 @@
-import { Directive, OnInit, SimpleChange, inject } from "@angular/core";
+import { ChangeDetectorRef, Directive, OnInit, SimpleChange, inject } from "@angular/core";
 import { Apollo } from "apollo-angular";
 import { GEEX_I18N } from "@geexcode/geex-angular";
 import { NzSelectComponent, type NzSelectOptionInterface } from "ng-zorro-antd/select";
@@ -13,6 +13,7 @@ import type { usersCacheResult, usersCacheVariables } from "../graphql/user.oper
 })
 export class UserSelectDirective implements OnInit {
   private readonly i18n = inject(GEEX_I18N);
+  private readonly cdr = inject(ChangeDetectorRef);
   private loaded = false;
 
   constructor(
@@ -67,6 +68,7 @@ export class UserSelectDirective implements OnInit {
       this.loaded = true;
     } finally {
       this.host.nzLoading = false;
+      this.cdr.markForCheck();
     }
   }
 
