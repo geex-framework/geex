@@ -87,6 +87,9 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     {
         if (template.FormFields.Count != 0)
             throw new UserFriendlyException("该模板包含流程表单, 请使用支持填写流程表单的发起入口.");
+        var creatorId = uow.ServiceProvider.GetRequiredService<ICurrentUser>().UserId;
+        ApprovalFormValidation.Users(uow, template.Nodes.Select(x => x.AuditUserId)
+            .Concat(template.Nodes.SelectMany(x => x.CarbonCopyUserIds)).Append(creatorId), template.OrgCode);
         this.Name = template.Name;
         this.Description = template.Description;
         uow?.Attach(this);
@@ -103,8 +106,6 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.TemplateName = template.Name;
         this.Categories = [.. template.Categories];
         this.FormFields = template.FormFields.Select(x => x.Copy()).ToList();
-        ApprovalFormValidation.Users(Uow, Nodes.Select(x => x.AuditUserId)
-            .Concat(Nodes.SelectMany(x => x.CarbonCopyUserIds)).Append(CreatorUserId), OrgCode);
     }
 
     protected ApprovalFlow()

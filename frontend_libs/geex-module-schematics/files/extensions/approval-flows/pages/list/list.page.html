@@ -11,6 +11,11 @@
   <form filters
         nz-form
         nzLayout="inline">
+    <nz-form-item><nz-form-label>流程分类</nz-form-label><nz-form-control>
+      <nz-select [(ngModel)]="category" name="category" nzAllowClear nzPlaceHolder="全部分类" style="min-width:160px">
+        @for (item of categories; track item) { <nz-option [nzLabel]="item" [nzValue]="item" /> }
+      </nz-select>
+    </nz-form-control></nz-form-item>
     <nz-form-item>
       <nz-form-label>{{ I18N.ApprovalFlows.name }}</nz-form-label>
       <nz-form-control>
@@ -22,10 +27,22 @@
       </nz-form-control>
     </nz-form-item>
     <nz-form-item>
+      <nz-form-label>{{ I18N.ApprovalFlows.orgCode }}</nz-form-label>
+      <nz-form-control>
+        <nz-tree-select
+          [(ngModel)]="filterOrgCodes"
+          name="filterOrgCodes"
+          org-tree-select-picker
+          style="min-width: 220px"
+          [nzPlaceHolder]="I18N.Identity.widget.selectOrg"
+        ></nz-tree-select>
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
       <button nz-button
               nzType="primary"
               type="button"
-              (click)="load()">
+              (click)="pageIndex = 1; load()">
         <i nz-icon
            nzType="search"
            nzTheme="outline"></i>{{ I18N.Common.action.search }}

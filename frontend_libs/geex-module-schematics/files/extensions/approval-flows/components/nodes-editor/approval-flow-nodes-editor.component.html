@@ -1,0 +1,120 @@
+<nz-divider [nzText]="I18N.ApprovalFlows.nodes"></nz-divider>
+@for (node of nodes.controls; track $index; let i = $index) {
+  <nz-card class="node-card" [nzTitle]="nodeTitle(i)" [nzExtra]="extraTpl" [attr.data-node-index]="i">
+    <ng-template #extraTpl>
+      @if (mode === "template") {
+      <div class="node-card-extra">
+        <button
+          nz-button
+          nzType="text"
+          nzSize="small"
+          type="button"
+          [disabled]="i === 0"
+          [nzTooltipTitle]="I18N.ApprovalFlows.moveUp"
+          nz-tooltip
+          (click)="moveUp(i)"
+        >
+          <i nz-icon nzType="arrow-up"></i>
+        </button>
+        <button
+          nz-button
+          nzType="text"
+          nzSize="small"
+          type="button"
+          [disabled]="i >= nodes.length - 1"
+          [nzTooltipTitle]="I18N.ApprovalFlows.moveDown"
+          nz-tooltip
+          (click)="moveDown(i)"
+        >
+          <i nz-icon nzType="arrow-down"></i>
+        </button>
+        <button
+          nz-button
+          nzType="text"
+          nzDanger
+          nzSize="small"
+          type="button"
+          [disabled]="nodes.length <= 1"
+          [nzTooltipTitle]="nodes.length <= 1 ? I18N.ApprovalFlows.atLeastOneNode : I18N.ApprovalFlows.removeNode"
+          nz-tooltip
+          nz-popconfirm
+          [nzPopconfirmTitle]="I18N.ApprovalFlows.removeNodeConfirm"
+          (nzOnConfirm)="removeNode(i)"
+        >
+          <i nz-icon nzType="delete"></i>
+        </button>
+      </div>
+      }
+    </ng-template>
+
+    <div nz-row [nzGutter]="16" [formGroup]="asGroup(node)">
+      <div nz-col [nzXs]="24" [nzMd]="12">
+        <nz-form-item>
+          <nz-form-label nzRequired>{{ I18N.ApprovalFlows.nodeName }}</nz-form-label>
+          <nz-form-control>
+            <input nz-input formControlName="name" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+      <div nz-col [nzXs]="24" [nzMd]="12">
+        @if (mode === "template") {
+          <nz-form-item>
+            <nz-form-label>{{ I18N.ApprovalFlows.nodeAuditRole }}</nz-form-label>
+            <nz-form-control>
+              <nz-select
+                formControlName="auditRole"
+                role-select
+                style="width: 100%"
+                [nzPlaceHolder]="I18N.Identity.widget.selectRole"
+              ></nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        } @else {
+          <nz-form-item>
+            <nz-form-label nzRequired>{{ I18N.ApprovalFlows.nodeAuditor }}</nz-form-label>
+            <nz-form-control>
+              <nz-select
+                formControlName="auditUserId"
+                user-select
+                style="width: 100%"
+                [nzPlaceHolder]="I18N.Identity.widget.selectUser"
+              ></nz-select>
+            </nz-form-control>
+          </nz-form-item>
+        }
+      </div>
+      <div nz-col [nzSpan]="24">
+        @if (mode === "template") {
+          <nz-form-item><nz-form-label>默认审批人</nz-form-label><nz-form-control>
+            <nz-select formControlName="auditUserId" user-select nzAllowClear style="width:100%" nzPlaceHolder="可在创建流程时确定审批人" />
+          </nz-form-control></nz-form-item>
+          <nz-form-item><nz-form-label>节点说明</nz-form-label><nz-form-control>
+            <textarea nz-input formControlName="description" rows="2"></textarea>
+          </nz-form-control></nz-form-item>
+        }
+        <nz-form-item>
+          <nz-form-label>{{ I18N.ApprovalFlows.nodeCarbonCopyUsers }}</nz-form-label>
+          <nz-form-control>
+            <nz-select
+              formControlName="carbonCopyUserIds"
+              user-select
+              nzMode="multiple"
+              style="width: 100%"
+              [nzPlaceHolder]="I18N.Identity.widget.selectUser"
+            ></nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+    @if (mode === "template") {
+      <nz-divider nzText="节点表单" />
+      <p>仅节点审批人可在节点通过前填写, 可提前填写未激活节点.</p>
+      <approval-field-editor [value]="node.get('formFields')!.value" (valueChange)="setFields(node, $event)" />
+    }
+  </nz-card>
+}
+@if (mode === "template") {
+<button nz-button type="button" class="mb-md" (click)="addNode()">
+  <i nz-icon nzType="plus"></i>{{ I18N.ApprovalFlows.addNode }}
+</button>
+}

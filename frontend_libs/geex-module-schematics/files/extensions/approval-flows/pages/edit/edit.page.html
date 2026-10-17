@@ -1,16 +1,64 @@
-<page-header [title]="id ? 'Edit approval flow template' : 'Create approval flow template'" />
-<nz-card>
-  <form nz-form [formGroup]="form">
-    <nz-form-item><nz-form-label nzRequired>Name</nz-form-label><nz-form-control><input nz-input [formControl]="form.controls.name" /></nz-form-control></nz-form-item>
-    <nz-form-item><nz-form-label nzRequired>Description</nz-form-label><nz-form-control><textarea nz-input rows="3" [formControl]="form.controls.description"></textarea></nz-form-control></nz-form-item>
-    <nz-form-item><nz-form-label>Organization code</nz-form-label><nz-form-control><input nz-input [formControl]="form.controls.orgCode" /></nz-form-control></nz-form-item>
-    <nz-form-item>
-      <nz-form-label nzRequired>Approval nodes JSON</nz-form-label>
-      <nz-form-control nzExtra="Each node uses the schema fields id, name, auditRole, index, carbonCopyUserIds and optional associatedEntityType.">
-        <textarea nz-input rows="14" [formControl]="form.controls.nodesJson"></textarea>
-      </nz-form-control>
-    </nz-form-item>
-    <button nz-button type="button" (click)="router.navigate(['/approval-flows'])">Cancel</button>
-    <button nz-button nzType="primary" type="button" [disabled]="form.invalid" (click)="submit()">Save</button>
+<page-header
+  [title]="id ? I18N.ApprovalFlows.editTitle : I18N.ApprovalFlows.createTitle"
+  [autoBreadcrumb]="true"
+/>
+<nz-card style="margin-bottom: 72px">
+  <form nz-form [formGroup]="form" nzLayout="vertical">
+    <div nz-row [nzGutter]="16">
+      <div nz-col [nzXs]="24" [nzMd]="12">
+        <nz-form-item>
+          <nz-form-label nzRequired>{{ I18N.ApprovalFlows.name }}</nz-form-label>
+          <nz-form-control>
+            <input nz-input [formControl]="form.controls.name" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+      <div nz-col [nzXs]="24" [nzMd]="12">
+        <nz-form-item>
+          <nz-form-label>{{ I18N.ApprovalFlows.orgCode }}</nz-form-label>
+          <nz-form-control>
+            <nz-tree-select
+              [formControl]="form.controls.orgCodes"
+              org-tree-select-picker
+              [nzPlaceHolder]="I18N.Identity.widget.selectOrg"
+            ></nz-tree-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+      <div nz-col [nzSpan]="24">
+        <nz-form-item>
+          <nz-form-label nzRequired>{{ I18N.ApprovalFlows.description }}</nz-form-label>
+          <nz-form-control>
+            <textarea nz-input rows="3" [formControl]="form.controls.description"></textarea>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+
+    <nz-form-item><nz-form-label>流程分类</nz-form-label><nz-form-control>
+      <nz-select formControlName="categories" nzMode="multiple" style="width:100%">
+        @for (category of categories; track category) { <nz-option [nzValue]="category" [nzLabel]="category" /> }
+      </nz-select>
+    </nz-form-control></nz-form-item>
+    <nz-divider nzText="流程表单" />
+    <p>允许修改的字段由发起人在流程办理期间维护, 其余字段仅在创建时填写.</p>
+    <approval-field-editor [flow]="true" [value]="form.controls.formFields.value"
+      (valueChange)="form.controls.formFields.setValue($event); form.markAsDirty()" />
+    <app-approval-flow-nodes-editor [nodes]="nodes" mode="template" />
   </form>
 </nz-card>
+
+<footer-toolbar>
+  <button nz-button type="button" (click)="cancel()">{{ I18N.Common.action.cancel }}</button>
+  <button
+    nz-button
+    nzType="primary"
+    type="button"
+    class="ml-sm"
+    [disabled]="form.invalid || !nodes.length"
+    [nzLoading]="saving()"
+    (click)="submit()"
+  >
+    {{ I18N.Common.action.save }}
+  </button>
+</footer-toolbar>
