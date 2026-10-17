@@ -182,7 +182,11 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         Touch();
         if (this.AssociatedEntityId != default)
         {
-            await this.AssociatedEntity.Value!.Approve(this.AssociatedEntityType.Type, "审批流自动触发审批通过");
+            if (!Uow.DbContext.SupportTransaction)
+                throw new UserFriendlyException("关联流程需要数据库事务支持.");
+            if (!Uow.DbContext.Session.IsInTransaction) Uow.DbContext.Session.StartTransaction();
+            await this.AssociatedEntityType!.OnApprove(this.AssociatedEntity.Value
+                ?? throw new UserFriendlyException("关联对象不存在或无权访问."));
         }
         this.AddDomainEvent(new ApprovalFlowFinishEvent(this, this.Id));
         Uow.Create(nodes.OrderBy(x => x.Index).Last().Id, ApprovalFlowNodeLogType.FlowFinished,
@@ -266,6 +270,7 @@ public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociat
     public Type Type { get; }
 
     public virtual Task OnCancel(IApproveEntity entity) => Task.CompletedTask;
+    public virtual Task OnApprove(IApproveEntity entity) => entity.Approve(Type, "审批流自动触发审批通过");
     public virtual string? ResolveOrgCode(IApproveEntity entity, string? requestedOrgCode)
         => entity is IOrgFilteredEntity scoped ? scoped.OrgCode : requestedOrgCode;
     public virtual ApprovalFlowEntitySummary Summarize(IApproveEntity entity) => new()
