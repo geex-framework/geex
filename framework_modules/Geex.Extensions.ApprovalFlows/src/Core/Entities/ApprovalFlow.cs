@@ -174,7 +174,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public async Task Finish()
     {
-        if (Status != ApprovalFlowStatus.Processing || Nodes.AsEnumerable().Any(x =>
+        var nodes = Nodes.ToList();
+        if (Status != ApprovalFlowStatus.Processing || nodes.Any(x =>
             (x.NodeStatus & (ApprovalFlowNodeStatus.Approved | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred)) == 0))
             throw new UserFriendlyException("全部有效节点通过后才能完成流程.");
         this.Status = ApprovalFlowStatus.Finished;
@@ -184,7 +185,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             await this.AssociatedEntity.Value!.Approve(this.AssociatedEntityType.Type, "审批流自动触发审批通过");
         }
         this.AddDomainEvent(new ApprovalFlowFinishEvent(this, this.Id));
-        Uow.Create(Nodes.OrderBy(x => x.Index).Last().Id, ApprovalFlowNodeLogType.FlowFinished,
+        Uow.Create(nodes.OrderBy(x => x.Index).Last().Id, ApprovalFlowNodeLogType.FlowFinished,
             ServiceProvider.GetRequiredService<ICurrentUser>().UserId, "", "审批流程已完成");
     }
     /// <summary>
