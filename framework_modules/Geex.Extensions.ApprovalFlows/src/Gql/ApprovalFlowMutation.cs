@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Settings;
+using Geex.Extensions.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Geex.Abstractions;
@@ -35,10 +36,14 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
             throw new UserFriendlyException("关联对象类型不支持审批.");
         ApprovalFlow? previous = null;
         ApprovalFlowAssociation? association = null;
+        var entity = _uow.Create(request);
         if (!string.IsNullOrWhiteSpace(request.AssociatedEntityId))
         {
-            var existing = _uow.Query<ApprovalFlow>().Where(x => x.AssociatedEntityType == request.AssociatedEntityType
-                && x.AssociatedEntityId == request.AssociatedEntityId && x.Status != ApprovalFlowStatus.Archived).ToList();
+            List<ApprovalFlow> existing;
+            // 构造实例已校验关联对象可访问, 同一对象的历史流程按租户边界查询.
+            using (var scope = _uow.DbContext.DisableDataFilters(typeof(IOrgFilteredEntity)))
+                existing = _uow.Query<ApprovalFlow>().Where(x => x.Id != entity.Id && x.AssociatedEntityType == request.AssociatedEntityType
+                    && x.AssociatedEntityId == request.AssociatedEntityId && x.Status != ApprovalFlowStatus.Archived).ToList();
             if (existing.Count > 1) throw new UserFriendlyException("该对象存在多个非归档流程, 请先核对关联记录.");
             previous = existing.SingleOrDefault();
             if (previous != null && previous.Status != ApprovalFlowStatus.Canceled)
@@ -49,7 +54,6 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
             // 每个前序流程只能产生一个替代流程, 唯一索引与归档操作在同一事务内提交.
             association = _uow.Attach(new ApprovalFlowAssociation { Key = key, PreviousFlowId = previous?.Id ?? "" });
         }
-        var entity = _uow.Create(request);
         if (association != null)
         {
             association.FlowId = entity.Id;

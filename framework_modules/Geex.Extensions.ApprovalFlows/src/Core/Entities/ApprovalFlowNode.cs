@@ -165,7 +165,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckIntegrity();
         CheckAuditUser();
         if (string.IsNullOrWhiteSpace(userId)) throw new UserFriendlyException("请选择抄送人.");
-        ApprovalFormValidation.Users(Uow, [userId]);
+        ApprovalFormValidation.Users(Uow, [userId], ApprovalFlow.Value.OrgCode);
 
         if (this.CarbonCopyUserIds.Contains(userId))
         {
@@ -235,7 +235,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
             || recipients.Contains(AuditUserId) || string.IsNullOrWhiteSpace(message)
             || Uow.Query<IUser>().Count(x => recipients.Contains(x.Id)) != recipients.Count)
             throw new UserFriendlyException("请选择有效的征询对象并填写征询内容.");
-        ApprovalFormValidation.Users(Uow, recipients);
+        ApprovalFormValidation.Users(Uow, recipients, ApprovalFlow.Value.OrgCode);
         foreach (var recipient in recipients)
         {
             this.ApprovalFlow.Value.EnsureStakeholder(recipient, ApprovalFlowOwnershipType.Consult);
@@ -342,7 +342,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckAuditUser();
         if (string.IsNullOrWhiteSpace(userId) || userId == AuditUserId || Uow.Query<IUser>().GetById(userId) == null)
             throw new UserFriendlyException("请选择有效的转交对象.");
-        ApprovalFormValidation.Users(Uow, [userId]);
+        ApprovalFormValidation.Users(Uow, [userId], ApprovalFlow.Value.OrgCode);
         var originUserId = AuditUserId;
         this.NodeStatus |= ApprovalFlowNodeStatus.Transferred;
         Touch();

@@ -46,11 +46,14 @@ public class ApprovalFormValue
 
 public static class ApprovalFormValidation
 {
-    public static void Users(IUnitOfWork uow, IEnumerable<string?> userIds)
+    public static void Users(IUnitOfWork uow, IEnumerable<string?> userIds, string? orgCode = null)
     {
         var ids = userIds.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
-        if (uow.Query<IUser>().Count(x => ids.Contains(x.Id) && x.IsEnable) != ids.Count)
+        var users = uow.Query<IUser>().Where(x => ids.Contains(x.Id) && x.IsEnable).ToList();
+        if (users.Count != ids.Count)
             throw new UserFriendlyException("所选人员不存在或已停用, 请重新选择.");
+        if (orgCode != null && users.Any(x => x.Id != GeexConstants.SuperAdminId && !x.OrgCodes.Contains(orgCode)))
+            throw new UserFriendlyException("所选人员无权访问流程所属组织, 请重新选择具有该组织访问权的人员.");
     }
 
     public static void References(IUnitOfWork uow, IEnumerable<ApprovalFormField> fields, IEnumerable<ApprovalFormValue> values)

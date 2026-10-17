@@ -58,7 +58,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             return node;
         }).ToList();
 
-        ApprovalFormValidation.Users(Uow, Nodes.Select(x => x.AuditUserId).Concat(Nodes.SelectMany(x => x.CarbonCopyUserIds)));
+        ApprovalFormValidation.Users(Uow, Nodes.Select(x => x.AuditUserId).Concat(Nodes.SelectMany(x => x.CarbonCopyUserIds)).Append(CreatorUserId), OrgCode);
         this.EnsureStakeholder(uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create);
         foreach (var userId in this.Nodes.Select(x => x.AuditUserId).Where(x => !x.IsNullOrEmpty()).Distinct())
         {
@@ -241,7 +241,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             throw new UserFriendlyException("流程实例的节点结构已确定, 请保持节点及顺序.");
         if (request.Nodes.Any(x => string.IsNullOrWhiteSpace(x.AuditUserId) || string.IsNullOrWhiteSpace(x.Name)))
             throw new UserFriendlyException("请确定各节点审批人.");
-        ApprovalFormValidation.Users(Uow, request.Nodes.Select(x => x.AuditUserId).Concat(request.Nodes.SelectMany(x => x.CarbonCopyUserIds ?? [])));
+        ApprovalFormValidation.Users(Uow, request.Nodes.Select(x => x.AuditUserId).Concat(request.Nodes.SelectMany(x => x.CarbonCopyUserIds ?? [])), OrgCode);
             Touch();
             this.Name = request.Name;
             this.Description = request.Description;
