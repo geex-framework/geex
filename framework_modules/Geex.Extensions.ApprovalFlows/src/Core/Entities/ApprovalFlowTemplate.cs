@@ -5,6 +5,7 @@ using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity;
 using Geex.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp;
 
 namespace Geex.Extensions.ApprovalFlows.Core.Entities;
 
@@ -17,6 +18,7 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     public ApprovalFlowTemplate(IApprovalFlowTemplateDate data, IUnitOfWork uow = default)
         : this()
     {
+        Validate(data);
         ApprovalFormValidation.Definitions(data.FormFields);
         this.Categories = data.Categories.Distinct().ToList();
         this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
@@ -39,15 +41,22 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
 
     public void Edit(IApprovalFlowTemplateDate request)
     {
+        Validate(request);
         ApprovalFormValidation.Definitions(request.FormFields);
         this.Categories = request.Categories.Distinct().ToList();
         this.FormFields = request.FormFields.Select(x => x.Copy()).ToList();
-        if (!request.Name.IsNullOrEmpty()) this.Name = request.Name;
-        if (!request.Description.IsNullOrEmpty()) this.Description = request.Description;
-        if (!request.OrgCode.IsNullOrEmpty()) this.OrgCode = request.OrgCode;
-        if (!request.ApprovalFlowNodeTemplates.IsNullOrEmpty())
-            this.Nodes = request.ApprovalFlowNodeTemplates
-                .Select((x, i) => new ApprovalFlowNodeTemplate(x, i)).ToList();
+        this.Name = request.Name;
+        this.Description = request.Description;
+        this.OrgCode = request.OrgCode;
+        this.Nodes = request.ApprovalFlowNodeTemplates
+            .Select((x, i) => new ApprovalFlowNodeTemplate(x, i)).ToList();
+    }
+
+    private static void Validate(IApprovalFlowTemplateDate data)
+    {
+        if (string.IsNullOrWhiteSpace(data.Name) || data.ApprovalFlowNodeTemplates.Count == 0
+            || data.ApprovalFlowNodeTemplates.Any(x => string.IsNullOrWhiteSpace(x.Name)))
+            throw new UserFriendlyException("请填写模板名称并配置有效的审批节点.");
     }
 }
 

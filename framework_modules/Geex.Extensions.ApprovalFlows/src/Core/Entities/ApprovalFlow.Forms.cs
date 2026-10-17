@@ -76,5 +76,7 @@ public partial class ApprovalFlow : ISaveIntercepted
         ArchivedAt = DateTimeOffset.UtcNow;
         ReplacedByFlowId = replacementId;
         Touch();
+        Uow.Create((ActiveNode ?? Nodes.First()).Id, ApprovalFlowNodeLogType.FlowArchived,
+            ServiceProvider.GetRequiredService<ICurrentUser>().UserId, "", "重新上报后归档, 替代流程: " + replacementId);
     }
 }

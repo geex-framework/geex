@@ -19,7 +19,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     public ApprovalFlow(IApprovalFlowDate data, IUnitOfWork uow = default)
         : this()
     {
-        if (!data.Nodes.Any())
+        if (string.IsNullOrWhiteSpace(data.Name) || !data.Nodes.Any())
         {
             throw new UserFriendlyException("工作流必须包含审批节点");
         }
@@ -71,6 +71,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             await entity.Submit(this.AssociatedEntityType.Type, "审批流自动触发上报.");
         }
         await this.ActiveNode.Start();
+        Uow.Create(ActiveNode.Id, ApprovalFlowNodeLogType.FlowCreated, CreatorUserId, "", "发起审批流程");
 
     }
 
@@ -173,6 +174,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             await this.AssociatedEntity.Value!.Approve(this.AssociatedEntityType.Type, "审批流自动触发审批通过");
         }
         this.AddDomainEvent(new ApprovalFlowFinishEvent(this, this.Id));
+        Uow.Create(Nodes.OrderBy(x => x.Index).Last().Id, ApprovalFlowNodeLogType.FlowFinished,
+            ServiceProvider.GetRequiredService<ICurrentUser>().UserId, "", "审批流程已完成");
     }
     /// <summary>
     /// 关联的实体对象
@@ -193,6 +196,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
                 ?? throw new UserFriendlyException("关联对象不存在或无权访问."));
         this.Status = ApprovalFlowStatus.Canceled;
         Touch();
+        Uow.Create((ActiveNode ?? Nodes.First()).Id, ApprovalFlowNodeLogType.FlowCanceled,
+            ServiceProvider.GetRequiredService<ICurrentUser>().UserId, "", "取消审批流程");
         this.AddDomainEvent(new ApprovalFlowCanceledEvent(this, this.Id));
     }
 
