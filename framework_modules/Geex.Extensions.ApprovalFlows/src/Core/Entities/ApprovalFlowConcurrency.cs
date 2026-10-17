@@ -17,7 +17,7 @@ internal static class ApprovalFlowConcurrency
             throw new UserFriendlyException("审批流程保存需要数据库事务支持.");
         var filter = Builders<T>.Filter;
         var expected = filter.Eq(revision, previous);
-        if (string.IsNullOrEmpty(previous)) expected |= filter.Exists(revision, false);
+        if (string.IsNullOrEmpty(previous)) expected |= filter.Exists(nameof(ApprovalFlow.Revision), false);
         // 在保存事务内取得条件写锁, 将办理前提与后续实体更新绑定到同一版本.
         var result = await uow.DbContext.Collection<T>().UpdateOneAsync(uow.DbContext.Session,
             filter.Eq(x => x.Id, id) & expected, Builders<T>.Update.Set(revision, next));
