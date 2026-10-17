@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using MongoDB.Entities;
+using MongoDB.Entities.Interceptors;
 using Geex.Extensions.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 
 namespace Geex.Extensions.ApprovalFlows.Core.Entities;
 
-public partial class ApprovalFlow
+public partial class ApprovalFlow : ISaveIntercepted
 {
     public List<string> Categories { get; set; } = [];
     public List<ApprovalFlowFormField> FormFields { get; set; } = [];
@@ -15,6 +18,17 @@ public partial class ApprovalFlow
     public string? TemplateName { get; set; }
     public DateTimeOffset? ArchivedAt { get; set; }
     public string? ReplacedByFlowId { get; set; }
+    [HotChocolate.GraphQLIgnore]
+    public string Revision { get; set; } = "";
+
+    [HotChocolate.GraphQLIgnore]
+    public void Touch() => Revision = Guid.NewGuid().ToString("N");
+
+    async Task ISaveIntercepted.InterceptOnSave(IEntityBase originalValue)
+    {
+        if (originalValue is ApprovalFlow previous)
+            await ApprovalFlowConcurrency.Guard<ApprovalFlow>(Uow, Id, previous.Revision, Revision, x => x.Revision);
+    }
 
     public bool CanEditForm => Status == ApprovalFlowStatus.Processing && !string.IsNullOrWhiteSpace(CreatorUserId)
         && CreatorUserId == ServiceProvider.GetRequiredService<ICurrentUser>().UserId;
@@ -49,6 +63,7 @@ public partial class ApprovalFlow
                 throw new UserFriendlyException($"{field.Name} 在创建后只读.");
         }
         FormValues = validated;
+        Touch();
         var node = ActiveNode ?? Nodes.First();
         Uow.Create(node.Id, ApprovalFlowNodeLogType.Edit, CreatorUserId, "", "更新流程表单");
     }
@@ -60,5 +75,6 @@ public partial class ApprovalFlow
         Status = ApprovalFlowStatus.Archived;
         ArchivedAt = DateTimeOffset.UtcNow;
         ReplacedByFlowId = replacementId;
+        Touch();
     }
 }

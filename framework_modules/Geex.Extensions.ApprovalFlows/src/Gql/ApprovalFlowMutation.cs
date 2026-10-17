@@ -44,10 +44,10 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
             if (previous != null && previous.Status != ApprovalFlowStatus.Canceled)
                 throw new UserFriendlyException("该对象已有关联审批流程.");
             var key = $"{request.AssociatedEntityType!.Value}:{request.AssociatedEntityId}";
-            association = _uow.Query<ApprovalFlowAssociation>().FirstOrDefault(x => x.Key == key)
-                ?? _uow.Attach(new ApprovalFlowAssociation { Key = key });
-            if (!string.IsNullOrEmpty(association.FlowId) && association.FlowId != previous?.Id)
-                throw new UserFriendlyException("关联流程不可访问或已发生变化, 请刷新后重试.");
+            if (!_uow.DbContext.SupportTransaction)
+                throw new UserFriendlyException("关联流程需要数据库事务支持.");
+            // 每个前序流程只能产生一个替代流程, 唯一索引与归档操作在同一事务内提交.
+            association = _uow.Attach(new ApprovalFlowAssociation { Key = key, PreviousFlowId = previous?.Id ?? "" });
         }
         var entity = _uow.Create(request);
         if (association != null)

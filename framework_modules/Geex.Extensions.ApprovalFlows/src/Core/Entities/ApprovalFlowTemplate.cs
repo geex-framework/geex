@@ -64,7 +64,7 @@ public class ApprovalFlowNodeTemplate
         this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
         this.AuditUserId = data.AuditUserId;
         this.Description = data.Description;
-        this.Id = data.Id;
+        this.Id = string.IsNullOrWhiteSpace(data.Id) ? Guid.NewGuid().ToString("N") : data.Id;
         this.AuditRole = data.AuditRole;
         this.Name = data.Name;
         this.Index = i;

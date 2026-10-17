@@ -118,6 +118,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckNotConsulting();
         ApprovalFormValidation.Values(FormFields, FormValues, true);
         this.NodeStatus |= ApprovalFlowNodeStatus.Approved;
+        Touch();
         Uow.Create(this.Id, ApprovalFlowNodeLogType.Approve, CurrentUser.UserId, "", message);
         if (this.NextNode == default)
         {
@@ -141,6 +142,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         CheckIntegrity();
         CheckAuditUser();
         this.NodeStatus |= ApprovalFlowNodeStatus.Rejected;
+        Touch();
         this.ApprovalComment = message;
         var curIndex = this.ApprovalFlow.Value.ActiveIndex;
         var targetNode = this.ApprovalFlow.Value.Nodes.First(x => x.Id == targetNodeId);
@@ -170,6 +172,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         this.ApprovalFlow.Value.EnsureStakeholder(userId, ApprovalFlowOwnershipType.CarbonCopy);
 
         this.CarbonCopyUserIds = [.. this.CarbonCopyUserIds, userId];
+        Touch();
         Uow.Create(this.Id, ApprovalFlowNodeLogType.CarbonCopy, this.AuditUserId, userId, "");
         var user = CurrentUser.User;
         var messageEntity = await this.Uow.Request(new CreateMessageRequest()
@@ -240,6 +243,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         }
         this.ConsultUserId = recipients[0];
         this.NodeStatus |= ApprovalFlowNodeStatus.Consulting;
+        Touch();
         var user = CurrentUser.User;
         var messageEntity = await this.Uow.Request(new CreateMessageRequest()
         {
@@ -263,6 +267,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public void Edit(IApprovalFlowNodeData approvalFlowNodeData)
     {
+        Touch();
         this.AuditRole = approvalFlowNodeData.AuditRole;
         this.AuditUserId = approvalFlowNodeData.AuditUserId;
         this.Description = approvalFlowNodeData.Description;
@@ -272,6 +277,8 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public async void MarkAsViewed()
     {
+        if (!CanOperate || NodeStatus.HasFlag(ApprovalFlowNodeStatus.Viewed)) return;
+        Touch();
         this.NodeStatus |= ApprovalFlowNodeStatus.Viewed;
         if (this.ChatLogs.ToList().All(x => x.LogType != ApprovalFlowNodeLogType.View))
         {
@@ -305,6 +312,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
                 consultation.RepliedAt = DateTimeOffset.UtcNow;
             }
             this.ConsultUserId = Consultations.FirstOrDefault(x => x.RepliedAt == null)?.UserId;
+            Touch();
             if (ConsultUserId == null) this.NodeStatus &= ~ApprovalFlowNodeStatus.Consulting;
             Uow.Create(this.Id, ApprovalFlowNodeLogType.ConsultChat, CurrentUser.UserId, "", message);
             this.AddDomainEvent(new ApprovalFlowNodeConsultRepliedEvent(this, userId));
@@ -317,6 +325,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public async Task Start()
     {
+        Touch();
         this.NodeStatus |= ApprovalFlowNodeStatus.Started;
         this.AddDomainEvent(new ApprovalFlowNodeStartEvent(this));
     }
@@ -331,6 +340,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
             throw new UserFriendlyException("请选择有效的转交对象.");
         var originUserId = AuditUserId;
         this.NodeStatus |= ApprovalFlowNodeStatus.Transferred;
+        Touch();
         this.ApprovalFlow.Value.EnsureStakeholder(userId, ApprovalFlowOwnershipType.Participate);
         Uow.Create(this.Id, ApprovalFlowNodeLogType.Transfer, this.AuditUserId, userId, "");
         var newNode = Uow.Create(this);
@@ -344,11 +354,15 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public async Task Withdraw()
     {
+        CheckAuditUser();
+        if (ApprovalFlow.Value.Status != ApprovalFlowStatus.Processing || !NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved))
+            throw new UserFriendlyException("仅办理中的已通过节点可撤回.");
         if (this.NextNode?.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Viewed) != false)
         {
             throw new UserFriendlyException($"下一节点已被审批人查阅, 无法撤回.");
         }
         this.NodeStatus &= ~ApprovalFlowNodeStatus.Approved;
+        Touch();
         this.ApprovalComment = "已撤回";
         Uow.Create(this.Id, ApprovalFlowNodeLogType.Withdraw, CurrentUser.UserId, "", "");
         this.ApprovalFlow.Value.ActiveIndex -= 1;

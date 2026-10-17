@@ -77,6 +77,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     public ApprovalFlow(ApprovalFlowTemplate template, IUnitOfWork uow = default)
         : this()
     {
+        if (template.FormFields.Count != 0)
+            throw new UserFriendlyException("该模板包含流程表单, 请使用支持填写流程表单的发起入口.");
         this.Name = template.Name;
         this.Description = template.Description;
         uow?.Attach(this);
@@ -165,6 +167,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
             (x.NodeStatus & (ApprovalFlowNodeStatus.Approved | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred)) == 0))
             throw new UserFriendlyException("全部有效节点通过后才能完成流程.");
         this.Status = ApprovalFlowStatus.Finished;
+        Touch();
         if (this.AssociatedEntityId != default)
         {
             await this.AssociatedEntity.Value!.Approve(this.AssociatedEntityType.Type, "审批流自动触发审批通过");
@@ -185,7 +188,11 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     {
         if (Status != ApprovalFlowStatus.Processing)
             throw new UserFriendlyException("仅办理中的流程可取消.");
+        if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
+            await AssociatedEntityType.OnCancel(AssociatedEntity.Value
+                ?? throw new UserFriendlyException("关联对象不存在或无权访问."));
         this.Status = ApprovalFlowStatus.Canceled;
+        Touch();
         this.AddDomainEvent(new ApprovalFlowCanceledEvent(this, this.Id));
     }
 
@@ -213,6 +220,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     {
         if (this.CanEdit)
         {
+            Touch();
             this.Name = request.Name;
             this.Description = request.Description;
             if ((request.AssociatedEntityType != null && request.AssociatedEntityType != AssociatedEntityType)
@@ -230,6 +238,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociatedEntityType>
 {
     public Type Type { get; }
+
+    public virtual Task OnCancel(IApproveEntity entity) => Task.CompletedTask;
 
     /// <inheritdoc />
     public ApprovalFlowAssociatedEntityType(string value, Type type) : base(value)
