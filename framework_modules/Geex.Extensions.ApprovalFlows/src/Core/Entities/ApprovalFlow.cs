@@ -31,6 +31,11 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.AssociatedEntityId = data.AssociatedEntityId;
         uow?.Attach(this);
         this.CreatorUserId = uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId;
+        if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
+        {
+            var associated = AssociatedEntity.Value ?? throw new UserFriendlyException("关联对象不存在或无权访问.");
+            if (associated is IOrgFilteredEntity scoped) OrgCode = scoped.OrgCode;
+        }
         var template = InitializeSnapshot(data);
         data.Nodes.Select((x, i) =>
         {
