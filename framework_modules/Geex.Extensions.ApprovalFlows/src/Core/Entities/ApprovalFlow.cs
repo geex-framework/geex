@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.ApprovalFlows.Requests;
@@ -120,10 +121,16 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
                 var type = this.AssociatedEntityType?.Type;
                 if (type == null || string.IsNullOrWhiteSpace(AssociatedEntityId))
                     return Enumerable.Empty<IApproveEntity>().AsQueryable();
-                var method = typeof(IRepository).GetMethod(nameof(IRepository.Query)).MakeGenericMethod(type);
-                var query = method.Invoke(Uow, []) as IQueryable<IApproveEntity>;
-                return query as IQueryable<IApproveEntity>;
+                var method = typeof(ApprovalFlow).GetMethod(nameof(QueryAssociatedEntity), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(type);
+                return (IQueryable<IApproveEntity>)method.Invoke(this, [])!;
             });
+    }
+
+    private IQueryable<IApproveEntity> QueryAssociatedEntity<T>() where T : IApproveEntity
+    {
+        // 先按业务实体类型完成查询, 使多态反序列化使用该类型对应的映射.
+        return Uow.Query<T>().Where(entity => entity.Id == AssociatedEntityId)
+            .ToList().Cast<IApproveEntity>().AsQueryable();
     }
 
     public string? TemplateId { get; set; }
