@@ -83,16 +83,18 @@ export class GeexUploadComponent implements ControlValueAccessor {
   set fileList(value: NzUploadFile[]) {
     this.files.set(value);
   }
+  private writeRevision = 0;
 
   onChange = (_: any) => {};
   onTouched = () => {};
 
   writeValue(obj: any): void {
+    const revision = ++this.writeRevision;
     if (obj == null) {
       this.fileList = [];
     } else if (this.valueEmitType === "id") {
       this.fetchFilesByIds(obj).then(fileList => {
-        this.fileList = fileList;
+        if (revision === this.writeRevision) this.fileList = fileList;
       });
     } else {
       this.fileList = obj;
@@ -119,10 +121,12 @@ export class GeexUploadComponent implements ControlValueAccessor {
 
   private pureValue(fileList: NzUploadFile[]): any[] {
     fileList
-      .filter(file => !file.url)
+      .filter(file => file.status === "done" && file.response && !file.url)
       .forEach(file => {
-        file.url = _.get(file.response, this.urlReName);
-        file.id = file.uid = _.get(file.response, this.idReName);
+        const url = _.get(file.response, this.urlReName);
+        const id = _.get(file.response, this.idReName);
+        if (typeof url === "string" && url) file.url = url;
+        if (typeof id === "string" && id) file.id = file.uid = id;
       });
     const res = fileList.filter(w => w.status === "done").map(file => this._getValue(file));
     if (this.nzMultiple) {
