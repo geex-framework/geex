@@ -302,6 +302,28 @@ public class UserSessionApiTests : TestsBase
         var token = (string)loginResp["data"]!["authenticate"]!["token"]!;
         var lastUpdatedOnBeforeRoleChange = loginResp["data"]!["authenticate"]!["lastUpdatedOn"]!.GetValue<DateTimeOffset>();
 
+        using var authedClient = AnonymousClient;
+        authedClient.DefaultRequestHeaders.Add("Authorization", $"Local {token}");
+        var (warmupResp, warmupResponse) = await authedClient.PostGqlRequest(
+            """
+            mutation {
+                generatePersonalAccessToken(request: { expireInSeconds: 60 }) {
+                    token
+                }
+            }
+            """);
+        warmupResponse.ShouldNotContain("errors");
+        ((string)warmupResp["data"]!["generatePersonalAccessToken"]!["token"]!).ShouldNotBeNullOrEmpty();
+        using (var scope = ScopedService.CreateScope())
+        {
+            var redis = scope.ServiceProvider.GetRequiredService<IRedisDatabase>();
+            var cached = await redis.GetNamedAsync<UserSession>(UserSession.GetCacheKey(userId, LoginProviderEnum.Local));
+            cached.ShouldNotBeNull();
+            cached.UserId.ShouldBe(userId);
+            cached.Token.ShouldBe(token);
+            cached.SupplementaryClaims.ShouldNotBeEmpty();
+        }
+
         await SuperAdminClient.PostGqlRequest(
             """
             mutation($id: String!, $roleIds: [String!]) {
@@ -320,8 +342,6 @@ public class UserSessionApiTests : TestsBase
             cached.ShouldBeNull();
         }
 
-        var authedClient = AnonymousClient;
-        authedClient.DefaultRequestHeaders.Add("Authorization", $"Local {token}");
         var (patResp, patResponse) = await authedClient.PostGqlRequest(
             """
             mutation {
