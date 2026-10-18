@@ -35,10 +35,15 @@ public partial class UserSession : Entity<UserSession>
         uow?.Attach(this);
     }
 
+    [JsonInclude]
     public string UserId { get; private set; } = string.Empty;
+    [JsonInclude]
     public LoginProviderEnum LoginProvider { get; private set; }
+    [JsonInclude]
     public string Token { get; private set; } = string.Empty;
+    [JsonInclude]
     public DateTimeOffset LastUpdatedOn { get; private set; }
+    [JsonInclude]
     public List<SupplementaryClaim> SupplementaryClaims { get; private set; } = [];
     [JsonIgnore]
     public string Name => User.Value?.Username ?? string.Empty;
