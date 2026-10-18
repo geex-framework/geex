@@ -5,7 +5,7 @@
 <nz-card style="margin-bottom: 72px">
   <form nz-form [formGroup]="form" nzLayout="vertical">
     <div nz-row [nzGutter]="16">
-      <div nz-col [nzXs]="24" [nzMd]="12">
+      <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="8">
         <nz-form-item>
           <nz-form-label nzRequired>{{ I18N.ApprovalFlows.name }}</nz-form-label>
           <nz-form-control>
@@ -13,7 +13,7 @@
           </nz-form-control>
         </nz-form-item>
       </div>
-      <div nz-col [nzXs]="24" [nzMd]="12">
+      <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="8">
         <nz-form-item>
           <nz-form-label>{{ I18N.ApprovalFlows.orgCode }}</nz-form-label>
           <nz-form-control>
@@ -22,6 +22,16 @@
               org-tree-select-picker
               [nzPlaceHolder]="I18N.Identity.widget.selectOrg"
             ></nz-tree-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+      <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="8">
+        <nz-form-item>
+          <nz-form-label>流程分类</nz-form-label>
+          <nz-form-control>
+            <nz-select formControlName="tags" nzMode="multiple" style="width:100%">
+              @for (tag of tags; track tag) { <nz-option [nzValue]="tag" [nzLabel]="tag" /> }
+            </nz-select>
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -35,11 +45,6 @@
       </div>
     </div>
 
-    <nz-form-item><nz-form-label>流程分类</nz-form-label><nz-form-control>
-      <nz-select formControlName="categories" nzMode="multiple" style="width:100%">
-        @for (category of categories; track category) { <nz-option [nzValue]="category" [nzLabel]="category" /> }
-      </nz-select>
-    </nz-form-control></nz-form-item>
     <nz-divider nzText="流程表单" />
     <p>允许修改的字段由发起人在流程办理期间维护, 其余字段仅在创建时填写.</p>
     <approval-field-editor [flow]="true" [value]="form.controls.formFields.value"

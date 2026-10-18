@@ -12,7 +12,7 @@ namespace Geex.Extensions.ApprovalFlows.Core.Entities;
 
 public partial class ApprovalFlow : ISaveIntercepted
 {
-    public List<string> Categories { get; set; } = [];
+    public List<string> Tags { get; set; } = [];
     public List<ApprovalFlowFormField> FormFields { get; set; } = [];
     public List<ApprovalFormValue> FormValues { get; set; } = [];
     public string? TemplateName { get; set; }
@@ -44,7 +44,7 @@ public partial class ApprovalFlow : ISaveIntercepted
             ?? throw new UserFriendlyException("审批流模板不存在.");
         if (template.Nodes.Count != data.Nodes.Count)
             throw new UserFriendlyException("审批节点与模板不一致, 请重新选择模板.");
-        Categories = [.. template.Categories];
+        Tags = [.. template.Tags];
         FormFields = template.FormFields.Select(x => x.Copy()).ToList();
         FormValues = ApprovalFormValidation.Values(FormFields, data.FormValues, true);
         ApprovalFormValidation.References(Uow, FormFields, FormValues);

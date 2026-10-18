@@ -106,7 +106,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.OrgCode = template.OrgCode;
         this.TemplateId = template.Id;
         this.TemplateName = template.Name;
-        this.Categories = [.. template.Categories];
+        this.Tags = [.. template.Tags];
         this.FormFields = template.FormFields.Select(x => x.Copy()).ToList();
     }
 

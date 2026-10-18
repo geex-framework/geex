@@ -7,7 +7,7 @@ import { NzMessageService } from "ng-zorro-antd/message";
 
 import { StartApprovalFlowService } from "../../components/start-flow/start-flow.component";
 import {
-  approvalFlowCategories,
+  approvalFlowTags,
   approvalFlowTemplates,
   deleteApprovalFlowTemplate,
   type ApprovalFlowTemplateDetail,
@@ -33,15 +33,15 @@ export class ApprovalFlowTemplateListPage implements OnInit {
   readonly data = signal<ApprovalFlowTemplateDetail[]>([]);
   readonly total = signal(0);
   filterText = "";
-  category: string | null = null;
-  categories: string[] = [];
+  tag: string | null = null;
+  tags: string[] = [];
   filterOrgCodes: string[] = [];
   pageIndex = 1;
   pageSize = 10;
   readonly columns: Array<STColumn<ApprovalFlowTemplateDetail>> = [
     { title: this.I18N.ApprovalFlows.name, index: "name" },
     { title: this.I18N.ApprovalFlows.description, index: "description" },
-    { title: "流程分类", format: item => item.categories.join(" / ") },
+    { title: "流程分类", format: item => item.tags.join(" / ") },
     { title: this.I18N.ApprovalFlows.orgCode, index: "orgCode" },
     { title: this.I18N.ApprovalFlows.nodes, index: "nodes.length", type: "number" },
     { title: this.I18N.ApprovalFlows.createdOn, index: "createdOn", type: "date" },
@@ -57,10 +57,10 @@ export class ApprovalFlowTemplateListPage implements OnInit {
 
   ngOnInit(): void {
     void this.apollo
-      .query({ query: approvalFlowCategories, fetchPolicy: "no-cache" })
+      .query({ query: approvalFlowTags, fetchPolicy: "no-cache" })
       .firstValuePromise()
       .then(result => {
-        this.categories = result.data.approvalFlowCategories;
+        this.tags = result.data.approvalFlowTags;
         this.cdr.markForCheck();
       });
     void this.load();
@@ -82,7 +82,7 @@ export class ApprovalFlowTemplateListPage implements OnInit {
           query: approvalFlowTemplates,
           variables: {
             filter: Object.keys(filter).length ? filter : undefined,
-            request: { orgCode, category: this.category },
+            request: { orgCode, tag: this.tag },
             skip: (this.pageIndex - 1) * this.pageSize,
             take: this.pageSize,
             sort: [{ createdOn: SortEnumType.descend }],

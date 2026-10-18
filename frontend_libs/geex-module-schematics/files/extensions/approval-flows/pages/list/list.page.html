@@ -12,8 +12,8 @@
         nz-form
         nzLayout="inline">
     <nz-form-item><nz-form-label>流程分类</nz-form-label><nz-form-control>
-      <nz-select [(ngModel)]="category" name="category" nzAllowClear nzPlaceHolder="全部分类" style="min-width:160px">
-        @for (item of categories; track item) { <nz-option [nzLabel]="item" [nzValue]="item" /> }
+      <nz-select [(ngModel)]="tag" name="tag" nzAllowClear nzPlaceHolder="全部分类" style="min-width:160px">
+        @for (item of tags; track item) { <nz-option [nzLabel]="item" [nzValue]="item" /> }
       </nz-select>
     </nz-form-control></nz-form-item>
     <nz-form-item>

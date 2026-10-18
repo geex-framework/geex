@@ -22,7 +22,7 @@ import { SharedModule } from "@/shared/shared.module";
           <button nz-button nzType="text" nzDanger type="button" (click)="remove(i)">删除</button>
         </ng-template>
         <div nz-row [nzGutter]="16">
-          <div nz-col [nzXs]="24" [nzMd]="12">
+          <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="8">
             <nz-form-item
               ><nz-form-label nzRequired>字段名称</nz-form-label
               ><nz-form-control>
@@ -34,7 +34,7 @@ import { SharedModule } from "@/shared/shared.module";
                 /> </nz-form-control
             ></nz-form-item>
           </div>
-          <div nz-col [nzXs]="24" [nzMd]="12">
+          <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="8">
             <nz-form-item
               ><nz-form-label>控件类型</nz-form-label
               ><nz-form-control>
@@ -50,15 +50,24 @@ import { SharedModule } from "@/shared/shared.module";
                 </nz-select> </nz-form-control
             ></nz-form-item>
           </div>
-          <div nz-col [nzSpan]="24" class="mb-sm">
-            <label nz-checkbox [ngModel]="field.required" (ngModelChange)="update(i, 'required', $event)" [ngModelOptions]="standalone"
-              >必填</label
-            >
-            @if (flow) {
-              <label nz-checkbox [ngModel]="field.allowEdit" (ngModelChange)="update(i, 'allowEdit', $event)" [ngModelOptions]="standalone"
-                >允许修改</label
-              >
-            }
+          <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="8">
+            <nz-form-item>
+              <nz-form-label>字段设置</nz-form-label>
+              <nz-form-control>
+                <label nz-checkbox [ngModel]="field.required" (ngModelChange)="update(i, 'required', $event)" [ngModelOptions]="standalone"
+                  >必填</label
+                >
+                @if (flow) {
+                  <label
+                    nz-checkbox
+                    [ngModel]="field.allowEdit"
+                    (ngModelChange)="update(i, 'allowEdit', $event)"
+                    [ngModelOptions]="standalone"
+                    >允许修改</label
+                  >
+                }
+              </nz-form-control>
+            </nz-form-item>
           </div>
           @if (field.type === kind.Select || field.type === kind.MultiSelect) {
             <div nz-col [nzSpan]="24"

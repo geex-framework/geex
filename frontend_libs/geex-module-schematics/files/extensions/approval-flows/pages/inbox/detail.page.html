@@ -8,7 +8,7 @@
 @if (loading()) { <nz-card [nzLoading]="true" /> }
 @if (!loading() && flow(); as current) {
   <nz-card nzTitle="流程信息" [nzExtra]="flowTags">
-    <ng-template #flowTags>@for (tag of current.categories; track tag) { <nz-tag nzColor="purple">{{ tag }}</nz-tag> }</ng-template>
+    <ng-template #flowTags>@for (tag of current.tags; track tag) { <nz-tag nzColor="purple">{{ tag }}</nz-tag> }</ng-template>
     <nz-descriptions [nzColumn]="2">
       <nz-descriptions-item nzTitle="流程编号">{{ current.id }}</nz-descriptions-item>
       <nz-descriptions-item nzTitle="状态">{{ statusLabel(current.status) }}</nz-descriptions-item>

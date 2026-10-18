@@ -13,7 +13,7 @@ import {
   approvalFlowTemplateById,
   createApprovalFlowTemplate,
   editApprovalFlowTemplate,
-  approvalFlowCategories,
+  approvalFlowTags,
 } from "../../graphql/operations.gql";
 
 import type { ApprovalFlowNodeTemplateDataInput } from "@/gql";
@@ -35,7 +35,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
   readonly router = inject(Router);
   readonly id = this.route.snapshot.paramMap.get("id");
   readonly saving = signal(false);
-  categories: string[] = [];
+  tags: string[] = [];
   readonly form = new FormGroup({
     name: new FormControl("", { nonNullable: true, validators: Validators.required }),
     description: new FormControl("", { nonNullable: true, validators: Validators.required }),
@@ -43,7 +43,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
       nonNullable: true,
     }),
     nodes: new FormArray<FormGroup>([]),
-    categories: new FormControl<string[]>([], { nonNullable: true }),
+    tags: new FormControl<string[]>([], { nonNullable: true }),
     formFields: new FormControl<ApprovalUiField[]>([], { nonNullable: true }),
   });
 
@@ -52,8 +52,8 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    const categories = await this.apollo.query({ query: approvalFlowCategories, fetchPolicy: "no-cache" }).firstValuePromise();
-    this.categories = categories.data.approvalFlowCategories;
+    const tags = await this.apollo.query({ query: approvalFlowTags, fetchPolicy: "no-cache" }).firstValuePromise();
+    this.tags = tags.data.approvalFlowTags;
     if (!this.id) {
       this.nodes.push(createApprovalFlowNodeGroup("template"));
       this.form.markAsPristine();
@@ -77,7 +77,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
       name: template.name,
       description: template.description,
       orgCodes: template.orgCode ? [template.orgCode] : [],
-      categories: template.categories,
+      tags: template.tags,
       formFields: cleanFields(template.formFields, true),
     });
     this.nodes.clear();
@@ -148,7 +148,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
                 description: value.description,
                 orgCode,
                 approvalFlowNodeTemplates: nodes,
-                categories: value.categories,
+                tags: value.tags,
                 formFields: cleanFields(value.formFields, true).map(field => ({ ...field, allowEdit: !!field.allowEdit })),
               },
             },
@@ -164,7 +164,7 @@ export class ApprovalFlowTemplateEditPage implements OnInit {
                 description: value.description,
                 orgCode,
                 approvalFlowNodeTemplates: nodes,
-                categories: value.categories,
+                tags: value.tags,
                 formFields: cleanFields(value.formFields, true).map(field => ({ ...field, allowEdit: !!field.allowEdit })),
               },
             },

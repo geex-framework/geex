@@ -9,7 +9,7 @@ export const menuContribution: Menu[] = [
     children: [
       { text: "审批事项", i18n: "ApprovalFlows.menuInbox", link: "/approval-flows/inbox" },
       { text: "流程模板", i18n: "ApprovalFlows.menuTemplates", link: "/approval-flows" },
-      { text: "流程分类配置", link: "/approval-flows/categories" },
+      { text: "流程分类配置", link: "/approval-flows/tags" },
     ],
   },
 ];

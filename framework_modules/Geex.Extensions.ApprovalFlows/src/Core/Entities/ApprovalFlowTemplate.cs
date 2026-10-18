@@ -20,7 +20,7 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     {
         Validate(data);
         ApprovalFormValidation.Definitions(data.FormFields);
-        this.Categories = data.Categories.Distinct().ToList();
+        this.Tags = data.Tags.Distinct().ToList();
         this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
         this.Name = data.Name;
         this.Description = data.Description;
@@ -36,14 +36,14 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     public string Description { get; set; }
     public List<ApprovalFlowNodeTemplate> Nodes { get; set; } = new List<ApprovalFlowNodeTemplate>();
     public string? OrgCode { get; set; }
-    public List<string> Categories { get; set; } = [];
+    public List<string> Tags { get; set; } = [];
     public List<ApprovalFlowFormField> FormFields { get; set; } = [];
 
     public void Edit(IApprovalFlowTemplateDate request)
     {
         Validate(request);
         ApprovalFormValidation.Definitions(request.FormFields);
-        this.Categories = request.Categories.Distinct().ToList();
+        this.Tags = request.Tags.Distinct().ToList();
         this.FormFields = request.FormFields.Select(x => x.Copy()).ToList();
         this.Name = request.Name;
         this.Description = request.Description;
