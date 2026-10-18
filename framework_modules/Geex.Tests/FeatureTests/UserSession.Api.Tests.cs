@@ -8,6 +8,7 @@ using MongoDB.Bson;
 using Shouldly;
 using StackExchange.Redis.Extensions.Core;
 using StackExchange.Redis.Extensions.Core.Abstractions;
+using System.Text.Json.Nodes;
 
 namespace Geex.Tests.FeatureTests;
 
@@ -17,6 +18,9 @@ public class UserSessionApiTests : TestsBase
     public UserSessionApiTests(TestApplicationFactory factory) : base(factory)
     {
     }
+
+    public new HttpClient AnonymousClient => Record(base.AnonymousClient);
+    public new HttpClient SuperAdminClient => Record(base.SuperAdminClient);
 
     [Fact]
     public async Task Authenticate_ShouldBeginSession()
@@ -332,6 +336,162 @@ public class UserSessionApiTests : TestsBase
         var (reloginResp, _) = await AnonymousClient.PostGqlRequest(authenticateMutation, loginVariables);
         var lastUpdatedOnAfterRoleChange = reloginResp["data"]!["authenticate"]!["lastUpdatedOn"]!.GetValue<DateTimeOffset>();
         lastUpdatedOnAfterRoleChange.ShouldBeGreaterThan(lastUpdatedOnBeforeRoleChange);
+    }
+
+    [Fact]
+    public async Task RefreshCache_ShouldKeepTrackedAndPersistedSessionUnchanged()
+    {
+        var (userId, username, passwordMd5) = await CreateTestUserAsync();
+        var (login, loginResponse) = await AnonymousClient.PostGqlRequest(
+            """
+            mutation($userIdentifier: String!, $password: String!) {
+                authenticate(request: { userIdentifier: $userIdentifier, password: $password }) {
+                    token
+                    userId
+                }
+            }
+            """,
+            new { userIdentifier = username, password = passwordMd5 });
+        loginResponse.ShouldNotContain("errors");
+        var token = (string)login["data"]!["authenticate"]!["token"]!;
+        token.ShouldNotBeNullOrEmpty();
+
+        BsonDocument before;
+        string roleId;
+        SupplementaryClaim[] cachedClaims;
+        using (var scope = ScopedService.CreateScope())
+        {
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var session = uow.Query<UserSession>()
+                .First(x => x.UserId == userId && x.LoginProvider == LoginProviderEnum.Local);
+            var originalClaims = session.SupplementaryClaims;
+            var originalValues = originalClaims.ToArray();
+            var originalUpdated = session.LastUpdatedOn;
+            var originalModified = session.ModifiedOn;
+            before = session.ToBsonDocument();
+            var claims = new[] { new SupplementaryClaim("session-cache-regression", "refreshed") };
+
+            await session.RefreshCacheAsync(claims, TimeSpan.FromMinutes(2));
+
+            session.SupplementaryClaims.ShouldBeSameAs(originalClaims);
+            session.SupplementaryClaims.ShouldBe(originalValues);
+            session.Token.ShouldBe(token);
+            session.LastUpdatedOn.ShouldBe(originalUpdated);
+            session.ModifiedOn.ShouldBe(originalModified);
+            session.ToBsonDocument().ShouldBe(before);
+            var redis = scope.ServiceProvider.GetRequiredService<IRedisDatabase>();
+            var cached = await redis.GetNamedAsync<UserSession>(session.CacheKey);
+            cached.ShouldNotBeNull();
+            cached.Id.ShouldBe(session.Id);
+            cached.UserId.ShouldBe(userId);
+            cached.LoginProvider.ShouldBe(LoginProviderEnum.Local);
+            cached.Token.ShouldBe(token);
+            cached.LastUpdatedOn.ShouldBe(originalUpdated);
+            cached.ModifiedOn.ShouldBe(originalModified);
+            cached.SupplementaryClaims.ShouldBe(claims);
+            cachedClaims = cached.SupplementaryClaims.ToArray();
+
+            var role = await uow.Request(new CreateRoleRequest
+            {
+                RoleCode = $"cache_{ObjectId.GenerateNewId()}",
+                RoleName = "Session cache persistence regression",
+                IsStatic = false,
+                IsDefault = false
+            });
+            roleId = role.Id;
+            await uow.SaveChanges();
+            session.ToBsonDocument().ShouldBe(before);
+        }
+
+        using (var scope = ScopedService.CreateScope())
+        {
+            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var persisted = uow.Query<UserSession>()
+                .First(x => x.UserId == userId && x.LoginProvider == LoginProviderEnum.Local);
+            persisted.ToBsonDocument().ShouldBe(before);
+            uow.Query<IRole>().Any(x => x.Id == roleId).ShouldBeTrue();
+            var root = Environment.GetEnvironmentVariable("PIMS_AF_EVIDENCE");
+            if (!string.IsNullOrWhiteSpace(root))
+            {
+                var observation = new JsonObject
+                {
+                    ["userId"] = userId,
+                    ["sessionId"] = persisted.Id,
+                    ["roleId"] = roleId,
+                    ["at"] = DateTimeOffset.UtcNow.ToString("o"),
+                    ["persistedSessionUnchanged"] = persisted.ToBsonDocument().Equals(before),
+                    ["beforeBsonSha256"] = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(before.ToBson())),
+                    ["persistedBsonSha256"] = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(persisted.ToBsonDocument().ToBson())),
+                    ["cachedClaims"] = System.Text.Json.JsonSerializer.SerializeToNode(cachedClaims)
+                };
+                await File.WriteAllTextAsync(Path.Combine(root, "session-cache-observation.json"), observation.ToJsonString());
+            }
+        }
+    }
+
+    private static HttpClient Record(HttpClient client)
+    {
+        var root = Environment.GetEnvironmentVariable("PIMS_AF_EVIDENCE");
+        return string.IsNullOrWhiteSpace(root)
+            ? client
+            : new HttpClient(new SessionEvidenceHandler(client, root)) { BaseAddress = client.BaseAddress };
+    }
+
+    private sealed class SessionEvidenceHandler(HttpClient client, string root) : HttpMessageHandler
+    {
+        private static readonly object EvidenceLock = new();
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            using var forwarded = new HttpRequestMessage(request.Method, request.RequestUri);
+            foreach (var header in request.Headers) forwarded.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            var body = "{}";
+            if (request.Content is not null)
+            {
+                var bytes = await request.Content.ReadAsByteArrayAsync(cancellationToken);
+                body = System.Text.Encoding.UTF8.GetString(bytes);
+                forwarded.Content = new ByteArrayContent(bytes);
+                foreach (var header in request.Content.Headers) forwarded.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+            var response = await client.SendAsync(forwarded, cancellationToken);
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            var entry = JsonNode.Parse(body)!.AsObject();
+            entry["response"] = JsonNode.Parse(content);
+            entry["statusCode"] = (int)response.StatusCode;
+            entry["at"] = DateTimeOffset.UtcNow.ToString("o");
+            Redact(entry);
+            var folder = Path.Combine(root, "session-api");
+            lock (EvidenceLock)
+            {
+                Directory.CreateDirectory(folder);
+                File.AppendAllText(Path.Combine(folder, "http.jsonl"), entry.ToJsonString() + Environment.NewLine);
+            }
+            return response;
+        }
+
+        private static void Redact(JsonNode? node)
+        {
+            if (node is JsonObject obj)
+            {
+                foreach (var pair in obj.ToArray())
+                {
+                    if (pair.Key is "token" or "password" or "accessToken" or "refreshToken")
+                        obj[pair.Key] = "[REDACTED]";
+                    else
+                        Redact(pair.Value);
+                }
+            }
+            else if (node is JsonArray array)
+            {
+                foreach (var child in array) Redact(child);
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) client.Dispose();
+            base.Dispose(disposing);
+        }
     }
 
     private async Task<(string userId, string username, string passwordMd5)> CreateTestUserAsync()
