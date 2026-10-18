@@ -27,6 +27,9 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
     public ApprovalFlowNode(ApprovalFlowNodeTemplate data, IUnitOfWork uow = default)
         : this()
     {
+        this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
+        this.AuditUserId = data.AuditUserId;
+        this.Description = data.Description;
         this.IsFromTemplate = true;
         this.AuditRole = data.AuditRole;
         this.Name = data.Name;
@@ -56,6 +59,8 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
     public ApprovalFlowNode(ApprovalFlowNode data, IUnitOfWork uow = default)
         : this()
     {
+        this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
+        this.FormValues = data.FormValues.Select(x => x.Copy()).ToList();
         this.IsFromTemplate = data.IsFromTemplate;
         this.AuditRole = data.AuditRole;
         this.Name = data.Name;
@@ -107,10 +112,14 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public async Task Approve(string message)
     {
+        CheckActive();
         CheckIntegrity();
         CheckAuditUser();
         CheckNotConsulting();
+        ApprovalFormValidation.Values(FormFields, FormValues, true);
+        ApprovalFormValidation.References(Uow, FormFields, FormValues);
         this.NodeStatus |= ApprovalFlowNodeStatus.Approved;
+        Touch();
         Uow.Create(this.Id, ApprovalFlowNodeLogType.Approve, CurrentUser.UserId, "", message);
         if (this.NextNode == default)
         {
@@ -129,13 +138,16 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public async Task BulkReject(string message, string targetNodeId)
     {
+        CheckActive();
         CheckNotConsulting();
         CheckIntegrity();
         CheckAuditUser();
         this.NodeStatus |= ApprovalFlowNodeStatus.Rejected;
+        Touch();
         this.ApprovalComment = message;
         var curIndex = this.ApprovalFlow.Value.ActiveIndex;
         var targetNode = this.ApprovalFlow.Value.Nodes.First(x => x.Id == targetNodeId);
+        if (targetNode.Index > Index) throw new UserFriendlyException("驳回目标必须是当前或已办理节点.");
         var nodesToReject = this.ApprovalFlow.Value.Nodes.Where(x => x.Index >= targetNode.Index && x.Index <= this.ApprovalFlow.Value.ActiveIndex).OrderBy(x => x.Index).ToList();
         foreach (var node in nodesToReject)
         {
@@ -149,8 +161,11 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public async Task CarbonCopy(string userId)
     {
+        CheckActive();
         CheckIntegrity();
         CheckAuditUser();
+        if (string.IsNullOrWhiteSpace(userId)) throw new UserFriendlyException("请选择抄送人.");
+        ApprovalFormValidation.Users(Uow, [userId], ApprovalFlow.Value.OrgCode);
 
         if (this.CarbonCopyUserIds.Contains(userId))
         {
@@ -160,6 +175,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         this.ApprovalFlow.Value.EnsureStakeholder(userId, ApprovalFlowOwnershipType.CarbonCopy);
 
         this.CarbonCopyUserIds = [.. this.CarbonCopyUserIds, userId];
+        Touch();
         Uow.Create(this.Id, ApprovalFlowNodeLogType.CarbonCopy, this.AuditUserId, userId, "");
         var user = CurrentUser.User;
         var messageEntity = await this.Uow.Request(new CreateMessageRequest()
@@ -201,20 +217,37 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
     {
         if (this.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Consulting))
         {
-            throw new UserFriendlyException($"节点正处于征询状态, 请等待 {this.ConsultUser.Value.Nickname} 回复.");
+            throw new UserFriendlyException("节点正处于征询状态, 请等待全部征询对象回复.");
         }
     }
 
     public async Task Consult(string userId, string message)
+        => await ConsultUsers([userId], message);
+
+    public async Task ConsultUsers(List<string> userIds, string message)
     {
+        CheckActive();
         CheckNotConsulting();
         CheckIntegrity();
         CheckAuditUser();
-        this.ApprovalFlow.Value.EnsureStakeholder(userId, ApprovalFlowOwnershipType.Consult);
-
-        this.ConsultUserId = userId;
+        var recipients = userIds.Distinct().ToList();
+        if (recipients.Count == 0 || recipients.Any(string.IsNullOrWhiteSpace)
+            || recipients.Contains(AuditUserId) || string.IsNullOrWhiteSpace(message)
+            || Uow.Query<IUser>().Count(x => recipients.Contains(x.Id)) != recipients.Count)
+            throw new UserFriendlyException("请选择有效的征询对象并填写征询内容.");
+        ApprovalFormValidation.Users(Uow, recipients, ApprovalFlow.Value.OrgCode);
+        foreach (var recipient in recipients)
+        {
+            this.ApprovalFlow.Value.EnsureStakeholder(recipient, ApprovalFlowOwnershipType.Consult);
+            this.Consultations.Add(new ApprovalFlowConsultation
+            {
+                UserId = recipient, FromUserId = AuditUserId!, Message = message
+            });
+            Uow.Create(this.Id, ApprovalFlowNodeLogType.Consult, this.AuditUserId, recipient, message);
+        }
+        this.ConsultUserId = recipients[0];
         this.NodeStatus |= ApprovalFlowNodeStatus.Consulting;
-        Uow.Create(this.Id, ApprovalFlowNodeLogType.Consult, this.AuditUserId, userId, message);
+        Touch();
         var user = CurrentUser.User;
         var messageEntity = await this.Uow.Request(new CreateMessageRequest()
         {
@@ -225,7 +258,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         await this.Uow.Request(new SendNotificationMessageRequest()
         {
             MessageId = messageEntity.Id,
-            ToUserIds = [userId]
+            ToUserIds = recipients
         });
     }
 
@@ -238,6 +271,7 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public void Edit(IApprovalFlowNodeData approvalFlowNodeData)
     {
+        Touch();
         this.AuditRole = approvalFlowNodeData.AuditRole;
         this.AuditUserId = approvalFlowNodeData.AuditUserId;
         this.Description = approvalFlowNodeData.Description;
@@ -245,8 +279,10 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
         this.CarbonCopyUserIds = approvalFlowNodeData.CarbonCopyUserIds;
     }
 
-    public async void MarkAsViewed()
+    public void MarkAsViewed()
     {
+        if (!CanOperate || NodeStatus.HasFlag(ApprovalFlowNodeStatus.Viewed)) return;
+        Touch();
         this.NodeStatus |= ApprovalFlowNodeStatus.Viewed;
         if (this.ChatLogs.ToList().All(x => x.LogType != ApprovalFlowNodeLogType.View))
         {
@@ -268,33 +304,48 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public async Task Reply(string message)
     {
+        CheckActive();
+        if (string.IsNullOrWhiteSpace(message)) throw new UserFriendlyException("请填写征询回复.");
         var userId = CurrentUser.UserId;
-        if (userId == this.ConsultUserId)
+        var consultation = Consultations.LastOrDefault(x => x.UserId == userId && x.RepliedAt == null);
+        if (consultation != null || (Consultations.Count == 0 && userId == this.ConsultUserId))
         {
-            this.ConsultUserId = null;
-            this.NodeStatus &= ~ApprovalFlowNodeStatus.Consulting;
+            if (consultation != null)
+            {
+                consultation.Reply = message;
+                consultation.RepliedAt = DateTimeOffset.UtcNow;
+            }
+            this.ConsultUserId = Consultations.FirstOrDefault(x => x.RepliedAt == null)?.UserId;
+            Touch();
+            if (ConsultUserId == null) this.NodeStatus &= ~ApprovalFlowNodeStatus.Consulting;
             Uow.Create(this.Id, ApprovalFlowNodeLogType.ConsultChat, CurrentUser.UserId, "", message);
             this.AddDomainEvent(new ApprovalFlowNodeConsultRepliedEvent(this, userId));
         }
         else
         {
-            Uow.Create(this.Id, ApprovalFlowNodeLogType.Chat, CurrentUser.UserId, "", message);
+            throw new UserFriendlyException("当前用户没有待回复的征询.");
         }
     }
 
     public async Task Start()
     {
+        Touch();
         this.NodeStatus |= ApprovalFlowNodeStatus.Started;
         this.AddDomainEvent(new ApprovalFlowNodeStartEvent(this));
     }
 
     public async Task Transfer(string userId)
     {
+        CheckActive();
         CheckNotConsulting();
         CheckIntegrity();
         CheckAuditUser();
+        if (string.IsNullOrWhiteSpace(userId) || userId == AuditUserId || Uow.Query<IUser>().GetById(userId) == null)
+            throw new UserFriendlyException("请选择有效的转交对象.");
+        ApprovalFormValidation.Users(Uow, [userId], ApprovalFlow.Value.OrgCode);
         var originUserId = AuditUserId;
         this.NodeStatus |= ApprovalFlowNodeStatus.Transferred;
+        Touch();
         this.ApprovalFlow.Value.EnsureStakeholder(userId, ApprovalFlowOwnershipType.Participate);
         Uow.Create(this.Id, ApprovalFlowNodeLogType.Transfer, this.AuditUserId, userId, "");
         var newNode = Uow.Create(this);
@@ -308,11 +359,17 @@ public partial class ApprovalFlowNode : Entity<ApprovalFlowNode>
 
     public async Task Withdraw()
     {
-        if (this.NextNode?.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Viewed) != false)
+        CheckAuditUser();
+        if (ApprovalFlow.Value.Status != ApprovalFlowStatus.Processing || !NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved))
+            throw new UserFriendlyException("仅办理中的已通过节点可撤回.");
+        if (ApprovalFlow.Value.ActiveIndex != Index + 1 || this.NextNode == null
+            || (NextNode.NodeStatus & (ApprovalFlowNodeStatus.Viewed | ApprovalFlowNodeStatus.Approved
+                | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred | ApprovalFlowNodeStatus.Consulting)) != 0)
         {
             throw new UserFriendlyException($"下一节点已被审批人查阅, 无法撤回.");
         }
         this.NodeStatus &= ~ApprovalFlowNodeStatus.Approved;
+        Touch();
         this.ApprovalComment = "已撤回";
         Uow.Create(this.Id, ApprovalFlowNodeLogType.Withdraw, CurrentUser.UserId, "", "");
         this.ApprovalFlow.Value.ActiveIndex -= 1;

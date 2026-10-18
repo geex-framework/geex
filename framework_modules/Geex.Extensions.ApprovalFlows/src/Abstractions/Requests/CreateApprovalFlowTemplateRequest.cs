@@ -7,6 +7,8 @@ namespace Geex.Extensions.ApprovalFlows.Requests;
 
 public record CreateApprovalFlowTemplateRequest : IRequest<ApprovalFlowTemplate>, IApprovalFlowTemplateDate
 {
+    public List<string> Categories { get; set; } = [];
+    public List<ApprovalFlowFormField> FormFields { get; set; } = [];
     public string Name { get; set; }
     public string Description { get; set; }
     public string? OrgCode { get; set; }

@@ -35,10 +35,15 @@ public partial class UserSession : Entity<UserSession>
         uow?.Attach(this);
     }
 
+    [JsonInclude]
     public string UserId { get; private set; } = string.Empty;
+    [JsonInclude]
     public LoginProviderEnum LoginProvider { get; private set; }
+    [JsonInclude]
     public string Token { get; private set; } = string.Empty;
+    [JsonInclude]
     public DateTimeOffset LastUpdatedOn { get; private set; }
+    [JsonInclude]
     public List<SupplementaryClaim> SupplementaryClaims { get; private set; } = [];
     [JsonIgnore]
     public string Name => User.Value?.Username ?? string.Empty;
@@ -61,10 +66,12 @@ public partial class UserSession : Entity<UserSession>
         TimeSpan? expireIn = null,
         CancellationToken cancellationToken = default)
     {
-        SupplementaryClaims = claims.ToList();
+        // Refreshing the cache must not dirty the session shared by concurrent business requests.
+        var cachedSession = (UserSession)MemberwiseClone();
+        cachedSession.SupplementaryClaims = claims.ToList();
         var redis = Uow.ServiceProvider.GetRequiredService<IRedisDatabase>();
         await redis.SetNamedAsync(
-            this,
+            cachedSession,
             keyOverride: CacheKey,
             expireIn: expireIn,
             token: cancellationToken);

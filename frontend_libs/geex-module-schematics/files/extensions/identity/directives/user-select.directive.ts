@@ -1,6 +1,6 @@
-import { Directive, OnInit, SimpleChange, inject } from "@angular/core";
-import { Apollo } from "apollo-angular";
+import { ChangeDetectorRef, Directive, OnInit, SimpleChange, inject } from "@angular/core";
 import { GEEX_I18N } from "@geexcode/geex-angular";
+import { Apollo } from "apollo-angular";
 import { NzSelectComponent, type NzSelectOptionInterface } from "ng-zorro-antd/select";
 import { map } from "rxjs/operators";
 
@@ -9,16 +9,17 @@ import type { usersCacheResult, usersCacheVariables } from "../graphql/user.oper
 
 @Directive({
   selector: "[user-select]",
+  // eslint-disable-next-line @angular-eslint/prefer-standalone -- SharedModule 声明并导出此指令.
   standalone: false,
 })
 export class UserSelectDirective implements OnInit {
   private readonly i18n = inject(GEEX_I18N);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly host = inject(NzSelectComponent);
+  private readonly apollo = inject(Apollo);
   private loaded = false;
 
-  constructor(
-    private host: NzSelectComponent,
-    private apollo: Apollo,
-  ) {
+  constructor() {
     this.host.nzDropdownMatchSelectWidth = false;
     this.host.nzOptionOverflowSize = 10;
     this.host.nzAllowClear = true;
@@ -67,6 +68,7 @@ export class UserSelectDirective implements OnInit {
       this.loaded = true;
     } finally {
       this.host.nzLoading = false;
+      this.cdr.markForCheck();
     }
   }
 

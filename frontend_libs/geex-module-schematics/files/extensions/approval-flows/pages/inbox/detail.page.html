@@ -1,0 +1,103 @@
+<page-header [title]="flow()?.name || '审批详情'" [autoBreadcrumb]="true" [action]="action">
+  <ng-template #action>
+    @if (flow()?.canEdit && flow()?.canEditForm) { <button nz-button class="mr-sm" (click)="edit()">编辑流程</button> }
+    @if (flow()?.canEditForm) { <button nz-button nzDanger class="mr-sm" (click)="openAction('cancel')">取消流程</button> }
+    <button nz-button (click)="back()">返回</button>
+  </ng-template>
+</page-header>
+@if (loading()) { <nz-card [nzLoading]="true" /> }
+@if (!loading() && flow(); as current) {
+  <nz-card nzTitle="流程信息" [nzExtra]="flowTags">
+    <ng-template #flowTags>@for (tag of current.categories; track tag) { <nz-tag nzColor="purple">{{ tag }}</nz-tag> }</ng-template>
+    <nz-descriptions [nzColumn]="2">
+      <nz-descriptions-item nzTitle="流程编号">{{ current.id }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="状态">{{ statusLabel(current.status) }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="来源模板">{{ current.templateName || '—' }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="发起人">{{ userLabel(current.creatorUser, current.creatorUserId) }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="所属组织">{{ current.orgCode || '—' }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="当前节点">{{ current.activeNode?.name || '—' }} / {{ current.activeNode ? current.activeIndex + 1 : current.nodes.length }} of {{ current.nodes.length }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="创建时间">{{ current.createdOn | date:'yyyy-MM-dd HH:mm' }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="最后更新时间">{{ current.modifiedOn | date:'yyyy-MM-dd HH:mm' }}</nz-descriptions-item>
+      <nz-descriptions-item nzTitle="关联对象" [nzSpan]="2">
+        @if (current.associatedEntitySummary; as entity) {
+          <span>{{ entity.typeName }} / </span>
+          @if (entity.detailUrl) { <a [routerLink]="entity.detailUrl">{{ entity.name }}</a> } @else { {{ entity.name }} }
+          <span class="ml-sm">{{ entity.id }} / {{ entityStatusLabel(entity.approveStatus) }}</span>
+        } @else { {{ current.associatedEntityType || '无' }} {{ current.associatedEntityId }} }
+      </nz-descriptions-item>
+      <nz-descriptions-item nzTitle="流程说明" [nzSpan]="2">{{ current.description || '—' }}</nz-descriptions-item>
+      @if (current.archivedAt) { <nz-descriptions-item nzTitle="归档时间">{{ current.archivedAt | date:'yyyy-MM-dd HH:mm' }}</nz-descriptions-item> }
+    </nz-descriptions>
+  </nz-card>
+  <nz-card nzTitle="流程表单" [nzExtra]="flowAccess" class="mt-md">
+    <ng-template #flowAccess><nz-tag [nzColor]="current.canEditForm ? 'green' : 'default'">{{ current.canEditForm ? '发起人可编辑允许修改的字段' : '只读' }}</nz-tag></ng-template>
+    <approval-dynamic-form #flowForm [fields]="current.formFields" [(values)]="flowValues" [editable]="current.canEditForm" [flow]="true" />
+    @if (current.canEditForm && current.formFields.length) { <button nz-button (click)="saveFlow(flowForm)" [nzLoading]="saving">保存流程表单</button> }
+  </nz-card>
+  <nz-card nzTitle="审批节点" class="mt-md">
+    <nz-collapse>
+      @for (node of current.nodes; track node.id) {
+        <nz-collapse-panel [nzHeader]="nodeTitle" [nzActive]="expanded.has(node.id)" (nzActiveChange)="toggle(node.id, $event)">
+          <ng-template #nodeTitle><strong>{{ node.index + 1 }}. {{ node.name }}</strong><span class="ml-md">{{ userLabel(node.auditUser, node.auditUserId) }}</span><nz-tag class="ml-md">{{ nodeStatusLabel(node) }}</nz-tag></ng-template>
+          <nz-descriptions [nzColumn]="2">
+            <nz-descriptions-item nzTitle="节点审批人">{{ userLabel(node.auditUser, node.auditUserId) }} / {{ node.auditRole || '—' }}</nz-descriptions-item>
+            <nz-descriptions-item nzTitle="节点说明">{{ node.description || '—' }}</nz-descriptions-item>
+            <nz-descriptions-item nzTitle="审批意见">{{ node.approvalComment || '尚未提交' }}</nz-descriptions-item>
+            <nz-descriptions-item nzTitle="审批时间">{{ (node.approvalTime | date:'yyyy-MM-dd HH:mm') || '—' }}</nz-descriptions-item>
+            <nz-descriptions-item nzTitle="节点来源">{{ node.isFromTemplate ? '流程模板' : '流程流转' }}</nz-descriptions-item>
+            <nz-descriptions-item nzTitle="查阅状态">{{ node.nodeStatus?.isViewed ? '已查阅' : '未查阅' }}</nz-descriptions-item>
+          </nz-descriptions>
+          <nz-divider nzText="节点表单" nzOrientation="left" />
+          <approval-dynamic-form [fields]="node.formFields" [(values)]="nodeValues[node.id]" [editable]="node.canEditForm" />
+          @if (node.canEditForm && node.formFields.length) { <button nz-button (click)="saveNode(node)" [nzLoading]="saving">保存节点表单</button><span class="ml-sm">本节点通过前可填写和修改.</span> }
+          <nz-divider nzText="抄送" nzOrientation="left" />
+          <nz-select user-select nzMode="multiple" [ngModel]="node.carbonCopyUserIds" [nzDisabled]="true" nzPlaceHolder="暂无抄送" style="width:100%" />
+          @if (node.canOperate) { <button nz-button class="mt-sm" (click)="openAction('cc', node)">添加抄送</button> }
+          <nz-divider nzText="征询" nzOrientation="left" />
+          @for (consultation of node.consultations; track consultation.id) {
+            <nz-card nzSize="small" class="mb-sm">
+              <strong>{{ userLabel(null, consultation.userId) }}</strong><nz-tag class="ml-sm" [nzColor]="consultation.repliedAt ? 'green' : 'orange'">{{ consultation.repliedAt ? '已回复' : '待回复' }}</nz-tag>
+              <p class="mt-sm">{{ consultation.message }}</p>
+              <p>{{ userLabel(null, consultation.fromUserId) }} 发起 / {{ consultation.createdAt | date:'yyyy-MM-dd HH:mm' }}</p>
+              <blockquote>{{ consultation.reply || '等待回复' }} @if (consultation.repliedAt) { <span class="ml-sm">{{ consultation.repliedAt | date:'yyyy-MM-dd HH:mm' }}</span> }</blockquote>
+            </nz-card>
+          } @empty { <p>暂无征询记录</p> }
+          @if (node.nodeStatus?.isConsulting) { <nz-alert class="mb-md" nzType="warning" nzMessage="全部征询对象回复后, 当前节点审批人继续审批." nzShowIcon /> }
+          @if (node.canReply) { <button nz-button nzType="primary" (click)="openAction('reply', node)">回复征询</button> }
+          @if (node.canOperate) {
+            <div class="mt-md" style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+              <button nz-button [disabled]="node.nodeStatus?.isConsulting" (click)="openAction('transfer', node)">转交</button>
+              <button nz-button [disabled]="node.nodeStatus?.isConsulting" (click)="openAction('consult', node)">征询</button>
+              <button nz-button nzDanger [disabled]="node.nodeStatus?.isConsulting" (click)="openAction('reject', node)">驳回</button>
+              <button nz-button nzType="primary" [disabled]="node.nodeStatus?.isConsulting" (click)="openAction('approve', node)">通过</button>
+            </div>
+          }
+        </nz-collapse-panel>
+      }
+    </nz-collapse>
+  </nz-card>
+  <nz-card nzTitle="流程操作日志" class="mt-md">
+    <nz-timeline>
+      @for (item of timelineItems(); track item.id) {
+        <nz-timeline-item [nzColor]="logColor(item.logType)">
+          <strong>{{ logTypeLabel(item.logType) }} / {{ item.nodeName }}</strong>
+          <p>{{ userLabel(item.from, item.fromUserId) }} {{ item.message }}</p>
+          <span>{{ item.creationTime | date:'yyyy-MM-dd HH:mm:ss' }}</span>
+        </nz-timeline-item>
+      } @empty { <nz-empty nzNotFoundContent="暂无操作日志" /> }
+    </nz-timeline>
+  </nz-card>
+} @else if (!loading()) { <nz-empty nzNotFoundContent="流程不存在或无权访问" /> }
+<nz-modal [nzVisible]="nodeAction !== null" [nzTitle]="nodeAction ? titles[nodeAction] : ''" [nzOkLoading]="saving" [nzMaskClosable]="false" (nzOnCancel)="nodeAction = null" (nzOnOk)="submitAction()">
+  <ng-container *nzModalContent>
+    @if (nodeAction === 'cancel') { <nz-alert nzType="warning" nzMessage="确认取消当前审批流程?" nzShowIcon /> }
+    @if (nodeAction === 'transfer' || nodeAction === 'cc') { <nz-select user-select [(ngModel)]="selectedUser" nzPlaceHolder="请选择用户" style="width:100%" /> }
+    @if (nodeAction === 'consult') { <nz-select user-select [(ngModel)]="selectedUsers" nzMode="multiple" nzPlaceHolder="请选择征询对象" style="width:100%" class="mb-md" /> }
+    @if (nodeAction === 'reject') {
+      <nz-select [(ngModel)]="targetNodeId" nzPlaceHolder="选择驳回节点" style="width:100%" class="mb-md">
+        @for (node of rejectTargets(); track node.id) { <nz-option [nzValue]="node.id" [nzLabel]="(node.index + 1) + '. ' + node.name" /> }
+      </nz-select>
+    }
+    @if (nodeAction === 'approve' || nodeAction === 'reject' || nodeAction === 'consult' || nodeAction === 'reply') { <textarea nz-input rows="4" [(ngModel)]="actionMessage" [placeholder]="nodeAction === 'approve' ? '审批意见(选填)' : '请填写内容'"></textarea> }
+  </ng-container>
+</nz-modal>

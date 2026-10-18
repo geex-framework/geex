@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Extensions.ApprovalFlows.Requests;
@@ -9,6 +10,7 @@ using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Core.Entities;
 using Geex.MultiTenant;
 using Geex.Storage;
+using Geex.Gql.Attributes;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 
@@ -19,7 +21,7 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     public ApprovalFlow(IApprovalFlowDate data, IUnitOfWork uow = default)
         : this()
     {
-        if (!data.Nodes.Any())
+        if (string.IsNullOrWhiteSpace(data.Name) || !data.Nodes.Any())
         {
             throw new UserFriendlyException("工作流必须包含审批节点");
         }
@@ -31,13 +33,34 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.AssociatedEntityId = data.AssociatedEntityId;
         uow?.Attach(this);
         this.CreatorUserId = uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId;
-
+        if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
+        {
+            var associated = AssociatedEntity.Value ?? throw new UserFriendlyException("关联对象不存在或无权访问.");
+            AssociatedEntityId = associated.Id;
+            OrgCode = AssociatedEntityType.ResolveOrgCode(associated, OrgCode);
+        }
+        var template = InitializeSnapshot(data);
         data.Nodes.Select((x, i) =>
         {
             x.ApprovalFlowId = this.Id;
-            return uow.Create(x);
+            x.Index = i;
+            if (template != null)
+            {
+                var definition = template.Nodes.OrderBy(n => n.Index).ElementAt(i);
+                x.Name = definition.Name;
+                x.Description = definition.Description;
+                x.AuditRole = definition.AuditRole;
+                x.AuditUserId = string.IsNullOrWhiteSpace(x.AuditUserId) ? definition.AuditUserId : x.AuditUserId;
+                x.CarbonCopyUserIds = [.. definition.CarbonCopyUserIds];
+                x.IsFromTemplate = true;
+            }
+            var node = uow.Create(x);
+            if (template != null)
+                node.FormFields = template.Nodes.OrderBy(n => n.Index).ElementAt(i).FormFields.Select(f => f.Copy()).ToList();
+            return node;
         }).ToList();
 
+        ApprovalFormValidation.Users(Uow, Nodes.Select(x => x.AuditUserId).Concat(Nodes.SelectMany(x => x.CarbonCopyUserIds)).Append(CreatorUserId), OrgCode);
         this.EnsureStakeholder(uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create);
         foreach (var userId in this.Nodes.Select(x => x.AuditUserId).Where(x => !x.IsNullOrEmpty()).Distinct())
         {
@@ -51,28 +74,40 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public async Task Start()
     {
-        var entity = this.AssociatedEntity.Value;
-        await entity.Submit(this.AssociatedEntityType.Type, "审批流自动触发上报.");
+        if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
+        {
+            var entity = this.AssociatedEntity.Value ?? throw new UserFriendlyException("关联对象不存在或无权访问.");
+            await entity.Submit(this.AssociatedEntityType.Type, "审批流自动触发上报.");
+        }
         await this.ActiveNode.Start();
+        Uow.Create(ActiveNode.Id, ApprovalFlowNodeLogType.FlowCreated, CreatorUserId, "", "发起审批流程");
 
     }
 
     public ApprovalFlow(ApprovalFlowTemplate template, IUnitOfWork uow = default)
         : this()
     {
+        if (template.FormFields.Count != 0)
+            throw new UserFriendlyException("该模板包含流程表单, 请使用支持填写流程表单的发起入口.");
+        var creatorId = uow.ServiceProvider.GetRequiredService<ICurrentUser>().UserId;
+        ApprovalFormValidation.Users(uow, template.Nodes.Select(x => x.AuditUserId)
+            .Concat(template.Nodes.SelectMany(x => x.CarbonCopyUserIds)).Append(creatorId), template.OrgCode);
         this.Name = template.Name;
         this.Description = template.Description;
         uow?.Attach(this);
         this.CreatorUserId = uow?.ServiceProvider.GetService<ICurrentUser>()?.UserId;
         template.Nodes.Select((x) =>
         {
-            var node = new ApprovalFlowNode(x);
+            var node = new ApprovalFlowNode(x, uow);
             node.ApprovalFlowId = this.Id;
             return node;
         }).ToList();
         this.EnsureStakeholder(Uow.ServiceProvider.GetService<ICurrentUser>()?.UserId, ApprovalFlowOwnershipType.Create);
         this.OrgCode = template.OrgCode;
         this.TemplateId = template.Id;
+        this.TemplateName = template.Name;
+        this.Categories = [.. template.Categories];
+        this.FormFields = template.FormFields.Select(x => x.Copy()).ToList();
     }
 
     protected ApprovalFlow()
@@ -83,11 +118,19 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.ConfigLazyQuery(x => x.AssociatedEntity, approveEntity => approveEntity.Id == AssociatedEntityId, approvalFlows => approveEntity => approvalFlows.SelectList(x => x.AssociatedEntityId).Contains(approveEntity.Id),
             () =>
             {
-                var type = this.AssociatedEntityType.Type;
-                var method = typeof(IRepository).GetMethod(nameof(IRepository.Query)).MakeGenericMethod(type);
-                var query = method.Invoke(Uow, []) as IQueryable<IApproveEntity>;
-                return query as IQueryable<IApproveEntity>;
+                var type = this.AssociatedEntityType?.Type;
+                if (type == null || string.IsNullOrWhiteSpace(AssociatedEntityId))
+                    return Enumerable.Empty<IApproveEntity>().AsQueryable();
+                var method = typeof(ApprovalFlow).GetMethod(nameof(QueryAssociatedEntity), BindingFlags.Instance | BindingFlags.NonPublic)!.MakeGenericMethod(type);
+                return (IQueryable<IApproveEntity>)method.Invoke(this, [])!;
             });
+    }
+
+    private IQueryable<IApproveEntity> QueryAssociatedEntity<T>() where T : IApproveEntity
+    {
+        // 先按业务实体类型完成查询, 使多态反序列化使用该类型对应的映射.
+        return Uow.Query<T>().Where(entity => entity.Id == AssociatedEntityId)
+            .ToList().Cast<IApproveEntity>().AsQueryable();
     }
 
     public string? TemplateId { get; set; }
@@ -117,7 +160,8 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     public bool CanEdit
     {
         //这里判断第一个start的log
-        get { return this.ActiveIndex == 0 && !this.ActiveNode.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved); }
+        get { return Status == ApprovalFlowStatus.Processing && this.ActiveIndex == 0
+            && this.ActiveNode?.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Approved) == false; }
     }
 
     public ApprovalFlowUserRef? EnsureStakeholder(string? userId, ApprovalFlowOwnershipType ownershipType)
@@ -138,12 +182,23 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public async Task Finish()
     {
+        var nodes = Nodes.ToList();
+        if (Status != ApprovalFlowStatus.Processing || nodes.Any(x =>
+            (x.NodeStatus & (ApprovalFlowNodeStatus.Approved | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred)) == 0))
+            throw new UserFriendlyException("全部有效节点通过后才能完成流程.");
         this.Status = ApprovalFlowStatus.Finished;
+        Touch();
         if (this.AssociatedEntityId != default)
         {
-            await this.AssociatedEntity.Value!.Approve(this.AssociatedEntityType.Type, "审批流自动触发审批通过");
+            if (!Uow.DbContext.SupportTransaction)
+                throw new UserFriendlyException("关联流程需要数据库事务支持.");
+            if (!Uow.DbContext.Session.IsInTransaction) Uow.DbContext.Session.StartTransaction();
+            await this.AssociatedEntityType!.OnApprove(this.AssociatedEntity.Value
+                ?? throw new UserFriendlyException("关联对象不存在或无权访问."));
         }
         this.AddDomainEvent(new ApprovalFlowFinishEvent(this, this.Id));
+        Uow.Create(nodes.OrderBy(x => x.Index).Last().Id, ApprovalFlowNodeLogType.FlowFinished,
+            ServiceProvider.GetRequiredService<ICurrentUser>().UserId, "", "审批流程已完成");
     }
     /// <summary>
     /// 关联的实体对象
@@ -154,10 +209,21 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     /// </summary>
     public ApprovalFlowAssociatedEntityType? AssociatedEntityType { get; set; }
     public string? AssociatedEntityId { get; set; }
+    [AutoBatchLoadDependsOn(nameof(AssociatedEntity))]
+    public ApprovalFlowEntitySummary? AssociatedEntitySummary => AssociatedEntityType != null && AssociatedEntity.Value is { } entity
+        ? AssociatedEntityType.Summarize(entity) : null;
 
     public async Task CancelAsync()
     {
+        if (Status != ApprovalFlowStatus.Processing)
+            throw new UserFriendlyException("仅办理中的流程可取消.");
+        if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
+            await AssociatedEntityType.OnCancel(AssociatedEntity.Value
+                ?? throw new UserFriendlyException("关联对象不存在或无权访问."));
         this.Status = ApprovalFlowStatus.Canceled;
+        Touch();
+        Uow.Create((ActiveNode ?? Nodes.First()).Id, ApprovalFlowNodeLogType.FlowCanceled,
+            ServiceProvider.GetRequiredService<ICurrentUser>().UserId, "", "取消审批流程");
         this.AddDomainEvent(new ApprovalFlowCanceledEvent(this, this.Id));
     }
 
@@ -183,24 +249,42 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
 
     public void Edit(EditApprovalFlowRequest request)
     {
-        if (this.CanEdit)
-        {
+        if (!CanEdit) throw new UserFriendlyException("当前流程状态不支持修改基础配置.");
+        if (string.IsNullOrWhiteSpace(request.Name)) throw new UserFriendlyException("请填写流程名称.");
+        var nodes = Nodes.ToList();
+        if (request.Nodes.Count != nodes.Count || request.Nodes.Select(x => x.Id).Distinct().Count() != nodes.Count
+            || nodes.Any(node => !request.Nodes.Any(x => x.Id == node.Id && x.Index == node.Index)))
+            throw new UserFriendlyException("流程实例的节点结构已确定, 请保持节点及顺序.");
+        if (request.Nodes.Any(x => string.IsNullOrWhiteSpace(x.AuditUserId) || string.IsNullOrWhiteSpace(x.Name)))
+            throw new UserFriendlyException("请确定各节点审批人.");
+        ApprovalFormValidation.Users(Uow, request.Nodes.Select(x => x.AuditUserId).Concat(request.Nodes.SelectMany(x => x.CarbonCopyUserIds ?? [])), OrgCode);
+            Touch();
             this.Name = request.Name;
             this.Description = request.Description;
-            this.AssociatedEntityType = request.AssociatedEntityType;
-            this.AssociatedEntityId = request.AssociatedEntityId;
-            var nodes = this.Nodes.ToList();
-            foreach (var (node, requestNode) in nodes.Join(request.Nodes, l => l.Index, r => r.Index, (l, r) => (node: l, requestNode: r)))
+            if ((request.AssociatedEntityType != null && request.AssociatedEntityType != AssociatedEntityType)
+                || (request.AssociatedEntityId != null && request.AssociatedEntityId != AssociatedEntityId))
+                throw new UserFriendlyException("流程创建后关联对象保持固定.");
+            foreach (var (node, requestNode) in nodes.Join(request.Nodes, l => l.Id, r => r.Id, (l, r) => (node: l, requestNode: r)))
             {
                 node.Edit(requestNode);
+                EnsureStakeholder(node.AuditUserId, ApprovalFlowOwnershipType.Participate);
+                foreach (var userId in node.CarbonCopyUserIds) EnsureStakeholder(userId, ApprovalFlowOwnershipType.CarbonCopy);
             }
-        }
     }
 }
 
 public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociatedEntityType>
 {
     public Type Type { get; }
+
+    public virtual Task OnCancel(IApproveEntity entity) => Task.CompletedTask;
+    public virtual Task OnApprove(IApproveEntity entity) => entity.Approve(Type, "审批流自动触发审批通过");
+    public virtual string? ResolveOrgCode(IApproveEntity entity, string? requestedOrgCode)
+        => entity is IOrgFilteredEntity scoped ? scoped.OrgCode : requestedOrgCode;
+    public virtual ApprovalFlowEntitySummary Summarize(IApproveEntity entity) => new()
+    {
+        Id = entity.Id, Name = entity.Id, TypeName = Value, ApproveStatus = entity.ApproveStatus
+    };
 
     /// <inheritdoc />
     public ApprovalFlowAssociatedEntityType(string value, Type type) : base(value)
@@ -211,9 +295,19 @@ public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociat
     public static ApprovalFlowAssociatedEntityType Object { get; } = new(nameof(Object), typeof(object));
 }
 
+public class ApprovalFlowEntitySummary
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string TypeName { get; set; } = "";
+    public ApproveStatus ApproveStatus { get; set; }
+    public string? DetailUrl { get; set; }
+}
+
 public enum ApprovalFlowStatus
 {
     Processing = 0,
     Finished = 1,
-    Canceled = -1
+    Canceled = -1,
+    Archived = 2
 }

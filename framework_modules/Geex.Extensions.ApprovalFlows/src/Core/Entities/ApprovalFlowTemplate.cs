@@ -5,6 +5,7 @@ using Geex.Extensions.Authentication;
 using Geex.Extensions.Identity;
 using Geex.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp;
 
 namespace Geex.Extensions.ApprovalFlows.Core.Entities;
 
@@ -17,6 +18,10 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     public ApprovalFlowTemplate(IApprovalFlowTemplateDate data, IUnitOfWork uow = default)
         : this()
     {
+        Validate(data);
+        ApprovalFormValidation.Definitions(data.FormFields);
+        this.Categories = data.Categories.Distinct().ToList();
+        this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
         this.Name = data.Name;
         this.Description = data.Description;
         this.OrgCode = data.OrgCode;
@@ -31,15 +36,27 @@ public partial class ApprovalFlowTemplate : Entity<ApprovalFlowTemplate>
     public string Description { get; set; }
     public List<ApprovalFlowNodeTemplate> Nodes { get; set; } = new List<ApprovalFlowNodeTemplate>();
     public string? OrgCode { get; set; }
+    public List<string> Categories { get; set; } = [];
+    public List<ApprovalFlowFormField> FormFields { get; set; } = [];
 
     public void Edit(IApprovalFlowTemplateDate request)
     {
-        if (!request.Name.IsNullOrEmpty()) this.Name = request.Name;
-        if (!request.Description.IsNullOrEmpty()) this.Description = request.Description;
-        if (!request.OrgCode.IsNullOrEmpty()) this.OrgCode = request.OrgCode;
-        if (!request.ApprovalFlowNodeTemplates.IsNullOrEmpty())
-            this.Nodes = request.ApprovalFlowNodeTemplates
-                .Select((x, i) => new ApprovalFlowNodeTemplate(x, i)).ToList();
+        Validate(request);
+        ApprovalFormValidation.Definitions(request.FormFields);
+        this.Categories = request.Categories.Distinct().ToList();
+        this.FormFields = request.FormFields.Select(x => x.Copy()).ToList();
+        this.Name = request.Name;
+        this.Description = request.Description;
+        this.OrgCode = request.OrgCode;
+        this.Nodes = request.ApprovalFlowNodeTemplates
+            .Select((x, i) => new ApprovalFlowNodeTemplate(x, i)).ToList();
+    }
+
+    private static void Validate(IApprovalFlowTemplateDate data)
+    {
+        if (string.IsNullOrWhiteSpace(data.Name) || data.ApprovalFlowNodeTemplates.Count == 0
+            || data.ApprovalFlowNodeTemplates.Any(x => string.IsNullOrWhiteSpace(x.Name)))
+            throw new UserFriendlyException("请填写模板名称并配置有效的审批节点.");
     }
 }
 
@@ -52,7 +69,11 @@ public class ApprovalFlowNodeTemplate
     }
     public ApprovalFlowNodeTemplate(IApprovalFlowNodeTemplateData data, int i)
     {
-        this.Id = data.Id;
+        ApprovalFormValidation.Definitions(data.FormFields);
+        this.FormFields = data.FormFields.Select(x => x.Copy()).ToList();
+        this.AuditUserId = data.AuditUserId;
+        this.Description = data.Description;
+        this.Id = string.IsNullOrWhiteSpace(data.Id) ? Guid.NewGuid().ToString("N") : data.Id;
         this.AuditRole = data.AuditRole;
         this.Name = data.Name;
         this.Index = i;
@@ -60,6 +81,9 @@ public class ApprovalFlowNodeTemplate
     }
 
     public string Id { get; set; }
+    public string? AuditUserId { get; set; }
+    public string? Description { get; set; }
+    public List<ApprovalFormField> FormFields { get; set; } = [];
     public string AuditRole { get; set; }
     public List<string> CarbonCopyUserIds { get; set; } = new List<string>();
     public int Index { get; set; }

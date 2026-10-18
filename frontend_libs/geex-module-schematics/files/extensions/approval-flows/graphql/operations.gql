@@ -1,6 +1,122 @@
+fragment ApprovalFlowNodeStatusBrief on ApprovalFlowNodeStatusFlags {
+  isApproved
+  isRejected
+  isStarted
+  isCreated
+  isConsulting
+  isViewed
+  isTransferred
+}
+
+fragment ApprovalFlowNodeDetail on ApprovalFlowNode {
+  id
+  name
+  index
+  auditUserId
+  auditRole
+  carbonCopyUserIds
+  description
+  isFromTemplate
+  approvalComment
+  approvalTime
+  canEditForm
+  canOperate
+  canReply
+  auditUser { id username nickname }
+  formFields { key name type required options }
+  formValues { key values }
+  consultations { id userId fromUserId message createdAt reply repliedAt }
+  nodeStatus {
+    ...ApprovalFlowNodeStatusBrief
+  }
+  chatLogs {
+    id
+    logType
+    message
+    creationTime
+    fromUserId
+    toUserId
+    from {
+      id
+      username
+      nickname
+    }
+    to {
+      id
+      username
+      nickname
+    }
+  }
+}
+
+fragment ApprovalFlowBrief on ApprovalFlow {
+  id
+  name
+  description
+  status
+  orgCode
+  activeIndex
+  canEdit
+  createdOn
+  modifiedOn
+  categories
+  creatorUserId
+  creatorUser { id username nickname }
+  nodes {
+    id
+    index
+    nodeStatus {
+      ...ApprovalFlowNodeStatusBrief
+    }
+  }
+}
+
+fragment ApprovalFlowDetail on ApprovalFlow {
+  ...ApprovalFlowBrief
+  templateId
+  templateName
+  associatedEntityType
+  associatedEntityId
+  associatedEntitySummary { id name typeName approveStatus detailUrl }
+  canEditForm
+  archivedAt
+  replacedByFlowId
+  formFields { key name type required allowEdit options }
+  formValues { key values }
+  activeNode {
+    ...ApprovalFlowNodeDetail
+  }
+  nodes {
+    ...ApprovalFlowNodeDetail
+  }
+}
+
+fragment ApprovalFlowTemplateDetail on ApprovalFlowTemplate {
+  id
+  name
+  description
+  orgCode
+  createdOn
+  modifiedOn
+  categories
+  formFields { key name type required allowEdit options }
+  nodes {
+    id
+    name
+    index
+    auditRole
+    auditUserId
+    description
+    formFields { key name type required options }
+    carbonCopyUserIds
+  }
+}
+
 query approvalFlows($filter: ApprovalFlowFilterInput, $request: QueryApprovalFlowRequest, $skip: Int = 0, $take: Int = 10, $sort: [ApprovalFlowSortInput!]) {
   approvalFlow(filter: $filter, request: $request, skip: $skip, take: $take, sort: $sort) {
-    items { id name description status orgCode activeIndex createdOn modifiedOn }
+    items {
+      ...ApprovalFlowBrief
+    }
     pageInfo { hasPreviousPage hasNextPage }
     totalCount
   }
@@ -8,14 +124,18 @@ query approvalFlows($filter: ApprovalFlowFilterInput, $request: QueryApprovalFlo
 
 query approvalFlowTemplates($filter: ApprovalFlowTemplateFilterInput, $request: QueryApprovalFlowTemplateRequest, $skip: Int = 0, $take: Int = 10, $sort: [ApprovalFlowTemplateSortInput!]) {
   approvalFlowTemplate(filter: $filter, request: $request, skip: $skip, take: $take, sort: $sort) {
-    items { id name description orgCode createdOn modifiedOn nodes { id name index auditRole carbonCopyUserIds } }
+    items {
+      ...ApprovalFlowTemplateDetail
+    }
     pageInfo { hasPreviousPage hasNextPage }
     totalCount
   }
 }
 
 query approvalFlowTemplateById($id: String!) {
-  approvalFlowTemplateById(id: $id) { id name description orgCode createdOn modifiedOn nodes { id name index auditRole carbonCopyUserIds } }
+  approvalFlowTemplateById(id: $id) {
+    ...ApprovalFlowTemplateDetail
+  }
 }
 
 mutation createApprovalFlowTemplate($request: CreateApprovalFlowTemplateRequest!) {
@@ -28,4 +148,70 @@ mutation editApprovalFlowTemplate($request: EditApprovalFlowTemplateRequest!) {
 
 mutation deleteApprovalFlowTemplate($ids: [String!]!) {
   deleteApprovalFlowTemplate(ids: $ids)
+}
+
+query approvalFlowById($id: String!) {
+  approvalFlowById(id: $id) {
+    ...ApprovalFlowDetail
+  }
+}
+
+mutation approveApprovalFlowNode($nodeId: String!, $message: String!) {
+  approveApprovalFlowNode(nodeId: $nodeId, message: $message) { id name index }
+}
+
+mutation rejectApprovalFlowNode($nodeId: String!, $message: String!, $targetNodeId: String!) {
+  rejectApprovalFlowNode(nodeId: $nodeId, message: $message, targetNodeId: $targetNodeId) { id name index }
+}
+
+mutation cancelApprovalFlow($id: String!) {
+  cancelApprovalFlow(id: $id)
+}
+
+mutation editApprovalFlow($request: EditApprovalFlowRequest!) {
+  editApprovalFlow(request: $request) { id }
+}
+
+query approvalFlowCategories {
+  approvalFlowCategories
+}
+
+mutation saveApprovalFlowCategories($categories: [String!]!) {
+  saveApprovalFlowCategories(categories: $categories)
+}
+
+mutation createApprovalFlow($request: CreateApprovalFlowRequest!) {
+  createApprovalFlow(request: $request) { id name status }
+}
+
+query approvalFlowByEntity($entityType: ApprovalFlowAssociatedEntityType!, $entityId: String!) {
+  approvalFlowByEntity(entityType: $entityType, entityId: $entityId) { id name status activeIndex }
+}
+
+mutation saveApprovalFlowForm($id: String!, $values: [ApprovalFormValueInput!]!) {
+  saveApprovalFlowForm(id: $id, values: $values) { id }
+}
+
+mutation saveApprovalFlowNodeForm($nodeId: String!, $values: [ApprovalFormValueInput!]!) {
+  saveApprovalFlowNodeForm(nodeId: $nodeId, values: $values) { id }
+}
+
+mutation consultApprovalFlowNodeUsers($nodeId: String!, $userIds: [String!]!, $message: String!) {
+  consultApprovalFlowNodeUsers(nodeId: $nodeId, userIds: $userIds, message: $message) { id }
+}
+
+mutation replyApprovalFlowNode($nodeId: String!, $message: String!) {
+  replyApprovalFlowNode(nodeId: $nodeId, message: $message) { id }
+}
+
+mutation transferApprovalFlowNode($nodeId: String!, $userId: String!) {
+  transferApprovalFlowNode(nodeId: $nodeId, userId: $userId) { id }
+}
+
+mutation carbonCopyApprovalFlowNode($nodeId: String!, $userId: String!) {
+  carbonCopyApprovalFlowNode(nodeId: $nodeId, userId: $userId) { id }
+}
+
+mutation markApprovalFlowNodeViewed($nodeId: String!) {
+  markApprovalFlowNodeViewed(nodeId: $nodeId)
 }

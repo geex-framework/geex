@@ -632,6 +632,8 @@ namespace MongoDB.Entities
                             }
                             catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))
                             {
+                                Logger.LogWarning(ex, "Transient save failure for {EntityType}, attempt {Attempt}.",
+                                    rootType.FullName, attempt + 1);
                                 if (attempt == maxRetries - 1)
                                     throw; // 如果是最后一次尝试，则抛出异常
 

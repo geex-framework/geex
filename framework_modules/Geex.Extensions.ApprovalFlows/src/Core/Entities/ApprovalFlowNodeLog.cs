@@ -36,6 +36,9 @@ public partial class ApprovalFlowNodeLog : Entity<ApprovalFlowNodeLog>
             ApprovalFlowNodeLogType.Reject => $"流程节点被退回: {message}",
             ApprovalFlowNodeLogType.Chat => message,
             ApprovalFlowNodeLogType.ConsultChat => message,
+            ApprovalFlowNodeLogType.Edit => message,
+            ApprovalFlowNodeLogType.FlowCreated or ApprovalFlowNodeLogType.FlowFinished
+                or ApprovalFlowNodeLogType.FlowCanceled or ApprovalFlowNodeLogType.FlowArchived => message,
             _ => throw new ArgumentOutOfRangeException(nameof(auditType), auditType, null)
         };
     }
@@ -71,5 +74,9 @@ public enum ApprovalFlowNodeLogType
     ConsultChat,
     CarbonCopy,
     Withdraw,
-    AttachFile
+    AttachFile,
+    FlowCreated,
+    FlowFinished,
+    FlowCanceled,
+    FlowArchived
 }

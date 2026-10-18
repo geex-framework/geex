@@ -1,0 +1,77 @@
+<list-page-layout
+  [title]="I18N.ApprovalFlows.inboxTitle"
+  [loading]="loading()"
+  [total]="total()"
+  [data]="data()"
+  [pi]="pageIndex"
+  [ps]="pageSize"
+  [columns]="columns()"
+  [multiSort]="false"
+  (refresh)="load()"
+  (tableChange)="onTableChange($event)"
+>
+  <form filters nz-form nzLayout="inline">
+    <nz-form-item><nz-form-label>流程分类</nz-form-label><nz-form-control>
+      <nz-select [(ngModel)]="category" name="category" nzAllowClear nzPlaceHolder="全部分类" style="min-width:160px">
+        @for (item of categories; track item) { <nz-option [nzLabel]="item" [nzValue]="item" /> }
+      </nz-select>
+    </nz-form-control></nz-form-item>
+    <nz-form-item>
+      <nz-form-label>{{ I18N.ApprovalFlows.name }}</nz-form-label>
+      <nz-form-control>
+        <input
+          nz-input
+          [(ngModel)]="filterText"
+          name="filterText"
+          [placeholder]="I18N.ApprovalFlows.name"
+          (keyup.enter)="load()"
+        />
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <nz-form-label>{{ I18N.ApprovalFlows.orgCode }}</nz-form-label>
+      <nz-form-control>
+        <nz-tree-select
+          [(ngModel)]="filterOrgCodes"
+          name="filterOrgCodes"
+          org-tree-select-picker
+          style="min-width: 220px"
+          [nzPlaceHolder]="I18N.Identity.widget.selectOrg"
+        ></nz-tree-select>
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <nz-form-label>{{ I18N.ApprovalFlows.inboxStatus }}</nz-form-label>
+      <nz-form-control>
+        <nz-select
+          [(ngModel)]="filterStatus"
+          name="filterStatus"
+          style="min-width: 160px"
+          nzAllowClear
+          [nzPlaceHolder]="I18N.ApprovalFlows.inboxStatus"
+        >
+          @for (opt of statusOptions; track opt.value) {
+            <nz-option [nzValue]="opt.value" [nzLabel]="statusLabel(opt.value)"></nz-option>
+          }
+        </nz-select>
+      </nz-form-control>
+    </nz-form-item>
+    <nz-form-item>
+      <button nz-button nzType="primary" type="button" (click)="pageIndex = 1; load()">
+        <i nz-icon nzType="search" nzTheme="outline"></i>{{ I18N.Common.action.search }}
+      </button>
+    </nz-form-item>
+  </form>
+  <ng-template #headerExtra><button nz-button nzType="primary" (click)="start()">发起审批</button></ng-template>
+</list-page-layout>
+
+<ng-template #progressTpl let-item>
+  <div nz-tooltip [nzTooltipTitle]="progressTooltip(item)">
+    <nz-progress
+      [nzPercent]="progressPercent(item)"
+      [nzStatus]="progressStatus(item)"
+      [nzShowInfo]="true"
+      nzSize="small"
+    ></nz-progress>
+  </div>
+</ng-template>
