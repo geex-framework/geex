@@ -48,7 +48,7 @@
     </ng-template>
 
     <div nz-row [nzGutter]="16" [formGroup]="asGroup(node)">
-      <div nz-col [nzXs]="24" [nzMd]="12">
+      <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="mode === 'template' ? 8 : 12">
         <nz-form-item>
           <nz-form-label nzRequired>{{ I18N.ApprovalFlows.nodeName }}</nz-form-label>
           <nz-form-control>
@@ -56,7 +56,7 @@
           </nz-form-control>
         </nz-form-item>
       </div>
-      <div nz-col [nzXs]="24" [nzMd]="12">
+      <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="mode === 'template' ? 8 : 12">
         @if (mode === "template") {
           <nz-form-item>
             <nz-form-label>{{ I18N.ApprovalFlows.nodeAuditRole }}</nz-form-label>
@@ -83,15 +83,19 @@
           </nz-form-item>
         }
       </div>
-      <div nz-col [nzSpan]="24">
-        @if (mode === "template") {
+      @if (mode === "template") {
+        <div nz-col [nzXs]="24" [nzMd]="12" [nzLg]="8">
           <nz-form-item><nz-form-label>默认审批人</nz-form-label><nz-form-control>
             <nz-select formControlName="auditUserId" user-select nzAllowClear style="width:100%" nzPlaceHolder="可在创建流程时确定审批人" />
           </nz-form-control></nz-form-item>
+        </div>
+        <div nz-col [nzSpan]="24">
           <nz-form-item><nz-form-label>节点说明</nz-form-label><nz-form-control>
             <textarea nz-input formControlName="description" rows="2"></textarea>
           </nz-form-control></nz-form-item>
-        }
+        </div>
+      }
+      <div nz-col [nzSpan]="24">
         <nz-form-item>
           <nz-form-label>{{ I18N.ApprovalFlows.nodeCarbonCopyUsers }}</nz-form-label>
           <nz-form-control>
