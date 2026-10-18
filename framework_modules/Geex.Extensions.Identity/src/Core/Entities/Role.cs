@@ -20,7 +20,15 @@ namespace Geex.Extensions.Identity.Core.Entities
         public string Code { get; set; }
         public string? Description { get; set; }
 
-        public Role(string code)
+        protected Role()
+        {
+            ConfigLazyQuery(
+                role => role.Users,
+                user => GetUserIds().Contains(user.Id),
+                roles => user => roles.SelectMany(role => role.GetUserIds()).Contains(user.Id));
+        }
+
+        public Role(string code) : this()
         {
             this.Name = code;
             this.Code = code;
@@ -33,14 +41,11 @@ namespace Geex.Extensions.Identity.Core.Entities
             this.IsDefault = isDefault;
         }
 
-        public IQueryable<IUser> Users
-        {
-            get
-            {
-                var userIds = DbContext.ServiceProvider.GetService<IRbacEnforcer>().GetUsersForRole(this.Id);
-                return DbContext.Query<User>().Where(x => userIds.Contains(x.Id));
-            }
-        }
+        public IQueryable<IUser> Users => LazyQuery(() => Users);
+
+        private List<string> GetUserIds() =>
+            DbContext.ServiceProvider.GetRequiredService<IRbacEnforcer>().GetUsersForRole(Id);
+
         public List<string> Permissions => DbContext.ServiceProvider.GetService<IUnitOfWork>().Request(new GetSubjectPermissionsRequest(this.Id)).Result.ToList();
 
         public string? TenantCode { get; set; }

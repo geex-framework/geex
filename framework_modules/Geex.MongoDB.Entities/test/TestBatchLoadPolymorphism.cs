@@ -432,7 +432,7 @@ public class TestBatchLoadPolymorphism
     {
         protected PolyRoot() => ConfigLazyQuery(root => root.Common,
             child => child.ParentKey == Key && child.Flavor == "common",
-            roots => child => roots.Select(root => root.Key).ToList().Contains(child.ParentKey) && child.Flavor == "common");
+            roots => child => roots.Select(root => root.Key).Contains(child.ParentKey) && child.Flavor == "common");
         public string Key { get; set; } = "";
         public string ParentKey { get; set; } = "";
         public IQueryable<IPolyChild> Common => LazyQuery(() => Common);

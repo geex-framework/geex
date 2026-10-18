@@ -23,6 +23,14 @@ $suites = @(
         filter='FullyQualifiedName~MongoDB.Entities.Tests.TestBatchLoad|FullyQualifiedName~MongoDB.Entities.Tests.TestLazyQueryMetadata' },
     @{ id='api'; project='framework_modules/Geex.Tests/Geex.Tests.csproj'
         filter='FullyQualifiedName~Geex.Tests.FeatureTests.CoreBatchLoadApiTests' },
+    @{ id='role-api'; project='framework_modules/Geex.Tests/Geex.Tests.csproj'
+        filter='FullyQualifiedName~Geex.Tests.FeatureTests.IdentityRoleApiTests'
+        environment=@('GeexCoreModuleOptions__AutoBatchLoad=true') },
+    @{ id='role-lazy'; project='framework_modules/Geex.Tests/Geex.Tests.csproj'
+        filter='FullyQualifiedName~Geex.Tests.FeatureTests.IdentityRoleApiTests.QueryRoleUsersShouldWork'
+        environment=@('GeexCoreModuleOptions__AutoBatchLoad=false') },
+    @{ id='role-metadata'; project='framework_modules/Geex.Tests/Geex.Tests.csproj'
+        filter='FullyQualifiedName~Geex.Tests.SchemaTests.RoleLazyQueryTests' },
     @{ id='enum'; project='framework_modules/Geex.Tests/Geex.Tests.csproj'
         filter='FullyQualifiedName~EnumerationDynamicTests.RegisteredLoginProviders_ParentLookupDiscoversChildrenAndDeserializersReuseThem' }
 )
@@ -59,6 +67,7 @@ try {
             'Apply navigation plans only to compatible concrete entities.',
             'Merge manual and automatic paths without dropping nested manual paths or duplicate loads.',
             'Preserve parent and related generic types, instance-bound sources and cold initialization.',
+            'Initialize Role.Users metadata without a DbContext and preserve enforcer membership in paged queries.',
             'Validate returned data and MongoDB query counts against fixed synthetic fixtures.'
         )
         boundaries = @('Real MongoDB and Redis in isolated Linux containers.', 'GraphQL in-process host and TestServer HTTP API in the Linux SDK container.',
@@ -105,9 +114,12 @@ try {
     }
     Save-Json 'scope/planned-instances.json' $discovered
     foreach ($suite in $suites) {
-        Invoke-Recorded "$($suite.id)-test" 'docker' @('exec','-w','/workspace',$sdkName,'dotnet','test',$suite.project,
+        $testArguments = @('exec','-w','/workspace')
+        foreach ($variable in $suite.environment) { $testArguments += @('--env', $variable) }
+        $testArguments += @($sdkName,'dotnet','test',$suite.project,
             '--no-build','--no-restore','--configuration','Release','--filter',$suite.filter,
             '--logger',"trx;LogFileName=$($suite.id).trx",'--results-directory','/evidence/runner/docker')
+        Invoke-Recorded "$($suite.id)-test" 'docker' $testArguments
     }
     $exitCode = 0
 } catch {
