@@ -1,4 +1,4 @@
-<page-header [title]="flow()?.name || '审批详情'" [autoBreadcrumb]="true">
+<page-header [title]="flow()?.name || '审批详情'" [autoBreadcrumb]="true" [action]="action">
   <ng-template #action>
     @if (flow()?.canEdit && flow()?.canEditForm) { <button nz-button class="mr-sm" (click)="edit()">编辑流程</button> }
     @if (flow()?.canEditForm) { <button nz-button nzDanger class="mr-sm" (click)="openAction('cancel')">取消流程</button> }

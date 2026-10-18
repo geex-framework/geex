@@ -1,6 +1,6 @@
 
 
-import { Component, ContentChild, forwardRef, inject, Input } from "@angular/core";
+import { Component, ContentChild, forwardRef, inject, Input, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
 import * as _ from "lodash-es";
@@ -76,7 +76,13 @@ export class GeexUploadComponent implements ControlValueAccessor {
   @Input() nzType?: NzUploadType;
 
   disabled = false;
-  fileList: NzUploadFile[] = [];
+  private readonly files = signal<NzUploadFile[]>([]);
+  get fileList(): NzUploadFile[] {
+    return this.files();
+  }
+  set fileList(value: NzUploadFile[]) {
+    this.files.set(value);
+  }
 
   onChange = (_: any) => {};
   onTouched = () => {};
