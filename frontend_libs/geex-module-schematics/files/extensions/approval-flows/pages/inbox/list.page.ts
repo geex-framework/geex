@@ -5,7 +5,7 @@ import { GEEX_I18N } from "@geexcode/geex-angular";
 import { Apollo } from "apollo-angular";
 
 import { StartApprovalFlowService } from "../../components/start-flow/start-flow.component";
-import { approvalFlowCategories, approvalFlows, type ApprovalFlowBrief } from "../../graphql/operations.gql";
+import { approvalFlowTags, approvalFlows, type ApprovalFlowBrief } from "../../graphql/operations.gql";
 
 import { ApprovalFlowStatus, SortEnumType } from "@/gql";
 import { SharedModule } from "@/shared/shared.module";
@@ -28,8 +28,8 @@ export class InboxListPage implements OnInit, AfterViewInit {
   readonly total = signal(0);
   readonly columns = signal<Array<STColumn<ApprovalFlowBrief>>>([]);
   filterText = "";
-  category: string | null = null;
-  categories: string[] = [];
+  tag: string | null = null;
+  tags: string[] = [];
   filterOrgCodes: string[] = [];
   filterStatus: ApprovalFlowStatus | null = null;
   pageIndex = 1;
@@ -43,10 +43,10 @@ export class InboxListPage implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     void this.apollo
-      .query({ query: approvalFlowCategories, fetchPolicy: "no-cache" })
+      .query({ query: approvalFlowTags, fetchPolicy: "no-cache" })
       .firstValuePromise()
       .then(result => {
-        this.categories = result.data.approvalFlowCategories;
+        this.tags = result.data.approvalFlowTags;
         this.cdr.markForCheck();
       });
     void this.load();
@@ -56,7 +56,7 @@ export class InboxListPage implements OnInit, AfterViewInit {
     this.columns.set([
       { title: this.I18N.ApprovalFlows.name, index: "name" },
       { title: this.I18N.ApprovalFlows.description, index: "description" },
-      { title: "流程分类", format: item => item.categories.join(" / ") },
+      { title: "流程分类", format: item => item.tags.join(" / ") },
       { title: this.I18N.ApprovalFlows.orgCode, index: "orgCode" },
       {
         title: this.I18N.ApprovalFlows.inboxStatus,
@@ -144,7 +144,7 @@ export class InboxListPage implements OnInit, AfterViewInit {
           query: approvalFlows,
           variables: {
             filter: Object.keys(filter).length ? filter : undefined,
-            request: { status: this.filterStatus, category: this.category },
+            request: { status: this.filterStatus, tag: this.tag },
             skip: (this.pageIndex - 1) * this.pageSize,
             take: this.pageSize,
             sort: [{ createdOn: SortEnumType.descend }],

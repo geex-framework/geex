@@ -29,8 +29,8 @@
         <nz-form-item>
           <nz-form-label>流程分类</nz-form-label>
           <nz-form-control>
-            <nz-select formControlName="categories" nzMode="multiple" style="width:100%">
-              @for (category of categories; track category) { <nz-option [nzValue]="category" [nzLabel]="category" /> }
+            <nz-select formControlName="tags" nzMode="multiple" style="width:100%">
+              @for (tag of tags; track tag) { <nz-option [nzValue]="tag" [nzLabel]="tag" /> }
             </nz-select>
           </nz-form-control>
         </nz-form-item>

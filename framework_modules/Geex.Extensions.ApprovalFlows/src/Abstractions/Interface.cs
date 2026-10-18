@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Geex.Extensions.ApprovalFlows.Core.Entities;
 
 namespace Geex.Extensions.ApprovalFlows;
 
 public interface IApprovalFlowTemplateDate
 {
-    List<string> Categories => [];
+    List<string> Tags => [];
     List<ApprovalFlowFormField> FormFields => [];
     string? Name { get; set; }
     string? Description { get; set; }

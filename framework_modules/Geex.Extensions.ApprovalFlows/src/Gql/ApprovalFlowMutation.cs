@@ -22,7 +22,7 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
         foreach (var method in typeof(ApprovalFlowMutation).GetMethods(System.Reflection.BindingFlags.Public
             | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
             descriptor.Field(method).Authorize();
-        descriptor.Field(x => x.SaveApprovalFlowCategories(default)).Authorize(SettingsPermission.Edit);
+        descriptor.Field(x => x.SaveApprovalFlowTags(default)).Authorize(SettingsPermission.Edit);
         base.Configure(descriptor);
     }
 

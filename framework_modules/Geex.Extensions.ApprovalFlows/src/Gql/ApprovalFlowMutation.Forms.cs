@@ -34,15 +34,15 @@ public partial class ApprovalFlowMutation
         return node;
     }
 
-    public async Task<List<string>> SaveApprovalFlowCategories(List<string> categories)
+    public async Task<List<string>> SaveApprovalFlowTags(List<string> tags)
     {
-        var normalized = categories.Select(x => x.Trim()).ToList();
+        var normalized = tags.Select(x => x.Trim()).ToList();
         if (normalized.Any(string.IsNullOrWhiteSpace) || normalized.Distinct().Count() != normalized.Count)
             throw new UserFriendlyException("流程分类不能为空或重复.");
         var tenant = _uow.ServiceProvider.GetService<ICurrentTenant>()?.Code;
         var scopeKey = string.IsNullOrEmpty(tenant) ? null : tenant;
         var settings = _uow.ServiceProvider.GetRequiredService<ISettingService>();
-        await settings.SetAsync(ApprovalFlowSettings.Categories,
+        await settings.SetAsync(ApprovalFlowSettings.Tags,
             scopeKey == null ? SettingScopeEnumeration.Global : SettingScopeEnumeration.Tenant,
             scopeKey, JsonSerializer.SerializeToNode(normalized));
         return normalized;

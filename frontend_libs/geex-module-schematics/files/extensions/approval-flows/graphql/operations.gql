@@ -59,7 +59,7 @@ fragment ApprovalFlowBrief on ApprovalFlow {
   canEdit
   createdOn
   modifiedOn
-  categories
+  tags
   creatorUserId
   creatorUser { id username nickname }
   nodes {
@@ -98,7 +98,7 @@ fragment ApprovalFlowTemplateDetail on ApprovalFlowTemplate {
   orgCode
   createdOn
   modifiedOn
-  categories
+  tags
   formFields { key name type required allowEdit options }
   nodes {
     id
@@ -172,12 +172,12 @@ mutation editApprovalFlow($request: EditApprovalFlowRequest!) {
   editApprovalFlow(request: $request) { id }
 }
 
-query approvalFlowCategories {
-  approvalFlowCategories
+query approvalFlowTags {
+  approvalFlowTags
 }
 
-mutation saveApprovalFlowCategories($categories: [String!]!) {
-  saveApprovalFlowCategories(categories: $categories)
+mutation saveApprovalFlowTags($tags: [String!]!) {
+  saveApprovalFlowTags(tags: $tags)
 }
 
 mutation createApprovalFlow($request: CreateApprovalFlowRequest!) {

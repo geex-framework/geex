@@ -9,5 +9,5 @@ public class ApprovalFlowSettings : SettingDefinition
         : base("ApprovalFlows" + name,
             [SettingScopeEnumeration.Global, SettingScopeEnumeration.Tenant], "流程分类配置", false, defaultValue) { }
 
-    public static ApprovalFlowSettings Categories { get; } = new(nameof(Categories), new JsonArray());
+    public static ApprovalFlowSettings Tags { get; } = new(nameof(Tags), new JsonArray());
 }

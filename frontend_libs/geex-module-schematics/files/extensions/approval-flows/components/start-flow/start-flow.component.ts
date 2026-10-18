@@ -10,7 +10,7 @@ import { NzResultModule } from "ng-zorro-antd/result";
 import { NzStepsModule } from "ng-zorro-antd/steps";
 
 import {
-  approvalFlowCategories,
+  approvalFlowTags,
   approvalFlowTemplates,
   approvalFlowTemplateById,
   createApprovalFlow,
@@ -83,14 +83,8 @@ export class StartApprovalFlowService {
             ><nz-form-item
               ><nz-form-label>流程分类</nz-form-label
               ><nz-form-control>
-                <nz-select
-                  [(ngModel)]="category"
-                  nzAllowClear
-                  nzPlaceHolder="全部分类"
-                  style="width:100%"
-                  (ngModelChange)="loadTemplates(true)"
-                >
-                  @for (item of categories; track item) {
+                <nz-select [(ngModel)]="tag" nzAllowClear nzPlaceHolder="全部分类" style="width:100%" (ngModelChange)="loadTemplates(true)">
+                  @for (item of tags; track item) {
                     <nz-option [nzLabel]="item" [nzValue]="item" />
                   }
                 </nz-select> </nz-form-control></nz-form-item
@@ -104,7 +98,7 @@ export class StartApprovalFlowService {
                 ><strong>{{ template.name }}</strong></label
               >
               <p class="mt-sm mb-sm">{{ template.description }}</p>
-              @for (tag of template.categories; track tag) {
+              @for (tag of template.tags; track tag) {
                 <nz-tag nzColor="purple">{{ tag }}</nz-tag>
               }
               <span>{{ template.formFields.length }} 个流程字段 / {{ template.nodes.length }} 个节点</span>
@@ -177,8 +171,8 @@ export class StartApprovalFlowComponent implements OnInit {
   loading = false;
   saving = false;
   search = "";
-  category?: string;
-  categories: string[] = [];
+  tag?: string;
+  tags: string[] = [];
   templates: ApprovalFlowTemplateDetail[] = [];
   selectedId?: string;
   selected?: ApprovalFlowTemplateDetail;
@@ -192,8 +186,8 @@ export class StartApprovalFlowComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.selectedId = this.context.templateId;
-    const result = await this.apollo.query({ query: approvalFlowCategories, fetchPolicy: "no-cache" }).firstValuePromise();
-    this.categories = result.data.approvalFlowCategories;
+    const result = await this.apollo.query({ query: approvalFlowTags, fetchPolicy: "no-cache" }).firstValuePromise();
+    this.tags = result.data.approvalFlowTags;
     this.cdr.markForCheck();
     await this.loadTemplates();
   }
@@ -206,7 +200,7 @@ export class StartApprovalFlowComponent implements OnInit {
       const result = await this.apollo
         .query({
           query: approvalFlowTemplates,
-          variables: { request: { name: this.search || null, category: this.category || null }, skip: (this.page - 1) * 10, take: 10 },
+          variables: { request: { name: this.search || null, tag: this.tag || null }, skip: (this.page - 1) * 10, take: 10 },
           fetchPolicy: "no-cache",
         })
         .firstValuePromise();

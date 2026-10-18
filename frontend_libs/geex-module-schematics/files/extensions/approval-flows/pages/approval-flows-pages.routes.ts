@@ -1,14 +1,14 @@
 import { Routes } from "@angular/router";
 
-import { ApprovalCategoriesPage } from "./categories/categories.page";
 import { ApprovalFlowTemplateEditPage } from "./edit/edit.page";
 import { InboxDetailPage } from "./inbox/detail.page";
 import { InboxEditPage } from "./inbox/edit.page";
 import { InboxListPage } from "./inbox/list.page";
 import { ApprovalFlowTemplateListPage } from "./list/list.page";
+import { ApprovalTagsPage } from "./tags/tags.page";
 
 export const approvalFlowsPagesRoutes: Routes = [
-  { path: "categories", component: ApprovalCategoriesPage },
+  { path: "tags", component: ApprovalTagsPage },
   { path: "", component: ApprovalFlowTemplateListPage },
   { path: "edit", component: ApprovalFlowTemplateEditPage },
   { path: "edit/:id", component: ApprovalFlowTemplateEditPage },

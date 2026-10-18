@@ -43,7 +43,7 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
     {
         request ??= new QueryApprovalFlowRequest();
         var result = _uow.Query<ApprovalFlow>()
-            .WhereIf(!string.IsNullOrWhiteSpace(request.Category), x => x.Categories.Contains(request.Category))
+            .WhereIf(!string.IsNullOrWhiteSpace(request.Tag), x => x.Tags.Contains(request.Tag))
             .WhereIf(request.StartTime.HasValue, x => x.CreatedOn >= request.StartTime)
             .WhereIf(request.EndTime.HasValue, x => x.CreatedOn <= request.EndTime)
             .WhereIf(!string.IsNullOrEmpty(request.TemplateId), x => x.TemplateId == request.TemplateId)
@@ -61,9 +61,9 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
             && x.AssociatedEntityId == entityId && x.Status != ApprovalFlowStatus.Archived);
     }
 
-    public async Task<List<string>> ApprovalFlowCategories()
+    public async Task<List<string>> ApprovalFlowTags()
     {
-        var setting = await _uow.ServiceProvider.GetRequiredService<ISettingService>().GetSetting(ApprovalFlowSettings.Categories);
+        var setting = await _uow.ServiceProvider.GetRequiredService<ISettingService>().GetSetting(ApprovalFlowSettings.Tags);
         return setting?.Value?.Deserialize<List<string>>() ?? [];
     }
 
@@ -72,7 +72,7 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
         request ??= new QueryApprovalFlowTemplateRequest();
         var result = _uow.Query<ApprovalFlowTemplate>()
             .WhereIf(!string.IsNullOrWhiteSpace(request.Name), x => x.Name.Contains(request.Name))
-            .WhereIf(!string.IsNullOrWhiteSpace(request.Category), x => x.Categories.Contains(request.Category))
+            .WhereIf(!string.IsNullOrWhiteSpace(request.Tag), x => x.Tags.Contains(request.Tag))
             .WhereIf(request.StartTime.HasValue, x => x.CreatedOn >= request.StartTime)
             .WhereIf(request.EndTime.HasValue, x => x.CreatedOn <= request.EndTime)
             .WhereIf(!string.IsNullOrEmpty(request.CreatorUserId), x => x.CreatorUserId == request.CreatorUserId)
