@@ -67,6 +67,7 @@ export default {
     FlowFinished: "完成流程",
     FlowCanceled: "取消流程",
     FlowArchived: "归档流程",
+    FlowClosed: "关闭流程",
   },
   approve: {
     pass: "通过",

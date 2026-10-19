@@ -86,6 +86,13 @@ export type rejectApprovalFlowNodeVariables = Types.Exact<{
 
 export type rejectApprovalFlowNodeResult = { __typename?: 'Mutation', rejectApprovalFlowNode: { __typename?: 'ApprovalFlowNode', id: string, name: string, index: number } };
 
+export type closeApprovalFlowVariables = Types.Exact<{
+  nodeId: Types.Scalars['String']['input'];
+}>;
+
+
+export type closeApprovalFlowResult = { __typename?: 'Mutation', closeApprovalFlow: boolean };
+
 export type cancelApprovalFlowVariables = Types.Exact<{
   id: Types.Scalars['String']['input'];
 }>;
@@ -452,6 +459,11 @@ export const rejectApprovalFlowNode = gql`
   }
 }
     ` as unknown as DocumentNode<rejectApprovalFlowNodeResult, rejectApprovalFlowNodeVariables>;
+export const closeApprovalFlow = gql`
+    mutation closeApprovalFlow($nodeId: String!) {
+  closeApprovalFlow(nodeId: $nodeId)
+}
+    ` as unknown as DocumentNode<closeApprovalFlowResult, closeApprovalFlowVariables>;
 export const cancelApprovalFlow = gql`
     mutation cancelApprovalFlow($id: String!) {
   cancelApprovalFlow(id: $id)

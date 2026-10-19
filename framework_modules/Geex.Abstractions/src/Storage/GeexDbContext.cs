@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -78,14 +78,14 @@ namespace Geex.Storage
             return entities.Select(this.Attach).ToList();
         }
         public Queue<IEvent> DomainEvents { get; } = new Queue<IEvent>();
-        /// <summary>关闭审批等原子业务显式启用; 其他工作单元保留原事件错误策略。</summary>
+        // 需要事件回写与实体保存共同成功的工作单元可启用失败传播.
         public bool RequireDomainEventSuccess { get; set; }
-        private bool requiredDomainEventSaveFailed;
+        private bool _requiredDomainEventSaveFailed;
 
         /// <inheritdoc />
         public override async Task<MergedBulkWriteResult> SaveChanges(CancellationToken cancellation = default)
         {
-            if (requiredDomainEventSaveFailed)
+            if (_requiredDomainEventSaveFailed)
                 throw new InvalidOperationException("要求领域事件成功的工作单元已失败, 请在新工作单元中重试.");
             if (!RequireDomainEventSuccess) return await SaveChangesCore(cancellation);
             try
@@ -97,8 +97,8 @@ namespace Geex.Storage
             }
             catch
             {
-                // 已出队事件不能在失败后被另一次SaveChanges绕过; 当前请求必须使用新工作单元重试。
-                requiredDomainEventSaveFailed = true;
+                // 失败事件已经出队, 重试需要使用新的工作单元.
+                _requiredDomainEventSaveFailed = true;
                 if (Session.IsInTransaction)
                 {
                     try { await Session.AbortTransactionAsync(CancellationToken.None); }

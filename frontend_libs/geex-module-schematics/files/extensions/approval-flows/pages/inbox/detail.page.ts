@@ -19,6 +19,7 @@ import {
   transferApprovalFlowNode,
   carbonCopyApprovalFlowNode,
   cancelApprovalFlow,
+  closeApprovalFlow,
   markApprovalFlowNodeViewed,
   type ApprovalFlowDetail,
   type ApprovalFlowNodeDetail,
@@ -27,7 +28,7 @@ import {
 import { ApprovalFlowNodeLogType, ApprovalFlowStatus } from "@/gql";
 import { SharedModule } from "@/shared/shared.module";
 
-type NodeAction = "approve" | "reject" | "transfer" | "consult" | "reply" | "cancel";
+type NodeAction = "approve" | "reject" | "transfer" | "consult" | "reply" | "cancel" | "close";
 
 @Component({
   selector: "app-approval-flow-inbox-detail",
@@ -56,6 +57,7 @@ export class InboxDetailPage implements OnInit {
     consult: "征询",
     reply: "回复征询",
     cancel: "取消流程",
+    close: "关闭流程",
   };
   flowValues: ApprovalUiValue[] = [];
   nodeValues: Record<string, ApprovalUiValue[]> = {};
@@ -277,6 +279,13 @@ export class InboxDetailPage implements OnInit {
         case "reply":
           await this.apollo.mutate({ mutation: replyApprovalFlowNode, variables: { nodeId, message } }).firstValuePromise();
           break;
+        case "close": {
+          const result = await this.apollo
+            .mutate({ mutation: closeApprovalFlow, variables: { nodeId }, errorPolicy: "none" })
+            .firstValuePromise();
+          if (!result.data?.closeApprovalFlow) throw new Error("关闭结果未确认");
+          break;
+        }
         case "cancel":
           await this.apollo.mutate({ mutation: cancelApprovalFlow, variables: { id: this.flow()!.id } }).firstValuePromise();
           break;
@@ -284,6 +293,8 @@ export class InboxDetailPage implements OnInit {
       this.nodeAction = null;
       this.message.success("操作成功");
       await this.load();
+    } catch {
+      this.message.error("操作未完成, 请刷新流程状态后重试.");
     } finally {
       this.saving = false;
     }

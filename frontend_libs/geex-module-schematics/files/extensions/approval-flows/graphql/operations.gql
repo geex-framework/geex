@@ -164,6 +164,10 @@ mutation rejectApprovalFlowNode($nodeId: String!, $message: String!, $targetNode
   rejectApprovalFlowNode(nodeId: $nodeId, message: $message, targetNodeId: $targetNodeId) { id name index }
 }
 
+mutation closeApprovalFlow($nodeId: String!) {
+  closeApprovalFlow(nodeId: $nodeId)
+}
+
 mutation cancelApprovalFlow($id: String!) {
   cancelApprovalFlow(id: $id)
 }
