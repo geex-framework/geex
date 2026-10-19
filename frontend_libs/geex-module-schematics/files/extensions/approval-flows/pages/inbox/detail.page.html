@@ -51,8 +51,16 @@
           <approval-dynamic-form [fields]="node.formFields" [(values)]="nodeValues[node.id]" [editable]="node.canEditForm" />
           @if (node.canEditForm && node.formFields.length) { <button nz-button (click)="saveNode(node)" [nzLoading]="saving">保存节点表单</button><span class="ml-sm">本节点通过前可填写和修改.</span> }
           <nz-divider nzText="抄送" nzOrientation="left" />
-          <nz-select user-select nzMode="multiple" [ngModel]="node.carbonCopyUserIds" [nzDisabled]="true" nzPlaceHolder="暂无抄送" style="width:100%" />
-          @if (node.canOperate) { <button nz-button class="mt-sm" (click)="openAction('cc', node)">添加抄送</button> }
+          <div class="carbon-copy-editor" style="display:flex;align-items:flex-start;gap:8px">
+            <nz-select user-select nzMode="multiple" [ngModel]="carbonCopyValues[node.id]"
+              (ngModelChange)="setCarbonCopy(node, $event)" [lockedUserIds]="node.carbonCopyUserIds"
+              [nzAllowClear]="false" [nzDisabled]="saving || !node.canOperate"
+              [nzPlaceHolder]="node.canOperate ? '请选择抄送人' : '暂无抄送'" style="flex:1;min-width:0" />
+            @if (node.canOperate) {
+              <button nz-button type="button" style="flex-shrink:0" [disabled]="saving || !newCarbonCopyIds(node).length"
+                [nzLoading]="saving" (click)="saveCarbonCopy(node)">确认抄送</button>
+            }
+          </div>
           <nz-divider nzText="征询" nzOrientation="left" />
           @for (consultation of node.consultations; track consultation.id) {
             <nz-card nzSize="small" class="mb-sm">
@@ -91,7 +99,7 @@
 <nz-modal [nzVisible]="nodeAction !== null" [nzTitle]="nodeAction ? titles[nodeAction] : ''" [nzOkLoading]="saving" [nzMaskClosable]="false" (nzOnCancel)="nodeAction = null" (nzOnOk)="submitAction()">
   <ng-container *nzModalContent>
     @if (nodeAction === 'cancel') { <nz-alert nzType="warning" nzMessage="确认取消当前审批流程?" nzShowIcon /> }
-    @if (nodeAction === 'transfer' || nodeAction === 'cc') { <nz-select user-select [(ngModel)]="selectedUser" nzPlaceHolder="请选择用户" style="width:100%" /> }
+    @if (nodeAction === 'transfer') { <nz-select user-select [(ngModel)]="selectedUser" nzPlaceHolder="请选择用户" style="width:100%" /> }
     @if (nodeAction === 'consult') { <nz-select user-select [(ngModel)]="selectedUsers" nzMode="multiple" nzPlaceHolder="请选择征询对象" style="width:100%" class="mb-md" /> }
     @if (nodeAction === 'reject') {
       <nz-select [(ngModel)]="targetNodeId" nzPlaceHolder="选择驳回节点" style="width:100%" class="mb-md">

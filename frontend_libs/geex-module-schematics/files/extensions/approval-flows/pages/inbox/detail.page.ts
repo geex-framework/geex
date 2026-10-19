@@ -27,7 +27,7 @@ import {
 import { ApprovalFlowNodeLogType, ApprovalFlowStatus } from "@/gql";
 import { SharedModule } from "@/shared/shared.module";
 
-type NodeAction = "approve" | "reject" | "transfer" | "consult" | "reply" | "cc" | "cancel";
+type NodeAction = "approve" | "reject" | "transfer" | "consult" | "reply" | "cancel";
 
 @Component({
   selector: "app-approval-flow-inbox-detail",
@@ -55,11 +55,11 @@ export class InboxDetailPage implements OnInit {
     transfer: "转交",
     consult: "征询",
     reply: "回复征询",
-    cc: "添加抄送",
     cancel: "取消流程",
   };
   flowValues: ApprovalUiValue[] = [];
   nodeValues: Record<string, ApprovalUiValue[]> = {};
+  carbonCopyValues: Record<string, string[]> = {};
   expanded = new Set<string>();
   saving = false;
   nodeAction: NodeAction | null = null;
@@ -73,7 +73,7 @@ export class InboxDetailPage implements OnInit {
     void this.load();
   }
 
-  async load(): Promise<void> {
+  async load(preserveDrafts = false): Promise<void> {
     const id = this.route.snapshot.paramMap.get("id");
     if (!id) return;
     this.loading.set(true);
@@ -82,13 +82,24 @@ export class InboxDetailPage implements OnInit {
       const flow = result.data.approvalFlowById ?? null;
       if (flow?.activeNode?.canOperate && !flow.activeNode.nodeStatus?.isViewed) {
         await this.apollo.mutate({ mutation: markApprovalFlowNodeViewed, variables: { nodeId: flow.activeNode.id } }).firstValuePromise();
-        await this.load();
+        await this.load(preserveDrafts);
         return;
       }
       const previousActive = this.flow()?.activeNode?.id;
       this.flow.set(flow);
-      this.flowValues = cleanValues(flow?.formValues ?? []);
-      this.nodeValues = Object.fromEntries((flow?.nodes ?? []).map(node => [node.id, cleanValues(node.formValues)]));
+      if (!preserveDrafts) this.flowValues = cleanValues(flow?.formValues ?? []);
+      this.nodeValues = Object.fromEntries(
+        (flow?.nodes ?? []).map(node => [
+          node.id,
+          preserveDrafts && this.nodeValues[node.id] ? this.nodeValues[node.id] : cleanValues(node.formValues),
+        ]),
+      );
+      this.carbonCopyValues = Object.fromEntries(
+        (flow?.nodes ?? []).map(node => [
+          node.id,
+          [...new Set([...node.carbonCopyUserIds, ...(preserveDrafts ? (this.carbonCopyValues[node.id] ?? []) : [])])],
+        ]),
+      );
       if (flow?.activeNode && previousActive !== flow.activeNode.id) this.expanded.add(flow.activeNode.id);
     } finally {
       this.loading.set(false);
@@ -167,6 +178,47 @@ export class InboxDetailPage implements OnInit {
     }
   }
 
+  setCarbonCopy(node: ApprovalFlowNodeDetail, selected: string[]): void {
+    this.carbonCopyValues[node.id] = [...new Set([...node.carbonCopyUserIds, ...selected])];
+  }
+
+  newCarbonCopyIds(node: ApprovalFlowNodeDetail): string[] {
+    return (this.carbonCopyValues[node.id] ?? []).filter(id => !node.carbonCopyUserIds.includes(id));
+  }
+
+  async saveCarbonCopy(node: ApprovalFlowNodeDetail): Promise<void> {
+    if (!node.canOperate || this.saving || !this.filesReady()) return;
+    const additions = this.newCarbonCopyIds(node);
+    if (!additions.length) return;
+    this.saving = true;
+    let completed = false;
+    try {
+      for (const userId of additions) {
+        const result = await this.apollo
+          .mutate({ mutation: carbonCopyApprovalFlowNode, variables: { nodeId: node.id, userId }, errorPolicy: "none" })
+          .firstValuePromise();
+        if (result.data?.carbonCopyApprovalFlowNode?.id !== node.id) throw new Error("抄送结果未确认");
+        this.flow.update(current => {
+          if (!current) return current;
+          const nodes = current.nodes.map(item =>
+            item.id === node.id ? { ...item, carbonCopyUserIds: [...item.carbonCopyUserIds, userId] } : item,
+          );
+          return { ...current, nodes, activeNode: nodes.find(item => item.id === current.activeNode?.id) ?? current.activeNode };
+        });
+      }
+      completed = true;
+    } catch {
+      this.message.warning("抄送未全部完成, 已保存的抄送人会保留, 请检查后重试.");
+    } finally {
+      try {
+        await this.load(true);
+      } finally {
+        this.saving = false;
+      }
+    }
+    if (completed) this.message.success("抄送已保存");
+  }
+
   openAction(action: NodeAction, node?: ApprovalFlowNodeDetail): void {
     this.nodeAction = action;
     this.actionNode = node ?? null;
@@ -185,7 +237,7 @@ export class InboxDetailPage implements OnInit {
       this.message.warning("请填写内容");
       return;
     }
-    if ((action === "transfer" || action === "cc") && !this.selectedUser) {
+    if (action === "transfer" && !this.selectedUser) {
       this.message.warning("请选择用户");
       return;
     }
@@ -215,11 +267,6 @@ export class InboxDetailPage implements OnInit {
         case "transfer":
           await this.apollo
             .mutate({ mutation: transferApprovalFlowNode, variables: { nodeId, userId: this.selectedUser } })
-            .firstValuePromise();
-          break;
-        case "cc":
-          await this.apollo
-            .mutate({ mutation: carbonCopyApprovalFlowNode, variables: { nodeId, userId: this.selectedUser } })
             .firstValuePromise();
           break;
         case "consult":

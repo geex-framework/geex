@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from "@angular/core";
 
 import { approvalFieldTypes, ApprovalUiField } from "./form-model";
+import { ApprovalOptionTagsComponent } from "./option-tags.component";
 
 import { ApprovalFormFieldType } from "@/gql";
 import { SharedModule } from "@/shared/shared.module";
@@ -8,7 +9,7 @@ import { SharedModule } from "@/shared/shared.module";
 @Component({
   selector: "approval-field-editor",
   standalone: true,
-  imports: [SharedModule],
+  imports: [SharedModule, ApprovalOptionTagsComponent],
   template: `
     @for (field of value; track field.key; let i = $index) {
       <nz-card class="mb-sm" nzSize="small" [nzTitle]="'字段 ' + (i + 1)" [nzExtra]="actions">
@@ -72,15 +73,11 @@ import { SharedModule } from "@/shared/shared.module";
           @if (field.type === kind.Select || field.type === kind.MultiSelect) {
             <div nz-col [nzSpan]="24"
               ><nz-form-item
-                ><nz-form-label nzRequired>选项 (每行一项)</nz-form-label
+                ><nz-form-label nzRequired>选项</nz-form-label
                 ><nz-form-control>
-                  <textarea
-                    nz-input
-                    rows="3"
-                    [ngModel]="optionText(field)"
-                    (ngModelChange)="options(i, $event)"
-                    [ngModelOptions]="standalone"
-                  ></textarea></nz-form-control></nz-form-item
+                  <approval-option-tags
+                    [value]="field.options"
+                    (valueChange)="update(i, 'options', $event)" /></nz-form-control></nz-form-item
             ></div>
           }
         </div>
@@ -120,12 +117,6 @@ export class ApprovalFieldEditorComponent {
   }
   update(index: number, key: string, value: unknown): void {
     this.emit(this.value.map((field, i) => (i === index ? { ...field, [key]: value } : field)));
-  }
-  options(index: number, text: string): void {
-    this.update(index, "options", text.split("\n"));
-  }
-  optionText(field: ApprovalUiField): string {
-    return field.options.join("\n");
   }
   private emit(value: ApprovalUiField[]): void {
     this.value = value;
