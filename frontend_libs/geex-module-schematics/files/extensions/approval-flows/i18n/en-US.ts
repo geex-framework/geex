@@ -67,6 +67,7 @@ export default {
     FlowFinished: "Flow finished",
     FlowCanceled: "Flow canceled",
     FlowArchived: "Flow archived",
+    FlowClosed: "Flow closed",
   },
   approve: {
     pass: "Approve",

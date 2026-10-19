@@ -42,7 +42,7 @@ public class ApprovalFlowEventHandler :
         var messageEntity = await _uow.Request(new CreateMessageRequest()
         {
             Severity = MessageSeverityType.Warn,
-            Text = $"【工作流】:{eventData.ApprovalFlow.Name} 已取消.",
+            Text = $"【工作流】:{eventData.ApprovalFlow.Name} {(eventData.ApprovalFlow.Status == Core.Entities.ApprovalFlowStatus.Archived ? "已关闭并归档" : "已取消")}.",
             Meta = new JsonObject([new("ApprovalFlowId", eventData.ApprovalFlow.Id)]),
         });
         var toUserIds = eventData.ApprovalFlow.Stakeholders

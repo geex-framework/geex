@@ -75,7 +75,7 @@ public partial class ApprovalFlow : ISaveIntercepted
         var closed = Status == ApprovalFlowStatus.Archived && ArchivedAt.HasValue
             && string.IsNullOrEmpty(ReplacedByFlowId);
         if (Status != ApprovalFlowStatus.Canceled && !closed)
-            throw new UserFriendlyException("仅已取消或已关闭且未被替代的流程可在重新上报时归档.");
+            throw new UserFriendlyException("仅已取消或已归档且无后续流程的记录可衔接重新上报.");
         Status = ApprovalFlowStatus.Archived;
         if (!closed) ArchivedAt = DateTimeOffset.UtcNow;
         ReplacedByFlowId = replacementId;

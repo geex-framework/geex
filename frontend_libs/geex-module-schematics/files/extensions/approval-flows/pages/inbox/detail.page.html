@@ -74,6 +74,7 @@
           @if (node.canReply) { <button nz-button nzType="primary" (click)="openAction('reply', node)">回复征询</button> }
           @if (node.canOperate) {
             <div class="mt-md" style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+              <button nz-button nzDanger [disabled]="saving" (click)="openAction('close', node)">关闭流程</button>
               <button nz-button [disabled]="node.nodeStatus?.isConsulting" (click)="openAction('transfer', node)">转交</button>
               <button nz-button [disabled]="node.nodeStatus?.isConsulting" (click)="openAction('consult', node)">征询</button>
               <button nz-button nzDanger [disabled]="node.nodeStatus?.isConsulting" (click)="openAction('reject', node)">驳回</button>
@@ -99,6 +100,7 @@
 <nz-modal [nzVisible]="nodeAction !== null" [nzTitle]="nodeAction ? titles[nodeAction] : ''" [nzOkLoading]="saving" [nzMaskClosable]="false" (nzOnCancel)="nodeAction = null" (nzOnOk)="submitAction()">
   <ng-container *nzModalContent>
     @if (nodeAction === 'cancel') { <nz-alert nzType="warning" nzMessage="确认取消当前审批流程?" nzShowIcon /> }
+    @if (nodeAction === 'close') { <nz-alert nzType="warning" [nzMessage]="flow()?.associatedEntityId ? '确认关闭当前审批流程? 关闭后流程立即归档, 关联对象同步取消上报.' : '确认关闭当前审批流程? 关闭后流程立即归档.'" nzShowIcon /> }
     @if (nodeAction === 'transfer') { <nz-select user-select [(ngModel)]="selectedUser" nzPlaceHolder="请选择用户" style="width:100%" /> }
     @if (nodeAction === 'consult') { <nz-select user-select [(ngModel)]="selectedUsers" nzMode="multiple" nzPlaceHolder="请选择征询对象" style="width:100%" class="mb-md" /> }
     @if (nodeAction === 'reject') {

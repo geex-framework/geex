@@ -47,7 +47,7 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
                 existing = _uow.Query<ApprovalFlow>().Where(x => x.Id != entity.Id && x.AssociatedEntityType == request.AssociatedEntityType
                     && x.AssociatedEntityId == entity.AssociatedEntityId
                     && (x.Status != ApprovalFlowStatus.Archived || x.ReplacedByFlowId == null)).ToList();
-            if (existing.Count > 1) throw new UserFriendlyException("该对象存在多个非归档流程, 请先核对关联记录.");
+            if (existing.Count > 1) throw new UserFriendlyException("该对象存在多个待衔接流程, 请先核对关联记录.");
             previous = existing.SingleOrDefault();
             if (previous != null && previous.Status != ApprovalFlowStatus.Canceled
                 && !(previous.Status == ApprovalFlowStatus.Archived && previous.ArchivedAt.HasValue && string.IsNullOrEmpty(previous.ReplacedByFlowId)))
@@ -85,8 +85,9 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
 
     public async Task<bool> CloseApprovalFlow(string nodeId)
     {
-        var node = _uow.Query<ApprovalFlowNode>().GetById(nodeId);
-        await node.ApprovalFlow.Value.CloseAsync(node.Id);
+        var node = _uow.Query<ApprovalFlowNode>().GetById(nodeId)
+            ?? throw new UserFriendlyException("审批节点不存在或无权访问.");
+        await node.ApprovalFlow.Value.CloseAsync(nodeId);
         return true;
     }
 
