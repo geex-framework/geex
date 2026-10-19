@@ -70,7 +70,7 @@
               <blockquote>{{ consultation.reply || '等待回复' }} @if (consultation.repliedAt) { <span class="ml-sm">{{ consultation.repliedAt | date:'yyyy-MM-dd HH:mm' }}</span> }</blockquote>
             </nz-card>
           } @empty { <p>暂无征询记录</p> }
-          @if (node.nodeStatus?.isConsulting) { <nz-alert class="mb-md" nzType="warning" nzMessage="全部征询对象回复后, 当前节点审批人继续审批." nzShowIcon /> }
+          @if (current.status === 'Processing' && node.nodeStatus?.isConsulting) { <nz-alert class="mb-md" nzType="warning" nzMessage="全部征询对象回复后, 当前节点审批人继续审批." nzShowIcon /> }
           @if (node.canReply) { <button nz-button nzType="primary" (click)="openAction('reply', node)">回复征询</button> }
           @if (node.canOperate) {
             <div class="mt-md" style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
