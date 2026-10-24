@@ -20,6 +20,7 @@ namespace MediatX
     {
         private readonly IExternalMessageDispatcher _messageDispatcher;
         private readonly ILogger<Mediator> _logger;
+        private static readonly AsyncLocal<bool> RequiredEventSuccess = new();
 
         public Mediator(IServiceProvider serviceProvider, ILogger<Mediator> logger, bool enableDistributedEvent = false) : base(serviceProvider)
         {
@@ -47,6 +48,21 @@ namespace MediatX
             _logger.LogDebug("PublishDistributedEvent [{routingKey}] started.", routingKey);
             await _messageDispatcher.Notify(routingKey, @event);
             _logger.LogDebug("PublishDistributedEvent [{routingKey}] finished.", routingKey);
+        }
+
+        /// <summary>仅在调用范围内要求事件成功, 并将要求传递给异步及嵌套发布。</summary>
+        public async Task PublishRequired(object @event, CancellationToken cancellationToken = default)
+        {
+            var previous = RequiredEventSuccess.Value;
+            RequiredEventSuccess.Value = true;
+            try
+            {
+                await base.Publish(@event, cancellationToken);
+            }
+            finally
+            {
+                RequiredEventSuccess.Value = previous;
+            }
         }
 
         /// <summary>
@@ -84,6 +100,7 @@ namespace MediatX
             catch (Exception ex)
             {
                 _logger.LogError(ex, ex.Message);
+                if (RequiredEventSuccess.Value) throw;
             }
         }
     }

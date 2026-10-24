@@ -118,6 +118,21 @@ public interface IApproveEntity : IEntity
             throw new BusinessException(GeexExceptionType.ValidationFailed, message: "已审核，无法取消上报.");
         }
     }
+    /// <summary>按关联业务类型取消上报, 保留对应业务类型的领域事件。</summary>
+    async Task UnSubmit(Type entityType, string? remark = default)
+    {
+        if (this.ApproveStatus == ApproveStatus.Submitted)
+        {
+            this.ApproveStatus ^= ApproveStatus.Submitted;
+            this.ApproveRemark = remark;
+            var entity = Activator.CreateInstance(typeof(EntityUnSubmittedEvent<IApproveEntity>).GetGenericTypeDefinition().MakeGenericType(entityType), [this]) as IEvent;
+            (this as IEntity)?.AddDomainEvent(entity);
+        }
+        else if (this.ApproveStatus == ApproveStatus.Approved)
+        {
+            throw new BusinessException(GeexExceptionType.ValidationFailed, message: "已审核，无法取消上报.");
+        }
+    }
     /// <summary>
     /// 取消审批
     /// </summary>

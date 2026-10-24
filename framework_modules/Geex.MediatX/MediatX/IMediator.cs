@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MediatX
@@ -13,5 +14,6 @@ namespace MediatX
     public interface IMediator : MediatR.IMediator
     {
         Task PublishDistributedEvent<TRequest>(TRequest @event) where TRequest : IDistributedEvent;
+        Task PublishRequired(object @event, CancellationToken cancellationToken = default);
     }
 }

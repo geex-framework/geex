@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using Geex.Extensions.Identity;
 using Geex.Extensions.BlobStorage.Core.Entities;
+using Geex.MultiTenant;
 using Volo.Abp;
 
 namespace Geex.Extensions.ApprovalFlows;
@@ -49,7 +50,17 @@ public static class ApprovalFormValidation
     public static void Users(IUnitOfWork uow, IEnumerable<string?> userIds, string? orgCode = null)
     {
         var ids = userIds.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
-        var users = uow.Query<IUser>().Where(x => ids.Contains(x.Id) && x.IsEnable).ToList();
+        var tenantUserIds = ids.Where(x => x != GeexConstants.SuperAdminId).ToList();
+        var users = uow.Query<IUser>().Where(x => tenantUserIds.Contains(x.Id) && x.IsEnable).ToList();
+        if (ids.Contains(GeexConstants.SuperAdminId))
+        {
+            // The built-in host account is resolved across tenants; ordinary users retain their tenant filter.
+            using (uow.DbContext.DisableDataFilters(typeof(ITenantFilteredEntity)))
+            {
+                var superAdmin = uow.Query<IUser>().SingleOrDefault(x => x.Id == GeexConstants.SuperAdminId && x.IsEnable);
+                if (superAdmin != null) users.Add(superAdmin);
+            }
+        }
         if (users.Count != ids.Count)
             throw new UserFriendlyException("所选人员不存在或已停用, 请重新选择.");
         if (orgCode != null && users.Any(x => x.Id != GeexConstants.SuperAdminId && !x.OrgCodes.Contains(orgCode)))

@@ -38,7 +38,7 @@ public partial class ApprovalFlowNodeLog : Entity<ApprovalFlowNodeLog>
             ApprovalFlowNodeLogType.ConsultChat => message,
             ApprovalFlowNodeLogType.Edit => message,
             ApprovalFlowNodeLogType.FlowCreated or ApprovalFlowNodeLogType.FlowFinished
-                or ApprovalFlowNodeLogType.FlowCanceled or ApprovalFlowNodeLogType.FlowArchived => message,
+                or ApprovalFlowNodeLogType.FlowCanceled or ApprovalFlowNodeLogType.FlowArchived or ApprovalFlowNodeLogType.FlowClosed => message,
             _ => throw new ArgumentOutOfRangeException(nameof(auditType), auditType, null)
         };
     }
@@ -78,5 +78,6 @@ public enum ApprovalFlowNodeLogType
     FlowCreated,
     FlowFinished,
     FlowCanceled,
-    FlowArchived
+    FlowArchived,
+    FlowClosed
 }
