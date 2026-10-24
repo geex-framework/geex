@@ -78,9 +78,41 @@ namespace Geex.Storage
             return entities.Select(this.Attach).ToList();
         }
         public Queue<IEvent> DomainEvents { get; } = new Queue<IEvent>();
+        /// <summary>关闭审批等原子业务显式启用; 其他工作单元保留原事件错误策略。</summary>
+        public bool RequireDomainEventSuccess { get; set; }
+        private bool requiredDomainEventSaveFailed;
 
         /// <inheritdoc />
         public override async Task<MergedBulkWriteResult> SaveChanges(CancellationToken cancellation = default)
+        {
+            if (requiredDomainEventSaveFailed)
+                throw new InvalidOperationException("要求领域事件成功的工作单元已失败, 请在新工作单元中重试.");
+            if (!RequireDomainEventSuccess) return await SaveChangesCore(cancellation);
+            try
+            {
+                if (!SupportTransaction)
+                    throw new InvalidOperationException("要求领域事件成功的保存需要数据库事务支持.");
+                if (!Session.IsInTransaction) Session.StartTransaction();
+                return await SaveChangesCore(cancellation);
+            }
+            catch
+            {
+                // 已出队事件不能在失败后被另一次SaveChanges绕过; 当前请求必须使用新工作单元重试。
+                requiredDomainEventSaveFailed = true;
+                if (Session.IsInTransaction)
+                {
+                    try { await Session.AbortTransactionAsync(CancellationToken.None); }
+                    catch (Exception rollbackError)
+                    {
+                        ServiceProvider.GetService<ILogger<GeexDbContext>>()?.LogError(rollbackError,
+                            "Failed to abort required domain event transaction.");
+                    }
+                }
+                throw;
+            }
+        }
+
+        private async Task<MergedBulkWriteResult> SaveChangesCore(CancellationToken cancellation)
         {
             var logger = ServiceProvider.GetService<ILogger<GeexDbContext>>();
 
@@ -96,11 +128,17 @@ namespace Geex.Storage
                 {
                     try
                     {
-                        await this.Mediator?.Publish(@event, cancellation);
+                        if (RequireDomainEventSuccess)
+                        {
+                            if (Mediator == null) throw new InvalidOperationException("领域事件发布服务不可用.");
+                            await Mediator.PublishRequired(@event, cancellation);
+                        }
+                        else await this.Mediator?.Publish(@event, cancellation);
                     }
                     catch (Exception ex)
                     {
                         logger?.LogError(ex, "Domain event failed to process: {event}", @event.ToJson());
+                        if (RequireDomainEventSuccess) throw;
                     }
                 }
             }

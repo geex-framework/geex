@@ -44,7 +44,7 @@ namespace Geex.Extensions.Authentication
     public static LoginProviderEnum GetLoginProvider(this ClaimsIdentity? identity)
     {
       var providerValue = identity?.Claims
-          .FirstOrDefault(x => x.Type == GeexClaimType.Provider)?.Value;
+          .FirstOrDefault(x => x.Type == GeexClaimType._Provider)?.Value;
       return providerValue.IsNullOrEmpty()
           ? LoginProviderEnum.Local
           : LoginProviderEnum.FromValue(providerValue);

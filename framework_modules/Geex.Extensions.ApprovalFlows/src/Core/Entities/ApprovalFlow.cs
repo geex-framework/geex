@@ -227,6 +227,44 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         this.AddDomainEvent(new ApprovalFlowCanceledEvent(this, this.Id));
     }
 
+    /// <summary>当前激活节点的审批人关闭流程; 历史快照保留, 关联实体在同一事务取消上报。</summary>
+    public async Task CloseAsync(string nodeId)
+    {
+        var actor = ServiceProvider.GetRequiredService<ICurrentUser>().UserId;
+        var node = ActiveNode;
+        if (Status != ApprovalFlowStatus.Processing || node == null
+            || !string.Equals(node.Id, nodeId, StringComparison.OrdinalIgnoreCase)
+            || !node.NodeStatus.HasFlag(ApprovalFlowNodeStatus.Started)
+            || (node.NodeStatus & (ApprovalFlowNodeStatus.Approved | ApprovalFlowNodeStatus.Rejected | ApprovalFlowNodeStatus.Transferred)) != 0)
+            throw new UserFriendlyException("仅当前激活的待审节点可以关闭流程.");
+        if (string.IsNullOrWhiteSpace(actor) || string.IsNullOrWhiteSpace(node.AuditUserId) || actor != node.AuditUserId)
+            throw new UserFriendlyException("仅当前激活节点的审批人可以关闭流程.");
+        if ((AssociatedEntityType == null) != string.IsNullOrWhiteSpace(AssociatedEntityId))
+            throw new UserFriendlyException("流程关联对象信息不完整.");
+        IApproveEntity? associated = null;
+        if (AssociatedEntityType != null)
+        {
+            associated = AssociatedEntity.Value ?? throw new UserFriendlyException("关联对象不存在或无权访问.");
+            if (associated.ApproveStatus != ApproveStatus.Submitted)
+                throw new UserFriendlyException("关联对象当前不处于已上报状态.");
+        }
+        var work = Uow.DbContext;
+        if (!work.SupportTransaction)
+            throw new UserFriendlyException("关闭审批流程需要数据库事务支持.");
+        // 业务事件可能直接写入关联对象; 必须在事件发布和这些写入之前进入同一事务。
+        work.RequireDomainEventSuccess = true;
+        if (!work.Session.IsInTransaction) work.Session.StartTransaction();
+        if (associated != null)
+            await associated.UnSubmit(AssociatedEntityType!.Type, "审批流程已关闭.");
+        Status = ApprovalFlowStatus.Archived;
+        ArchivedAt = DateTimeOffset.UtcNow;
+        ReplacedByFlowId = null;
+        Touch();
+        Uow.Create(node.Id, ApprovalFlowNodeLogType.FlowClosed, actor, "", "审批流程已关闭.");
+        // 已有业务回写订阅取消事件; 关闭只改变流程终态, 不另建一条业务状态同步链。
+        this.AddDomainEvent(new ApprovalFlowCanceledEvent(this, this.Id));
+    }
+
     public ApprovalFlow InsertNode(int index, ApprovalFlowNode approvalflowNode)
     {
         foreach (var node in this.Nodes.Where(x => x.Index > index))

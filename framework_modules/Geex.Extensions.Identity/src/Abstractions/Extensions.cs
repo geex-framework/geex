@@ -17,14 +17,14 @@ namespace Geex.Extensions.Identity
         public static string[]? FindOrgCodes(this ClaimsPrincipal principal)
         {
             Check.NotNull(principal, nameof(principal));
-            IEnumerable<Claim> claims = principal.Claims.Where((Func<Claim, bool>)(c => c.Type == GeexClaimType.Org));
+            IEnumerable<Claim> claims = principal.Claims.Where((Func<Claim, bool>)(c => c.Type == GeexClaimType._Org));
             return claims?.Select(x => x.Value).ToArray();
         }
 
         public static string[]? GetOrgCodes(this ICurrentUser currentUser)
         {
             Check.NotNull(currentUser, nameof(currentUser));
-            IEnumerable<Claim> claims = currentUser.ClaimsIdentity.Claims.Where((Func<Claim, bool>)(c => c.Type == GeexClaimType.Org));
+            IEnumerable<Claim> claims = currentUser.ClaimsIdentity.Claims.Where((Func<Claim, bool>)(c => c.Type == GeexClaimType._Org));
             return claims.Select(x => x.Value).ToArray();
         }
 
