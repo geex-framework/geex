@@ -72,12 +72,11 @@ public partial class ApprovalFlow : ISaveIntercepted
 
     public void Archive(string replacementId)
     {
-        var closed = Status == ApprovalFlowStatus.Archived && ArchivedAt.HasValue
-            && string.IsNullOrEmpty(ReplacedByFlowId);
-        if (Status != ApprovalFlowStatus.Canceled && !closed)
-            throw new UserFriendlyException("仅已取消或已归档且无后续流程的记录可衔接重新上报.");
-        Status = ApprovalFlowStatus.Archived;
-        if (!closed) ArchivedAt = DateTimeOffset.UtcNow;
+        if (Status != ApprovalFlowStatus.Closed || !string.IsNullOrEmpty(ReplacedByFlowId))
+            throw new UserFriendlyException("仅已关闭且无后续流程的记录可衔接重新上报.");
+        if (string.IsNullOrWhiteSpace(replacementId) || replacementId == Id)
+            throw new UserFriendlyException("请指定有效的替代流程.");
+        ArchivedAt ??= DateTimeOffset.UtcNow;
         ReplacedByFlowId = replacementId;
         Touch();
         Uow.Create((ActiveNode ?? Nodes.First()).Id, ApprovalFlowNodeLogType.FlowArchived,

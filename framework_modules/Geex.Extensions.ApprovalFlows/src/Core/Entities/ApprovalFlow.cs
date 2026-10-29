@@ -213,20 +213,6 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
     public ApprovalFlowEntitySummary? AssociatedEntitySummary => AssociatedEntityType != null && AssociatedEntity.Value is { } entity
         ? AssociatedEntityType.Summarize(entity) : null;
 
-    public async Task CancelAsync()
-    {
-        if (Status != ApprovalFlowStatus.Processing)
-            throw new UserFriendlyException("仅办理中的流程可取消.");
-        if (AssociatedEntityType != null && !string.IsNullOrWhiteSpace(AssociatedEntityId))
-            await AssociatedEntityType.OnCancel(AssociatedEntity.Value
-                ?? throw new UserFriendlyException("关联对象不存在或无权访问."));
-        this.Status = ApprovalFlowStatus.Canceled;
-        Touch();
-        Uow.Create((ActiveNode ?? Nodes.First()).Id, ApprovalFlowNodeLogType.FlowCanceled,
-            ServiceProvider.GetRequiredService<ICurrentUser>().UserId, "", "取消审批流程");
-        this.AddDomainEvent(new ApprovalFlowCanceledEvent(this, this.Id));
-    }
-
     public async Task CloseAsync(string nodeId)
     {
         var node = ActiveNode;
@@ -250,12 +236,12 @@ public partial class ApprovalFlow : Entity<ApprovalFlow>, ITenantFilteredEntity,
         if (!work.Session.IsInTransaction) work.Session.StartTransaction();
         if (associated != null)
             await AssociatedEntityType!.OnClose(associated);
-        Status = ApprovalFlowStatus.Archived;
+        Status = ApprovalFlowStatus.Closed;
         ArchivedAt = DateTimeOffset.UtcNow;
         Touch();
         Uow.Create(node.Id, ApprovalFlowNodeLogType.FlowClosed,
             ServiceProvider.GetRequiredService<ICurrentUser>().UserId, "", "关闭审批流程并归档");
-        AddDomainEvent(new ApprovalFlowCanceledEvent(this, Id));
+        AddDomainEvent(new ApprovalFlowClosedEvent(this, Id));
     }
 
     public ApprovalFlow InsertNode(int index, ApprovalFlowNode approvalflowNode)
@@ -308,7 +294,6 @@ public class ApprovalFlowAssociatedEntityType : Enumeration<ApprovalFlowAssociat
 {
     public Type Type { get; }
 
-    public virtual Task OnCancel(IApproveEntity entity) => Task.CompletedTask;
     public virtual Task OnClose(IApproveEntity entity) => entity.UnSubmit(Type, "审批流程已关闭.");
     public virtual Task OnApprove(IApproveEntity entity) => entity.Approve(Type, "审批流自动触发审批通过");
     public virtual string? ResolveOrgCode(IApproveEntity entity, string? requestedOrgCode)
@@ -340,6 +325,5 @@ public enum ApprovalFlowStatus
 {
     Processing = 0,
     Finished = 1,
-    Canceled = -1,
-    Archived = 2
+    Closed = 2
 }

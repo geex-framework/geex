@@ -46,11 +46,10 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
             using (var scope = _uow.DbContext.DisableDataFilters(typeof(IOrgFilteredEntity)))
                 existing = _uow.Query<ApprovalFlow>().Where(x => x.Id != entity.Id && x.AssociatedEntityType == request.AssociatedEntityType
                     && x.AssociatedEntityId == entity.AssociatedEntityId
-                    && (x.Status != ApprovalFlowStatus.Archived || x.ReplacedByFlowId == null)).ToList();
+                    && (x.ReplacedByFlowId == null || x.ReplacedByFlowId == "")).ToList();
             if (existing.Count > 1) throw new UserFriendlyException("该对象存在多个待衔接流程, 请先核对关联记录.");
             previous = existing.SingleOrDefault();
-            if (previous != null && previous.Status != ApprovalFlowStatus.Canceled
-                && !(previous.Status == ApprovalFlowStatus.Archived && previous.ArchivedAt.HasValue && string.IsNullOrEmpty(previous.ReplacedByFlowId)))
+            if (previous != null && previous.Status != ApprovalFlowStatus.Closed)
                 throw new UserFriendlyException("该对象已有关联审批流程.");
             var key = $"{request.AssociatedEntityType!.Value}:{entity.AssociatedEntityId}";
             if (!_uow.DbContext.SupportTransaction)
@@ -73,14 +72,6 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
         EnsureCreator(entity);
         entity.Edit(request);
         return entity;
-    }
-
-    public async Task<bool> CancelApprovalFlow(string id)
-    {
-        var entity = _uow.Query<ApprovalFlow>().GetById(id);
-        EnsureCreator(entity);
-        await entity.CancelAsync();
-        return true;
     }
 
     public async Task<bool> CloseApprovalFlow(string nodeId)

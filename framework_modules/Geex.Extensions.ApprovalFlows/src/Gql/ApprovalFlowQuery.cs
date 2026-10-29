@@ -48,7 +48,9 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
             .WhereIf(request.EndTime.HasValue, x => x.CreatedOn <= request.EndTime)
             .WhereIf(!string.IsNullOrEmpty(request.TemplateId), x => x.TemplateId == request.TemplateId)
             .WhereIf(!string.IsNullOrEmpty(request.CreatorUserId), x => x.CreatorUserId == request.CreatorUserId)
-            .WhereIf(request.Status != default, x => x.Status == request.Status);
+            .WhereIf(request.Status != default, x => x.Status == request.Status)
+            .WhereIf(request.Archived == true, x => x.ArchivedAt != null)
+            .WhereIf(request.Archived == false, x => x.ArchivedAt == null);
         return result;
     }
 
@@ -58,7 +60,7 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
     {
         if (ObjectId.TryParse(entityId, out var objectId)) entityId = objectId.ToString();
         return _uow.Query<ApprovalFlow>().SingleOrDefault(x => x.AssociatedEntityType == entityType
-            && x.AssociatedEntityId == entityId && x.Status != ApprovalFlowStatus.Archived);
+            && x.AssociatedEntityId == entityId && x.ArchivedAt == null);
     }
 
     public async Task<List<string>> ApprovalFlowTags()

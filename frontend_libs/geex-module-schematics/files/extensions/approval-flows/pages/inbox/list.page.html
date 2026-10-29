@@ -56,6 +56,12 @@
         </nz-select>
       </nz-form-control>
     </nz-form-item>
+    <nz-form-item><nz-form-label>{{ I18N.ApprovalFlows.archiveStatus }}</nz-form-label><nz-form-control>
+      <nz-select [(ngModel)]="filterArchived" name="filterArchived" nzAllowClear [nzPlaceHolder]="I18N.ApprovalFlows.archiveAll" style="min-width:120px">
+        <nz-option [nzValue]="false" [nzLabel]="I18N.ApprovalFlows.notArchived" />
+        <nz-option [nzValue]="true" [nzLabel]="I18N.ApprovalFlows.archived" />
+      </nz-select>
+    </nz-form-control></nz-form-item>
     <nz-form-item>
       <button nz-button nzType="primary" type="button" (click)="pageIndex = 1; load()">
         <i nz-icon nzType="search" nzTheme="outline"></i>{{ I18N.Common.action.search }}

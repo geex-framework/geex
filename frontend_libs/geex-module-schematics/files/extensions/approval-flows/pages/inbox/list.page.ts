@@ -32,13 +32,13 @@ export class InboxListPage implements OnInit, AfterViewInit {
   tags: string[] = [];
   filterOrgCodes: string[] = [];
   filterStatus: ApprovalFlowStatus | null = null;
+  filterArchived: boolean | null = null;
   pageIndex = 1;
   pageSize = 10;
   readonly statusOptions = [
     { label: ApprovalFlowStatus.Processing, value: ApprovalFlowStatus.Processing },
     { label: ApprovalFlowStatus.Finished, value: ApprovalFlowStatus.Finished },
-    { label: ApprovalFlowStatus.Canceled, value: ApprovalFlowStatus.Canceled },
-    { label: ApprovalFlowStatus.Archived, value: ApprovalFlowStatus.Archived },
+    { label: ApprovalFlowStatus.Closed, value: ApprovalFlowStatus.Closed },
   ];
 
   ngOnInit(): void {
@@ -67,6 +67,10 @@ export class InboxListPage implements OnInit, AfterViewInit {
         title: this.I18N.ApprovalFlows.progress,
         render: this.progressTpl(),
         width: 180,
+      },
+      {
+        title: this.I18N.ApprovalFlows.archiveStatus,
+        format: item => item.archivedAt ? this.I18N.ApprovalFlows.archived : this.I18N.ApprovalFlows.notArchived,
       },
       { title: this.I18N.ApprovalFlows.createdOn, index: "createdOn", type: "date" },
       {
@@ -99,7 +103,7 @@ export class InboxListPage implements OnInit, AfterViewInit {
   }
 
   progressStatus(item: ApprovalFlowBrief): "success" | "exception" | "active" | "normal" {
-    if (item.status === ApprovalFlowStatus.Canceled) {
+    if (item.status === ApprovalFlowStatus.Closed) {
       return "exception";
     }
     if (item.status === ApprovalFlowStatus.Finished) {
@@ -117,10 +121,8 @@ export class InboxListPage implements OnInit, AfterViewInit {
     switch (status) {
       case ApprovalFlowStatus.Finished:
         return this.I18N.ApprovalFlows.statusFinished;
-      case ApprovalFlowStatus.Canceled:
-        return this.I18N.ApprovalFlows.statusCanceled;
-      case ApprovalFlowStatus.Archived:
-        return "已归档";
+      case ApprovalFlowStatus.Closed:
+        return this.I18N.ApprovalFlows.statusClosed;
       case ApprovalFlowStatus.Processing:
         return this.I18N.ApprovalFlows.statusProcessing;
       default:
@@ -144,7 +146,7 @@ export class InboxListPage implements OnInit, AfterViewInit {
           query: approvalFlows,
           variables: {
             filter: Object.keys(filter).length ? filter : undefined,
-            request: { status: this.filterStatus, tag: this.tag },
+            request: { status: this.filterStatus, archived: this.filterArchived, tag: this.tag },
             skip: (this.pageIndex - 1) * this.pageSize,
             take: this.pageSize,
             sort: [{ createdOn: SortEnumType.descend }],

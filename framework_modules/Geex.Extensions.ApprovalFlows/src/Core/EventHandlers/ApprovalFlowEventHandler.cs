@@ -12,7 +12,7 @@ namespace Geex.Extensions.ApprovalFlows.Core.EventHandlers;
 
 public class ApprovalFlowEventHandler :
     IEventHandler<ApprovalFlowFinishEvent>,
-    IEventHandler<ApprovalFlowCanceledEvent>,
+    IEventHandler<ApprovalFlowClosedEvent>,
     ITransientDependency
 {
     private readonly IUnitOfWork _uow;
@@ -37,12 +37,12 @@ public class ApprovalFlowEventHandler :
         });
     }
 
-    public async Task Handle(ApprovalFlowCanceledEvent eventData, CancellationToken cancellationToken)
+    public async Task Handle(ApprovalFlowClosedEvent eventData, CancellationToken cancellationToken)
     {
         var messageEntity = await _uow.Request(new CreateMessageRequest()
         {
             Severity = MessageSeverityType.Warn,
-            Text = $"【工作流】:{eventData.ApprovalFlow.Name} {(eventData.ApprovalFlow.Status == Core.Entities.ApprovalFlowStatus.Archived ? "已关闭并归档" : "已取消")}.",
+            Text = $"【工作流】:{eventData.ApprovalFlow.Name} 已关闭并归档.",
             Meta = new JsonObject([new("ApprovalFlowId", eventData.ApprovalFlow.Id)]),
         });
         var toUserIds = eventData.ApprovalFlow.Stakeholders

@@ -12,6 +12,7 @@ public record QueryApprovalFlowRequest : IRequest<IQueryable<ApprovalFlow>>
     public string? TemplateId { get; set; }
     public string? CreatorUserId { get; set; }
     public ApprovalFlowStatus? Status { get; set; }
+    public bool? Archived { get; set; }
     public DateTimeOffset? StartTime { get; set; }
     public DateTimeOffset? EndTime { get; set; }
 }

@@ -55,6 +55,7 @@ fragment ApprovalFlowBrief on ApprovalFlow {
   description
   status
   orgCode
+  archivedAt
   activeIndex
   canEdit
   createdOn
@@ -166,10 +167,6 @@ mutation rejectApprovalFlowNode($nodeId: String!, $message: String!, $targetNode
 
 mutation closeApprovalFlow($nodeId: String!) {
   closeApprovalFlow(nodeId: $nodeId)
-}
-
-mutation cancelApprovalFlow($id: String!) {
-  cancelApprovalFlow(id: $id)
 }
 
 mutation editApprovalFlow($request: EditApprovalFlowRequest!) {
