@@ -41,6 +41,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             }
             var users = _uow.Query<IAuthUser>();
             _logger.LogWarning("AUTH_DIAG users={Count}", users.Count());
+            using (_uow.DbContext.DisableAllDataFilters()) { _logger.LogWarning("AUTH_DIAG allUsers={Count}", _uow.Query<IAuthUser>().Count()); }
             var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
             var passwordOk = user != default && user.CheckPassword(request.Password);
             if (user == default || !passwordOk)
@@ -61,6 +62,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         }
     }
 }
+
 
 
 
