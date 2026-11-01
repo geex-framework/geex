@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Extensions.Authentication.Core.Entities;
@@ -60,5 +61,6 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         }
     }
 }
+
 
 
