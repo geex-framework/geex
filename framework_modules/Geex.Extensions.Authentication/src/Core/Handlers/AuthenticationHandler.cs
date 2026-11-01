@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using Geex.MultiTenant;
+using MongoDB.Entities.Utilities;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Extensions.Authentication.Core.Entities;
@@ -37,6 +39,8 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             // 数据过滤器，并显式按当前租户收敛（超管保持跨租户查找）。
             using var filterScope = _uow.DbContext.DisableAllDataFilters();
             var users = _uow.Query<IAuthUser>();
+            users.Provider.As<ICachedDbContextQueryProvider>().DbContext.DisableDataFilters(typeof(ITenantFilteredEntity));
+            System.Console.WriteLine($"AUTH_COUNT {users.Count()}");
             var isSuperAdmin = request.UserIdentifier is GeexConstants.SuperAdminId or GeexConstants.SuperAdminName;
             var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
             if (!isSuperAdmin && user != default)
@@ -68,6 +72,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         }
     }
 }
+
 
 
 
