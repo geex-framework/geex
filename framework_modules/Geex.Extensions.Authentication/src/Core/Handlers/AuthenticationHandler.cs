@@ -42,7 +42,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             using var filterScope = _uow.DbContext.DisableAllDataFilters();
             var filterUsers = _uow.Query<IAuthUser>();
             filterUsers.Provider.As<ICachedDbContextQueryProvider>().DbContext.DisableAllDataFilters();
-            System.Console.WriteLine($"AUTH_PROVIDER_COUNT {filterUsers.Count()}");
+            System.Console.WriteLine($"AUTH_PROVIDER_COUNT {filterUsers.Count()} db={_uow.DbContext.DefaultDb.DatabaseNamespace.DatabaseName}");
             var users = _uow.Query<IAuthUser>();
 
             var isSuperAdmin = request.UserIdentifier is GeexConstants.SuperAdminId or GeexConstants.SuperAdminName;
@@ -76,6 +76,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         }
     }
 }
+
 
 
 
