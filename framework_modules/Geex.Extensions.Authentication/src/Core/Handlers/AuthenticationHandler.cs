@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Authentication.Requests;
+using Geex.MultiTenant;
 using MediatX;
 using Microsoft.Extensions.Logging;
 
@@ -15,17 +16,20 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         private readonly GeexJwtSecurityTokenHandler _tokenHandler;
         private readonly UserTokenGenerateOptions _userTokenGenerateOptions;
         private readonly ILogger<AuthenticationHandler> _logger;
+        private readonly ICurrentTenant _currentTenant;
 
         public AuthenticationHandler(
             IUnitOfWork uow,
             GeexJwtSecurityTokenHandler tokenHandler,
             UserTokenGenerateOptions userTokenGenerateOptions,
-            ILogger<AuthenticationHandler> logger)
+            ILogger<AuthenticationHandler> logger,
+            ICurrentTenant currentTenant)
         {
             _uow = uow;
             _tokenHandler = tokenHandler;
             _userTokenGenerateOptions = userTokenGenerateOptions;
             _logger = logger;
+            _currentTenant = currentTenant;
         }
 
         public async Task<UserSession> Handle(AuthenticateRequest request, CancellationToken cancellationToken)
@@ -39,7 +43,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             var passwordOk = user != default && user.CheckPassword(request.Password);
             if (user == default || !passwordOk)
             {
-                _logger.LogWarning("AUTH_DIAG found={Found} passwordOk={PasswordOk}", user != default, passwordOk);
+                _logger.LogWarning("AUTH_DIAG found={Found} passwordOk={PasswordOk} tenant={Tenant}", user != default, passwordOk, _currentTenant.Code ?? "<empty>");
                 throw new BusinessException(GeexExceptionType.NotFound, message: "用户名或者密码不正确");
             }
 
