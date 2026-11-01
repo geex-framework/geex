@@ -43,7 +43,9 @@ namespace Geex.Extensions.Authentication.Core.Handlers
                 users = users.Where(x => x.TenantCode == tenantCode);
             }
             var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
-            if (user == default || !user.CheckPassword(request.Password))
+            var passwordOk = user != default && user.CheckPassword(request.Password);
+            Console.WriteLine($"AUTH_RESULT found={user != default} pwd={passwordOk} tenant={_currentTenant.Code ?? "<empty>"}");
+            if (user == default || !passwordOk)
             {
                 throw new BusinessException(GeexExceptionType.NotFound, message: "用户名或者密码不正确");
             }
@@ -60,6 +62,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         }
     }
 }
+
 
 
 
