@@ -2,12 +2,14 @@ using System;
 using System.Linq;
 using Geex.MultiTenant;
 using MongoDB.Entities.Utilities;
+using MongoDB.Entities.Utilities;
 using System.Threading;
 using System.Threading.Tasks;
 using Geex.Extensions.Authentication.Core.Entities;
 using Geex.Extensions.Authentication.Core.Utils;
 using Geex.Extensions.Authentication.Requests;
 using Geex.MultiTenant;
+using MongoDB.Entities.Utilities;
 using MediatX;
 
 namespace Geex.Extensions.Authentication.Core.Handlers
@@ -38,6 +40,9 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             // 会导致合法账号被过滤掉并与“密码错误”共用提示。这里仅对凭据查找禁用
             // 数据过滤器，并显式按当前租户收敛（超管保持跨租户查找）。
             using var filterScope = _uow.DbContext.DisableAllDataFilters();
+            var filterUsers = _uow.Query<IAuthUser>();
+            filterUsers.Provider.As<ICachedDbContextQueryProvider>().DbContext.DisableAllDataFilters();
+            System.Console.WriteLine($"AUTH_PROVIDER_COUNT {filterUsers.Count()}");
             var users = _uow.Query<IAuthUser>();
 
             var isSuperAdmin = request.UserIdentifier is GeexConstants.SuperAdminId or GeexConstants.SuperAdminName;
@@ -71,6 +76,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         }
     }
 }
+
 
 
 
