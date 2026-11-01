@@ -39,6 +39,7 @@ namespace Geex.Extensions.Authentication.Core.Handlers
                 _uow.DbContext.DisableAllDataFilters();
             }
             var users = _uow.Query<IAuthUser>();
+            _logger.LogWarning("AUTH_DIAG users={Count}", users.Count());
             var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
             var passwordOk = user != default && user.CheckPassword(request.Password);
             if (user == default || !passwordOk)
@@ -59,3 +60,5 @@ namespace Geex.Extensions.Authentication.Core.Handlers
         }
     }
 }
+
+
