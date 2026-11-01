@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,12 +38,19 @@ namespace Geex.Extensions.Authentication.Core.Handlers
             using var filterScope = _uow.DbContext.DisableAllDataFilters();
             var users = _uow.Query<IAuthUser>();
             var isSuperAdmin = request.UserIdentifier is GeexConstants.SuperAdminId or GeexConstants.SuperAdminName;
-            if (!isSuperAdmin)
+            var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
+            if (!isSuperAdmin && user != default)
             {
                 var tenantCode = _currentTenant.Code;
-                users = users.Where(x => x.TenantCode == tenantCode);
+                var userTenant = user.TenantCode;
+                var tenantMatches = string.IsNullOrEmpty(tenantCode)
+                    ? string.IsNullOrEmpty(userTenant)
+                    : string.Equals(userTenant, tenantCode, StringComparison.Ordinal);
+                if (!tenantMatches)
+                {
+                    user = default;
+                }
             }
-            var user = users.MatchUserIdentifier(request.UserIdentifier?.Trim());
             if (user == default || !user.CheckPassword(request.Password))
             {
                 throw new BusinessException(GeexExceptionType.NotFound, message: "用户名或者密码不正确");
