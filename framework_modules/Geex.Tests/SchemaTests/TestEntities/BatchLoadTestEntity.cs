@@ -30,6 +30,10 @@ namespace Geex.Tests.SchemaTests.TestEntities
                 x => x.FirstChild,
                 x => x.ParentId == ThisId,
                 children => parent => children.Select(y => y.ThisId).ToList().Contains(parent.ParentId));
+            ConfigLazyQuery(
+                x => x.InterfaceFirstChild,
+                x => x.ParentId == ThisId,
+                children => parent => children.Select(y => y.ThisId).ToList().Contains(parent.ParentId));
         }
 
         public BatchLoadTestEntity(string thisId) : this()
@@ -47,6 +51,7 @@ namespace Geex.Tests.SchemaTests.TestEntities
 
         public IQueryable<BatchLoadTestEntity> Children => LazyQuery(() => Children);
         public Lazy<BatchLoadTestEntity> FirstChild => LazyQuery(() => FirstChild);
+        public Lazy<IBatchLoadTestEntity> InterfaceFirstChild => LazyQuery(() => InterfaceFirstChild);
 
         [AutoBatchLoadDependsOn(nameof(Children))]
         public int ChildCount => Children.Count();

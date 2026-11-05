@@ -571,6 +571,31 @@ namespace Geex.Tests.FeatureTests
             DB.StopProfiler();
         }
 
+        [Theory]
+        [InlineData("query", "batchLoadEntities")]
+        [InlineData("mutation", "batchLoadEntitiesEnabled")]
+        public async Task InterfaceNavigationUsesConcreteStorageType(string operation, string field)
+        {
+            await SeedBatchLoadDataAsync();
+            await DB.RestartProfiler();
+            try
+            {
+                var (response, text) = await SuperAdminClient.PostGqlRequest(
+                    operation + " { " + field + " { thisId interfaceFirstChild { thisId } } }");
+                response["errors"].ShouldBeNull(text);
+                var roots = response["data"]![field]!.AsArray();
+                roots.Single(root => root!["thisId"]!.GetValue<string>() == "2")!["interfaceFirstChild"]!["thisId"]!
+                    .GetValue<string>().ShouldBe("2.1");
+                roots.Single(root => root!["thisId"]!.GetValue<string>() == "3")!["interfaceFirstChild"].ShouldBeNull();
+                DB.GetProfilerLogs().AsQueryable()
+                    .Count(entry => entry.ns != null && entry.ns.Contains(ProfilerNamespace)).ShouldBe(2);
+            }
+            finally
+            {
+                DB.StopProfiler();
+            }
+        }
+
         private async Task SeedBatchLoadDataAsync()
         {
             var uow = ScopedService.GetRequiredService<IUnitOfWork>();
