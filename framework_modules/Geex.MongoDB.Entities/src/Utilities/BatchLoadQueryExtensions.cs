@@ -75,7 +75,9 @@ namespace MongoDB.Entities.Utilities
             }
 
             // 保留导航的泛型类型, 持久化根类型转换由查询 Provider 处理.
-            var allQuery = first.DefaultSourceProvider().OfType(relatedType);
+            var source = first.DefaultSourceProvider();
+            // 可赋值的接口只表达导航类型, 不应生成 BSON 实体判别条件.
+            var allQuery = relatedType.IsAssignableFrom(source.ElementType) ? source : source.OfType(relatedType);
             var filteredQuery = (IQueryable)QueryableWhereMethodInfo.MakeGenericMethod(relatedType)
                 .Invoke(null, new object[] { allQuery, filter.CastParamType(relatedType) })!;
             var results = CreateTypedList(relatedType, filteredQuery).AsQueryable();

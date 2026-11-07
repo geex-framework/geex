@@ -41,6 +41,11 @@ namespace Geex.Tests.SchemaTests
         public IQueryable<BatchLoadTestEntity> BatchLoadEntities() =>
             RootEntities();
 
+        public bool UnitOfWorkTracking() => _uow.DbContext.EntityTrackingEnabled;
+
+        public bool QueryProviderTracking() =>
+            ((global::MongoDB.Entities.Utilities.ICachedDbContextQueryProvider)_uow.Query<BatchLoadTestEntity>().Provider).EntityTrackingEnabled;
+
         public IQueryable<IBatchLoadTestEntity> BatchLoadInterfaceEntities() =>
             RootEntities();
 
@@ -81,6 +86,15 @@ namespace Geex.Tests.SchemaTests
         public BatchLoadEnabledTestMutation(IUnitOfWork uow)
         {
             _uow = uow;
+        }
+
+        public async System.Threading.Tasks.Task<bool> SaveBatchLoadTrackingProbe(string thisId)
+        {
+            var tracking = _uow.DbContext.EntityTrackingEnabled &&
+                ((global::MongoDB.Entities.Utilities.ICachedDbContextQueryProvider)_uow.Query<BatchLoadTestEntity>().Provider).EntityTrackingEnabled;
+            _uow.Attach(new BatchLoadTestEntity(thisId));
+            await _uow.SaveChanges();
+            return tracking;
         }
 
         protected override void Configure(IObjectTypeDescriptor<BatchLoadEnabledTestMutation> descriptor)
