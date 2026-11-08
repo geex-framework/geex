@@ -9,6 +9,7 @@ public sealed class BackupType : ObjectType<Backup>
     {
         descriptor.BindFieldsExplicitly();
         descriptor.Field(x => x.Id);
+        descriptor.Field(x => x.CreatedOn);
         descriptor.Field(x => x.DatabaseName);
         descriptor.Field(x => x.ScheduledAt);
         descriptor.Field(x => x.StartedAt);
