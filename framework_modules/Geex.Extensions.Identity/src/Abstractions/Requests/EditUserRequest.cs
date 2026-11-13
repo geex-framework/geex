@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Geex.Extensions.Authentication;
 using MediatX;
+using HotChocolate;
 
 namespace Geex.Extensions.Identity.Requests
 {
@@ -8,11 +9,12 @@ namespace Geex.Extensions.Identity.Requests
     {
         public string Id { get; set; }
         public bool? IsEnable { get; set; }
+        public Optional<string?> DeactivationDate { get; set; }
         public string? Email { get; set; }
         public List<string>? RoleIds { get; set; }
         public List<string>? OrgCodes { get; set; }
         public string? AvatarFileId { get; set; }
-        public List<UserClaim>? Claims { get; set; } = new List<UserClaim>();
+        public List<UserClaim>? Claims { get; set; }
         public string? PhoneNumber { get; set; }
         public string? Username { get; set; }
         public string Nickname { get; set; }

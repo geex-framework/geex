@@ -30,6 +30,7 @@ namespace Geex.Extensions.Identity.Requests
     {
         public string Username { get; set; }
         public bool IsEnable { get; set; } = true;
+        public string? DeactivationDate { get; set; }
         public string? Email { get; set; }
         public List<string>? RoleIds { get; set; } = new List<string>();
         public List<string>? OrgCodes { get; set; } = new List<string>();

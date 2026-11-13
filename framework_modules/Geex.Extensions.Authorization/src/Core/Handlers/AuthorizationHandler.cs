@@ -19,16 +19,18 @@ namespace Geex.Extensions.Authorization.Core.Handlers
     {
         private IUnitOfWork _uow;
 
-        public AuthorizationHandler(IRbacEnforcer enforcer, IUnitOfWork uow)
+        private readonly TransactionalRoleAssignments _roleAssignments;
+        public AuthorizationHandler(IRbacEnforcer enforcer, IUnitOfWork uow, TransactionalRoleAssignments roleAssignments)
         {
             _enforcer = enforcer;
             _uow = uow;
+            _roleAssignments = roleAssignments;
         }
 
         private IRbacEnforcer _enforcer { get; init; }
         public async Task Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
-            await _enforcer.SetRoles(notification.UserId, notification.RoleIds);
+            _roleAssignments.Set(notification.UserId, notification.RoleIds);
             var user = _uow.Query<IAuthUser>().GetById(notification.UserId);
             if (user != null)
             {

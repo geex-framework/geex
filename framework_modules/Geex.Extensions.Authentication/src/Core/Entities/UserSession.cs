@@ -45,6 +45,8 @@ public partial class UserSession : Entity<UserSession>
     public DateTimeOffset LastUpdatedOn { get; private set; }
     [JsonInclude]
     public List<SupplementaryClaim> SupplementaryClaims { get; private set; } = [];
+    [JsonInclude, global::MongoDB.Bson.Serialization.Attributes.BsonIgnore, HotChocolate.GraphQLIgnore]
+    public DateTimeOffset ClaimsUserModifiedOn { get; private set; }
     [JsonIgnore]
     public string Name => User.Value?.Username ?? string.Empty;
 
@@ -69,6 +71,7 @@ public partial class UserSession : Entity<UserSession>
         // Refreshing the cache must not dirty the session shared by concurrent business requests.
         var cachedSession = (UserSession)MemberwiseClone();
         cachedSession.SupplementaryClaims = claims.ToList();
+        cachedSession.ClaimsUserModifiedOn = User.Value.ModifiedOn;
         var redis = Uow.ServiceProvider.GetRequiredService<IRedisDatabase>();
         await redis.SetNamedAsync(
             cachedSession,
