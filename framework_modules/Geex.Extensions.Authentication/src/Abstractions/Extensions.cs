@@ -27,6 +27,11 @@ namespace Geex.Extensions.Authentication
         string token,
         CancellationToken cancellationToken = default)
     {
+      foreach (var guard in user.DbContext.As<IUnitOfWork>().ServiceProvider.GetServices<IUserSessionGuard>())
+      {
+        await guard.BeforeStartAsync(user, provider, cancellationToken);
+      }
+
       var session = user.GetSessionFromDb(provider);
       if (session == null)
       {
