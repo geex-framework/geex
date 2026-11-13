@@ -112,8 +112,7 @@ namespace System.Linq
                         }
                     default:
                         {
-                            var binary = exp as BinaryExpression;
-                            if (binary.Left is not MemberExpression memberExp) return exp;
+                            if (exp is not BinaryExpression binary || binary.Left is not MemberExpression memberExp) return exp;
                             while (memberExp.Expression is MemberExpression nestedMemberExp)
                             {
                                 memberExp = nestedMemberExp;
