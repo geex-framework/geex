@@ -85,6 +85,7 @@ namespace Geex.Storage
         /// <inheritdoc />
         public override async Task<MergedBulkWriteResult> SaveChanges(CancellationToken cancellation = default)
         {
+            ThrowIfTransactionAborted();
             if (_requiredDomainEventSaveFailed)
                 throw new InvalidOperationException("要求领域事件成功的工作单元已失败, 请在新工作单元中重试.");
             if (!RequireDomainEventSuccess) return await SaveChangesCore(cancellation);

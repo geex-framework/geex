@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Geex.Extensions.Authentication;
 using Geex.Gql.Types;
+using Geex.Extensions.Identity.Core.Entities;
 using HotChocolate.Types;
 
 namespace Geex.Extensions.Identity.Gql
@@ -43,6 +44,8 @@ namespace Geex.Extensions.Identity.Gql
             //.Authorize()
             ;
             descriptor.Field(x => x.UsersCache()).AllowAnonymous();
+            descriptor.Field(x => x.UserChangeRecords(default!)).UseOffsetPaging<UserChangeRecord.Graph>()
+                .Authorize(IdentityPermission.UserPermission.Query);
             base.Configure(descriptor);
         }
 
@@ -78,6 +81,15 @@ namespace Geex.Extensions.Identity.Gql
             if (userId == null) return default;
             var user = _uow.Query<IUser>().GetById(userId);
             return user;
+        }
+
+        public IQueryable<UserChangeRecord> UserChangeRecords(string userId)
+        {
+            var user = _uow.Query<IUser>().SingleOrDefault(x => x.Id == userId);
+            if (user == null || user.Id == GeexConstants.SuperAdminId && !_currentUser.IsSuperAdmin)
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "用户不存在或不可访问.");
+            return _uow.Query<UserChangeRecord>().Where(x => x.UserId == user.Id && x.TenantCode == user.TenantCode)
+                .OrderByDescending(x => x.OccurredAt).ThenByDescending(x => x.Id);
         }
     }
 }
