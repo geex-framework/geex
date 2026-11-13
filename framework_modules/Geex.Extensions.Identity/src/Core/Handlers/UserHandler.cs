@@ -21,6 +21,7 @@ namespace Geex.Extensions.Identity.Core.Handlers
         IRequestHandler<AssignRoleRequest, bool>,
         IRequestHandler<AssignOrgRequest, bool>,
         IRequestHandler<ChangeOrganizationMembersRequest, bool>,
+        IRequestHandler<TransferOrganizationMembersRequest, bool>,
         IRequestHandler<EditUserRequest, IUser>,
         IRequestHandler<ResetUserPasswordRequest, IUser>,
         IRequestHandler<DeleteUserRequest, bool>,
@@ -153,6 +154,32 @@ namespace Geex.Extensions.Identity.Core.Handlers
                 if (user.OrgCodes.SequenceEqual(next)) continue;
                 await user.AssignOrgs(next);
                 History.Record(user, before, request.Add ? "添加组织成员" : "移出组织成员");
+            }
+            return true;
+        }
+
+        public async Task<bool> Handle(TransferOrganizationMembersRequest request, CancellationToken cancellationToken)
+        {
+            var ids = (request.UserIds ?? new List<string>()).Distinct().ToList();
+            if (ids.Count == 0 || ids.Count > 200 || string.IsNullOrWhiteSpace(request.SourceOrgCode)
+                || string.IsNullOrWhiteSpace(request.TargetOrgCode) || request.SourceOrgCode == request.TargetOrgCode)
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "请选择不同的来源和目标组织及 1-200 名用户.");
+            Uow.DbContext.RequireDomainEventSuccess = true;
+            if (Uow.DbContext.SupportTransaction && !Uow.DbContext.Session.IsInTransaction)
+                Uow.DbContext.Session.StartTransaction();
+            var orgs = Uow.Query<IOrg>().Where(x => x.Code == request.SourceOrgCode || x.Code == request.TargetOrgCode).ToList();
+            var source = orgs.Where(x => x.Code == request.SourceOrgCode).ToList();
+            var target = orgs.Where(x => x.Code == request.TargetOrgCode).ToList();
+            if (source.Count != 1 || target.Count != 1 || source[0].TenantCode != target[0].TenantCode)
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "组织不存在或不可访问, 请刷新后重试.");
+            var users = Uow.Query<IUser>().Where(x => ids.Contains(x.Id)).ToList();
+            if (users.Count != ids.Count || users.Any(x => x.TenantCode != source[0].TenantCode || !x.OrgCodes.Contains(request.SourceOrgCode)))
+                throw new BusinessException(GeexExceptionType.ValidationFailed, message: "所选成员已发生变化或不可访问, 请刷新后重试.");
+            foreach (var user in users)
+            {
+                var before = History.Capture(user);
+                await user.AssignOrgs(user.OrgCodes.Where(x => x != request.SourceOrgCode).Append(request.TargetOrgCode).Distinct().ToList());
+                History.Record(user, before, "转移组织成员");
             }
             return true;
         }
