@@ -1,6 +1,7 @@
 ﻿using Geex.Extensions.Authentication;
 using Geex.Extensions.Authorization.Core.Casbin;
 using Geex.Extensions.Authorization.Core.Utils;
+using Geex.Extensions.Authorization.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -16,6 +17,7 @@ namespace Geex.Extensions.Authorization
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             var services = context.Services;
+            services.AddScoped<TransactionalRoleAssignments>();
             services.AddCasbinAuthorization(out var configureAction);
             SchemaBuilder.AddAuthorization(configureAction);
             SchemaBuilder.TryAddTypeInterceptor<AuthorizationTypeInterceptor>();

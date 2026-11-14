@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -78,9 +78,42 @@ namespace Geex.Storage
             return entities.Select(this.Attach).ToList();
         }
         public Queue<IEvent> DomainEvents { get; } = new Queue<IEvent>();
+        // 需要事件回写与实体保存共同成功的工作单元可启用失败传播.
+        public bool RequireDomainEventSuccess { get; set; }
+        private bool _requiredDomainEventSaveFailed;
 
         /// <inheritdoc />
         public override async Task<MergedBulkWriteResult> SaveChanges(CancellationToken cancellation = default)
+        {
+            ThrowIfTransactionAborted();
+            if (_requiredDomainEventSaveFailed)
+                throw new InvalidOperationException("要求领域事件成功的工作单元已失败, 请在新工作单元中重试.");
+            if (!RequireDomainEventSuccess) return await SaveChangesCore(cancellation);
+            try
+            {
+                if (!SupportTransaction)
+                    throw new InvalidOperationException("要求领域事件成功的保存需要数据库事务支持.");
+                if (!Session.IsInTransaction) Session.StartTransaction();
+                return await SaveChangesCore(cancellation);
+            }
+            catch
+            {
+                // 失败事件已经出队, 重试需要使用新的工作单元.
+                _requiredDomainEventSaveFailed = true;
+                if (Session.IsInTransaction)
+                {
+                    try { await Session.AbortTransactionAsync(CancellationToken.None); }
+                    catch (Exception rollbackError)
+                    {
+                        ServiceProvider.GetService<ILogger<GeexDbContext>>()?.LogError(rollbackError,
+                            "Failed to abort required domain event transaction.");
+                    }
+                }
+                throw;
+            }
+        }
+
+        private async Task<MergedBulkWriteResult> SaveChangesCore(CancellationToken cancellation)
         {
             var logger = ServiceProvider.GetService<ILogger<GeexDbContext>>();
 
@@ -96,11 +129,17 @@ namespace Geex.Storage
                 {
                     try
                     {
-                        await this.Mediator?.Publish(@event, cancellation);
+                        if (RequireDomainEventSuccess)
+                        {
+                            if (Mediator == null) throw new InvalidOperationException("领域事件发布服务不可用.");
+                            await Mediator.PublishRequired(@event, cancellation);
+                        }
+                        else await this.Mediator?.Publish(@event, cancellation);
                     }
                     catch (Exception ex)
                     {
                         logger?.LogError(ex, "Domain event failed to process: {event}", @event.ToJson());
+                        if (RequireDomainEventSuccess) throw;
                     }
                 }
             }

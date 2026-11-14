@@ -15,12 +15,12 @@ namespace Geex.Extensions.ApprovalFlows.Events
         }
     }
 
-    public class ApprovalFlowCanceledEvent : IEvent
+    public class ApprovalFlowClosedEvent : IEvent
     {
         public ApprovalFlow ApprovalFlow { get; }
         public string Id { get; }
 
-        public ApprovalFlowCanceledEvent(ApprovalFlow approvalflow, string id)
+        public ApprovalFlowClosedEvent(ApprovalFlow approvalflow, string id)
         {
             ApprovalFlow = approvalflow;
             Id = id;

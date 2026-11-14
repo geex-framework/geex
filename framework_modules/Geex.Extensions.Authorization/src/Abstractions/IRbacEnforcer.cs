@@ -8,6 +8,7 @@ namespace Geex.Extensions.Authorization
         List<string> GetRolesForUser(string sub);
         List<string> GetUsersForRole(string sub);
         Task SetRoles(string sub, List<string> roles);
+        Task ReloadUserRoles(string sub);
         Task SetPermissionsAsync(string sub, IEnumerable<string> permissions);
         Task<bool> AddRolesForUserAsync(string sub, IEnumerable<string> role);
         List<string> GetImplicitPermissionsForUser(string sub);

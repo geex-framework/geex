@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Geex.Extensions.ApprovalFlows.Core.Entities;
 
 namespace Geex.Extensions.ApprovalFlows;
 
 public interface IApprovalFlowTemplateDate
 {
+    List<string> Tags => [];
+    List<ApprovalFlowFormField> FormFields => [];
     string? Name { get; set; }
     string? Description { get; set; }
     List<IApprovalFlowNodeTemplateData> ApprovalFlowNodeTemplates { get; }
@@ -13,6 +15,7 @@ public interface IApprovalFlowTemplateDate
 
 public interface IApprovalFlowDate
 {
+    List<ApprovalFormValue> FormValues => [];
     string? Name { get; set; }
     string? Description { get; set; }
     List<IApprovalFlowNodeData> Nodes { get; }
@@ -36,6 +39,9 @@ public interface IApprovalFlowNodeData
 
 public interface IApprovalFlowNodeTemplateData
 {
+    string? AuditUserId => null;
+    string? Description => null;
+    List<ApprovalFormField> FormFields => [];
     string? Id { get; set; }
     string? AuditRole { get; set; }
     string? Name { get; set; }

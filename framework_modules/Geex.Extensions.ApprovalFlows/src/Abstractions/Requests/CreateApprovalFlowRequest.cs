@@ -8,6 +8,7 @@ namespace Geex.Extensions.ApprovalFlows.Requests;
 
 public record CreateApprovalFlowRequest : IRequest<ApprovalFlow>, IApprovalFlowDate
 {
+    public List<ApprovalFormValue> FormValues { get; set; } = [];
     public string Name { get; set; }
     public string? Description { get; set; }
 

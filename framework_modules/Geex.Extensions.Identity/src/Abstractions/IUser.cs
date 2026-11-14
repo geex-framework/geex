@@ -14,6 +14,7 @@ namespace Geex.Extensions.Identity
     {
         List<string> RoleIds { get; }
         List<string> OrgCodes { get; set; }
+        string? DeactivationDate { get; }
         public List<string> Permissions { get; }
         List<UserClaim> Claims { get; set; }
         IQueryable<UserLogin> Logins { get; }

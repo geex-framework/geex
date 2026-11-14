@@ -40,16 +40,12 @@ namespace Geex.Extensions.Authentication.Core.Utils
             var redis = _uow.ServiceProvider.GetRequiredService<IRedisDatabase>();
             var cached = await redis.GetNamedAsync<UserSession>(UserSession.GetCacheKey(userId, provider));
             var principalIdentity = principal.Identity as ClaimsIdentity;
-            if (cached?.SupplementaryClaims?.Count > 0)
-            {
-                principalIdentity!.AppendClaims(cached.SupplementaryClaims.Select(x => new Claim(x.Type, x.Value)));
-                return principal;
-            }
-
             using var disableAllDataFilters = _uow.DbContext.DisableAllDataFilters();
             var user = _uow.Query<IAuthUser>().GetById(userId);
-            if (user == null)
+            if (user == null) return principal;
+            if (cached?.SupplementaryClaims?.Count > 0 && cached.ClaimsUserModifiedOn == user.ModifiedOn)
             {
+                principalIdentity!.AppendClaims(cached.SupplementaryClaims.Select(x => new Claim(x.Type, x.Value)));
                 return principal;
             }
 

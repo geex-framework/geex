@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -33,7 +33,7 @@ namespace MongoDB.Entities
     /// <para>TIP: Remember to always call .Dispose() after use or enclose in a 'Using' statement.</para>
     /// <para>IMPORTANT: Use the methods on this transaction to perform operations and not the methods on the DB class.</para>
     /// </summary>
-    public class DbContext : IDisposable
+    public partial class DbContext : IDisposable
     {
         static DbContext()
         {
@@ -588,6 +588,7 @@ namespace MongoDB.Entities
         /// <returns>A list of saved entity ids in format of {entityType}@{entityId}</returns>
         public virtual async Task<MergedBulkWriteResult> SaveChanges(CancellationToken cancellation = default)
         {
+            ThrowIfTransactionAborted();
             if (!EntityTrackingEnabled)
             {
                 this.Logger.LogError("EntityTrackingEnabled is false, SaveChanges will not save any entities.");
@@ -609,6 +610,9 @@ namespace MongoDB.Entities
 
             try
             {
+                if (PersistingTransaction != null)
+                    foreach (Func<CancellationToken, Task> callback in PersistingTransaction.GetInvocationList())
+                        await callback(cancellation);
                 foreach (var (rootType, keyedEntities) in this.MemoryDataCache.TypedCacheDictionary)
                 {
                     var toSavedEntities = keyedEntities.Values;
@@ -648,19 +652,20 @@ namespace MongoDB.Entities
                     oce.EntityType.Name, oce.EntityId, string.Join(", ", oce.ConflictingFields?.Select(f => f.FieldName) ?? []));
                 if (Session.IsInTransaction)
                 {
-                    await Session.AbortTransactionAsync(cancellation);
+                    await AbortTransactionAsync(CancellationToken.None);
                 }
                 throw;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error saving changes.");
+                await AbortTransactionAsync(CancellationToken.None);
                 throw;
             }
 
             if (Session.IsInTransaction && !IsInExplicitTransaction)
             {
-                await Session.CommitTransactionAsync(cancellation).ConfigureAwait(false);
+                await CommitTransactionAsync(cancellation).ConfigureAwait(false);
             }
 
             //this.Local.TypedCacheDictionary.Clear();
@@ -856,14 +861,14 @@ namespace MongoDB.Entities
             {
                 try
                 {
-                    IsInExplicitTransaction = false;
+                    if (!Session.IsInTransaction) return;
                     using var commitCts = new CancellationTokenSource(3000);
-                    await Session.CommitTransactionAsync(commitCts.Token);
+                    await CommitTransactionAsync(commitCts.Token);
                 }
                 catch (Exception e)
                 {
                     using var abortCts = new CancellationTokenSource(3000);
-                    await Session.AbortTransactionAsync(abortCts.Token);
+                    await AbortTransactionAsync(abortCts.Token);
                 }
             });
         }
@@ -878,35 +883,8 @@ namespace MongoDB.Entities
         /// <returns></returns>
         public virtual async Task CommitExplicitTransaction()
         {
-            if (this.IsInExplicitTransaction)
-            {
-                const int maxRetries = 3;
-                for (int attempt = 0; attempt < maxRetries; attempt++)
-                {
-                    try
-                    {
-                        await Session.CommitTransactionAsync();
-                        break;
-                    }
-                    catch (MongoException ex) when (ex.HasErrorLabel("TransientTransactionError"))
-                    {
-                        if (attempt == maxRetries - 1)
-                        {
-                            this.IsInExplicitTransaction = false;
-                            throw;
-                        }
-                        await Task.Delay(TimeSpan.FromSeconds(0.5 * (attempt + 1)));
-                    }
-                    finally
-                    {
-                        this.IsInExplicitTransaction = false;
-                    }
-                }
-            }
-            else
-            {
-                this.Logger.LogWarning("Explicit transaction is not started, nothing will be committed.");
-            }
+            if (IsInExplicitTransaction) await CommitTransactionAsync();
+            else Logger.LogWarning("Explicit transaction is not started, nothing will be committed.");
         }
     }
 }

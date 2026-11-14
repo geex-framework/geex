@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Geex.Extensions.ApprovalFlows.Events;
 using Geex.Storage;
@@ -105,13 +105,16 @@ public interface IApproveEntity : IEntity
     /// <param name="remark"></param>
     /// <returns></returns>
     /// <exception cref="BusinessException"></exception>
-    async Task UnSubmit<TEntity>(string? remark = default)
+    Task UnSubmit<TEntity>(string? remark = default) => UnSubmit(typeof(TEntity), remark);
+
+    async Task UnSubmit(Type entityType, string? remark = default)
     {
         if (this.ApproveStatus == ApproveStatus.Submitted)
         {
             this.ApproveStatus ^= ApproveStatus.Submitted;
             this.ApproveRemark = remark;
-            (this as IEntity)?.AddDomainEvent(new EntityUnSubmittedEvent<TEntity>(this));
+            var notification = Activator.CreateInstance(typeof(EntityUnSubmittedEvent<>).MakeGenericType(entityType), [this]) as IEvent;
+            (this as IEntity)?.AddDomainEvent(notification);
         }
         else if (this.ApproveStatus == ApproveStatus.Approved)
         {
