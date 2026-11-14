@@ -1,22 +1,23 @@
 import * as i0 from '@angular/core';
-import { WritableSignal, Signal, Injector, Provider, InjectionToken, EnvironmentProviders, ChangeDetectorRef, TemplateRef, Type, ExtendedSignal, CreateSignalOptions } from '@angular/core';
+import { WritableSignal, Signal, Injector, Provider, InjectionToken, EnvironmentProviders, ChangeDetectorRef, OnInit, OnDestroy, TemplateRef, Type, ExtendedSignal, CreateSignalOptions } from '@angular/core';
 import { HttpContextToken, HttpInterceptor, HttpRequest, HttpResponseBase, HttpHandler, HttpHeaders, HttpEvent } from '@angular/common/http';
-import { TypePolicies, ApolloLink, InMemoryCache, ApolloClient } from '@apollo/client';
+import { InMemoryCache, TypePolicies, ApolloLink, ApolloClient } from '@apollo/client';
 import { ApolloBase, Apollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
+import * as rxjs from 'rxjs';
+import { Observable, ObservableInput, ObservedValueOf } from 'rxjs';
 import { AuthConfig, OAuthService } from 'angular-oauth2-oidc';
 import { TranslateLoader, TranslationObject } from '@ngx-translate/core';
-import { Observable, ObservableInput, ObservedValueOf } from 'rxjs';
 import { AlainI18NService, ModalHelper, TitleService } from '@delon/theme';
 import { DocumentNode } from 'graphql';
 import { NzModalService, NzModalRef } from 'ng-zorro-antd/modal';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { FormGroup, FormControl, FormBuilder, FormArray, AbstractControlOptions } from '@angular/forms';
-import { Router, Params, ActivatedRoute, Route, NavigationExtras, UrlTree, ActivatedRouteSnapshot, DetachedRouteHandle, RouteReuseStrategy, Data, NavigationEnd } from '@angular/router';
+import { Router, Params, ActivatedRoute, NavigationExtras, UrlTree, ActivatedRouteSnapshot, DetachedRouteHandle, RouteReuseStrategy, Data, Route, NavigationEnd } from '@angular/router';
 import { ACLService, ACLCanType } from '@delon/acl';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { Location } from '@angular/common';
-import { ReuseTabService, ReuseTabStrategy, provideReuseTabConfig } from '@delon/abc/reuse-tab';
+import { ReuseTabService, ReuseTabStrategy, ReuseTabCached, provideReuseTabConfig } from '@delon/abc/reuse-tab';
 import { LoadingService } from '@delon/abc/loading';
 import { STChange, STData, STColumn, STExportOptions } from '@delon/abc/st';
 import { List } from 'linqts-camelcase';
@@ -53,6 +54,15 @@ declare function provideGeex<TExtensionModules extends Record<string, GeexModule
  * Does not install admin business UI pages; use `geex add <name>` for source modules.
  */
 declare function provideGeexCommon<TExtensionModules extends Record<string, GeexModule> = {}>(overrides?: Partial<GeexModules>, extensions?: TExtensionModules): Provider[];
+
+type SubscriptionConnectionState = "connecting" | "connected" | "disconnected";
+declare class GeexSubscriptionConnection {
+    private readonly state;
+    readonly changes: rxjs.Observable<SubscriptionConnectionState>;
+    update(state: SubscriptionConnectionState): void;
+    static ɵfac: i0.ɵɵFactoryDeclaration<GeexSubscriptionConnection, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<GeexSubscriptionConnection>;
+}
 
 type GeexTypePolicies = TypePolicies | Record<string, unknown>;
 type GeexApolloTypePolicyContribution = () => GeexTypePolicies;
@@ -118,6 +128,7 @@ declare function createGeexWsApolloOptions(options: {
     connectionParams?: () => Promise<Record<string, string>> | Record<string, string>;
     retryAttempts?: number;
     onOpened?: () => void;
+    connection?: GeexSubscriptionConnection;
     onError?: (err: unknown) => void;
 }): ApolloClient.Options;
 /**
@@ -582,6 +593,7 @@ declare abstract class RoutedComponent<TParams extends {}> extends BusinessCompo
     protected reuseTabSrv: ReuseTabService;
     protected route: ActivatedRoute;
     protected titleSrv: TitleService;
+    private loadedUrl?;
     ngOnInit(): Promise<void>;
     constructor();
     /** Full route-reload pipeline; override to replace navigation side effects. */
@@ -637,6 +649,7 @@ declare abstract class RoutedEditComponent<TParams extends GeexHint<{
 }>, TEntity extends GeexHint<{
     id?: string;
 }>, TEditSchema extends GeexHint<Partial<TEntity>>> extends RoutedComponent<TParams> {
+    private readonly tabs;
     entity?: GeexHint<TEntity>;
     entityForm?: GeexTypedFormGroup<TEditSchema>;
     originalValue?: TEditSchema;
@@ -680,9 +693,7 @@ declare abstract class TreeTableComponentBase<ITreeNode = any> {
 }
 
 declare class GeexRouter extends Router {
-    lastRoute: Route;
     constructor(injector: Injector);
-    private isDifferentPath;
     createUrlTree(commands: any[], navigationExtras?: NavigationExtras): UrlTree;
     static ɵfac: i0.ɵɵFactoryDeclaration<GeexRouter, never>;
     static ɵprov: i0.ɵɵInjectableDeclaration<GeexRouter>;
@@ -699,6 +710,100 @@ declare class GeexReuseTabStrategy extends ReuseTabStrategy {
     shouldAttach(route: ActivatedRouteSnapshot): boolean;
     static ɵfac: i0.ɵɵFactoryDeclaration<GeexReuseTabStrategy, never>;
     static ɵprov: i0.ɵɵInjectableDeclaration<GeexReuseTabStrategy>;
+}
+
+type GeexTabReuse = "none" | "path" | "query" | "full";
+type GeexTabOptions = {
+    reuse: "none" | "path" | "full";
+} | {
+    reuse: "query";
+    queryKeys?: readonly string[];
+};
+interface GeexTabDefaults {
+    menu: GeexTabReuse;
+    other: GeexTabReuse;
+}
+declare const GEEX_TAB_DEFAULTS: InjectionToken<GeexTabDefaults>;
+declare function geexTabPath(url: string): string;
+declare function geexTabKey(url: string, policy: GeexTabOptions): string;
+declare class GeexTabPolicy {
+    private readonly menus;
+    private readonly defaults;
+    resolve(url: string, snapshot?: ActivatedRouteSnapshot): GeexTabOptions;
+    key(url: string, snapshot?: ActivatedRouteSnapshot): string;
+    static ɵfac: i0.ɵɵFactoryDeclaration<GeexTabPolicy, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<GeexTabPolicy>;
+}
+declare module "@angular/router" {
+    interface RouteData {
+        tab?: GeexTabOptions;
+    }
+}
+
+interface GeexTabCached extends ReuseTabCached {
+    tabKey?: string;
+    tabPolicy?: GeexTabOptions;
+}
+declare class GeexReuseTabService extends ReuseTabService {
+    private readonly context;
+    private readonly policy;
+    private readonly cache;
+    private active?;
+    private listening;
+    constructor();
+    get curUrl(): string;
+    getUrl(route: ActivatedRouteSnapshot): string;
+    key(url: string, snapshot?: ActivatedRouteSnapshot): string;
+    index(url: string): number;
+    get(url?: string): GeexTabCached | null;
+    saveCache(snapshot: ActivatedRouteSnapshot, handle: any, pos?: number): void;
+    shouldDetach(route: ActivatedRouteSnapshot): boolean;
+    shouldAttach(route: ActivatedRouteSnapshot): boolean;
+    retrieve(route: ActivatedRouteSnapshot): DetachedRouteHandle | null;
+    shouldReuseRoute(future: ActivatedRouteSnapshot, current: ActivatedRouteSnapshot): boolean;
+    init(): void;
+    private synchronize;
+    static ɵfac: i0.ɵɵFactoryDeclaration<GeexReuseTabService, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<GeexReuseTabService>;
+}
+
+interface GeexCloseTabOptions {
+    fallbackUrl: string;
+    refreshOrigin?: boolean;
+}
+declare class GeexTabService {
+    private readonly router;
+    private readonly location;
+    private readonly reuse;
+    private readonly policy;
+    private readonly origins;
+    constructor();
+    private currentKey;
+    private contextFor;
+    open(commands: any[], extras?: NavigationExtras): Promise<boolean>;
+    activate(url: string): Promise<boolean>;
+    openMenu(url: string | UrlTree): Promise<boolean>;
+    closeCurrent(options: GeexCloseTabOptions): Promise<boolean>;
+    close(url: string, includeNonCloseable?: boolean): Promise<boolean>;
+    closeOthers(url: string, rightOnly: boolean, includeNonCloseable?: boolean): Promise<boolean>;
+    static ɵfac: i0.ɵɵFactoryDeclaration<GeexTabService, never>;
+    static ɵprov: i0.ɵɵInjectableDeclaration<GeexTabService>;
+}
+
+declare class GeexTabMenuDirective {
+    static ɵfac: i0.ɵɵFactoryDeclaration<GeexTabMenuDirective, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<GeexTabMenuDirective, "layout-default-nav[geexTabMenu]", never, {}, {}, never, never, true, never>;
+}
+declare class GeexTabsDirective implements OnInit, OnDestroy {
+    private readonly host;
+    private readonly tabs;
+    private originalClose?;
+    private readonly originalContextMenu;
+    private readonly originalTo;
+    ngOnInit(): void;
+    ngOnDestroy(): void;
+    static ɵfac: i0.ɵɵFactoryDeclaration<GeexTabsDirective, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<GeexTabsDirective, "reuse-tab[geexTabs]", never, {}, {}, never, never, true, never>;
 }
 
 declare class ListPageLayoutComponent {
@@ -725,7 +830,9 @@ declare class ListPageLayoutComponent {
     static ɵcmp: i0.ɵɵComponentDeclaration<ListPageLayoutComponent, "list-page-layout", never, { "title": { "alias": "title"; "required": true; "isSignal": true; }; "loading": { "alias": "loading"; "required": false; "isSignal": true; }; "total": { "alias": "total"; "required": false; "isSignal": true; }; "data": { "alias": "data"; "required": false; "isSignal": true; }; "columns": { "alias": "columns"; "required": false; "isSignal": true; }; "pi": { "alias": "pi"; "required": false; "isSignal": true; }; "ps": { "alias": "ps"; "required": false; "isSignal": true; }; "selectedCount": { "alias": "selectedCount"; "required": false; "isSignal": true; }; "multiSort": { "alias": "multiSort"; "required": false; "isSignal": true; }; "filtersInHeader": { "alias": "filtersInHeader"; "required": false; "isSignal": true; }; }, { "tableChange": "tableChange"; "refresh": "refresh"; }, ["headerExtraTpl", "headerTabTpl", "headerActionTpl"], ["[filters]", "[filters]", "[toolbar]"], true, never>;
 }
 
-type GeexReuseTabOptions = NonNullable<Parameters<typeof provideReuseTabConfig>[0]>;
+type GeexReuseTabOptions = NonNullable<Parameters<typeof provideReuseTabConfig>[0]> & {
+    defaults?: Partial<GeexTabDefaults>;
+};
 interface GeexDelonProvideOptions {
     router?: Type<Router>;
     reuseStrategy?: Type<RouteReuseStrategy>;
@@ -898,6 +1005,7 @@ declare module "@angular/router" {
     }
     interface NavigationBehaviorOptions {
         forceReload?: boolean;
+        closeCurrentTab?: boolean;
     }
     type GeexRoutes = GeexRoute[];
     interface GeexRoute extends Route {
@@ -1008,8 +1116,8 @@ declare global {
  */
 declare function bindGeexGlobal(): void;
 
-declare const exports: Record<string, any>;
+declare const exports$1: Record<string, any>;
 
-export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports as rison };
-export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexAppPermission, GeexDelonProvideOptions, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexHttpProvideOptions, GeexI18n, GeexI18nProvideOptions, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexSessionTerminatedCopy, GeexStartupI18nAdapter, GeexStartupOptions, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, UiModule, WritableDeepSignal };
+export { BusinessComponentBase, DebuggerBlockerService, ExtensionModule, GEEX_AFTER_LOGIN_NAVIGATE, GEEX_API_BASE_URL, GEEX_APOLLO_CACHE, GEEX_APOLLO_TYPE_POLICY_CONTRIBUTIONS, GEEX_APP_MENU_SETTING, GEEX_APP_NAME_SETTING, GEEX_APP_PERMISSION, GEEX_BLOCK_DEBUGGER, GEEX_CANCEL_AUTHENTICATION_DOCUMENT, GEEX_DEFAULT_HTTP_STATUS_MESSAGES, GEEX_DEFAULT_MENUS, GEEX_EXCEPTION_403_PROFILE_LABEL, GEEX_EXCEPTION_403_PROFILE_PATH, GEEX_EXCEPTION_500_PATH, GEEX_EXCEPTION_LOGIN_PATH, GEEX_HTTP_STATUS_MESSAGES, GEEX_I18N, GEEX_I18N_PACKS, GEEX_I18N_SERVICE, GEEX_LOCALIZATION_DATA_SETTING, GEEX_LOCALIZATION_LANGUAGE_SETTING, GEEX_LOGIN_PATH, GEEX_MENU_CONTRIBUTIONS, GEEX_MOBILE_PATH_SUFFIX, GEEX_MODULE_CONTRIBUTIONS, GEEX_PROFILE_LABEL, GEEX_PROFILE_PATH, GEEX_SESSION_TERMINATED_COPY, GEEX_STARTUP_OPTIONS, GEEX_SUPER_ADMIN_USER_ID, GEEX_TAB_DEFAULTS, Geex, GeexAuthLogout, GeexHttpInterceptor, GeexI18nService, GeexReuseTabService, GeexReuseTabStrategy, GeexRouter, GeexStartupService, GeexSubscriptionConnection, GeexTabMenuDirective, GeexTabPolicy, GeexTabService, GeexTabsDirective, GeexTranslateLoader, I18N, GeexI18nService as I18NService, ListPageLayoutComponent, ListPageParams, ModalComponentBase, RoutedComponent, RoutedEditComponent, RoutedListComponent, SILENT_REQUEST, SilentApollo, TreeTableComponentBase, applyEnvironmentOverrides, assert, assertIsArray, assertIsDefined, assertIsNotArray, bindGeexGlobal, cancelAuthenticationMutation, computedAsync, configGeex, createGeexGraphqlErrorLink, createGeexHttpApolloOptions, createGeexInMemoryCache, createGeexSilentContextLink, createGeexUploadHttpLink, createGeexUriLink, createGeexWsApolloOptions, createUiModule, deepProxy, deepSignal, extract, geex, geexApolloDefaultOptions, geexDefaultTypePolicies, geexTabKey, geexTabPath, guardedSignal, isGeexSilentOperation, isRecord, loadEnvironmentOverrides, mergeGeexI18nPacks, provideGeex, provideGeexApollo, provideGeexApolloTypePolicies, provideGeexCommon, provideGeexDelonBase, provideGeexExtensions, provideGeexHttp, provideGeexI18n, provideGeexMenus, provideGeexModuleContribution, provideGeexStartup, exports$1 as rison };
+export type { BatchOperationName, DeepSignal, GeexApolloCacheOptions, GeexApolloLinkOptions, GeexApolloTypePolicyContribution, GeexAppPermission, GeexCloseTabOptions, GeexDelonProvideOptions, GeexEnvironmentOverridesOptions, GeexExtensions, GeexGraphqlErrorHandler, GeexHint, GeexHttpProvideOptions, GeexI18n, GeexI18nProvideOptions, GeexMenuContribution, GeexMenuContributionContext, GeexMenuItem, GeexModule, GeexModuleContribution, GeexModuleContributionContext, GeexModuleMap, GeexModules, GeexOverrides, GeexReuseTabOptions, GeexSessionTerminatedCopy, GeexStartupI18nAdapter, GeexStartupOptions, GeexTabCached, GeexTabDefaults, GeexTabOptions, GeexTabReuse, GeexTypePolicies, GeexTypedFormGroup, IdentityClaims, LangObject, PropertyAccessType, ProvideGeexApolloOptions, RouteParams, RouteParamsMappings, SubscriptionConnectionState, UiModule, WritableDeepSignal };
 //# sourceMappingURL=index.d.ts.map

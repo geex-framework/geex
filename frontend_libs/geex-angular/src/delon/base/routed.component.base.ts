@@ -52,6 +52,7 @@ export abstract class RoutedComponent<TParams extends {}> extends BusinessCompon
   protected reuseTabSrv = inject(ReuseTabService);
   protected route = inject(ActivatedRoute);
   protected titleSrv = inject(TitleService);
+  private loadedUrl?: string;
 
   async ngOnInit(): Promise<void> {
     this.defaultParams = Object.fromEntries(
@@ -71,7 +72,15 @@ export abstract class RoutedComponent<TParams extends {}> extends BusinessCompon
 
   /** Full route-reload pipeline; override to replace navigation side effects. */
   protected async handleRouteReload(): Promise<void> {
-    (this.router as any).navigationReload();
+    const navigation = this.router.navigationReload() as { extras?: { forceReload?: boolean } } | undefined;
+    const activeRoutes = [this.router.routerState.root];
+    while (activeRoutes.length && activeRoutes[0] !== this.route) {
+      activeRoutes.push(...activeRoutes.shift()!.children);
+    }
+    if (!activeRoutes.length) return;
+    const url = this.router.url;
+    if (this.loadedUrl === url && !navigation?.extras?.forceReload) return;
+    this.loadedUrl = url;
     this.loading.set(true);
     try {
       const routeParams = {
@@ -86,7 +95,7 @@ export abstract class RoutedComponent<TParams extends {}> extends BusinessCompon
       await this.onRouted(params);
       await this.afterOnRouted(params);
       const title = this.title();
-      if (title) this.reuseTabSrv.title = title;
+      if (title && this.router.url === url) this.reuseTabSrv.title = title;
     } finally {
       this.loading.set(false);
       this.cdr.detectChanges();
