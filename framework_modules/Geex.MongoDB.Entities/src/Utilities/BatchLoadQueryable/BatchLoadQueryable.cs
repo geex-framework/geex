@@ -22,7 +22,7 @@ namespace System.Linq
 
             BatchLoadConfig config = rootProvider.BatchLoadConfig;
             this.Provider = rootProvider;
-            config.RegisterBatchLoad(parentProp, parentProp.DeclaringType!);
+            config.RegisterBatchLoad(parentProp, typeof(TSource));
             _sources = sources;
         }
         public BatchLoadQueryable(IQueryable<TSource> sources, PropertyInfo parentProp)
@@ -36,6 +36,7 @@ namespace System.Linq
             }
 
             BatchLoadConfig config = rootProvider.BatchLoadConfig;
+            var declaringEntityType = typeof(TSource);
             if (sources is IBatchLoadQueryable batchLoadQueryable)
             {
                 var propQueue = new Queue<PropertyInfo>();
@@ -55,11 +56,12 @@ namespace System.Linq
                 propQueue = new Queue<PropertyInfo>(propQueue.Reverse());
                 while (propQueue.TryDequeue(out var prop))
                 {
-                    config = config.GetSubConfig(prop, prop.DeclaringType!);
+                    config = config.GetSubConfig(prop, declaringEntityType);
+                    prop.TryGetRelatedEntityType(out declaringEntityType);
                 }
             }
             this.Provider = rootProvider;
-            config.RegisterBatchLoad(parentProp, parentProp.DeclaringType!);
+            config.RegisterBatchLoad(parentProp, declaringEntityType);
             _sources = sources;
         }
 
