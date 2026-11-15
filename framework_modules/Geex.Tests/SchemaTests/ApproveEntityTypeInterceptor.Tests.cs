@@ -3,6 +3,7 @@ using Geex.Gql;
 using Geex.Extensions.AuditLogs;
 using Geex.Gql.Types;
 using Geex.Tests.SchemaTests.TestEntities;
+using Geex.Storage;
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -11,6 +12,24 @@ using Shouldly;
 
 namespace Geex.Tests.SchemaTests
 {
+    public class AuditOverrideEntity : Entity<AuditOverrideEntity>, IApproveEntity
+    {
+        public ApproveStatus ApproveStatus { get; set; }
+        public string? ApproveRemark { get; set; }
+        public bool Submittable { get; }
+    }
+
+    public class AuditOverrideMutation : MutationExtension<AuditOverrideMutation>, IHasApproveMutation<AuditOverrideEntity>, IHasDeleteMutation<AuditOverrideEntity>
+    {
+        protected override void Configure(IObjectTypeDescriptor<AuditOverrideMutation> descriptor)
+        {
+            descriptor.AuditFieldsImplicitly(AuditLevel.None);
+            descriptor.Field("approveAuditOverrideEntity").Type<BooleanType>().Audit();
+            descriptor.Field("deleteAuditOverrideEntity").Type<BooleanType>().Audit();
+            base.Configure(descriptor);
+        }
+    }
+
     public class ApproveEntityMutation : MutationExtension<ApproveEntityMutation>, IHasApproveMutation<ApproveEntity>, IHasDeleteMutation<ApproveEntity>
     {
         /// <inheritdoc />
@@ -100,6 +119,16 @@ namespace Geex.Tests.SchemaTests
                 .Any(x => x.Type.Name == "audit").ShouldBeFalse();
             schema.MutationType.Fields[$"delete{approveEntityName}"].Directives
                 .Any(x => x.Type.Name == "audit").ShouldBeFalse();
+            foreach (var operation in new[] { "submit", "unSubmit", "unApprove" })
+            {
+                schema.MutationType.Fields[$"{operation}AuditOverrideEntity"].Directives
+                    .Any(x => x.Type.Name == "audit").ShouldBeFalse();
+            }
+            foreach (var operation in new[] { "approve", "delete" })
+            {
+                schema.MutationType.Fields[$"{operation}AuditOverrideEntity"].Directives
+                    .Count(x => x.Type.Name == "audit").ShouldBe(1);
+            }
         }
     }
 }

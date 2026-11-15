@@ -23,6 +23,7 @@ internal static class IntegrationTestDataCleaner
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.Test.json", optional: false)
+            .AddEnvironmentVariables()
             .Build();
     }
 

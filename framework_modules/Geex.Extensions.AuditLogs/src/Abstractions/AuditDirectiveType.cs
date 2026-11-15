@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Text.Json.Nodes;
+using System.Collections.Generic;
+using System.Linq;
 using Geex.Extensions.AuditLogs.Core.Entities;
+using Geex.Extensions.AuditLogs.Utils;
 using Geex.Extensions.Authentication;
 using Geex.Storage;
+using HotChocolate;
 using HotChocolate.Types;
 
 using Microsoft.AspNetCore.Http;
@@ -31,6 +35,9 @@ namespace Geex.Extensions.AuditLogs
                     var operation = context.Operation.Document.ToString();
                     var variables = context.Variables.ToJson();
                     var clientIp = context.Service<IHttpContextAccessor>()?.HttpContext?.Connection.RemoteIpAddress?.ToString();
+                    var reportedErrors = new List<IError>();
+                    var hadErrorState = context.LocalContextData.TryGetValue(AuditErrorListener.ContextKey, out var previousErrors);
+                    context.LocalContextData = context.LocalContextData.SetItem(AuditErrorListener.ContextKey, reportedErrors);
                     Exception? failure = null;
                     try
                     {
@@ -40,6 +47,12 @@ namespace Geex.Extensions.AuditLogs
                     {
                         failure = error;
                         context.ReportError(error);
+                    }
+                    finally
+                    {
+                        context.LocalContextData = hadErrorState
+                            ? context.LocalContextData.SetItem(AuditErrorListener.ContextKey, previousErrors)
+                            : context.LocalContextData.Remove(AuditErrorListener.ContextKey);
                     }
 
                     try
@@ -53,9 +66,17 @@ namespace Geex.Extensions.AuditLogs
                             Operation = operation,
                             Variables = JsonNode.Parse(variables),
                             ClientIp = clientIp,
-                            Result = JsonNode.Parse(failure == null
-                                ? context.Result.ToJson()
-                                : failure.ToExceptionModel().ToJson()),
+                            Result = JsonNode.Parse(failure != null
+                                ? failure.ToExceptionModel().ToJson()
+                                : reportedErrors.Count > 0
+                                    ? reportedErrors.Select(error => new
+                                    {
+                                        error.Message,
+                                        error.Code,
+                                        Path = error.Path?.ToString(),
+                                        error.Extensions,
+                                    }).ToJson()
+                                    : context.Result.ToJson()),
                             IsSuccess = failure == null && !context.HasErrors,
                         };
                         uow.Attach(logEntry);

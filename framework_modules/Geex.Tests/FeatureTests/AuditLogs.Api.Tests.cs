@@ -2,6 +2,8 @@ using Geex.Extensions.AuditLogs;
 using Geex.Extensions.AuditLogs.Core.Entities;
 using Geex.Extensions.AuditLogs.Requests;
 using Geex.Gql.Types;
+using HotChocolate;
+using HotChocolate.Resolvers;
 using HotChocolate.Types;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
@@ -16,12 +18,18 @@ public class AuditWriteTestMutation : MutationExtension<AuditWriteTestMutation>
         descriptor.Field(x => x.AuditWriteSuccess(default!)).Audit();
         descriptor.Field(x => x.AuditWriteDisabled(default!)).Audit(false);
         descriptor.Field(x => x.AuditWriteFailure(default!)).Audit();
+        descriptor.Field(x => x.AuditWriteReportedFailure(default!, default!)).Audit();
         base.Configure(descriptor);
     }
 
     public string? AuditWriteSuccess(string marker) => marker;
     public string? AuditWriteDisabled(string marker) => marker;
     public string? AuditWriteFailure(string marker) => throw new InvalidOperationException(marker);
+    public string? AuditWriteReportedFailure(string marker, IResolverContext context)
+    {
+        context.ReportError(ErrorBuilder.New().SetMessage(marker).SetCode("AUDIT_TEST_REPORTED_ERROR").Build());
+        return null;
+    }
 }
 
 [Collection(nameof(TestsCollection))]
@@ -131,6 +139,39 @@ public class AuditLogsApiTests : TestsBase
         rows.Length.ShouldBe(1);
         rows[0].IsSuccess.ShouldBeFalse();
         rows[0].Result!.ToJsonString().ShouldContain(marker);
+    }
+
+    [Fact]
+    public async Task ReportedErrorIsReturnedToClientAndStoredInFailureDetails()
+    {
+        var operation = "auditReported" + Guid.NewGuid().ToString("N");
+        var marker = "reported-" + Guid.NewGuid().ToString("N");
+        var (_, body) = await SuperAdminClient.PostGqlRequest(
+            $"mutation {operation}($marker: String!) {{ auditWriteReportedFailure(marker: $marker) }}", new { marker });
+        body.ShouldContain("AUDIT_TEST_REPORTED_ERROR");
+        body.ShouldContain(marker);
+        var rows = ReadOperationLogs(operation);
+        rows.Length.ShouldBe(1);
+        rows[0].IsSuccess.ShouldBeFalse();
+        rows[0].Result!.ToJsonString().ShouldContain(marker);
+        rows[0].Result!.ToJsonString().ShouldContain("AUDIT_TEST_REPORTED_ERROR");
+    }
+
+    [Fact]
+    public async Task ReportedErrorDoesNotContaminateAnotherFieldInSameOperation()
+    {
+        var operation = "auditMixed" + Guid.NewGuid().ToString("N");
+        var marker = "mixed-" + Guid.NewGuid().ToString("N");
+        var (response, body) = await SuperAdminClient.PostGqlRequest(
+            $"mutation {operation}($marker: String!) {{ failed: auditWriteReportedFailure(marker: $marker) succeeded: auditWriteSuccess(marker: $marker) }}",
+            new { marker });
+        body.ShouldContain("AUDIT_TEST_REPORTED_ERROR");
+        response["data"]["succeeded"].GetValue<string>().ShouldBe(marker);
+        var rows = ReadOperationLogs(operation);
+        rows.Length.ShouldBe(2);
+        var success = rows.Single(x => x.IsSuccess);
+        success.Result!.GetValue<string>().ShouldBe(marker);
+        rows.Single(x => !x.IsSuccess).Result!.ToJsonString().ShouldContain("AUDIT_TEST_REPORTED_ERROR");
     }
 
     private AuditLog[] ReadOperationLogs(string operation)
