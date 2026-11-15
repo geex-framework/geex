@@ -2,6 +2,7 @@ using Geex.Extensions.AuditLogs;
 using Geex.Extensions.AuditLogs.Utils;
 using Geex.Gql.Types;
 using HotChocolate;
+using HotChocolate.Execution;
 using HotChocolate.Types;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
