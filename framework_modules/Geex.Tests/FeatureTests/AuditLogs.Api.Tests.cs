@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Path = System.IO.Path;
 using Geex.Extensions.AuditLogs;
 using Geex.Extensions.AuditLogs.Core.Entities;
 using Geex.Extensions.AuditLogs.Requests;
