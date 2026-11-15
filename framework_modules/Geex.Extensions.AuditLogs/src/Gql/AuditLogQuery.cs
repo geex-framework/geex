@@ -26,7 +26,9 @@ public sealed class AuditLogQuery : QueryExtension<AuditLogQuery>
                 x.BindFieldsExplicitly();
                 x.Field(y => y.Id);
                 x.Field(y => y.OperationName);
+                x.Field(y => y.OperationType);
                 x.Field(y => y.OperatorId);
+                x.Field(y => y.ClientIp);
                 x.Field(y => y.IsSuccess);
                 x.Field(y => y.TenantCode);
                 x.Field(y => y.CreatedOn);

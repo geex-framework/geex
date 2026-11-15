@@ -8,7 +8,6 @@ using Geex.Gql;
 using Geex.Gql.Types;
 
 using HotChocolate.Configuration;
-using HotChocolate.Language;
 using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 
@@ -96,10 +95,7 @@ namespace Geex.Extensions.ApprovalFlows
                         fieldDefinition.Arguments.Clear();
                         fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("[String!]")));
                         fieldDefinition.Arguments.Add(new InputFieldDefinition("remark", type: TypeReference.Parse("String")));
-                        if (GeexTypeInterceptor.AuditTypes.Contains(implementation))
-                        {
-                            fieldDefinition.Directives.Add(new DirectiveDefinition(new DirectiveNode("audit")));
-                        }
+                        fieldDefinition.ContextData[GeexTypeInterceptor.RootFieldDeclaringTypeKey] = implementation;
                     }
                 }
             }

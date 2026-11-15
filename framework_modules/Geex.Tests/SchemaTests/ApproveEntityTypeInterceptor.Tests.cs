@@ -1,5 +1,6 @@
 using Geex.Extensions.ApprovalFlows;
 using Geex.Gql;
+using Geex.Extensions.AuditLogs;
 using Geex.Gql.Types;
 using Geex.Tests.SchemaTests.TestEntities;
 using HotChocolate;
@@ -10,11 +11,14 @@ using Shouldly;
 
 namespace Geex.Tests.SchemaTests
 {
-    public class ApproveEntityMutation : MutationExtension<ApproveEntityMutation>, IHasApproveMutation<ApproveEntity>
+    public class ApproveEntityMutation : MutationExtension<ApproveEntityMutation>, IHasApproveMutation<ApproveEntity>, IHasDeleteMutation<ApproveEntity>
     {
         /// <inheritdoc />
         protected override void Configure(IObjectTypeDescriptor<ApproveEntityMutation> descriptor)
         {
+            descriptor.AuditFieldsImplicitly();
+            descriptor.Field("unApproveApproveEntity").Type<BooleanType>().Audit(false);
+            descriptor.Field("deleteApproveEntity").Type<BooleanType>().Audit(false);
             base.Configure(descriptor);
         }
         public ApproveEntity ApproveEntityTestMutationField(string arg1) => throw new NotImplementedException();
@@ -86,19 +90,16 @@ namespace Geex.Tests.SchemaTests
 
             var schema = ScopedService.GetService<ISchema>();
 
-            // Act & Assert
-            // Check if GeexTypeInterceptor.AuditTypes applies audit directive to methods
             var approveEntityName = nameof(ApproveEntity);
-
-            schema.MutationType.Fields.TryGetField($"submit{approveEntityName}", out var submitField).ShouldBeTrue();
-            schema.MutationType.Fields.TryGetField($"approve{approveEntityName}", out var approveField).ShouldBeTrue();
-
-            // Verify audit directives are added when the type is in GeexTypeInterceptor.AuditTypes
-            if (GeexTypeInterceptor.AuditTypes.Contains(typeof(ApproveEntityMutation)))
+            foreach (var operation in new[] { "submit", "approve", "unSubmit" })
             {
-                submitField.Directives.Any(x => x.Type.Name == "audit").ShouldBeTrue();
-                approveField.Directives.Any(x => x.Type.Name == "audit").ShouldBeTrue();
+                schema.MutationType.Fields[$"{operation}{approveEntityName}"].Directives
+                    .Count(x => x.Type.Name == "audit").ShouldBe(1);
             }
+            schema.MutationType.Fields[$"unApprove{approveEntityName}"].Directives
+                .Any(x => x.Type.Name == "audit").ShouldBeFalse();
+            schema.MutationType.Fields[$"delete{approveEntityName}"].Directives
+                .Any(x => x.Type.Name == "audit").ShouldBeFalse();
         }
     }
 }
