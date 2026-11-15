@@ -50,6 +50,29 @@ namespace Geex.Gql
 
         #endregion
 
+        private readonly List<ObjectTypeDefinition> _mutationDefinitions = new();
+
+        public override void OnAfterCompleteName(ITypeCompletionContext completionContext, DefinitionBase definition)
+        {
+            if (definition is ObjectTypeDefinition objectDefinition &&
+                typeof(Mutation).IsAssignableFrom(objectDefinition.RuntimeType))
+            {
+                _mutationDefinitions.Add(objectDefinition);
+            }
+            base.OnAfterCompleteName(completionContext, definition);
+        }
+
+        public override void OnBeforeCompleteTypes()
+        {
+            // Generate root fields after extension merging and before per-type policy interceptors.
+            foreach (var definition in _mutationDefinitions)
+            {
+                ProcessDeleteMutations(definition);
+            }
+            _mutationDefinitions.Clear();
+            base.OnBeforeCompleteTypes();
+        }
+
         public override void OnAfterMergeTypeExtensions()
         {
             // Process IHasDeleteMutation types
@@ -167,12 +190,6 @@ namespace Geex.Gql
                 IgnoreEntityMethods(definition);
             }
 
-            // Process delete mutations for Mutation type
-            if (typeof(Mutation).IsAssignableFrom(runtimeType))
-            {
-                ProcessDeleteMutations(completionContext, definition);
-            }
-
             ProcessArgumentDefaults(completionContext, definition);
         }
 
@@ -201,7 +218,7 @@ namespace Geex.Gql
             //}
         }
 
-        private void ProcessDeleteMutations(ITypeCompletionContext completionContext, ObjectTypeDefinition definition)
+        private void ProcessDeleteMutations(ObjectTypeDefinition definition)
         {
             foreach (var (mutationExtType, data) in PatchedDeleteMutationEntities)
             {

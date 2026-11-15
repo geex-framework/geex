@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -16,6 +16,28 @@ namespace Geex.Extensions.ApprovalFlows
     public class ApproveEntityTypeInterceptor : TypeInterceptor
     {
         public Dictionary<Type, (Type implementation, string entityName)> PatchedEntities = new Dictionary<Type, (Type implementation, string entityName)>();
+        private readonly List<ObjectTypeDefinition> _mutationDefinitions = new();
+
+        public override void OnAfterCompleteName(ITypeCompletionContext completionContext, DefinitionBase definition)
+        {
+            if (definition is ObjectTypeDefinition objectDefinition &&
+                typeof(Mutation).IsAssignableFrom(objectDefinition.RuntimeType))
+            {
+                _mutationDefinitions.Add(objectDefinition);
+            }
+            base.OnAfterCompleteName(completionContext, definition);
+        }
+
+        public override void OnBeforeCompleteTypes()
+        {
+            foreach (var definition in _mutationDefinitions)
+            {
+                ProcessApprovalMutations(definition);
+            }
+            _mutationDefinitions.Clear();
+            base.OnBeforeCompleteTypes();
+        }
+
         /// <inheritdoc />
         public override void OnAfterMergeTypeExtensions()
         {
@@ -61,46 +83,45 @@ namespace Geex.Extensions.ApprovalFlows
                         pureResolver: context => context.Parent<IApproveEntity>().Submittable));
             }
 
-            if (typeof(Mutation).IsAssignableFrom(runtimeType))
-            {
+            base.OnBeforeCompleteType(completionContext, definition);
+        }
 
-                foreach (var (mutationExtType, data) in PatchedEntities)
+        private void ProcessApprovalMutations(ObjectTypeDefinition objectTypeDefinition)
+        {
+            foreach (var (mutationExtType, data) in PatchedEntities)
+            {
+                var (implementation, entityName) = data;
+                var methods = mutationExtType
+                    .GetMethods()
+                    .Where(m => m.GetParameters() is { Length: 3 } parameters
+                                && parameters[0].ParameterType == typeof(string[])
+                                && parameters[2].ParameterType == typeof(IUnitOfWork))
+                    .ToList();
+                foreach (var method in methods)
                 {
-                    var (implementation, entityName) = data;
-                    var methods = mutationExtType
-                        .GetMethods()
-                        .Where(m => m.GetParameters() is { Length: 3 } parameters
-                                    && parameters[0].ParameterType == typeof(string[])
-                                    && parameters[2].ParameterType == typeof(IUnitOfWork))
-                        .ToList();
-                    foreach (var method in methods)
+                    var capturedMethod = method;
+                    var fieldName = $"{capturedMethod.Name.ToCamelCase()}{entityName}";
+                    var fieldDefinition = objectTypeDefinition.Fields.FirstOrDefault(x => x.Name == fieldName);
+                    if (fieldDefinition == null)
                     {
-                        var capturedMethod = method;
-                        var fieldName = $"{capturedMethod.Name.ToCamelCase()}{entityName}";
-                        var fieldDefinition = objectTypeDefinition.Fields.FirstOrDefault(x => x.Name == fieldName);
-                        if (fieldDefinition == null)
-                        {
-                            fieldDefinition = new ObjectFieldDefinition(fieldName);
-                            objectTypeDefinition.Fields.Add(fieldDefinition);
-                        }
-                        fieldDefinition.Type = TypeReference.Parse("Boolean");
-                        fieldDefinition.Resolver = async (context) =>
-                            {
-                                var instance = context.Service(implementation);
-                                return await (capturedMethod.Invoke(instance, [
-                                    context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"),
-                                    context.Service<IUnitOfWork>()
-                                ]) as Task<bool>);
-                            };
-                        fieldDefinition.Arguments.Clear();
-                        fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("[String!]")));
-                        fieldDefinition.Arguments.Add(new InputFieldDefinition("remark", type: TypeReference.Parse("String")));
-                        fieldDefinition.ContextData[GeexTypeInterceptor.RootFieldDeclaringTypeKey] = implementation;
+                        fieldDefinition = new ObjectFieldDefinition(fieldName);
+                        objectTypeDefinition.Fields.Add(fieldDefinition);
                     }
+                    fieldDefinition.Type = TypeReference.Parse("Boolean");
+                    fieldDefinition.Resolver = async (context) =>
+                        {
+                            var instance = context.Service(implementation);
+                            return await (capturedMethod.Invoke(instance, [
+                                context.ArgumentValue<string[]>("ids"), context.ArgumentValue<string>("remark"),
+                                context.Service<IUnitOfWork>()
+                            ]) as Task<bool>);
+                        };
+                    fieldDefinition.Arguments.Clear();
+                    fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("[String!]")));
+                    fieldDefinition.Arguments.Add(new InputFieldDefinition("remark", type: TypeReference.Parse("String")));
+                    fieldDefinition.ContextData[GeexTypeInterceptor.RootFieldDeclaringTypeKey] = implementation;
                 }
             }
-
-            base.OnBeforeCompleteType(completionContext, definition);
         }
     }
 }
