@@ -26,6 +26,31 @@ public class AuditPolicySchemaTests
         AssertAudit(schema.MutationType!, "cancelAuthentication", true);
     }
 
+    [Fact]
+    public async Task AllLevelAuditsAllRootsWithoutExplicitAuditConfiguration()
+    {
+        var schema = await new ServiceCollection().AddGraphQLServer()
+            .AddQueryType(descriptor =>
+            {
+                descriptor.Name("Query");
+                descriptor.Field("unconfiguredQuery").Type<BooleanType>().Resolve(true);
+            })
+            .AddMutationType(descriptor =>
+            {
+                descriptor.Name("Mutation");
+                descriptor.Field("unconfiguredMutation").Type<BooleanType>().Resolve(true);
+            })
+            .AddSubscriptionType<PolicySubscription>(descriptor => descriptor.Name("Subscription"))
+            .AddDirectiveType<AuditDirectiveType.Config>()
+            .ConfigureSchema(builder => builder.TryAddTypeInterceptor(new AuditLogsTypeInterceptor(
+                new AuditLogsModuleOptions { DefaultAuditLevel = AuditLevel.All })))
+            .BuildSchemaAsync();
+
+        AssertAudit(schema.QueryType, "unconfiguredQuery", true);
+        AssertAudit(schema.MutationType!, "unconfiguredMutation", true);
+        AssertAudit(schema.SubscriptionType!, "changes", true);
+    }
+
     [Theory]
     [InlineData(AuditLevel.None, AuditLevel.All, false)]
     [InlineData(AuditLevel.None, AuditLevel.All, true)]

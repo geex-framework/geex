@@ -7,6 +7,7 @@ using Geex.Gql;
 using Geex.Gql.Types;
 using HotChocolate.Configuration;
 using HotChocolate.Language;
+using HotChocolate.Types.Descriptors;
 using HotChocolate.Types.Descriptors.Definitions;
 
 namespace Geex.Extensions.AuditLogs.Utils
@@ -37,6 +38,18 @@ namespace Geex.Extensions.AuditLogs.Utils
         {
             { nameof(Mutation), [..AuthenticationMutationMembers] },
         };
+
+        public override void OnBeforeRegisterDependencies(ITypeDiscoveryContext discoveryContext, DefinitionBase definition)
+        {
+            if (definition is ObjectTypeDefinition objectTypeDefinition &&
+                objectTypeDefinition.Name is nameof(Query) or nameof(Mutation) or nameof(Subscription))
+            {
+                // Policies add directives after discovery, so root completion must wait for the directive type.
+                discoveryContext.Dependencies.Add(new TypeDependency(
+                    TypeReference.CreateDirective(AuditDirectiveType.DirectiveName), TypeDependencyFulfilled.Completed));
+            }
+            base.OnBeforeRegisterDependencies(discoveryContext, definition);
+        }
 
         public override void OnBeforeCompleteType(ITypeCompletionContext completionContext, DefinitionBase definition)
         {
