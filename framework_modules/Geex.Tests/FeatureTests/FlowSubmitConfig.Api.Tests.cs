@@ -6,8 +6,12 @@ using Geex.Extensions.Authorization;
 using Geex.Extensions.Identity;
 using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Settings;
+using Geex.Extensions.Settings.Core;
 using Geex.MultiTenant;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using MongoDB.Entities;
 using Path = System.IO.Path;
 
 namespace Geex.Tests.FeatureTests;
@@ -43,7 +47,7 @@ public class FlowSubmitConfigApiTests(TestApplicationFactory factory) : TestsBas
     public async Task EmptyConfigurationDisablesUnconfiguredModules()
     {
         var definition = ApprovalFlowSettings.FlowSubmitConfig;
-        Assert.Equal("FlowSubmitConfig", definition.Name);
+        Assert.Equal("ApprovalFlowsFlowSubmitConfig", definition.Name);
         Assert.Equal("{}", definition.DefaultValue.ToJsonString());
         Assert.Equal(new[] { SettingScopeEnumeration.Global, SettingScopeEnumeration.Tenant }, definition.ValidScopes);
         var query = "query{flowConfig flowSubmitConfig}";
@@ -74,8 +78,8 @@ public class FlowSubmitConfigApiTests(TestApplicationFactory factory) : TestsBas
         Assert.Equal(workEnabled, await FlowSubmitGate.IsEnabled(uow, "workReports"));
         Assert.Equal(investEnabled, await FlowSubmitGate.IsEnabled(uow, "investReports"));
         Assert.False(await FlowSubmitGate.IsEnabled(uow, "otherModule"));
-        var stored = Assert.Single(uow.Query<ISetting>().Where(x => x.Name == ApprovalFlowSettings.FlowSubmitConfig
-            && x.Scope == SettingScopeEnumeration.Global).ToList());
+        var stored = DB.Collection<Setting>().Find(new BsonDocument
+            { { "Name", "ApprovalFlowsFlowSubmitConfig" }, { "Scope", "Global" } }).Single();
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(value), stored.Value));
         await Evidence(nameof(SaveAndReadKeepModuleKeysIndependent) + "-" + workEnabled + "-" + value.Length,
             new { query = SaveMutation, variables = new { value } }, new { saved, response, workEnabled, investEnabled });
