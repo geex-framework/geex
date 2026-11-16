@@ -1,6 +1,6 @@
 ﻿namespace Geex
 {
-    public class AppPermission : Enumeration<AppPermission>
+    public class AppPermission : Enumeration<AppPermission>, IEnumerationFactory<AppPermission>
     {
         public AppPermission(string value) : this(value, value)
         {
@@ -13,6 +13,9 @@
             this.Obj = split[1];
             this.Field = split[2];
         }
+
+        static AppPermission IEnumerationFactory<AppPermission>.CreateEnumeration(string name, string value)
+            => new(name, value);
 
         public string Field { get; set; }
 

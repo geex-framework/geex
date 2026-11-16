@@ -31,6 +31,9 @@ namespace Geex.Extensions.Authorization.Core.Casbin
             return Task.CompletedTask;
         }
 
+        public async Task<List<string>> GetRoleIdsAsync(string userId) =>
+            await _collection.Find(x => x.PType == "g" && x.V0 == userId).Project(x => x.V1).ToListAsync();
+
         public async Task RemoveFilteredPolicyAsync(
             string ptype,
             int fieldIndex,

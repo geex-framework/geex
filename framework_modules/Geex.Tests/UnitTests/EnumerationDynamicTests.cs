@@ -983,6 +983,7 @@ public sealed class EnumerationDynamicTests
     {
         Type[] types =
         [
+            typeof(Geex.Extensions.ApprovalFlows.ApprovalFlowPermission),
             typeof(Geex.Extensions.AuditLogs.AuditLogsPermission),
             typeof(Geex.Extensions.Backups.BackupsPermission),
             typeof(Geex.Extensions.Authorization.AuthorizationPermission),

@@ -15,12 +15,16 @@ namespace Geex.Extensions.Identity.Gql
         protected override void Configure(IObjectTypeDescriptor<UserMutation> descriptor)
         {
             base.Configure(descriptor);
+            descriptor.Field(x => x.ChangeOrganizationMembers(default!)).Authorize(IdentityPermission.UserPermission.Edit);
+            descriptor.Field(x => x.TransferOrganizationMembers(default!)).Authorize(IdentityPermission.UserPermission.Edit);
         }
 
         private readonly IUnitOfWork _uow;
         public UserMutation(IUnitOfWork uow) => this._uow = uow;
         public async Task<bool> AssignRoles(AssignRoleRequest request) => await _uow.Request(request);
         public async Task<bool> AssignOrgs(AssignOrgRequest request) => await _uow.Request(request);
+        public async Task<bool> ChangeOrganizationMembers(ChangeOrganizationMembersRequest request) => await _uow.Request(request);
+        public async Task<bool> TransferOrganizationMembers(TransferOrganizationMembersRequest request) => await _uow.Request(request);
         public async Task<IUser> EditUser(EditUserRequest request) => await _uow.Request(request);
         public async Task<IUser> CreateUser(CreateUserRequest request) => await _uow.Request(request);
         public async Task<IUser> ResetUserPassword(ResetUserPasswordRequest request) => await _uow.Request(request);

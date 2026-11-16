@@ -90,20 +90,13 @@ namespace Geex.Extensions.Authentication.Core.Utils
             return AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));
         }
 
-        private async Task<UserSession?> ResolveSessionAsync(string userId, LoginProviderEnum provider, string accessToken)
+        private Task<UserSession?> ResolveSessionAsync(string userId, LoginProviderEnum provider, string accessToken)
         {
             var services = Context.RequestServices;
-            var cacheKey = UserSession.GetCacheKey(userId, provider);
-            var redis = services.GetRequiredService<IRedisDatabase>();
-            var cached = await redis.GetNamedAsync<UserSession>(cacheKey);
-            if (cached != null && string.Equals(cached.Token, accessToken, StringComparison.Ordinal))
-            {
-                return cached;
-            }
-
             var uow = services.GetRequiredService<IUnitOfWork>();
-            return uow.Query<UserSession>()
-                .FirstOrDefault(x => x.UserId == userId && x.LoginProvider == provider);
+            // 会话存在性以已提交数据为准, 使撤销与并发缓存回填无关.
+            return Task.FromResult(uow.Query<UserSession>()
+                .FirstOrDefault(x => x.UserId == userId && x.LoginProvider == provider));
         }
 
         /// <inheritdoc />

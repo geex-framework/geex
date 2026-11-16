@@ -654,9 +654,9 @@ namespace Geex
             {
                 var constructor = _constructorCache.GetOrAdd(concreteType, CreateConstructor);
                 var instance = constructor(name, value);
-                if (instance is null || instance.GetType() != concreteType)
+                if (instance is null || !concreteType.IsInstanceOfType(instance))
                 {
-                    throw new InvalidOperationException($"The enumeration constructor must produce an instance of {concreteType.FullName}.");
+                    throw new InvalidOperationException($"The enumeration factory or constructor must produce an instance of {concreteType.FullName}.");
                 }
                 if (instance.Name != name || instance.Value != value)
                 {
@@ -675,7 +675,19 @@ namespace Geex
 
         private static Func<string, string, TEnum> CreateConstructor(Type concreteType)
         {
-            if (concreteType.IsAbstract || concreteType.IsInterface || !typeof(TEnum).IsAssignableFrom(concreteType))
+            if (!typeof(TEnum).IsAssignableFrom(concreteType))
+                throw new InvalidOperationException($"Type {concreteType.FullName} cannot be constructed as an enumeration.");
+
+            var factoryType = typeof(IEnumerationFactory<>).MakeGenericType(concreteType);
+            if (factoryType.IsAssignableFrom(concreteType))
+            {
+                return typeof(Enumeration<TEnum>)
+                    .GetMethod(nameof(CreateWithFactory), BindingFlags.NonPublic | BindingFlags.Static)!
+                    .MakeGenericMethod(concreteType)
+                    .CreateDelegate<Func<string, string, TEnum>>();
+            }
+
+            if (concreteType.IsAbstract || concreteType.IsInterface)
                 throw new InvalidOperationException($"Type {concreteType.FullName} cannot be constructed as an enumeration.");
 
             var constructor = concreteType.GetConstructor(
@@ -705,6 +717,9 @@ namespace Geex
             };
         }
 
+        private static TEnum CreateWithFactory<TActual>(string name, string value)
+            where TActual : class, TEnum, IEnumerationFactory<TActual>
+            => TActual.CreateEnumeration(name, value);
     }
 
     public static class EnumerationExtensions

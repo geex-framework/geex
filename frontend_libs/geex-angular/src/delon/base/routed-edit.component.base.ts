@@ -1,4 +1,5 @@
-import { Component } from "@angular/core";
+import { Component, inject } from "@angular/core";
+import { GeexTabService } from "../router/geex-tab.service";
 
 import { GeexHint, GeexTypedFormGroup } from "../types";
 import { RoutedComponent } from "./routed.component.base";
@@ -23,6 +24,7 @@ export abstract class RoutedEditComponent<
   TEntity extends GeexHint<{ id?: string }>,
   TEditSchema extends GeexHint<Partial<TEntity>>,
 > extends RoutedComponent<TParams> {
+  private readonly tabs = inject(GeexTabService);
   entity?: GeexHint<TEntity>;
   entityForm?: GeexTypedFormGroup<TEditSchema>;
   originalValue?: TEditSchema;
@@ -62,11 +64,8 @@ export abstract class RoutedEditComponent<
 
   async back(reload: boolean = false) {
     if (reload) {
-      if (this.params().id) {
-        await this.router.navigate(["../../"], { relativeTo: this.route, replaceUrl: true, forceReload: reload } as any);
-      } else {
-        await this.router.navigate(["../"], { relativeTo: this.route, replaceUrl: true, forceReload: reload } as any);
-      }
+      const fallback = this.router.createUrlTree([this.params().id ? "../../" : "../"], { relativeTo: this.route });
+      await this.tabs.closeCurrent({ fallbackUrl: this.router.serializeUrl(fallback), refreshOrigin: true });
     } else {
       this.location.back();
     }

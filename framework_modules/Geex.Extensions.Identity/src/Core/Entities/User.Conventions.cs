@@ -3,6 +3,7 @@ using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Identity;
 using HotChocolate.Types;
 using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 
 namespace Geex.Extensions.Identity.Core.Entities;
 
@@ -21,6 +22,7 @@ public partial class User
             descriptor.Field(x => x.Email);
             descriptor.Field(x => x.PhoneNumber);
             descriptor.Field(x => x.IsEnable);
+            descriptor.Field(x => x.DeactivationDate);
             descriptor.Field(x => x.RoleIds);
             descriptor.Field(x => x.OrgCodes);
             descriptor.Field(x => x.Permissions);
@@ -48,6 +50,7 @@ public partial class User
             indexConfig.MapIndex(x => x.Ascending(y => y.Email), options => { options.Background = true; });
             indexConfig.MapIndex(x => x.Ascending(y => y.Username), options => { options.Background = true; });
             indexConfig.MapIndex(x => x.Ascending(y => y.PhoneNumber), options => { options.Background = true; });
+            indexConfig.MapIndex(x => x.Ascending(y => y.IsEnable).Ascending(y => y.DeactivationAt));
         }
     }
 
@@ -60,6 +63,7 @@ public partial class User
             descriptor.BindFieldsImplicitly();
             descriptor.Field(x => x.AvatarFile).Type<InterfaceType<IBlobObject>>();
             descriptor.Ignore(x => x.Password);
+            descriptor.Ignore(x => x.DeactivationAt);
             //descriptor.Field(x => x.UserName);
             //descriptor.Field(x => x.IsEnable);
             //descriptor.Field(x => x.Email);

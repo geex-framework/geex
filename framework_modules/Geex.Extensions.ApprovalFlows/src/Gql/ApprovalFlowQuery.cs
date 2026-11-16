@@ -21,6 +21,7 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
             descriptor.Field(method).Authorize();
         descriptor.Field(x => x.ApprovalFlowById(default)).Authorize();
         descriptor.Field(x => x.ApprovalFlowTemplateById(default)).Authorize();
+        descriptor.Field(x => x.FlowConfig()).Authorize(ApprovalFlowPermission.QueryFlowConfig);
         descriptor.Field(x => x.ApprovalFlow(default))
             .UseOffsetPaging<ObjectType<ApprovalFlow>>()
             .UseFiltering<ApprovalFlow>()
@@ -55,6 +56,10 @@ public class ApprovalFlowQuery : QueryExtension<ApprovalFlowQuery>
     }
 
     public ApprovalFlow? ApprovalFlowById(string id) => _uow.Query<ApprovalFlow>().GetById(id);
+
+    public async Task<string> FlowConfig() => (await FlowSubmitGate.GetConfiguration(_uow)).ToJsonString();
+
+    public async Task<string> FlowSubmitConfig() => (await FlowSubmitGate.GetConfiguration(_uow)).ToJsonString();
 
     public ApprovalFlow? ApprovalFlowByEntity(ApprovalFlowAssociatedEntityType entityType, string entityId)
     {

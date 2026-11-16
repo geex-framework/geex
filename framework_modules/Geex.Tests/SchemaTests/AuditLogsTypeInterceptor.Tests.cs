@@ -1,6 +1,8 @@
 using Geex.Extensions.AuditLogs;
 using Geex.Extensions.AuditLogs.Utils;
 using Geex.Gql.Types;
+using Geex.Gql;
+using Geex.Storage;
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -10,7 +12,9 @@ using Shouldly;
 
 namespace Geex.Tests.SchemaTests
 {
-    public class AuditLogTestMutation : MutationExtension<AuditLogTestMutation>
+    public class AuditInheritedDeleteEntity : Entity<AuditInheritedDeleteEntity>;
+
+    public class AuditLogTestMutation : MutationExtension<AuditLogTestMutation>, IHasDeleteMutation<AuditInheritedDeleteEntity>
     {
         /// <inheritdoc />
         protected override void Configure(IObjectTypeDescriptor<AuditLogTestMutation> descriptor)
@@ -36,6 +40,8 @@ namespace Geex.Tests.SchemaTests
             var schema = ScopedService.GetService<ISchema>();
             schema.MutationType.Fields.TryGetField(nameof(AuditLogTestMutation.AuditLogTestMutationField).ToCamelCase(), out var field1).ShouldBeTrue();
             field1.Directives.Any(x => x.Type.RuntimeType == typeof(AuditDirectiveType)).ShouldBeTrue();
+            schema.MutationType.Fields["deleteAuditInheritedDeleteEntity"].Directives
+                .Count(x => x.Type.Name == AuditDirectiveType.DirectiveName).ShouldBe(1);
         }
 
         [Fact]

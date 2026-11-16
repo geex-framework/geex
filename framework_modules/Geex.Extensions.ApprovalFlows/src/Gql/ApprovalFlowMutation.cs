@@ -23,6 +23,7 @@ public partial class ApprovalFlowMutation : MutationExtension<ApprovalFlowMutati
             | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly))
             descriptor.Field(method).Authorize();
         descriptor.Field(x => x.SaveApprovalFlowTags(default)).Authorize(SettingsPermission.Edit);
+        descriptor.Field(x => x.SaveFlowConfig(default!)).Authorize(ApprovalFlowPermission.SaveFlowConfig);
         base.Configure(descriptor);
     }
 

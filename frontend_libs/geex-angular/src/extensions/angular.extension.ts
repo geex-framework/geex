@@ -64,6 +64,7 @@ declare module "@angular/router" {
 
   interface NavigationBehaviorOptions {
     forceReload?: boolean;
+    closeCurrentTab?: boolean;
   }
 
   type GeexRoutes = GeexRoute[];

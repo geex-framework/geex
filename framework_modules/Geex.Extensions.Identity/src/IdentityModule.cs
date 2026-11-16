@@ -12,10 +12,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Entities.Interceptors;
 using Volo.Abp.Modularity;
+using System;
+using Geex.Extensions.BackgroundJob;
 
 namespace Geex.Extensions.Identity
 {
-    [DependsOn(typeof(AuthenticationModule), typeof(AuthorizationModule), typeof(BlobStorageModule), typeof(SettingsModule), typeof(MessagingModule))]
+    [DependsOn(typeof(AuthenticationModule), typeof(AuthorizationModule), typeof(BlobStorageModule), typeof(SettingsModule), typeof(MessagingModule), typeof(BackgroundJobModule))]
     public class IdentityModule : GeexModule<IdentityModule>
     {
         public override void ConfigureServices(ServiceConfigurationContext context)
@@ -24,6 +26,10 @@ namespace Geex.Extensions.Identity
             context.Services.AddTransient<IPasswordHasher<IUser>, PasswordHasher<IUser>>();
             context.Services.AddTransient<IUserCreationValidator, UserCreationValidator>();
             context.Services.AddTransient<UserHandler>();
+            context.Services.TryAddSingleton(TimeProvider.System);
+            context.Services.AddScoped<UserChangeHistory>();
+            context.Services.AddScoped<UserDeactivationService>();
+            context.Services.AddJob<UserDeactivationJob>("* * * * *");
             context.Services.AddTransient<OrgHandler>();
             context.Services.AddTransient<RoleHandler>();
             context.Services.TryAddEnumerable(new ServiceDescriptor(typeof(ISubClaimsTransformation), typeof(IdentitySubClaimsTransformation), ServiceLifetime.Singleton));

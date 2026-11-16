@@ -30,10 +30,13 @@ namespace Geex.Extensions.Authorization.Core.Casbin
     {
         private readonly ILogger<RbacEnforcer> _logger;
         private readonly Enforcer _innerEnforcer;
+        private readonly CasbinMongoAdapter _adapter;
+        private readonly HashSet<string> _pendingRoleRefresh = new();
 
         public RbacEnforcer(CasbinMongoAdapter adapter, ILogger<RbacEnforcer> logger)
         {
             _logger = logger;
+            _adapter = adapter;
             _innerEnforcer = new Enforcer(Model, adapter);
             _innerEnforcer.EnableCache(true);
             _innerEnforcer.EnableAutoSave(true);
@@ -82,6 +85,7 @@ m = (p.sub == ""*"" || g(r.sub, p.sub) || r.sub == p.sub) && r.obj == p.obj && (
             {
                 return true;
             }
+            EnsureCurrentRoles(sub);
             return this._innerEnforcer.Enforce(sub, mod, obj, fields);
         }
 
@@ -110,6 +114,20 @@ m = (p.sub == ""*"" || g(r.sub, p.sub) || r.sub == p.sub) && r.obj == p.obj && (
             {
                 await this._innerEnforcer.AddRoleForUserAsync(sub, newRole);
             }
+        }
+
+        public async Task ReloadUserRoles(string sub)
+        {
+            _pendingRoleRefresh.Add(sub);
+            var roles = await _adapter.GetRoleIdsAsync(sub);
+            _innerEnforcer.EnableAutoSave(false);
+            try { await SetRoles(sub, roles); _pendingRoleRefresh.Remove(sub); }
+            finally { _innerEnforcer.EnableAutoSave(true); }
+        }
+
+        private void EnsureCurrentRoles(string sub)
+        {
+            if (_pendingRoleRefresh.Contains(sub)) ReloadUserRoles(sub).GetAwaiter().GetResult();
         }
 
         public async Task SetPermissionsAsync(string sub, IEnumerable<string> permissions)
@@ -142,6 +160,7 @@ m = (p.sub == ""*"" || g(r.sub, p.sub) || r.sub == p.sub) && r.obj == p.obj && (
         /// <inheritdoc />
         public List<string> GetRolesForUser(string sub)
         {
+            EnsureCurrentRoles(sub);
             return this._innerEnforcer.GetRolesForUser(sub);
         }
 
@@ -154,6 +173,7 @@ m = (p.sub == ""*"" || g(r.sub, p.sub) || r.sub == p.sub) && r.obj == p.obj && (
         /// <inheritdoc />
         public List<string> GetImplicitRolesForUser(string sub)
         {
+            EnsureCurrentRoles(sub);
             return this._innerEnforcer.GetImplicitRolesForUser(sub);
         }
 
