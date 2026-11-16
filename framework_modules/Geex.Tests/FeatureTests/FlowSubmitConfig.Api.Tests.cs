@@ -95,8 +95,10 @@ public class FlowSubmitConfigApiTests(TestApplicationFactory factory) : TestsBas
             "{\"assets\":{\"useFlow\":\"true\"}}", "{\"assets\":{\"useFlow\":true,\"defaultTag\":1}}" })
         {
             var (response, _) = await SuperAdminClient.PostGqlRequest(SaveMutation, new { value }, ignoreError: true);
-            Assert.NotEmpty(response["errors"]!.AsArray());
-            Assert.Contains(response["errors"]!.AsArray(), x => x!["message"]!.GetValue<string>().Contains("流程配置须为模块对象"));
+            var error = Assert.Single(response["errors"]!.AsArray())!;
+            Assert.Equal("saveFlowConfig", error["path"]![0]!.GetValue<string>());
+            Assert.Equal("流程配置须为模块对象, useFlow 为布尔值, defaultTag 为文本或空值.",
+                error["extensions"]?["message"]?.GetValue<string>() ?? error["message"]!.GetValue<string>());
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(valid), JsonNode.Parse(await ReadInScope())));
             observations.Add(new { value, response });
         }
@@ -106,7 +108,7 @@ public class FlowSubmitConfigApiTests(TestApplicationFactory factory) : TestsBas
     [Fact]
     public async Task RuntimeReadRequiresLoginAndManagementKeepsSeparatePermissions()
     {
-        var username = "flow-reader-" + Guid.NewGuid().ToString("N");
+        var username = "flow_reader_" + Guid.NewGuid().ToString("N");
         string userId;
         using (var scope = ScopedService.CreateScope())
         {

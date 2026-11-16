@@ -110,7 +110,9 @@ public class FlowSubmitGateTests(TestApplicationFactory factory) : TestsBase(fac
             foreach (var entry in filters) Assert.Same(entry.Value, uow.DbContext.DataFilters[entry.Key]);
             await uow.SaveChanges();
         }
-        var rows = DB.Collection<FlowSubmitTestEntity>().Find(x => new[] { foreignTenantId, foreignOrgId, accessibleId }.Contains(x.Id)).ToList();
+        var ids = new[] { foreignTenantId, foreignOrgId, accessibleId };
+        var rows = DB.Collection<FlowSubmitTestEntity>()
+            .Find(Builders<FlowSubmitTestEntity>.Filter.In(x => x.Id, ids)).ToList();
         Assert.Equal(3, rows.Count);
         Assert.All(rows.Where(x => x.Id != accessibleId), x => Assert.Equal(ApproveStatus.Default, x.ApproveStatus));
         Assert.Equal(ApproveStatus.Submitted, rows.Single(x => x.Id == accessibleId).ApproveStatus);
