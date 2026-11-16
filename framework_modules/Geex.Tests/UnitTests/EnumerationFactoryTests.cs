@@ -60,8 +60,8 @@ public sealed class EnumerationFactoryTests
         Assert.Throws<InvalidOperationException>(() => InvalidIdentityFactory<TMarker>.FromValue(value));
         Assert.Null(InvalidIdentityFactory<TMarker>.FromExistedValue(value, true));
         Assert.Null(InvalidIdentityFactory<TMarker>.FromExistedValue(value + "-invalid", true));
-        Assert.Null(InvalidIdentityFactory<TMarker>.FromExistedName(value, true));
-        Assert.Null(InvalidIdentityFactory<TMarker>.FromExistedName(value + "-invalid", true));
+        Assert.Null(InvalidIdentityFactory<TMarker>.FromExistedName(value, noException: true));
+        Assert.Null(InvalidIdentityFactory<TMarker>.FromExistedName(value + "-invalid", noException: true));
     }
 
     private sealed class PreferredFactoryEnum : Enumeration<PreferredFactoryEnum>, IEnumerationFactory<PreferredFactoryEnum>
