@@ -17,7 +17,8 @@ namespace Geex.Extensions.AuditLogs
         public override void ConfigureServices(ServiceConfigurationContext context)
         {
             SchemaBuilder.AddDirectiveType(typeof(AuditDirectiveType.Config));
-            SchemaBuilder.TryAddTypeInterceptor<AuditLogsTypeInterceptor>();
+            SchemaBuilder.TryAddTypeInterceptor(new AuditLogsTypeInterceptor(ModuleOptions));
+            SchemaBuilder.AddDiagnosticEventListener<AuditErrorListener>();
             context.Services.AddTransient<AuditLogHandler>();
             context.Services.AddJob<AuditLogRetentionJob>("0 0 3 * * *");
             base.ConfigureServices(context);

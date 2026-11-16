@@ -18,13 +18,14 @@ var second = TaskState.FromValue("queued");
 
 未知值的构造顺序:
 
-1. 使用请求具体类型自身声明的精确 `(string name, string value)` 构造函数, 支持 public/internal/protected/private.
-2. 没有二参构造时, `Enumeration<TRoot>` 派生类型可通过 public 无参构造创建, 再由框架设置 Name/Value.
-3. 都不具备时抛出异常. 不推测单字符串构造/可选参数/其他业务参数, 不绕过构造函数创建未初始化对象.
+1. 类型实现 `IEnumerationFactory<TSelf>` 时, 调用其静态 `CreateEnumeration(name, value)` 工厂. 返回实例须兼容请求类型并保留 Name/Value, 继续使用同一家族的缓存和冲突校验.
+2. 使用请求具体类型自身声明的精确 `(string name, string value)` 构造函数, 支持 public/internal/protected/private.
+3. 没有二参构造时, `Enumeration<TRoot>` 派生类型可通过 public 无参构造创建, 再由框架设置 Name/Value.
+4. 都不具备时抛出异常. 不推测单字符串构造/可选参数/其他业务参数, 不绕过构造函数创建未初始化对象.
 
-二参构造必须保留传入的 Name/Value. 构造异常不会触发另一路回退, 无效实例不进入缓存. 无参构造执行时 Name/Value 尚未设置, 依赖 Value 的初始化应放在二参构造或计算属性中.
+二参构造必须保留传入的 Name/Value. 工厂或构造异常不会触发另一路回退, 无效实例不进入缓存. 无参构造执行时 Name/Value 尚未设置, 依赖 Value 的初始化应放在二参构造或计算属性中.
 
-独立实现 `IEnumeration` 的类型可以使用 `Enumeration<TConcrete>.FromValue` 等入口, 但必须提供精确二参构造并自行初始化 Name/Value. 抽象类型和接口只能复用已知兼容实例, 不能凭空创建未知具体类型.
+独立实现 `IEnumeration` 的类型可以使用 `Enumeration<TConcrete>.FromValue` 等入口, 通过显式工厂或精确二参构造初始化 Name/Value. 抽象类型可以通过显式工厂提供同家族的兼容具体实例; 构造函数路径要求可实例化的具体类型.
 
 ## 可选的外部属性定义
 

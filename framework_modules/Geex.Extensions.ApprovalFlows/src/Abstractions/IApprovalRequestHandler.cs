@@ -15,22 +15,8 @@ public interface IApproveRequestHandler<TInterface, TEntity> :
     IRequestHandler<UnApproveRequest<TInterface>>
     where TInterface : IApproveEntity, IEntityBase where TEntity : TInterface
 {
-    async Task MediatR.IRequestHandler<SubmitRequest<TInterface>>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
-    {
-        var entities = Uow.Query<TEntity>().Where(x => request.Ids.Contains(x.Id)).ToList();
-        if (!entities.Any())
-        {
-            throw new BusinessException(GeexExceptionType.NotFound);
-        }
-        foreach (var entity in entities)
-        {
-            if (entity is { DbContext: null })
-            {
-                Uow.Attach(entity);
-            }
-            await entity.Submit<TInterface>(request.Remark);
-        }
-    }
+    Task MediatR.IRequestHandler<SubmitRequest<TInterface>>.Handle(SubmitRequest<TInterface> request, CancellationToken cancellationToken)
+        => FlowSubmitGate.DefaultSubmit<TInterface, TEntity>(Uow, request.Ids, request.Remark);
 
     async Task MediatR.IRequestHandler<ApproveRequest<TInterface>>.Handle(ApproveRequest<TInterface> request, CancellationToken cancellationToken)
     {

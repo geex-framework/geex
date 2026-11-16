@@ -30,6 +30,7 @@ public partial class AuditLog
             descriptor.Field(x => x.OperationType);
             descriptor.Field(x => x.OperationName);
             descriptor.Field(x => x.Operation);
+            descriptor.Field(x => x.Variables);
             descriptor.Field(x => x.IsSuccess);
             descriptor.Field(x => x.Result);
             descriptor.Field(x => x.TenantCode);

@@ -27,7 +27,7 @@ namespace Geex.Gql
     {
         #region Static Configuration
 
-        public static HashSet<Type> AuditTypes { get; } = new HashSet<Type>();
+        public const string RootFieldDeclaringTypeKey = "Geex.RootFieldDeclaringType";
         public static HashSet<Type> IgnoredTypes { get; } = new HashSet<Type>();
         public static HashSet<KeyValuePair<Type, Type>> OneOfConfigs { get; } = new HashSet<KeyValuePair<Type, Type>>();
         public Dictionary<Type, (Type implementation, string entityName)> PatchedDeleteMutationEntities { get; } = new Dictionary<Type, (Type implementation, string entityName)>();
@@ -49,6 +49,29 @@ namespace Geex.Gql
             OneOfConfigs.GroupBy(x => x.Key).ToDictionary(x => x.Key, x => x.Select(y => y.Value).ToList());
 
         #endregion
+
+        private readonly List<ObjectTypeDefinition> _mutationDefinitions = new();
+
+        public override void OnAfterCompleteName(ITypeCompletionContext completionContext, DefinitionBase definition)
+        {
+            if (definition is ObjectTypeDefinition objectDefinition &&
+                typeof(Mutation).IsAssignableFrom(objectDefinition.RuntimeType))
+            {
+                _mutationDefinitions.Add(objectDefinition);
+            }
+            base.OnAfterCompleteName(completionContext, definition);
+        }
+
+        public override void OnBeforeCompleteTypes()
+        {
+            // Generate root fields after extension merging and before per-type policy interceptors.
+            foreach (var definition in _mutationDefinitions)
+            {
+                ProcessDeleteMutations(definition);
+            }
+            _mutationDefinitions.Clear();
+            base.OnBeforeCompleteTypes();
+        }
 
         public override void OnAfterMergeTypeExtensions()
         {
@@ -167,12 +190,6 @@ namespace Geex.Gql
                 IgnoreEntityMethods(definition);
             }
 
-            // Process delete mutations for Mutation type
-            if (typeof(Mutation).IsAssignableFrom(runtimeType))
-            {
-                ProcessDeleteMutations(completionContext, definition);
-            }
-
             ProcessArgumentDefaults(completionContext, definition);
         }
 
@@ -201,7 +218,7 @@ namespace Geex.Gql
             //}
         }
 
-        private void ProcessDeleteMutations(ITypeCompletionContext completionContext, ObjectTypeDefinition definition)
+        private void ProcessDeleteMutations(ObjectTypeDefinition definition)
         {
             foreach (var (mutationExtType, data) in PatchedDeleteMutationEntities)
             {
@@ -210,20 +227,25 @@ namespace Geex.Gql
 
                 if (deleteMethod != null)
                 {
-                    var fieldDefinition = new ObjectFieldDefinition($"delete{entityName}",
-                        type: TypeReference.Parse("Boolean"),
-                        resolver: async (context) =>
+                    var fieldName = $"delete{entityName}";
+                    var fieldDefinition = definition.Fields.FirstOrDefault(x => x.Name == fieldName);
+                    if (fieldDefinition == null)
+                    {
+                        fieldDefinition = new ObjectFieldDefinition(fieldName);
+                        definition.Fields.Add(fieldDefinition);
+                    }
+                    fieldDefinition.Type = TypeReference.Parse("Boolean");
+                    fieldDefinition.Resolver = async (context) =>
                         {
                             var ids = context.ArgumentValue<string[]>("ids");
                             var uow = context.Service<IUnitOfWork>();
 
                             var instance = context.Service(implementation);
                             return await (deleteMethod.Invoke(instance, [ids, uow]) as Task<bool>);
-                        });
-
+                        };
+                    fieldDefinition.ContextData[RootFieldDeclaringTypeKey] = implementation;
+                    fieldDefinition.Arguments.Clear();
                     fieldDefinition.Arguments.Add(new InputFieldDefinition("ids", type: TypeReference.Parse("[String!]!")));
-
-                    definition.Fields.Add(fieldDefinition);
                 }
             }
         }

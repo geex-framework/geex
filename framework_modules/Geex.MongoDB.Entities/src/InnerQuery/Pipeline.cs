@@ -1,4 +1,4 @@
-﻿// The MIT License (MIT)
+// The MIT License (MIT)
 //
 // Copyright (c) 2015 Pathmatics, Inc
 //
@@ -1443,10 +1443,10 @@ namespace MongoDB.Entities.InnerQuery
                 //    c.SomeEnumerableProperty.Contains("someConst")
                 // 2: Contains on a constant expression searching for some property
                 //    new[] { 1,2,3}.Contains(c.SomeProperty)
-                if (callExp.Method.Name == "Contains"
-                    && (callExp.Method.ReflectedType.IsAssignableTo<IEnumerable>()
-                        || callExp.Method.ReflectedType == typeof(Enumerable)
-                        || (callExp.Method.ReflectedType == typeof(Queryable) && callExp.Arguments.Count == 2)))
+                if (callExp.Method.Name == "Contains" &&
+                    (callExp.Method.ReflectedType.IsAssignableTo<IEnumerable>() ||
+                     callExp.Method.ReflectedType == typeof(Enumerable) ||
+                     callExp.Method.DeclaringType == typeof(Queryable) && callExp.Arguments.Count == 2))
                 {
                     BsonValue searchValue, arrayToSearch;
 

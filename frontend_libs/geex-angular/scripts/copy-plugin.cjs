@@ -26,4 +26,10 @@ const indexJs = `export * from "${fesm}";\n`;
 fs.writeFileSync(path.join(dist, "index.js"), indexJs);
 fs.writeFileSync(path.join(dist, "index.mjs"), indexJs);
 
+const manifestPath = path.join(dist, "package.json");
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+manifest.files = ["**/*"];
+manifest.exports["./esbuild/gql-redirect.plugin"].default = "./esbuild/gql-redirect.plugin.js";
+fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
+
 console.log("copied esbuild plugin / rison assets / dist index re-exports");

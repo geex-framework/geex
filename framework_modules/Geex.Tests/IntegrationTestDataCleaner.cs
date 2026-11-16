@@ -12,6 +12,11 @@ internal static class IntegrationTestDataCleaner
     public static async Task CleanAsync()
     {
         var configuration = BuildConfiguration();
+        if (configuration["PIMS_TEST_DATABASE"] == "pims-flow-api")
+        {
+            // The PIMS fixed runner owns setup and cleanup of this database and its companion resources.
+            return;
+        }
         await CleanMongoDbAsync(configuration);
         await CleanRedisAsync(configuration);
         CleanBlobStorageFiles(configuration);
@@ -23,6 +28,7 @@ internal static class IntegrationTestDataCleaner
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile("appsettings.Test.json", optional: false)
+            .AddEnvironmentVariables()
             .Build();
     }
 
