@@ -21,7 +21,7 @@ namespace Geex.Extensions.MultiTenant.Api
             {
                 IEnumerable<Claim> claims = claimsIdentity.Claims;
                 claim = claims != null
-                    ? claims.FirstOrDefault((Func<Claim, bool>)(c => c.Type == GeexClaimType.Tenant))
+                    ? claims.FirstOrDefault((Func<Claim, bool>)(c => c.Type == GeexClaimType._Tenant))
                     : null;
             }
 

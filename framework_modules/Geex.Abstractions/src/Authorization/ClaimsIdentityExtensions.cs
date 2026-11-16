@@ -33,7 +33,7 @@ public static class ClaimsIdentityExtensions
         {
             IEnumerable<Claim> claims = claimsIdentity.Claims;
             claim = claims != null
-                ? claims.FirstOrDefault((Func<Claim, bool>)(c => c.Type == GeexClaimType.Sub))
+                ? claims.FirstOrDefault((Func<Claim, bool>)(c => c.Type == GeexClaimType._Sub))
                 : null;
         }
 
