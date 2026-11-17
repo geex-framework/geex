@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Geex.Extensions.Backups.Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MongoDB.Driver;
 using MongoDB.Entities;
 
 namespace Geex.Extensions.Backups.Core.Jobs;
@@ -26,19 +27,41 @@ public sealed class BackupsExecution : IHostedService
         return accepted.Task;
     }
 
-    private async Task RunManualAsync(TaskCompletionSource<string?> accepted, string? requestedByUserId)
+    public Task<string?> TryStartOwnedManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(execution);
+        if (_shutdown.IsCancellationRequested || !_gate.Wait(0)) return Task.FromResult<string?>(null);
+        var accepted = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        _active = RunManualAsync(accepted, execution.RequestedByUserId, execution, cancellationToken);
+        return accepted.Task;
+    }
+
+    private async Task RunManualAsync(TaskCompletionSource<string?> accepted, string? requestedByUserId,
+        ManualBackupExecution? execution = null, CancellationToken cancellationToken = default)
     {
         try
         {
             var options = _services.GetRequiredService<BackupsModuleOptions>();
             var url = options.Validate(_services.GetRequiredService<GeexCoreModuleOptions>());
-            using var stop = CancellationTokenSource.CreateLinkedTokenSource(_shutdown.Token);
+            if (execution != null) ValidateExecution(execution, url.DatabaseName);
+            using var stop = CancellationTokenSource.CreateLinkedTokenSource(_shutdown.Token, cancellationToken);
             stop.CancelAfter(options.Timeout);
-            var scheduledAt = DateTimeOffset.UtcNow;
+            var scheduledAt = execution?.ScheduledAt ?? DateTimeOffset.UtcNow;
             await using var lease = await BackupLease.AcquireAsync(DB.Database(url.DatabaseName), scheduledAt, stop.Token, deduplicateSlot: false);
             if (lease == null)
                 return;
-            await ExecuteOwnedAsync(_services, url.DatabaseName, scheduledAt, options, lease, automatic: false, accepted, requestedByUserId);
+            if (execution != null)
+            {
+                var existing = await DB.Collection<Backup>().Find(x => x.Id == execution.BackupId).FirstOrDefaultAsync(lease.Token);
+                if (existing != null)
+                {
+                    execution.EnsureMatches(existing);
+                    accepted.TrySetResult(existing.Id);
+                    return;
+                }
+            }
+            await ExecuteOwnedAsync(_services, url.DatabaseName, scheduledAt, options, lease, automatic: false,
+                accepted, requestedByUserId, execution);
         }
         catch (Exception exception)
         {
@@ -53,6 +76,43 @@ public sealed class BackupsExecution : IHostedService
     }
 
     public Task StartAsync(CancellationToken cancellationToken) => Backup.RecoverNotificationsAsync(_services);
+
+    public Task<bool> TryRecoverOwnedManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(execution);
+        if (_shutdown.IsCancellationRequested || !_gate.Wait(0)) return Task.FromResult(false);
+        var recovery = RecoverOwnedManualAsync(execution, cancellationToken);
+        _active = recovery;
+        return recovery;
+    }
+
+    private async Task<bool> RecoverOwnedManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var options = _services.GetRequiredService<BackupsModuleOptions>();
+            var database = options.Validate(_services.GetRequiredService<GeexCoreModuleOptions>()).DatabaseName;
+            ValidateExecution(execution, database);
+            using var stop = CancellationTokenSource.CreateLinkedTokenSource(_shutdown.Token, cancellationToken);
+            stop.CancelAfter(options.Timeout);
+            await using var lease = await BackupLease.AcquireAsync(DB.Database(database), execution.ScheduledAt, stop.Token, deduplicateSlot: false);
+            if (lease == null) return false;
+            using var scope = _services.CreateScope();
+            var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            var backup = await work.DbContext.Collection<Backup>().Find(x => x.Id == execution.BackupId).FirstOrDefaultAsync(lease.Token)
+                ?? throw new InvalidOperationException("Backup execution record was not found.");
+            execution.EnsureMatches(backup);
+            await work.Attach(backup).RecoverOwnedAsync(lease.Token, lease.EnsureOwnedAsync);
+            return true;
+        }
+        finally { _gate.Release(); }
+    }
+
+    private static void ValidateExecution(ManualBackupExecution execution, string database)
+    {
+        if (execution.DatabaseName != database || DB.DefaultDb.DatabaseNamespace.DatabaseName != database)
+            throw new InvalidOperationException("Backup execution must target the application's active database.");
+    }
 
     internal Task RunScheduledAsync(DateTimeOffset scheduledAt, CancellationToken cancellationToken)
     {
@@ -77,23 +137,27 @@ public sealed class BackupsExecution : IHostedService
         finally { _gate.Release(); }
     }
     private static async Task ExecuteOwnedAsync(IServiceProvider services, string database, DateTimeOffset scheduledAt,
-        BackupsModuleOptions options, BackupLease lease, bool automatic, TaskCompletionSource<string?>? accepted = null, string? requestedByUserId = null)
+        BackupsModuleOptions options, BackupLease lease, bool automatic, TaskCompletionSource<string?>? accepted = null,
+        string? requestedByUserId = null, ManualBackupExecution? execution = null)
     {
         using var scope = services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var backup = new Backup(work, scheduledAt, lease.Token, recoverInterrupted: true,
-            source: automatic ? BackupSource.Automatic : BackupSource.Manual, requestedByUserId: requestedByUserId);
+        var backup = new Backup(work, scheduledAt, lease.Token, recoverInterrupted: execution == null,
+            source: automatic ? BackupSource.Automatic : BackupSource.Manual, requestedByUserId: requestedByUserId, execution: execution);
         work.PreSaveChanges += lease.EnsureOwnedAsync;
+        var recordCreated = false;
         try
         {
             var id = await backup.WaitForRecordAsync();
+            recordCreated = true;
             accepted?.TrySetResult(id);
             await work.SaveChanges(lease.Token);
         }
         catch
         {
-            await backup.CompensateAsync(lease.Token.IsCancellationRequested ? BackupStatus.Cancelled : BackupStatus.Failed,
-                "Backup final persistence failed or execution was cancelled.");
+            if (recordCreated)
+                await backup.CompensateAsync(lease.Token.IsCancellationRequested ? BackupStatus.Cancelled : BackupStatus.Failed,
+                    "Backup final persistence failed or execution was cancelled.");
             throw;
         }
         await Backup.PublishChangedAsync(services, backup.Id);
