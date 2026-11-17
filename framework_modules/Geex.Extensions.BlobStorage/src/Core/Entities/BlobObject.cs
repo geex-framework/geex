@@ -106,7 +106,7 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         public bool? UploadPending { get; private set; }
 
         [HotChocolate.GraphQLIgnore]
-        [MongoDB.Bson.Serialization.Attributes.BsonIgnoreIfNull]
+        [global::MongoDB.Bson.Serialization.Attributes.BsonIgnoreIfNull]
         public string? StorageOwnerTag { get; private set; }
 
         /// <summary>
