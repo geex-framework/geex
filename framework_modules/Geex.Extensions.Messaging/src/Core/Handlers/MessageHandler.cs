@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Geex.Extensions.Authentication;
 using Geex.Extensions.Messaging.Core.Entities;
 using Geex.Extensions.Messaging.Requests;
+using Geex.MultiTenant;
 using HotChocolate.Subscriptions;
 
 using MediatX;
@@ -20,7 +21,8 @@ namespace Geex.Extensions.Messaging.Core.Handlers
         IRequestHandler<SendNotificationMessageRequest>,
         IRequestHandler<CreateMessageRequest, IMessage>,
         IRequestHandler<EditMessageRequest>,
-        IRequestHandler<GetUnreadMessagesRequest, IQueryable<Message>>
+        IRequestHandler<GetUnreadMessagesRequest, IQueryable<Message>>,
+        IRequestHandler<GetReadMessagesRequest, IQueryable<Message>>
     {
         public IUnitOfWork Uow { get; }
         public ICurrentUser CurrentUser { get; }
@@ -57,12 +59,25 @@ namespace Geex.Extensions.Messaging.Core.Handlers
         }
 
         public Task<IQueryable<Message>> Handle(GetUnreadMessagesRequest request, CancellationToken cancellationToken)
+            => Task.FromResult(ReceivedMessages(isRead: false));
+
+        public Task<IQueryable<Message>> Handle(GetReadMessagesRequest request, CancellationToken cancellationToken)
+            => Task.FromResult(ReceivedMessages(isRead: true));
+
+        private IQueryable<Message> ReceivedMessages(bool isRead)
         {
             var messageIds = Uow.Query<MessageDistribution>()
-                .Where(x => x.IsRead == false && x.ToUserId == CurrentUser.UserId)
+                .Where(x => x.IsRead == isRead && x.ToUserId == CurrentUser.UserId)
                 .Select(x => x.MessageId)
                 .ToList();
-            return Task.FromResult(Uow.Query<Message>().Where(x => messageIds.Contains(x.Id)));
+            var messages = Uow.Query<Message>().Where(x => messageIds.Contains(x.Id));
+            var tenantCode = Uow.ServiceProvider.GetService<ICurrentTenant>()?.Code;
+            if (!string.IsNullOrEmpty(tenantCode))
+            {
+                // 原生消息允许空租户标签, 此时仍由精确收件人限定可见范围.
+                messages = messages.Where(x => x.TenantCode == null || x.TenantCode == "" || x.TenantCode == tenantCode);
+            }
+            return messages.OrderByDescending(x => x.CreatedOn).ThenByDescending(x => x.Id);
         }
 
         public async Task Handle(SendNotificationMessageRequest request, CancellationToken cancellationToken)
