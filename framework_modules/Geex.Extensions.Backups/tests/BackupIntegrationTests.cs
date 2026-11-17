@@ -36,7 +36,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
             { "Amount", new BsonDecimal128(12.75m) }, { "Time", DateTime.UtcNow }, { "Bytes", new BsonBinaryData(new byte[] { 1, 2, 3 }) } };
         await data.InsertOneAsync(document);
         await data.Indexes.CreateOneAsync(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("Code"), new CreateIndexOptions { Unique = true, Name = "unique_code" }));
-        var unrelated = DB.DefaultDb.Client.GetDatabase("unrelated_" + Guid.NewGuid().ToString("N"));
+        var unrelated = DB.DefaultDb.Client.GetDatabase(fixture.AllocateDatabaseName("unrelated"));
         await unrelated.GetCollection<BsonDocument>("sentinel").InsertOneAsync(new BsonDocument("value", 1));
         using var scope = fixture.Services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -63,7 +63,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         await loadedWork.SaveChanges();
         Assert.Equal(blobId, roundtrip.BlobObjectId);
 
-        var restoredName = "restored_" + Guid.NewGuid().ToString("N");
+        var restoredName = fixture.AllocateDatabaseName("restored");
         var info = new ProcessStartInfo(Environment.GetEnvironmentVariable("GEEX_BACKUP_MONGORESTORE") ?? "mongorestore")
         { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true };
         foreach (var arg in new[] { "--uri", fixture.Uri, "--archive=" + blob.GetFilePath(), "--gzip",
@@ -505,7 +505,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
     [Fact]
     public async Task ConcurrentLeaseClaimsHaveExactlyOneOwner()
     {
-        var database = DB.DefaultDb.Client.GetDatabase("lease_test_" + Guid.NewGuid().ToString("N"));
+        var database = DB.DefaultDb.Client.GetDatabase(fixture.AllocateDatabaseName("lease"));
         var slot = DateTimeOffset.UtcNow;
         var claims = await Task.WhenAll(Enumerable.Range(0, 8)
             .Select(_ => BackupLease.AcquireAsync(database, slot, CancellationToken.None)));
@@ -517,7 +517,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
     [Fact]
     public async Task ManualClaimsShareLeaseWithoutConsumingScheduledSlots()
     {
-        var database = DB.DefaultDb.Client.GetDatabase("manual_lease_" + Guid.NewGuid().ToString("N"));
+        var database = DB.DefaultDb.Client.GetDatabase(fixture.AllocateDatabaseName("manual_lease"));
         var slot = DateTimeOffset.UtcNow;
         await using (var manual = await BackupLease.AcquireAsync(database, slot.AddMinutes(1), CancellationToken.None, false))
         {

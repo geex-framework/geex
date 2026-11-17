@@ -40,8 +40,15 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         }
 
         public BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow, CancellationToken cancellationToken)
+            : this(request, uow, cancellationToken, null)
+        {
+        }
+
+        internal BlobObject(CreateBlobObjectRequest request, IUnitOfWork uow, CancellationToken cancellationToken, string? storageOwnerTag)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (storageOwnerTag != null) ArgumentException.ThrowIfNullOrWhiteSpace(storageOwnerTag);
+            StorageOwnerTag = storageOwnerTag;
             uow?.Attach(this);
             var file = request.File;
 
@@ -97,6 +104,10 @@ namespace Geex.Extensions.BlobStorage.Core.Entities
         // Legacy records have no pending marker and remain queryable without a data migration.
         [HotChocolate.GraphQLIgnore]
         public bool? UploadPending { get; private set; }
+
+        [HotChocolate.GraphQLIgnore]
+        [MongoDB.Bson.Serialization.Attributes.BsonIgnoreIfNull]
+        public string? StorageOwnerTag { get; private set; }
 
         /// <summary>
         /// Calculates appropriate buffer size based on file size

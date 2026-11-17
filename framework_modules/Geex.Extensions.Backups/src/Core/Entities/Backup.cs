@@ -28,7 +28,7 @@ public partial class Backup : Entity<Backup>
 
     internal Backup(IUnitOfWork uow, DateTimeOffset scheduledAt, CancellationToken cancellationToken = default,
         bool recoverInterrupted = false, BackupSource source = BackupSource.Manual, string? requestedByUserId = null,
-        ManualBackupExecution? execution = null)
+        ManualBackupExecution? execution = null, Func<CancellationToken, Task>? beforeExport = null)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var options = uow.ServiceProvider.GetRequiredService<BackupsModuleOptions>();
@@ -71,7 +71,7 @@ public partial class Backup : Entity<Backup>
             ResultMessageId = ResultMessageId
         };
         _abort = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _backupTask = Task.Run(() => CreateArchiveAsync(snapshot, core.ConnectionString, options, recoverInterrupted, _abort.Token));
+        _backupTask = Task.Run(() => CreateArchiveAsync(snapshot, core.ConnectionString, options, recoverInterrupted, _abort.Token, beforeExport));
         uow.PreSaveChanges += async () =>
         {
             var blobId = await _backupTask;
@@ -110,7 +110,7 @@ public partial class Backup : Entity<Backup>
         ? null : Uow.Query<BlobObject>().FirstOrDefault(x => x.Id == BlobObjectId);
 
     private async Task<string> CreateArchiveAsync(Backup snapshot, string connectionString,
-        BackupsModuleOptions options, bool recoverInterrupted, CancellationToken cancellationToken)
+        BackupsModuleOptions options, bool recoverInterrupted, CancellationToken cancellationToken, Func<CancellationToken, Task>? beforeExport)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(options.Timeout);
@@ -132,6 +132,8 @@ public partial class Backup : Entity<Backup>
             if (recoverInterrupted)
                 await RecoverAsync(_services, DatabaseName, token, Id);
             stage = "Archive export";
+            if (beforeExport != null) await beforeExport(token);
+            token.ThrowIfCancellationRequested();
             Directory.CreateDirectory(directory);
             var archive = Path.Combine(directory, $"backup-{Id}.archive.gz");
             await MongodumpProcess.RunAsync(options.MongodumpPath, connectionString, DatabaseName, directory, archive, token);
@@ -141,7 +143,7 @@ public partial class Backup : Entity<Backup>
             {
                 File = new StreamFile(Path.GetFileName(archive), () => System.IO.File.OpenRead(archive)),
                 StorageType = BlobStorageType.FileSystem
-            }, work, token);
+            }, work, token, StorageOwnerTag(this));
             await work.DbContext.Collection<Backup>().UpdateOneAsync(x => x.Id == Id,
                 Builders<Backup>.Update.Set(x => x.BlobObjectId, blob.Id), cancellationToken: token);
             await work.SaveChanges(token);
@@ -223,12 +225,16 @@ public partial class Backup : Entity<Backup>
         }
     }
 
+    internal static string StorageOwnerTag(Backup backup) => "geex.backup/" + backup.Id;
+
     private static async Task RemoveFilesAsync(IUnitOfWork work, Backup backup, CancellationToken token)
     {
-        var fileName = $"backup-{backup.Id}.archive.gz";
+        var ownerTag = StorageOwnerTag(backup);
         var blobId = backup.BlobObjectId;
         var blobs = await work.DbContext.Collection<BlobObject>().Find(
-            x => x.Id == blobId || x.FileName == fileName).ToListAsync(token);
+            x => x.Id == blobId || x.StorageOwnerTag == ownerTag).ToListAsync(token);
+        if (blobs.Any(x => x.StorageOwnerTag != null && x.StorageOwnerTag != ownerTag))
+            throw new InvalidOperationException("Backup archive is associated with another storage owner.");
         foreach (var blob in blobs)
             await work.Attach(blob).DeleteAsync(token);
         await work.SaveChanges(token);
