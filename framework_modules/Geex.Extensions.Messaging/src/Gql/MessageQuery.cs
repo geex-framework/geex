@@ -22,6 +22,9 @@ namespace Geex.Extensions.Messaging.Gql
             descriptor.Field(x => x.UnreadMessages())
                 .UseOffsetPaging<ObjectType<Message>>()
                 .Authorize();
+            descriptor.Field(x => x.ReadMessages())
+                .UseOffsetPaging<ObjectType<Message>>()
+                .Authorize();
             base.Configure(descriptor);
         }
         private readonly IUnitOfWork _uow;
@@ -39,6 +42,11 @@ namespace Geex.Extensions.Messaging.Gql
         public async Task<IQueryable<Message>> UnreadMessages()
         {
             return await _uow.Request(new GetUnreadMessagesRequest());
+        }
+
+        public async Task<IQueryable<Message>> ReadMessages()
+        {
+            return await _uow.Request(new GetReadMessagesRequest());
         }
     }
 }
