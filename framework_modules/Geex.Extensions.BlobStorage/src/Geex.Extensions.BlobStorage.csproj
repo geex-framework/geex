@@ -16,5 +16,6 @@
     <ItemGroup>
         <Folder Include="Gql\Types\" />
         <InternalsVisibleTo Include="Geex.Extensions.Backups.Tests" />
+        <InternalsVisibleTo Include="Geex.Extensions.Backups" />
     </ItemGroup>
 </Project>

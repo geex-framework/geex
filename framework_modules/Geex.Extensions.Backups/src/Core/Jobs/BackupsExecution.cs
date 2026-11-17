@@ -27,17 +27,18 @@ public sealed class BackupsExecution : IHostedService
         return accepted.Task;
     }
 
-    public Task<string?> TryStartOwnedManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken = default)
+    public Task<string?> TryStartOwnedManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken = default,
+        Func<CancellationToken, Task>? beforeExport = null)
     {
         ArgumentNullException.ThrowIfNull(execution);
         if (_shutdown.IsCancellationRequested || !_gate.Wait(0)) return Task.FromResult<string?>(null);
         var accepted = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _active = RunManualAsync(accepted, execution.RequestedByUserId, execution, cancellationToken);
+        _active = RunManualAsync(accepted, execution.RequestedByUserId, execution, cancellationToken, beforeExport);
         return accepted.Task;
     }
 
     private async Task RunManualAsync(TaskCompletionSource<string?> accepted, string? requestedByUserId,
-        ManualBackupExecution? execution = null, CancellationToken cancellationToken = default)
+        ManualBackupExecution? execution = null, CancellationToken cancellationToken = default, Func<CancellationToken, Task>? beforeExport = null)
     {
         try
         {
@@ -61,7 +62,7 @@ public sealed class BackupsExecution : IHostedService
                 }
             }
             await ExecuteOwnedAsync(_services, url.DatabaseName, scheduledAt, options, lease, automatic: false,
-                accepted, requestedByUserId, execution);
+                accepted, requestedByUserId, execution, beforeExport);
         }
         catch (Exception exception)
         {
@@ -138,12 +139,13 @@ public sealed class BackupsExecution : IHostedService
     }
     private static async Task ExecuteOwnedAsync(IServiceProvider services, string database, DateTimeOffset scheduledAt,
         BackupsModuleOptions options, BackupLease lease, bool automatic, TaskCompletionSource<string?>? accepted = null,
-        string? requestedByUserId = null, ManualBackupExecution? execution = null)
+        string? requestedByUserId = null, ManualBackupExecution? execution = null, Func<CancellationToken, Task>? beforeExport = null)
     {
         using var scope = services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var backup = new Backup(work, scheduledAt, lease.Token, recoverInterrupted: execution == null,
-            source: automatic ? BackupSource.Automatic : BackupSource.Manual, requestedByUserId: requestedByUserId, execution: execution);
+            source: automatic ? BackupSource.Automatic : BackupSource.Manual, requestedByUserId: requestedByUserId,
+            execution: execution, beforeExport: beforeExport);
         work.PreSaveChanges += lease.EnsureOwnedAsync;
         var recordCreated = false;
         try
