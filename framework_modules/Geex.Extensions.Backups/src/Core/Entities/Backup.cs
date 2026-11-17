@@ -27,7 +27,8 @@ public partial class Backup : Entity<Backup>
     internal Backup() { }
 
     internal Backup(IUnitOfWork uow, DateTimeOffset scheduledAt, CancellationToken cancellationToken = default,
-        bool recoverInterrupted = false, BackupSource source = BackupSource.Manual, string? requestedByUserId = null)
+        bool recoverInterrupted = false, BackupSource source = BackupSource.Manual, string? requestedByUserId = null,
+        ManualBackupExecution? execution = null)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var options = uow.ServiceProvider.GetRequiredService<BackupsModuleOptions>();
@@ -40,6 +41,15 @@ public partial class Backup : Entity<Backup>
         Status = BackupStatus.Running;
         Source = source;
         RequestedByUserId = source == BackupSource.Manual ? requestedByUserId : null;
+        if (execution != null)
+        {
+#pragma warning disable CS0618
+            Id = execution.BackupId;
+            CreatedOn = ModifiedOn = StartedAt;
+#pragma warning restore CS0618
+            ExecutionKey = execution.ExecutionKey;
+            execution.EnsureMatches(this);
+        }
         ResultMessageId = string.IsNullOrWhiteSpace(RequestedByUserId) ? null : ObjectId.GenerateNewId().ToString();
         _services = uow.ServiceProvider;
         uow.Attach(this);
@@ -50,11 +60,13 @@ public partial class Backup : Entity<Backup>
             Id = Id,
 #pragma warning restore CS0618
             CreatedOn = CreatedOn,
+            ModifiedOn = ModifiedOn,
             DatabaseName = DatabaseName,
             ScheduledAt = ScheduledAt,
             StartedAt = StartedAt,
             Status = Status,
             Source = Source,
+            ExecutionKey = ExecutionKey,
             RequestedByUserId = RequestedByUserId,
             ResultMessageId = ResultMessageId
         };
@@ -79,6 +91,7 @@ public partial class Backup : Entity<Backup>
     public DateTimeOffset? FinishedAt { get; private set; }
     public BackupStatus Status { get; private set; }
     public BackupSource Source { get; private set; }
+    public string? ExecutionKey { get; private set; }
     public string? RequestedByUserId { get; private set; }
     public string? ResultMessageId { get; private set; }
     public bool ResultNotificationSaved { get; private set; }
@@ -107,10 +120,12 @@ public partial class Backup : Entity<Backup>
         BlobObject? blob = null;
         using var scope = _services.CreateScope();
         var stage = "Record creation";
+        var recordCreated = false;
         try
         {
             var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             await work.DbContext.Collection<Backup>().InsertOneAsync(snapshot, cancellationToken: token);
+            recordCreated = true;
             _recordCreated.TrySetResult(Id);
             await PublishChangedAsync(_services, Id);
             stage = "Interrupted execution recovery";
@@ -141,9 +156,10 @@ public partial class Backup : Entity<Backup>
                 catch { /* Preserve the export or persistence failure. */ }
             }
             // The outer SaveChanges cannot commit a failed task. Compensation uses a fresh scope.
-            await RecordFailureAndCleanAsync(timeout.IsCancellationRequested ? BackupStatus.Cancelled : BackupStatus.Failed,
-                timeout.IsCancellationRequested ? $"{stage}: backup cancelled or timed out."
-                    : $"{stage}: {MongodumpProcess.SummarizeError(exception.Message, connectionString)}");
+            if (recordCreated)
+                await RecordFailureAndCleanAsync(timeout.IsCancellationRequested ? BackupStatus.Cancelled : BackupStatus.Failed,
+                    timeout.IsCancellationRequested ? $"{stage}: backup cancelled or timed out."
+                        : $"{stage}: {MongodumpProcess.SummarizeError(exception.Message, connectionString)}");
             throw;
         }
         finally
@@ -154,14 +170,15 @@ public partial class Backup : Entity<Backup>
                 try { await blob.WaitForStorageAsync(); }
                 catch { /* The original failure is propagated by SaveChanges. */ }
             }
-            try { if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
+            try { if (recordCreated && Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             { _services.GetService<ILogger<Backup>>()?.LogWarning("Could not remove backup temporary directory {BackupId}.", Id); }
             finally { _abort?.Dispose(); }
         }
     }
 
-    internal async Task CompensateAsync(BackupStatus status, string message)
+    internal async Task CompensateAsync(BackupStatus status, string message, Func<Task>? ensureOwned = null,
+        CancellationToken cancellationToken = default)
     {
         try { _abort?.Cancel(); }
         catch (ObjectDisposedException) { }
@@ -170,16 +187,20 @@ public partial class Backup : Entity<Backup>
             try { await _backupTask; }
             catch { /* The original failure has already been observed by the caller. */ }
         }
-        await RecordFailureAndCleanAsync(status, message);
+        await RecordFailureAndCleanAsync(status, message, ensureOwned, cancellationToken);
+        if (ensureOwned != null) await ensureOwned();
         await PublishChangedAsync(_services ?? ServiceProvider, Id);
         await SaveResultMessageAsync(_services ?? ServiceProvider, Id);
     }
 
-    private async Task RecordFailureAndCleanAsync(BackupStatus status, string message)
+    private async Task RecordFailureAndCleanAsync(BackupStatus status, string message, Func<Task>? ensureOwned = null,
+        CancellationToken cancellationToken = default)
     {
-        using var cleanupTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cleanupTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cleanupTimeout.CancelAfter(TimeSpan.FromSeconds(30));
         try
         {
+            if (ensureOwned != null) await ensureOwned();
             using var scope = (_services ?? ServiceProvider).CreateScope();
             var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var collection = work.DbContext.Collection<Backup>();
@@ -190,11 +211,13 @@ public partial class Backup : Entity<Backup>
                 Builders<Backup>.Update.Set(x => x.Status, status).Set(x => x.ErrorMessage, message)
                     .Set(x => x.FinishedAt, DateTimeOffset.UtcNow), cancellationToken: cleanupTimeout.Token);
             await RemoveFilesAsync(work, stored, cleanupTimeout.Token);
+            if (ensureOwned != null) await ensureOwned();
             await collection.UpdateOneAsync(x => x.Id == Id,
                 Builders<Backup>.Update.Set(x => x.BlobObjectId, null), cancellationToken: cleanupTimeout.Token);
         }
         catch (Exception)
         {
+            if (ensureOwned != null) throw;
             (_services ?? ServiceProvider).GetService<ILogger<Backup>>()?.LogError(
                 "Backup {BackupId} needs cleanup on the next execution.", Id);
         }
