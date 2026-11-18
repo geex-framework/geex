@@ -17,7 +17,7 @@ using Xunit;
 namespace Geex.Extensions.Backups.Tests;
 
 [Collection("Backups")]
-public sealed class OwnedManualBackupTests(BackupFixture fixture) : IAsyncLifetime
+public sealed class ManualBackupExecutionTests(BackupFixture fixture) : IAsyncLifetime
 {
     private static long _slot;
     private readonly List<string> _ids = [];
@@ -72,7 +72,7 @@ public sealed class OwnedManualBackupTests(BackupFixture fixture) : IAsyncLifeti
         var workers = Enumerable.Range(0, 3).Select(_ => Worker()).ToArray();
         try
         {
-            var accepted = await Task.WhenAll(workers.Select(x => x.TryStartOwnedManualAsync(execution)));
+            var accepted = await Task.WhenAll(workers.Select(x => x.TryStartManualWithIdAsync(execution, CancellationToken.None)));
             Assert.Contains(execution.BackupId, accepted);
             Assert.All(accepted.Where(x => x != null), id => Assert.Equal(execution.BackupId, id));
             var completed = await WaitForCompletion(execution.BackupId);
@@ -81,7 +81,7 @@ public sealed class OwnedManualBackupTests(BackupFixture fixture) : IAsyncLifeti
             Assert.True(completed.CreatedOn > DateTimeOffset.MinValue);
             var snapshot = completed.ToBson();
             var retry = Worker();
-            Assert.Equal(execution.BackupId, await retry.TryStartOwnedManualAsync(execution));
+            Assert.Equal(execution.BackupId, await retry.TryStartManualWithIdAsync(execution, CancellationToken.None));
             await retry.StopAsync(CancellationToken.None);
             Assert.Equal(snapshot, (await Find(execution.BackupId)).ToBson());
             Assert.Equal(1L, await DB.Collection<Backup>().CountDocumentsAsync(x => x.ExecutionKey == execution.ExecutionKey));
@@ -133,10 +133,10 @@ public sealed class OwnedManualBackupTests(BackupFixture fixture) : IAsyncLifeti
         Directory.CreateDirectory(partialDirectory);
         await File.WriteAllTextAsync(Path.Combine(partialDirectory, "partial"), "interrupted attempt");
         var replay = Worker();
-        Assert.Equal(first.BackupId, await replay.TryStartOwnedManualAsync(first));
+        Assert.Equal(first.BackupId, await replay.TryStartManualWithIdAsync(first, CancellationToken.None));
         await replay.StopAsync(CancellationToken.None);
         var recovery = Worker();
-        Assert.True(await recovery.TryRecoverOwnedManualAsync(first));
+        Assert.True(await recovery.TryRecoverManualAsync(first));
         var recovered = await Find(first.BackupId);
         Assert.Equal(BackupStatus.Failed, recovered.Status);
         Assert.Equal("Previous backup execution was interrupted.", recovered.ErrorMessage);
@@ -145,13 +145,13 @@ public sealed class OwnedManualBackupTests(BackupFixture fixture) : IAsyncLifeti
         Assert.False(File.Exists(partialPath));
         Assert.False(Directory.Exists(partialDirectory));
         var terminal = recovered.ToBson();
-        Assert.True(await recovery.TryRecoverOwnedManualAsync(first));
+        Assert.True(await recovery.TryRecoverManualAsync(first));
         Assert.Equal(terminal, (await Find(first.BackupId)).ToBson());
 
         var second = new ManualBackupExecution(first.ExecutionKey.Replace("/attempt/0", "/attempt/1"),
             first.DatabaseName, first.RequestedByUserId, first.ScheduledAt.AddSeconds(1));
         _ids.Add(second.BackupId);
-        Assert.Equal(second.BackupId, await recovery.TryStartOwnedManualAsync(second));
+        Assert.Equal(second.BackupId, await recovery.TryStartManualWithIdAsync(second, CancellationToken.None));
         Assert.Equal(BackupStatus.Succeeded, (await WaitForCompletion(second.BackupId)).Status);
         await recovery.StopAsync(CancellationToken.None);
         Assert.Equal(terminal, (await Find(first.BackupId)).ToBson());
@@ -186,8 +186,8 @@ public sealed class OwnedManualBackupTests(BackupFixture fixture) : IAsyncLifeti
         var existing = BsonSerializer.Deserialize<Backup>(document);
         await DB.Collection<Backup>().InsertOneAsync(existing);
         var before = (await Find(existing.Id)).ToBson();
-        await Assert.ThrowsAsync<InvalidOperationException>(() => new BackupsExecution(fixture.Services).TryStartOwnedManualAsync(execution));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => new BackupsExecution(fixture.Services).TryRecoverOwnedManualAsync(execution));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => new BackupsExecution(fixture.Services).TryStartManualWithIdAsync(execution, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => new BackupsExecution(fixture.Services).TryRecoverManualAsync(execution));
         Assert.Equal(before, (await Find(existing.Id)).ToBson());
         Assert.Equal(0L, await DB.Collection<MessageDistribution>().CountDocumentsAsync(x => x.MessageId == existing.ResultMessageId));
     }
@@ -265,7 +265,7 @@ public sealed class OwnedManualBackupTests(BackupFixture fixture) : IAsyncLifeti
             sentinels.Add((blob, saved.ToBson(), sample.Content, blob.GetFilePath()));
         }
 
-        Assert.True(await Worker().TryRecoverOwnedManualAsync(identity));
+        Assert.True(await Worker().TryRecoverManualAsync(identity));
         Assert.False(await DB.Collection<BlobObject>().Find(x => x.Id == orphan.Id).AnyAsync());
         Assert.False(await DB.Collection<BlobObject>().Find(x => x.StorageOwnerTag == ownerTag).AnyAsync());
         Assert.Equal(sharedContent, File.Exists(orphanPath));
@@ -307,32 +307,45 @@ public sealed class OwnedManualBackupTests(BackupFixture fixture) : IAsyncLifeti
     [Theory]
     [InlineData(0)]
     [InlineData(300)]
-    public async Task ExportBarrierKeepsAcceptedBackupRunningUntilActualCancellation(int cancellationDelayMilliseconds)
+    public async Task InjectedExporterKeepsAcceptedBackupRunningUntilActualCancellation(int cancellationDelayMilliseconds)
     {
         var identity = Identity();
-        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var execution = Worker();
-        Assert.Equal(identity.BackupId, await execution.TryStartOwnedManualAsync(identity, beforeExport: async token =>
+        var exporter = new WaitingArchiveExporter();
+        await using var services = fixture.CreateServices(exporter);
+        var execution = new BackupsExecution(services);
+        try
         {
-            entered.TrySetResult();
-            await Task.Delay(Timeout.InfiniteTimeSpan, token);
-        }));
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await Task.Delay(cancellationDelayMilliseconds);
-        Assert.Equal(BackupStatus.Running, (await Find(identity.BackupId)).Status);
-        Assert.False(await DB.Collection<BlobObject>().Find(x => x.StorageOwnerTag == "geex.backup/" + identity.BackupId).AnyAsync());
-        await execution.StopAsync(CancellationToken.None);
-        var cancelled = await Find(identity.BackupId);
-        Assert.Equal(BackupStatus.Cancelled, cancelled.Status);
-        Assert.StartsWith("Archive export:", cancelled.ErrorMessage);
-        Assert.Null(cancelled.BlobObjectId);
-        Assert.True(cancelled.ResultNotificationSaved);
-        var snapshot = cancelled.ToBson();
-        var retry = Worker();
-        Assert.Equal(identity.BackupId, await retry.TryStartOwnedManualAsync(identity));
-        await retry.StopAsync(CancellationToken.None);
-        Assert.Equal(snapshot, (await Find(identity.BackupId)).ToBson());
-        Assert.Equal(1L, await DB.Collection<MessageDistribution>().CountDocumentsAsync(x => x.MessageId == cancelled.ResultMessageId));
+            Assert.Equal(identity.BackupId, await execution.TryStartManualWithIdAsync(identity, CancellationToken.None));
+            await exporter.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Task.Delay(cancellationDelayMilliseconds);
+            Assert.Equal(BackupStatus.Running, (await Find(identity.BackupId)).Status);
+            Assert.False(await DB.Collection<BlobObject>().Find(x => x.StorageOwnerTag == "geex.backup/" + identity.BackupId).AnyAsync());
+            await execution.StopAsync(CancellationToken.None);
+            var cancelled = await Find(identity.BackupId);
+            Assert.Equal(BackupStatus.Cancelled, cancelled.Status);
+            Assert.StartsWith("Archive export:", cancelled.ErrorMessage);
+            Assert.Null(cancelled.BlobObjectId);
+            Assert.True(cancelled.ResultNotificationSaved);
+            var snapshot = cancelled.ToBson();
+            var retry = Worker();
+            Assert.Equal(identity.BackupId, await retry.TryStartManualWithIdAsync(identity, CancellationToken.None));
+            await retry.StopAsync(CancellationToken.None);
+            Assert.Equal(snapshot, (await Find(identity.BackupId)).ToBson());
+            Assert.Equal(1L, await DB.Collection<MessageDistribution>().CountDocumentsAsync(x => x.MessageId == cancelled.ResultMessageId));
+        }
+        finally { await execution.StopAsync(CancellationToken.None); }
+    }
+
+    private sealed class WaitingArchiveExporter : IBackupArchiveExporter
+    {
+        internal TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task ExportAsync(string executable, string connectionString, string database, string directory, string archive,
+            CancellationToken cancellationToken)
+        {
+            Entered.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+        }
     }
 
     private sealed class GatedStream(byte[] bytes) : MemoryStream(bytes)

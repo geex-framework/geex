@@ -5,7 +5,7 @@ namespace Geex.Extensions.Backups.Core.Entities;
 
 public partial class Backup
 {
-    internal async Task RecoverOwnedAsync(CancellationToken token, Func<Task> ensureOwned)
+    internal async Task RecoverExecutionAsync(CancellationToken token, Func<Task> ensureOwned)
     {
         await ensureOwned();
         if (Status is BackupStatus.Running or BackupStatus.Failed or BackupStatus.Cancelled)

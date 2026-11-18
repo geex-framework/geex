@@ -773,6 +773,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         var replaceOwner = 1;
         await using var services = new ServiceCollection().AddLogging()
             .AddSingleton(fixture.Options)
+            .AddSingleton(fixture.Services.GetRequiredService<IBackupArchiveExporter>())
             .AddSingleton(fixture.Services.GetRequiredService<GeexCoreModuleOptions>())
             .AddSingleton(fixture.Services.GetRequiredService<BlobStorageModuleOptions>())
             .AddScoped<IUnitOfWork>(sp =>
@@ -828,6 +829,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         var failSave = false;
         await using var services = new ServiceCollection().AddLogging()
             .AddSingleton(fixture.Options)
+            .AddSingleton(fixture.Services.GetRequiredService<IBackupArchiveExporter>())
             .AddSingleton(fixture.Services.GetRequiredService<GeexCoreModuleOptions>())
             .AddSingleton(fixture.Services.GetRequiredService<BlobStorageModuleOptions>())
             .AddScoped<IUnitOfWork>(sp =>
@@ -880,6 +882,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         var injectFailure = 1;
         await using var services = new ServiceCollection().AddLogging()
             .AddSingleton(fixture.Options)
+            .AddSingleton(fixture.Services.GetRequiredService<IBackupArchiveExporter>())
             .AddSingleton(fixture.Services.GetRequiredService<GeexCoreModuleOptions>())
             .AddSingleton(fixture.Services.GetRequiredService<BlobStorageModuleOptions>())
             .AddScoped<IUnitOfWork>(sp =>

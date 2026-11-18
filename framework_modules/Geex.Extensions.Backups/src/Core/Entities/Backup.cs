@@ -25,7 +25,7 @@ public partial class Backup : Entity<Backup>
 
     internal Backup(IUnitOfWork uow, DateTimeOffset scheduledAt, CancellationToken cancellationToken = default,
         bool recoverInterrupted = false, BackupSource source = BackupSource.Manual, string? requestedByUserId = null,
-        ManualBackupExecution? execution = null, Func<CancellationToken, Task>? beforeExport = null)
+        ManualBackupExecution? execution = null)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var options = uow.ServiceProvider.GetRequiredService<BackupsModuleOptions>();
@@ -68,7 +68,7 @@ public partial class Backup : Entity<Backup>
             ResultMessageId = ResultMessageId
         };
         _abort = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _backupTask = Task.Run(() => CreateArchiveAsync(snapshot, core.ConnectionString, options, recoverInterrupted, _abort.Token, beforeExport));
+        _backupTask = Task.Run(() => CreateArchiveAsync(snapshot, core.ConnectionString, options, recoverInterrupted, _abort.Token));
         uow.PreSaveChanges += async () =>
         {
             var blobId = await _backupTask;
@@ -107,7 +107,7 @@ public partial class Backup : Entity<Backup>
         ? null : Uow.Query<BlobObject>().FirstOrDefault(x => x.Id == BlobObjectId);
 
     private async Task<string> CreateArchiveAsync(Backup snapshot, string connectionString,
-        BackupsModuleOptions options, bool recoverInterrupted, CancellationToken cancellationToken, Func<CancellationToken, Task>? beforeExport)
+        BackupsModuleOptions options, bool recoverInterrupted, CancellationToken cancellationToken)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(options.Timeout);
@@ -129,11 +129,11 @@ public partial class Backup : Entity<Backup>
             if (recoverInterrupted)
                 await RecoverAsync(_services, DatabaseName, token, Id);
             stage = "Archive export";
-            if (beforeExport != null) await beforeExport(token);
             token.ThrowIfCancellationRequested();
             Directory.CreateDirectory(directory);
             var archive = Path.Combine(directory, $"backup-{Id}.archive.gz");
-            await MongodumpProcess.RunAsync(options.MongodumpPath, connectionString, DatabaseName, directory, archive, token);
+            await scope.ServiceProvider.GetRequiredService<IBackupArchiveExporter>()
+                .ExportAsync(options.MongodumpPath, connectionString, DatabaseName, directory, archive, token);
 
             stage = "Archive storage";
             blob = new BlobObject(new CreateBlobObjectRequest
