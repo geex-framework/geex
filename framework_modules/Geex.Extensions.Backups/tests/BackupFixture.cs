@@ -6,6 +6,7 @@ using System.Text.Json;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.BlobStorage.Core.Entities;
 using Geex.Extensions.Backups.Core.Entities;
+using Geex.Extensions.Backups.Core;
 using Geex.Storage;
 using Geex.Extensions.Messaging.Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,14 +42,10 @@ public sealed class BackupFixture : IAsyncLifetime
         Directory.CreateDirectory(Root);
         Directory.CreateDirectory(Path.Combine(Root, "mongo"));
         Directory.CreateDirectory(Path.Combine(Root, "blobs"));
-        if (Environment.GetEnvironmentVariable("PIMS_TEST_STAGE") == "FaultInjection")
+        var externalMongo = Environment.GetEnvironmentVariable("GEEX_BACKUP_TEST_MONGO_URI");
+        if (!string.IsNullOrWhiteSpace(externalMongo))
         {
-            var supplied = new MongoUrlBuilder(Environment.GetEnvironmentVariable("GeexCoreModuleOptions__ConnectionString"));
-            if (Environment.GetEnvironmentVariable("PIMS_TEST_STACK") != "kufosoft"
-                || Environment.GetEnvironmentVariable("PIMS_TEST_DATABASE") != "pims-flow-api"
-                || supplied.DatabaseName != "pims-flow-api"
-                || supplied.Servers.Count() != 1 || supplied.Servers.Single().Host != "test-mongo-fault")
-                throw new InvalidOperationException("Backup tests require the fixed kufosoft fault-test MongoDB service.");
+            var supplied = new MongoUrlBuilder(externalMongo);
             supplied.DatabaseName = DatabaseName;
             Uri = supplied.ToString();
             _externalMongo = true;
@@ -82,13 +79,16 @@ public sealed class BackupFixture : IAsyncLifetime
             WorkingDirectory = Path.Combine(Root, "backup"),
             MongodumpPath = Environment.GetEnvironmentVariable("GEEX_BACKUP_MONGODUMP") ?? "mongodump"
         };
-        Services = new ServiceCollection().AddLogging()
+        Services = CreateServices();
+    }
+
+    public ServiceProvider CreateServices(IBackupArchiveExporter? exporter = null) => new ServiceCollection().AddLogging()
             .AddSingleton(Options)
+            .AddSingleton<IBackupArchiveExporter>(exporter ?? new MongodumpProcess())
             .AddSingleton(new GeexCoreModuleOptions { ConnectionString = Uri })
             .AddSingleton(new BlobStorageModuleOptions { FileSystemStoragePath = Path.Combine(Root, "blobs") })
             .AddScoped<IUnitOfWork>(sp => new GeexDbContext(sp))
             .BuildServiceProvider();
-    }
 
     private static void ConfigureMap(object config)
     {
@@ -109,7 +109,7 @@ public sealed class BackupFixture : IAsyncLifetime
         {
             var database = new MongoClient(Uri).GetDatabase(DatabaseName);
             var rows = await database.GetCollection<BsonDocument>("Backup").Find(FilterDefinition<BsonDocument>.Empty).ToListAsync();
-            var evidence = Environment.GetEnvironmentVariable("PP_BACKEND_EVIDENCE");
+            var evidence = Environment.GetEnvironmentVariable("GEEX_BACKUP_TEST_EVIDENCE");
             if (!string.IsNullOrWhiteSpace(evidence))
             {
                 var cases = Path.Combine(evidence, "cases");

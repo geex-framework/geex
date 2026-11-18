@@ -8,6 +8,8 @@ pwsh ./scripts/testing/test-backups.ps1
 
 Use `-Scope Backend` or `-Scope Frontend` for focused work. Every test stage follows a successful build. Schematics is JavaScript with no build stage. A failed build stops dependent tests. Evidence is centralized in ignored `.test-evidence/database-backup/<run-id>`: build/test logs, `results.trx`, and a local NuGet package. Page compiler output is in `.test-evidence/database-backup/page`. The script never publishes packages.
 
+For an externally managed test MongoDB, set `GEEX_BACKUP_TEST_MONGO_URI`. The fixture replaces its database name with a fresh `geex_backup_test_*` name and cleans only databases it allocates. Otherwise it starts a local `mongod`. The server must support the test failpoints. `GEEX_BACKUP_TEST_EVIDENCE` selects the evidence directory; cleanup preserves its `cases` observations. Consuming applications validate their own environment and map these variables in their test runner.
+
 ## Automated coverage
 
 | Area | Expected evidence |
@@ -19,6 +21,7 @@ Use `-Scope Backend` or `-Scope Frontend` for focused work. Every test stage fol
 | Retention | A manual run leaves excess automatic backups untouched. A scheduled run retains seven newest successful automatic archives. Older manual backups, records with the source field absent, their BlobObjects/files, and unrelated files survive. Explicit expiration still removes protected archives. |
 | Synchronous cleanup | Deletion and final state persistence complete before success. Partial deletion permits explicit retry; failures retain Succeeded with a cleanup error. A real isolated MongoDB failpoint checks failure of the final state update after file/Blob removal. Later backups do not resume failed cleanup. Healthy automatic retention excludes these failures and continues other candidates, while database errors abort retention. Ownership is checked again before final persistence and error recording; manual/automatic cleanup tests replace the lease owner after deletion to verify immediate cancellation. |
 | Submission tracking | The returned ID is queryable immediately. Failed historical cleanup does not prevent a new archive. Concurrent work is rejected. |
+| Persisted execution | Fixed identities survive receipt loss and concurrent replay. Conflicting identities fail. Recovery preserves unrelated backups and shared files. An injected exporter remains Running until actual cancellation, then produces one terminal result and notification. |
 | Download responses | Real loopback HTTP checks preserve ordinary/archive bytes and headers, return errors before attachment transmission, abort partial/short streams, and dispose cancelled streams. |
 | Diagnostics | A real authentication failure persists the tool exit code and sanitized diagnostic; URI/credential redaction and summary length are checked. |
 | GraphQL contract | The backups query/mutation fields expose Boolean results, nullable tracking IDs and source, apply Backups permissions, preserve enum values, and validate the frontend package's actual operation documents. |

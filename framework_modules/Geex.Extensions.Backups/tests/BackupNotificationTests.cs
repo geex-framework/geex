@@ -1,3 +1,4 @@
+using Geex.Extensions.Backups.Core;
 using Geex.Extensions.Backups.Core.Entities;
 using Geex.Extensions.Backups.Core.Jobs;
 using Geex.Extensions.Messaging.Core.Entities;
@@ -102,6 +103,7 @@ public class BackupNotificationTests(BackupFixture fixture)
         var sender = new BrokenSender();
         await using var services = new ServiceCollection().AddLogging()
             .AddSingleton(fixture.Options)
+            .AddSingleton(fixture.Services.GetRequiredService<IBackupArchiveExporter>())
             .AddSingleton(new GeexCoreModuleOptions { ConnectionString = fixture.Uri })
             .AddSingleton(new BlobStorageModuleOptions { FileSystemStoragePath = Path.Combine(fixture.Root, "blobs") })
             .AddSingleton<ITopicEventSender>(sender)
@@ -128,6 +130,7 @@ public class BackupNotificationTests(BackupFixture fixture)
         var sender = new StateRecordingSender();
         await using var services = new ServiceCollection().AddLogging()
             .AddSingleton(fixture.Options)
+            .AddSingleton(fixture.Services.GetRequiredService<IBackupArchiveExporter>())
             .AddSingleton(new GeexCoreModuleOptions { ConnectionString = fixture.Uri })
             .AddSingleton(new BlobStorageModuleOptions { FileSystemStoragePath = Path.Combine(fixture.Root, "blobs") })
             .AddSingleton<ITopicEventSender>(sender)

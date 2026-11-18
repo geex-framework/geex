@@ -33,7 +33,11 @@ The connection string must explicitly select the application's business database
 
 `BackupsExecution` is always registered as a singleton with a hosted shutdown lifecycle; it has no timer and starts no backups at application startup. `BackupsJob` is only registered when automatic scheduling is enabled and delegates scheduled occurrences to that same execution instance. The execution instance acquires the database lease before constructing `Backup`. Construction and expiration are internal: applications start work through `BackupsExecution` or GraphQL so they cannot bypass lease ownership and compensation. The constructor attaches the entity and starts one private asynchronous task. `PreSaveChanges` awaits that task and applies the successful result. Repeated saves do not start another export. Deserialization never starts a task.
 
-The task uses a separate scope for the running record and BlobObject, without recursively saving its caller's unit of work. A non-public constructor supports materialization. Query records with `uow.Query<Backup>()`; no backup-specific request/handler/service is added.
+The task uses a separate scope for the running record and BlobObject, without recursively saving its caller's unit of work. A non-public constructor supports materialization. Query records with `uow.Query<Backup>()`.
+
+Programmatic callers use `TryStartManualWithIdAsync(requestedByUserId)`. Workflows that persist their progress can supply `ManualBackupExecution` and an explicit cancellation token to the overload of the same method. Persist that identity before starting: its execution key and database determine the backup ID, while requester and scheduled time are checked on replay. Matching records return the same ID; conflicting identities fail. `TryRecoverManualAsync(execution)` acquires the database lease and recovers only the matching execution, including its owned storage and result notification. Retry a failed business operation with a new persisted execution key.
+
+`IBackupArchiveExporter` writes the archive and observes cancellation. The default implementation runs `mongodump`. Applications can replace this dependency through their service registrations; it receives the captured executable, connection string, database and output paths for each execution. Backup state, database leases, BlobStorage and result notifications remain managed by the backup lifecycle. An exporter must finish with a non-empty archive or throw.
 
 ## Management
 

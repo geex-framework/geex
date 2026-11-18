@@ -19,26 +19,25 @@ public sealed class BackupsExecution : IHostedService
     public async Task<bool> TryStartManualAsync(string? requestedByUserId = null) => await TryStartManualWithIdAsync(requestedByUserId) != null;
 
     public Task<string?> TryStartManualWithIdAsync(string? requestedByUserId = null)
-    {
-        if (_shutdown.IsCancellationRequested || !_gate.Wait(0))
-            return Task.FromResult<string?>(null);
-        var accepted = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _active = RunManualAsync(accepted, requestedByUserId);
-        return accepted.Task;
-    }
+        => StartManualAsync(requestedByUserId, null, CancellationToken.None);
 
-    public Task<string?> TryStartOwnedManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken = default,
-        Func<CancellationToken, Task>? beforeExport = null)
+    public Task<string?> TryStartManualWithIdAsync(ManualBackupExecution execution, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(execution);
+        return StartManualAsync(execution.RequestedByUserId, execution, cancellationToken);
+    }
+
+    private Task<string?> StartManualAsync(string? requestedByUserId, ManualBackupExecution? execution,
+        CancellationToken cancellationToken)
+    {
         if (_shutdown.IsCancellationRequested || !_gate.Wait(0)) return Task.FromResult<string?>(null);
         var accepted = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _active = RunManualAsync(accepted, execution.RequestedByUserId, execution, cancellationToken, beforeExport);
+        _active = RunManualAsync(accepted, requestedByUserId, execution, cancellationToken);
         return accepted.Task;
     }
 
     private async Task RunManualAsync(TaskCompletionSource<string?> accepted, string? requestedByUserId,
-        ManualBackupExecution? execution = null, CancellationToken cancellationToken = default, Func<CancellationToken, Task>? beforeExport = null)
+        ManualBackupExecution? execution = null, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -62,7 +61,7 @@ public sealed class BackupsExecution : IHostedService
                 }
             }
             await ExecuteOwnedAsync(_services, url.DatabaseName, scheduledAt, options, lease, automatic: false,
-                accepted, requestedByUserId, execution, beforeExport);
+                accepted, requestedByUserId, execution);
         }
         catch (Exception exception)
         {
@@ -78,16 +77,16 @@ public sealed class BackupsExecution : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken) => Backup.RecoverNotificationsAsync(_services);
 
-    public Task<bool> TryRecoverOwnedManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken = default)
+    public Task<bool> TryRecoverManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(execution);
         if (_shutdown.IsCancellationRequested || !_gate.Wait(0)) return Task.FromResult(false);
-        var recovery = RecoverOwnedManualAsync(execution, cancellationToken);
+        var recovery = RecoverManualAsync(execution, cancellationToken);
         _active = recovery;
         return recovery;
     }
 
-    private async Task<bool> RecoverOwnedManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken)
+    private async Task<bool> RecoverManualAsync(ManualBackupExecution execution, CancellationToken cancellationToken)
     {
         try
         {
@@ -103,7 +102,7 @@ public sealed class BackupsExecution : IHostedService
             var backup = await work.DbContext.Collection<Backup>().Find(x => x.Id == execution.BackupId).FirstOrDefaultAsync(lease.Token)
                 ?? throw new InvalidOperationException("Backup execution record was not found.");
             execution.EnsureMatches(backup);
-            await work.Attach(backup).RecoverOwnedAsync(lease.Token, lease.EnsureOwnedAsync);
+            await work.Attach(backup).RecoverExecutionAsync(lease.Token, lease.EnsureOwnedAsync);
             return true;
         }
         finally { _gate.Release(); }
@@ -139,13 +138,13 @@ public sealed class BackupsExecution : IHostedService
     }
     private static async Task ExecuteOwnedAsync(IServiceProvider services, string database, DateTimeOffset scheduledAt,
         BackupsModuleOptions options, BackupLease lease, bool automatic, TaskCompletionSource<string?>? accepted = null,
-        string? requestedByUserId = null, ManualBackupExecution? execution = null, Func<CancellationToken, Task>? beforeExport = null)
+        string? requestedByUserId = null, ManualBackupExecution? execution = null)
     {
         using var scope = services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var backup = new Backup(work, scheduledAt, lease.Token, recoverInterrupted: execution == null,
             source: automatic ? BackupSource.Automatic : BackupSource.Manual, requestedByUserId: requestedByUserId,
-            execution: execution, beforeExport: beforeExport);
+            execution: execution);
         work.PreSaveChanges += lease.EnsureOwnedAsync;
         var recordCreated = false;
         try
