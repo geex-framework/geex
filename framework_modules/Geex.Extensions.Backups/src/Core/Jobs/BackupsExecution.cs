@@ -24,7 +24,7 @@ public sealed class BackupsExecution : IHostedService
         lock (_gate)
         {
             _active.RemoveAll(task => task.IsCompleted);
-            if (_shutdown.IsCancellationRequested || !force && _active.Count != 0) return Task.FromResult<string?>(null);
+            if (_shutdown.IsCancellationRequested) return Task.FromResult<string?>(null);
             var accepted = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
             _active.Add(RunManualAsync(accepted, requestedByUserId, force));
             return accepted.Task;
@@ -64,7 +64,7 @@ public sealed class BackupsExecution : IHostedService
         lock (_gate)
         {
             _active.RemoveAll(task => task.IsCompleted);
-            if (_shutdown.IsCancellationRequested || _active.Count != 0) return Task.CompletedTask;
+            if (_shutdown.IsCancellationRequested) return Task.CompletedTask;
             var running = RunScheduledCoreAsync(scheduledAt, cancellationToken);
             _active.Add(running);
             return running;

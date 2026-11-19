@@ -24,7 +24,7 @@ namespace Geex.Extensions.Backups.Tests;
 public class BackupIntegrationTests(BackupFixture fixture)
 {
     private static long _slot;
-    private static DateTimeOffset NextSlot() => DateTimeOffset.UtcNow.AddDays(Interlocked.Increment(ref _slot));
+    internal static DateTimeOffset NextSlot() => DateTimeOffset.UtcNow.AddDays(Interlocked.Increment(ref _slot));
 
     [Fact]
     public async Task ConstructorSaveAndRestorePreserveDocumentsTypesAndIndexes()

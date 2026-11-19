@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text.Json;
 using Geex.Extensions.Backups.Core;
 using Geex.Extensions.Backups.Core.Entities;
@@ -22,7 +23,7 @@ public class BackupLockTests(BackupFixture fixture)
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task ForceCancelsPreviousExecutorsAndOnlyReleasesItsOwnRegistration(bool olderFinishesFirst)
+    public async Task ForceReplacesTheCurrentLockAndOlderExecutorsCannotReleaseIt(bool olderFinishesFirst)
     {
         await using var first = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None);
         Assert.NotNull(first);
@@ -32,37 +33,46 @@ public class BackupLockTests(BackupFixture fixture)
         Assert.NotNull(third);
         await WaitUntil(() => first.Token.IsCancellationRequested && second.Token.IsCancellationRequested);
         Assert.False(third.Token.IsCancellationRequested);
-        Assert.Equal(3, await Redis.HashLengthAsync(BackupLock.Key));
+        Assert.Equal(RedisType.String, await Redis.KeyTypeAsync(BackupLock.Key));
+        var latest = await Redis.StringGetAsync(BackupLock.Key);
         Assert.Null(await Redis.KeyTimeToLiveAsync(BackupLock.Key));
-        await (olderFinishesFirst ? first : third).DisposeAsync();
-        Assert.Null(await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None));
-        await second.DisposeAsync();
-        Assert.Equal(1, await Redis.HashLengthAsync(BackupLock.Key));
-        Assert.Null(await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None));
-        await (olderFinishesFirst ? third : first).DisposeAsync();
+        if (olderFinishesFirst)
+        {
+            await first.DisposeAsync();
+            await second.DisposeAsync();
+            Assert.Equal(latest, await Redis.StringGetAsync(BackupLock.Key));
+            Assert.Null(await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None));
+        }
+        await third.DisposeAsync();
         Assert.False(await Redis.KeyExistsAsync(BackupLock.Key));
         await using var next = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None);
         Assert.NotNull(next);
+        var current = await Redis.StringGetAsync(BackupLock.Key);
+        await first.DisposeAsync();
+        await second.DisposeAsync();
+        Assert.Equal(current, await Redis.StringGetAsync(BackupLock.Key));
+        Assert.Null(await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None));
     }
 
     [Fact]
-    public async Task ForceDoesNotTreatAnUnresponsiveExecutorAsStopped()
+    public async Task ForceReplacesAnUnresponsiveExecutorAndReleasesForOrdinaryWork()
     {
         var stale = Guid.NewGuid().ToString("N");
-        await Redis.HashSetAsync(BackupLock.Key, stale, "unresponsive-test-process");
+        await Redis.StringSetAsync(BackupLock.Key, stale);
         try
         {
             Assert.Null(await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None));
             await using (var forced = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None, force: true))
             {
                 Assert.NotNull(forced);
-                Assert.Equal(2, await Redis.HashLengthAsync(BackupLock.Key));
+                Assert.NotEqual((RedisValue)stale, await Redis.StringGetAsync(BackupLock.Key));
                 Assert.Null(await Redis.KeyTimeToLiveAsync(BackupLock.Key));
             }
-            Assert.True(await Redis.HashExistsAsync(BackupLock.Key, stale));
-            Assert.Null(await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None));
+            Assert.False(await Redis.KeyExistsAsync(BackupLock.Key));
+            await using var next = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None);
+            Assert.NotNull(next);
         }
-        finally { await Redis.HashDeleteAsync(BackupLock.Key, stale); }
+        finally { await Redis.LockReleaseAsync(BackupLock.Key, stale); }
     }
 
     [Fact]
@@ -70,11 +80,11 @@ public class BackupLockTests(BackupFixture fixture)
     {
         var count = await DB.Collection<Backup>().CountDocumentsAsync(FilterDefinition<Backup>.Empty);
         Assert.False(await Redis.KeyExistsAsync(BackupLock.Key));
-        await Redis.StringSetAsync(BackupLock.Key, "invalid-lock-type");
+        await Redis.HashSetAsync(BackupLock.Key, "invalid-lock-type", "test");
         var execution = new BackupsExecution(fixture.Services);
         try
         {
-            await Assert.ThrowsAsync<RedisServerException>(() => execution.TryStartManualWithIdAsync());
+            await Assert.ThrowsAsync<RedisServerException>(() => execution.TryStartManualWithIdAsync(force: true));
             Assert.Equal(count, await DB.Collection<Backup>().CountDocumentsAsync(FilterDefinition<Backup>.Empty));
         }
         finally
@@ -82,6 +92,91 @@ public class BackupLockTests(BackupFixture fixture)
             await execution.StopAsync(CancellationToken.None);
             await Redis.KeyDeleteAsync(BackupLock.Key);
         }
+    }
+
+    [Fact]
+    public async Task CancellationPublicationTimeoutDoesNotAbortLockReplacement()
+    {
+        await using var previous = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None);
+        Assert.NotNull(previous);
+        var oldValue = await Redis.StringGetAsync(BackupLock.Key);
+        var sender = OverrideResult(Redis.Multiplexer.GetSubscriber(), nameof(ISubscriber.PublishAsync),
+            Task.FromException<long>(new RedisTimeoutException("Cancellation publish timed out", CommandStatus.Sent)));
+        var connection = OverrideResult(Redis.Multiplexer, nameof(IConnectionMultiplexer.GetSubscriber), sender);
+        var database = OverrideResult(Redis, "get_Multiplexer", connection);
+        var cache = OverrideResult(fixture.Services.GetRequiredService<IRedisDatabase>(), "get_Database", database);
+        using var services = new ServiceCollection().AddSingleton(cache).BuildServiceProvider();
+        await using (var forced = await BackupLock.AcquireAsync(services, CancellationToken.None, force: true))
+        {
+            Assert.NotNull(forced);
+            Assert.Equal(1, ((ResultOverrideProxy)(object)sender).Calls);
+            Assert.False(previous.Token.IsCancellationRequested);
+            Assert.NotEqual(oldValue, await Redis.StringGetAsync(BackupLock.Key));
+        }
+        await using var next = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None);
+        Assert.NotNull(next);
+    }
+
+    [Fact]
+    public async Task FailedCancellationPublicationAllowsForcedAndLaterOrdinaryBackups()
+    {
+        var core = fixture.Services.GetRequiredService<GeexCoreModuleOptions>();
+        var original = core.ConnectionString;
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        core.ConnectionString = $"mongodb://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/{fixture.DatabaseName}";
+        using var control = await ConnectionMultiplexer.ConnectAsync(new ConfigurationOptions
+        {
+            EndPoints = { { "127.0.0.1", fixture.RedisPort } }, AllowAdmin = true
+        });
+        var server = control.GetServer("127.0.0.1", fixture.RedisPort);
+        var execution = new BackupsExecution(fixture.Services);
+        Process? child = null;
+        try
+        {
+            var previousId = await execution.TryStartManualWithIdAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.NotNull(previousId);
+            child = await FindMongodump(previousId);
+            core.ConnectionString = original;
+            await server.ExecuteAsync("ACL", "SETUSER", "default", "-publish");
+            var publishError = await Assert.ThrowsAsync<RedisServerException>(() => control.GetSubscriber()
+                .PublishAsync(RedisChannel.Literal("backup-test-cancellation-denied"), "cancel"));
+            Assert.Contains("NOPERM", publishError.Message);
+            var forcedId = await execution.TryStartManualWithIdAsync(force: true).WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.NotNull(forcedId);
+            await WaitUntil(async () => !await Redis.KeyExistsAsync(BackupLock.Key));
+            Assert.Equal(BackupStatus.Succeeded, (await DB.Collection<Backup>().Find(x => x.Id == forcedId).SingleAsync()).Status);
+            Assert.False(child.HasExited);
+            var manualId = await execution.TryStartManualWithIdAsync().WaitAsync(TimeSpan.FromSeconds(10));
+            Assert.NotNull(manualId);
+            await WaitUntil(async () => !await Redis.KeyExistsAsync(BackupLock.Key));
+            Assert.Equal(BackupStatus.Succeeded, (await DB.Collection<Backup>().Find(x => x.Id == manualId).SingleAsync()).Status);
+            var slot = BackupIntegrationTests.NextSlot();
+            await execution.RunScheduledAsync(slot, CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(15));
+            var scheduled = await DB.Collection<Backup>().Find(x => x.ScheduledAt == slot).SingleAsync();
+            Assert.Equal(BackupStatus.Succeeded, scheduled.Status);
+            Assert.False(child.HasExited);
+            Assert.Equal(BackupStatus.Running, (await DB.Collection<Backup>().Find(x => x.Id == previousId).SingleAsync()).Status);
+            var evidence = Environment.GetEnvironmentVariable("GEEX_BACKUP_TEST_EVIDENCE");
+            if (!string.IsNullOrWhiteSpace(evidence))
+            {
+                Directory.CreateDirectory(Path.Combine(evidence, "cases"));
+                await File.WriteAllTextAsync(Path.Combine(evidence, "cases", "forced-backup-with-failed-cancellation.json"),
+                    JsonSerializer.Serialize(new { observations = new[] { new {
+                        previousBackup = previousId, previousStatus = "Running", previousMongodumpAlive = true,
+                        forcedBackup = forcedId, manualBackup = manualId, scheduledBackup = scheduled.Id,
+                        newBackupsStatus = "Succeeded", cancellationPublishDenied = true
+                    } } }));
+            }
+        }
+        finally
+        {
+            core.ConnectionString = original;
+            await server.ExecuteAsync("ACL", "SETUSER", "default", "+publish");
+            await execution.StopAsync(CancellationToken.None);
+            child?.Dispose();
+        }
+        Assert.False(await Redis.KeyExistsAsync(BackupLock.Key));
     }
 
     [Theory]
@@ -172,6 +267,31 @@ public class BackupLockTests(BackupFixture fixture)
         {
             if (!first.HasExited) { first.Kill(true); await first.WaitForExitAsync(); }
             child?.Dispose();
+        }
+    }
+
+    private static T OverrideResult<T>(T target, string method, object result) where T : class
+    {
+        var proxy = DispatchProxy.Create<T, ResultOverrideProxy>();
+        var settings = (ResultOverrideProxy)(object)proxy;
+        settings.Target = target;
+        settings.Method = method;
+        settings.Result = result;
+        return proxy;
+    }
+
+    public class ResultOverrideProxy : DispatchProxy
+    {
+        public object Target = null!;
+        public string Method = "";
+        public object Result = null!;
+        public int Calls;
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod!.Name != Method) return targetMethod.Invoke(Target, args);
+            Calls++;
+            return Result;
         }
     }
 

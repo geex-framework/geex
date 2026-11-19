@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
@@ -12,7 +13,6 @@ internal sealed class BackupLock : IAsyncDisposable
     private readonly string _id = Guid.NewGuid().ToString("N");
     private readonly CancellationTokenSource _execution;
     private ChannelMessageQueue? _subscription;
-    private bool _claimAttempted;
     private int _disposed;
 
     private BackupLock(IDatabase database, CancellationToken token)
@@ -38,19 +38,24 @@ internal sealed class BackupLock : IAsyncDisposable
                 catch (ObjectDisposedException) { }
             });
             execution.Token.ThrowIfCancellationRequested();
-            execution._claimAttempted = true;
-            // Forced executions remain registered alongside their predecessors until each has actually stopped.
-            var acquired = (long)await database.ScriptEvaluateAsync("""
-                local previous = redis.call('HKEYS', KEYS[1])
-                if #previous > 0 and ARGV[1] ~= '1' then return 0 end
-                redis.call('HSET', KEYS[1], ARGV[2], ARGV[3])
-                for _, id in ipairs(previous) do
-                    redis.call('PUBLISH', ARGV[4] .. id, 'cancel')
-                end
-                return 1
-                """, [Key], [force ? "1" : "0", execution._id,
-                $"{Environment.MachineName}/{Environment.ProcessId}", CancellationChannel]);
-            if (acquired == 0)
+            if (force)
+            {
+                var previous = await database.StringGetSetAsync(Key, execution._id);
+                if (previous.HasValue)
+                {
+                    try
+                    {
+                        await database.Multiplexer.GetSubscriber()
+                            .PublishAsync(RedisChannel.Literal(CancellationChannel + previous), "cancel");
+                    }
+                    catch (Exception exception)
+                    {
+                        services.GetService<ILogger<BackupLock>>()?.LogWarning(exception,
+                            "Could not request cancellation of the previous backup. The forced backup will continue.");
+                    }
+                }
+            }
+            else if (!await database.StringSetAsync(Key, execution._id, when: When.NotExists))
             {
                 await execution.DisposeAsync();
                 return null;
@@ -70,7 +75,7 @@ internal sealed class BackupLock : IAsyncDisposable
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         try
         {
-            if (_claimAttempted) await _database.HashDeleteAsync(Key, _id);
+            await _database.LockReleaseAsync(Key, _id);
         }
         finally
         {
