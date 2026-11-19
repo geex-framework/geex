@@ -146,7 +146,7 @@ public class BackupLockTests(BackupFixture fixture)
             var busy = await RunWorker(Path.Combine(root, "busy.json"), otherUri, "normal");
             Assert.Equal(JsonValueKind.Null, busy.GetProperty("id").ValueKind);
             var forced = await RunWorker(Path.Combine(root, "forced.json"), fixture.Uri, "force");
-            Assert.Equal("Succeeded", forced.GetProperty("status").GetString());
+            Assert.True(forced.GetProperty("status").GetString() == "Succeeded", forced.GetRawText());
             await first.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(30));
             Assert.True(first.ExitCode == 0, await firstOutput + await firstError);
             Assert.True(child.HasExited);

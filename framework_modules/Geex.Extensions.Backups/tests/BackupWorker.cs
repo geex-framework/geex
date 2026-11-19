@@ -30,6 +30,7 @@ internal static class BackupWorker
             mapping.GetType().GetInterface("Geex.IBsonConfig")!.GetMethod("Map")!.Invoke(mapping, null);
         var root = args[2] + ".files";
         Directory.CreateDirectory(root);
+        Directory.CreateDirectory(Path.Combine(root, "blobs"));
         var port = int.Parse(args[5]);
         if (port != 0) config.ConnectionString = $"mongodb://127.0.0.1:{port}/{database}";
         await using var services = new ServiceCollection().AddLogging().AddSingleton(config).AddStackExchangeRedisExtensions()
@@ -53,7 +54,7 @@ internal static class BackupWorker
                 } while (result.Status == BackupStatus.Running);
             }
             await execution.StopAsync(CancellationToken.None);
-            await File.WriteAllTextAsync(args[2] + ".done", JsonSerializer.Serialize(new { id, status = result?.Status.ToString() }));
+            await File.WriteAllTextAsync(args[2] + ".done", JsonSerializer.Serialize(new { id, status = result?.Status.ToString(), error = result?.ErrorMessage }));
         }
         finally { await execution.StopAsync(CancellationToken.None); }
     }
