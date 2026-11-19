@@ -130,7 +130,7 @@ public partial class Backup : Entity<Backup>
             {
                 File = new StreamFile(Path.GetFileName(archive), () => System.IO.File.OpenRead(archive)),
                 StorageType = BlobStorageType.FileSystem
-            }, work, token, StorageOwnerTag(this));
+            }, work, token);
             await work.DbContext.Collection<Backup>().UpdateOneAsync(x => x.Id == Id,
                 Builders<Backup>.Update.Set(x => x.BlobObjectId, blob.Id), cancellationToken: token);
             await work.SaveChanges(token);
@@ -205,18 +205,13 @@ public partial class Backup : Entity<Backup>
         }
     }
 
-    internal static string StorageOwnerTag(Backup backup) => "geex.backup/" + backup.Id;
-
     private static async Task RemoveFilesAsync(IUnitOfWork work, Backup backup, CancellationToken token)
     {
-        var ownerTag = StorageOwnerTag(backup);
-        var blobId = backup.BlobObjectId;
-        var blobs = await work.DbContext.Collection<BlobObject>().Find(
-            x => x.Id == blobId || x.StorageOwnerTag == ownerTag).ToListAsync(token);
-        if (blobs.Any(x => x.StorageOwnerTag != null && x.StorageOwnerTag != ownerTag))
-            throw new InvalidOperationException("Backup archive is associated with another storage owner.");
-        foreach (var blob in blobs)
-            await work.Attach(blob).DeleteAsync(token);
+        if (backup.BlobObjectId == null) return;
+        var blob = await work.DbContext.Collection<BlobObject>()
+            .Find(x => x.Id == backup.BlobObjectId).FirstOrDefaultAsync(token);
+        if (blob == null) return;
+        await work.Attach(blob).DeleteAsync(token);
         await work.SaveChanges(token);
     }
 

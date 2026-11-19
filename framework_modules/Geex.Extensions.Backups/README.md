@@ -35,7 +35,7 @@ The connection string must explicitly select the application's business database
 
 The task uses a separate scope for the running record and BlobObject, without recursively saving its caller's unit of work. A non-public constructor supports materialization. Query records with `uow.Query<Backup>()`.
 
-Programmatic callers use `TryStartManualWithIdAsync(requestedByUserId, force: false)`. Each accepted invocation creates a new backup and returns its persisted ID. Callers can store that ID with their own completed operation result. Export runs through `MongodumpProcess.RunAsync` using the configured tool and observes timeout/shutdown cancellation. The global Redis lock, BlobStorage ownership, failure compensation and result notifications remain managed by the backup lifecycle.
+Programmatic callers use `TryStartManualWithIdAsync(requestedByUserId, force: false)`. Each accepted invocation creates a new backup and returns its persisted ID. Callers can store that ID with their own completed operation result. Export runs through `MongodumpProcess.RunAsync` using the configured tool and observes timeout/shutdown cancellation. The global Redis lock, archive association, failure compensation and result notifications remain managed by the backup lifecycle.
 
 ## Management
 
@@ -50,6 +50,8 @@ The record includes database, scheduled/start/end timestamps, status, source, er
 The export writes a gzip-compressed MongoDB archive under `App_Data/backup/<backup-id>`. The URI is passed through a temporary tool configuration file, not command arguments. Standard output is drained; only the last 8192 characters of standard error are retained in memory. Error summaries redact MongoDB URIs and configured credentials, normalize whitespace and limit diagnostic text to 2048 characters plus a truncation marker. Records identify the failed stage: creation, failed-backup cleanup, export or storage. A zero exit code and non-empty archive are required. The archive is streamed to `BlobStorageType.FileSystem`, normally `App_Data/BlobStorageFiles/<md5>`, and the temporary directory is removed. Archive bytes are never stored in MongoDB.
 
 Success requires the file write, BlobObject save and final Backup save to complete. The job compensates failed final saves using a fresh scope. Failed compensation for Failed/Cancelled records is logged and retried during the next ordinary execution. Running records are never presumed dead or cleaned by another backup. After a process crash, a developer verifies the application and export process state before handling its record and files. A forced start can replace a stale lock without claiming that the previous process has exited. BlobStorage records the final file address before publishing the file and names incomplete writes `<blob-id>.upload` so they can be recovered through the BlobObject lifecycle.
+
+Backup cleanup deletes only the BlobObject referenced by `Backup.BlobObjectId`, using the normal BlobStorage deletion and shared-content checks. If a file was saved but its backup association failed, the residual BlobObject and file are left for a developer to identify and clean manually. Confirm the affected processes have stopped and check BlobObject references before removing storage content.
 
 When upgrading from the MongoDB lease version, stop all old application/export processes before starting this version. The lock models must not run together. The new MongoDB schedule receipt starts independently; switch outside a scheduled occurrence to avoid reclaiming that occurrence.
 
