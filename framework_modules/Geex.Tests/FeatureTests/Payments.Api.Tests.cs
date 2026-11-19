@@ -140,5 +140,10 @@ public class PaymentsApiTests : TestsBase
         responseString.ShouldNotContain("errors");
         responseData["data"]["createPaymentRefund"]["status"].GetValue<string>().ShouldBe(PaymentRefundStatusEnum.Succeeded.Name);
         responseData["data"]["createPaymentRefund"]["amount"].GetValue<decimal>().ShouldBe(5m);
+        await TestExtensions.WriteBusinessEvidence(nameof(CreatePaymentRefundMutationShouldWork), new
+        {
+            endpoint = "/graphql", request = new { query = mutation, variables = new { request = new { clientSn, amount = 5m } } },
+            response = responseData
+        });
     }
 }
