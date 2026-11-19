@@ -204,19 +204,17 @@ namespace Geex
         }
     }
 
-    public class EnumerationConverter<T> : JsonConverter<T> where T : class
+    public class EnumerationConverter<T> : JsonConverter<T> where T : class, IEnumeration
     {
-        private static Type classEnumRealType = typeof(T).GetClassEnumRealType();
         public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var data = reader.GetString();
-            return EnumerationReflectionCache.FromValue(classEnumRealType, data) as T;
+            return data is null ? null : EnumerationReflectionCache.ResolveSerialized<T>(data);
         }
 
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
         {
-            var data = value.ToString();
-            writer.WriteStringValue(data);
+            writer.WriteStringValue(value.Value);
         }
     }
 }

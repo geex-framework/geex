@@ -26,15 +26,8 @@ namespace Geex.Gql.AutoBatchLoad
 
         public static BatchLoadConfig Analyze(IMiddlewareContext context, Type entityType)
         {
-            var navigationEntityType = entityType.ResolveNavigationEntityType(context);
             var config = new BatchLoadConfig();
-            var selections = GetEntityFieldSelections(context, navigationEntityType);
-
-            foreach (var selection in selections)
-            {
-                AppendSelection(config, context, navigationEntityType, selection);
-            }
-
+            AppendEntitySelections(config, context, entityType, context.Selection);
             return config;
         }
 
@@ -42,7 +35,8 @@ namespace Geex.Gql.AutoBatchLoad
             BatchLoadConfig config,
             IMiddlewareContext context,
             Type entityType,
-            ISelection selection)
+            ISelection selection,
+            IReadOnlyList<Type> excludedEntityTypes)
         {
             if (IgnoredFieldNames.Contains(selection.Field.Name))
             {
@@ -54,30 +48,26 @@ namespace Geex.Gql.AutoBatchLoad
                 property.TryGetRelatedEntityType(out var relatedType) &&
                 property.TryValidateBatchLoadable(entityType, out _))
             {
-                var subConfig = config.RegisterBatchLoad(property, entityType);
+                var subConfig = config.RegisterBatchLoad(property, entityType, excludedEntityTypes);
 
                 if (selection.SelectionSet == null)
                 {
                     return;
                 }
 
-                var nestedEntityType = relatedType.ResolveNavigationEntityType(context);
-                var nestedSelections = GetNestedEntityFieldSelections(context, nestedEntityType, selection);
-                foreach (var nestedSelection in nestedSelections)
-                {
-                    AppendSelection(subConfig, context, nestedEntityType, nestedSelection);
-                }
+                AppendEntitySelections(subConfig, context, relatedType, selection);
 
                 return;
             }
 
-            AppendAutoBatchLoadDependsOn(config, entityType, selection);
+            AppendAutoBatchLoadDependsOn(config, entityType, selection, excludedEntityTypes);
         }
 
         private static void AppendAutoBatchLoadDependsOn(
             BatchLoadConfig config,
             Type entityType,
-            ISelection selection)
+            ISelection selection,
+            IReadOnlyList<Type> excludedEntityTypes)
         {
             var selectedProperty = selection.Field.ResolveEntityProperty(entityType);
             if (selectedProperty == null)
@@ -94,82 +84,53 @@ namespace Geex.Gql.AutoBatchLoad
                     continue;
                 }
 
-                config.RegisterBatchLoad(navigationProperty, entityType);
+                config.RegisterBatchLoad(navigationProperty, entityType, excludedEntityTypes);
             }
         }
 
-        private static IReadOnlyList<ISelection> GetEntityFieldSelections(
+        private static void AppendEntitySelections(
+            BatchLoadConfig config,
             IMiddlewareContext context,
-            Type entityType)
-        {
-            if (context.Selection.Field is IObjectField field &&
-                field.IsSystemOrIntrospectionField())
-            {
-                return Array.Empty<ISelection>();
-            }
-
-            if (context.Selection.Field.IsRelayPagingField())
-            {
-                LogRelayPagingUnsupported(context, context.Selection.Field);
-                return Array.Empty<ISelection>();
-            }
-
-            if (context.Selection.Field.IsOffsetPagingField())
-            {
-                return GetEntitySelectionsUnderOffsetPaging(context, entityType, context.Selection, context.Selection.Field);
-            }
-
-            return GetNestedEntityFieldSelections(context, entityType, context.Selection);
-        }
-
-        private static IReadOnlyList<ISelection> GetNestedEntityFieldSelections(
-            IMiddlewareContext context,
-            Type entityType,
+            Type declaredEntityType,
             ISelection selection)
         {
+            if (selection.SelectionSet == null ||
+                selection.Field is IObjectField field &&
+                field.IsSystemOrIntrospectionField())
+            {
+                return;
+            }
+
             if (selection.Field.IsRelayPagingField())
             {
                 LogRelayPagingUnsupported(context, selection.Field);
-                return Array.Empty<ISelection>();
+                return;
             }
 
-            if (selection.Field.IsOffsetPagingField())
+            if (selection.Field.IsOffsetPagingField() && selection.Field.Type.NamedType() is IObjectType pageType)
             {
-                return GetEntitySelectionsUnderOffsetPaging(context, entityType, selection, selection.Field);
+                foreach (var items in context.GetSelections(pageType, selection, true)
+                             .Where(item => item.Field.Name is "items" or "nodes"))
+                {
+                    AppendEntitySelections(config, context, declaredEntityType, items);
+                }
+                return;
             }
 
-            if (entityType.TryResolveEntityObjectType(context, out var objectType))
+            var objectTypes = context.Operation.GetPossibleTypes(selection)
+                .Where(type => declaredEntityType.IsAssignableFrom(type.RuntimeType))
+                .ToArray();
+            foreach (var objectType in objectTypes)
             {
-                return context.GetSelections(objectType, selection, true).ToArray();
+                var entityType = objectType.RuntimeType;
+                var excludedTypes = objectTypes.Select(type => type.RuntimeType)
+                    .Where(type => type != entityType && entityType.IsAssignableFrom(type))
+                    .Distinct().ToArray();
+                foreach (var child in context.GetSelections(objectType, selection, true))
+                {
+                    AppendSelection(config, context, entityType, child, excludedTypes);
+                }
             }
-
-            return Array.Empty<ISelection>();
-        }
-
-        private static IReadOnlyList<ISelection> GetEntitySelectionsUnderOffsetPaging(
-            IMiddlewareContext context,
-            Type entityType,
-            ISelection pagingSelection,
-            IOutputField pagingField)
-        {
-            if (pagingField.Type.NamedType() is not IObjectType pageType)
-            {
-                return Array.Empty<ISelection>();
-            }
-
-            var pageSelections = context.GetSelections(pageType, pagingSelection, true).ToArray();
-            var itemsSelection = pageSelections.FirstOrDefault(x => x.Field.Name is "items" or "nodes");
-            if (itemsSelection == null)
-            {
-                return Array.Empty<ISelection>();
-            }
-
-            if (!entityType.TryResolveEntityObjectType(context, out var entityObjectType))
-            {
-                return Array.Empty<ISelection>();
-            }
-
-            return context.GetSelections(entityObjectType, itemsSelection, true).ToArray();
         }
 
         private static void LogRelayPagingUnsupported(IMiddlewareContext context, IOutputField field)

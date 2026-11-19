@@ -6,7 +6,6 @@ import { ControlUIWidget, toBool } from "@delon/form";
 import { DelonFormModule } from "@delon/form";
 import { SFUploadWidgetSchema } from "@delon/form/widgets/upload";
 import { deepGet } from "@delon/util/other";
-import { Apollo } from "apollo-angular";
 import { NzSafeAny } from "ng-zorro-antd/core/types";
 import { NzMessageService } from "ng-zorro-antd/message";
 import { NzModalService } from "ng-zorro-antd/modal";
@@ -15,9 +14,9 @@ import { NzUploadModule } from "ng-zorro-antd/upload";
 import { NzButtonModule } from "ng-zorro-antd/button";
 import { NzIconModule } from "ng-zorro-antd/icon";
 import { from, Observable, Subscription } from "rxjs";
-import { switchMap } from "rxjs/operators";
 
 import { GEEX_I18N, geex } from "@geexcode/geex-angular";
+import { attachBlob } from "@geexcode/geex-extensions-blob-storage";
 
 export type GeexUploadWidgetSchema = SFUploadWidgetSchema & {
   valueEmitType?: "id" | "file";
@@ -117,7 +116,6 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
 
     const blobStorage = geex.blobStorage;
     const defaultStorageType = blobStorage.defaultStorageType;
-    const createDocument = blobStorage.createDocument;
     const I18N = this.injector.get(GEEX_I18N);
 
     const res: GeexUploadWidgetSchema = {
@@ -157,39 +155,18 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
         typeof customRequest === "function"
           ? customRequest
           : (args: NzUploadXHRArgs) => {
-              if (!createDocument) {
-                return Subscription.EMPTY;
-              }
               const postFile = args.postFile;
               if (!(postFile instanceof Blob)) {
                 return Subscription.EMPTY;
               }
-              return from(postFile.slice().computeChecksumMd5())
-                .pipe(
-                  switchMap(md5 => {
-                    args.onProgress?.({ percent: 50 }, args.file);
-                    return this.injector
-                      .get(Apollo)
-                      .mutate({
-                        mutation: createDocument,
-                        variables: {
-                          request: {
-                            file: args.file as any,
-                            md5,
-                            storageType: storageType ?? defaultStorageType,
-                          },
-                        },
-                        context: {
-                          useMultipart: true,
-                        },
-                      })
-                      .firstValuePromise();
-                  }),
-                )
-                .subscribe(x => {
+              args.onProgress?.({ percent: 0 }, args.file);
+              return attachBlob(blobStorage, postFile, args.file.name, storageType ?? defaultStorageType).subscribe({
+                next: blob => {
                   args.onProgress?.({ percent: 100 }, args.file);
-                  args.onSuccess?.((x?.data as { createBlobObject: unknown } | undefined)?.createBlobObject, args.file, null);
-                });
+                  args.onSuccess?.(blob, args.file, null);
+                },
+                error: error => args.onError?.(error, args.file),
+              });
             },
       urlReName: "url",
       limitFileCount: limitFileCount || 999,
@@ -294,9 +271,9 @@ export class GeexUploadWidget extends ControlUIWidget<GeexUploadWidgetSchema> {
       (async () => {
         this.fileList = this.fileList.filter(f => f.uid !== file.uid);
         this._setValue(this.fileList);
-        let isDelete = true;
+        let isDelete = false;
         if (this.ui.deleteRemoteFile) {
-          isDelete = (await this.ui.deleteRemoteFile.firstValuePromise()) ?? true;
+          isDelete = (await this.ui.deleteRemoteFile.firstValuePromise()) === true;
         }
         if (isDelete && file.uid) {
           await geex.blobStorage.delete({

@@ -32,7 +32,9 @@ namespace Geex.Extensions.Settings.Core
             var keySet = keys.ToHashSet();
             try
             {
-                return await redis.GetAllAsync<Setting>(keySet);
+                var cached = await redis.GetAllAsync<Setting>(keySet);
+                // A concurrent cache refresh can remove keys between the scan and the read.
+                return cached.Where(entry => entry.Value != null).ToDictionary(entry => entry.Key, entry => entry.Value);
             }
             catch (Exception ex)
             {

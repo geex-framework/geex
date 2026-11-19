@@ -15,7 +15,7 @@ namespace Geex.Bson
     /// <typeparam name="TEnum"></typeparam>
     public class EnumerationSerializer<TEnum> :
         ClassSerializerBase<TEnum>,
-        IRepresentationConfigurable, IEnumerationSerializer where TEnum : Enumeration<TEnum>
+        IRepresentationConfigurable, IEnumerationSerializer where TEnum : class, IEnumeration
     {
         private readonly BsonType _representation = BsonType.String;
         private readonly TypeCode _underlyingTypeCode;

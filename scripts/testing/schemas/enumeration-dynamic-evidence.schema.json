@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://geex.local/schemas/enumeration-dynamic-evidence.schema.json",
+  "title": "Enumeration dynamic evidence records",
+  "oneOf": [
+    { "$ref": "#/$defs/scope" },
+    { "$ref": "#/$defs/case" },
+    { "$ref": "#/$defs/artifact" },
+    { "$ref": "#/$defs/manifest" },
+    { "$ref": "#/$defs/gate" }
+  ],
+  "$defs": {
+    "id": { "type": "string", "minLength": 1 },
+    "ref": { "type": "string", "minLength": 1, "pattern": "^(?![/\\\\]|[A-Za-z]:|.*(?:^|/)\\.\\.(?:/|$)).+" },
+    "nullableRef": { "anyOf": [ { "$ref": "#/$defs/ref" }, { "type": "null" } ] },
+    "time": { "type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T.+(?:Z|[+-]\\d{2}:\\d{2})$" },
+    "ids": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+    "refs": { "type": "array", "items": { "$ref": "#/$defs/ref" }, "uniqueItems": true },
+    "status": { "enum": [ "PASS", "FAIL", "BLOCKED", "NOT_RUN" ] },
+    "evidenceStatus": { "enum": [ "COMPLETE", "INCOMPLETE" ] },
+    "stage": { "enum": [ "PREPARATION", "DEVELOPMENT", "MODULE", "ACCEPTANCE", "HANDOFF" ] },
+    "counts": {
+      "type": "object",
+      "required": [ "planned", "PASS", "FAIL", "BLOCKED", "NOT_RUN", "completeEvidence", "attempts", "historicalFailures", "uniqueDefects" ],
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "scope": {
+      "type": "object",
+      "required": [ "recordType", "schemaRef", "scopeId", "caseId", "instanceId", "flowId", "ruleIds", "testType", "role", "scenario", "parameters", "browser", "viewport", "preconditions", "operations", "expectedRef", "implementationRef", "applicability", "requiredStages", "applicabilityReason", "confirmationRef", "evidenceRequirements" ],
+      "properties": {
+        "recordType": { "const": "scope" }, "schemaRef": { "$ref": "#/$defs/ref" },
+        "scopeId": { "$ref": "#/$defs/id" }, "caseId": { "$ref": "#/$defs/id" }, "instanceId": { "$ref": "#/$defs/id" }, "flowId": { "$ref": "#/$defs/id" },
+        "ruleIds": { "$ref": "#/$defs/ids", "minItems": 1 }, "testType": { "const": "UNIT" }, "role": { "$ref": "#/$defs/id" }, "scenario": { "$ref": "#/$defs/id" },
+        "parameters": { "type": "object" }, "browser": { "type": "null" }, "viewport": { "type": "null" },
+        "preconditions": { "$ref": "#/$defs/ids" }, "operations": { "$ref": "#/$defs/id" }, "expectedRef": { "$ref": "#/$defs/ref" }, "implementationRef": { "$ref": "#/$defs/ref" },
+        "applicability": { "const": "APPLICABLE" }, "requiredStages": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/stage" } },
+        "applicabilityReason": { "$ref": "#/$defs/id" }, "confirmationRef": { "$ref": "#/$defs/ref" }, "evidenceRequirements": { "$ref": "#/$defs/ids", "minItems": 1 }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "required": [ "executionId", "attemptId", "baselineId", "invocationId", "rawRunnerStatus", "startedAt", "endedAt", "stoppedAt", "status", "evidenceStatus", "assertionSummary", "assertionOutput", "artifactIds", "defectRefs", "blockerRefs", "retryOf", "trxRef", "timeSource" ],
+      "properties": {
+        "executionId": { "$ref": "#/$defs/id" }, "attemptId": { "type": "integer", "minimum": 1 }, "baselineId": { "$ref": "#/$defs/id" }, "invocationId": { "$ref": "#/$defs/id" },
+        "rawRunnerStatus": { "$ref": "#/$defs/id" }, "startedAt": { "$ref": "#/$defs/time" }, "endedAt": { "$ref": "#/$defs/time" }, "stoppedAt": { "$ref": "#/$defs/id" },
+        "status": { "enum": [ "PASS", "FAIL", "BLOCKED" ] }, "evidenceStatus": { "$ref": "#/$defs/evidenceStatus" },
+        "assertionSummary": { "type": "string" }, "assertionOutput": { "type": "string" }, "artifactIds": { "$ref": "#/$defs/ids", "minItems": 1 },
+        "defectRefs": { "$ref": "#/$defs/refs" }, "blockerRefs": { "$ref": "#/$defs/refs" }, "retryOf": { "$ref": "#/$defs/nullableRef" }, "trxRef": { "$ref": "#/$defs/ref" }, "timeSource": { "const": "original-trx" }
+      }
+    },
+    "case": {
+      "type": "object",
+      "required": [ "recordType", "schemaRef", "runId", "instanceId", "scopeRef", "status", "evidenceStatus", "assertionSummary", "artifactIds", "defectRefs", "blockerRefs", "finalExecutionId", "attempts" ],
+      "properties": {
+        "recordType": { "const": "case" }, "schemaRef": { "$ref": "#/$defs/ref" }, "runId": { "$ref": "#/$defs/id" }, "instanceId": { "$ref": "#/$defs/id" }, "scopeRef": { "$ref": "#/$defs/ref" },
+        "status": { "$ref": "#/$defs/status" }, "evidenceStatus": { "$ref": "#/$defs/evidenceStatus" }, "assertionSummary": { "type": "string" },
+        "artifactIds": { "$ref": "#/$defs/ids" }, "defectRefs": { "$ref": "#/$defs/refs" }, "blockerRefs": { "$ref": "#/$defs/refs" },
+        "finalExecutionId": { "anyOf": [ { "$ref": "#/$defs/id" }, { "type": "null" } ] }, "attempts": { "type": "array", "items": { "$ref": "#/$defs/attempt" } }
+      },
+      "allOf": [
+        { "if": { "properties": { "attempts": { "maxItems": 0 } } }, "then": { "properties": { "finalExecutionId": { "type": "null" }, "status": { "enum": [ "NOT_RUN", "BLOCKED" ] }, "evidenceStatus": { "const": "INCOMPLETE" } } } },
+        { "if": { "properties": { "status": { "const": "PASS" } } }, "then": { "properties": { "attempts": { "minItems": 1, "maxItems": 1 }, "finalExecutionId": { "$ref": "#/$defs/id" }, "evidenceStatus": { "const": "COMPLETE" }, "artifactIds": { "minItems": 1 } } } }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [ "recordType", "schemaRef", "artifactId", "runId", "level", "category", "path", "createdAt", "sizeBytes", "sha256", "mediaType", "redaction" ],
+      "properties": {
+        "recordType": { "const": "artifact" }, "schemaRef": { "$ref": "#/$defs/ref" }, "artifactId": { "$ref": "#/$defs/id" }, "runId": { "$ref": "#/$defs/id" },
+        "level": { "const": "run" }, "category": { "$ref": "#/$defs/id" }, "path": { "$ref": "#/$defs/ref" }, "createdAt": { "$ref": "#/$defs/time" },
+        "sizeBytes": { "type": "integer", "minimum": 0 }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "mediaType": { "$ref": "#/$defs/id" }, "redaction": { "$ref": "#/$defs/id" }
+      }
+    },
+    "command": {
+      "type": "object",
+      "required": [ "invocationId", "name", "executable", "arguments", "workingDirectory", "outputDirectory", "logRef", "commandRef", "startedAt", "endedAt", "exitCode" ],
+      "properties": {
+        "invocationId": { "$ref": "#/$defs/id" }, "name": { "$ref": "#/$defs/id" }, "executable": { "$ref": "#/$defs/id" }, "arguments": { "type": "array", "items": { "type": "string" } },
+        "workingDirectory": { "$ref": "#/$defs/id" }, "outputDirectory": { "$ref": "#/$defs/ref" }, "logRef": { "$ref": "#/$defs/ref" }, "commandRef": { "$ref": "#/$defs/ref" },
+        "startedAt": { "$ref": "#/$defs/time" }, "endedAt": { "$ref": "#/$defs/time" }, "exitCode": { "type": "integer" }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "required": [ "recordType", "schemaVersion", "schemaRef", "runId", "stage", "baselineId", "startedAt", "endedAt", "executor", "acceptor", "independentReview", "scopeId", "scopeRef", "scopeSummary", "plannedInstanceIds", "repository", "baselineRef", "testCodeRef", "productIdentity", "environment", "dependenciesRef", "configurationRef", "datasetRef", "commands", "counts", "evidenceStatus", "reportRef", "gateResultRef", "artifactIndexRef", "fullProjectAcceptance" ],
+      "properties": {
+        "recordType": { "const": "manifest" }, "schemaVersion": { "const": "1.0" }, "schemaRef": { "$ref": "#/$defs/ref" }, "runId": { "$ref": "#/$defs/id" }, "stage": { "$ref": "#/$defs/stage" }, "baselineId": { "$ref": "#/$defs/id" },
+        "startedAt": { "$ref": "#/$defs/time" }, "endedAt": { "$ref": "#/$defs/time" }, "executor": { "type": "object", "required": [ "identity", "role" ], "properties": { "identity": { "$ref": "#/$defs/id" }, "role": { "$ref": "#/$defs/id" } } },
+        "acceptor": { "type": "null" }, "independentReview": { "$ref": "#/$defs/id" }, "scopeId": { "$ref": "#/$defs/id" }, "scopeRef": { "$ref": "#/$defs/ref" }, "scopeSummary": { "$ref": "#/$defs/id" },
+        "plannedInstanceIds": { "$ref": "#/$defs/ids" }, "repository": { "type": "object" }, "baselineRef": { "$ref": "#/$defs/nullableRef" }, "testCodeRef": { "$ref": "#/$defs/ref" },
+        "productIdentity": { "type": "array" }, "environment": { "type": "object" }, "dependenciesRef": { "$ref": "#/$defs/nullableRef" }, "configurationRef": { "$ref": "#/$defs/nullableRef" }, "datasetRef": { "$ref": "#/$defs/ref" },
+        "commands": { "type": "array", "items": { "$ref": "#/$defs/command" } }, "counts": { "$ref": "#/$defs/counts" }, "evidenceStatus": { "$ref": "#/$defs/evidenceStatus" },
+        "reportRef": { "$ref": "#/$defs/ref" }, "gateResultRef": { "$ref": "#/$defs/ref" }, "artifactIndexRef": { "$ref": "#/$defs/ref" }, "fullProjectAcceptance": { "const": false }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": [ "recordType", "schemaRef", "scopeId", "baselineId", "runIds", "checkScope", "judgement", "counts", "effectiveResults", "gates", "reasons", "confirmationRef", "artifactRefs", "checker", "startedAt", "endedAt", "toolExitCode", "fullProjectAcceptance" ],
+      "properties": {
+        "recordType": { "const": "gate" }, "schemaRef": { "$ref": "#/$defs/ref" }, "scopeId": { "$ref": "#/$defs/id" }, "baselineId": { "$ref": "#/$defs/id" }, "runIds": { "$ref": "#/$defs/ids", "minItems": 1 },
+        "checkScope": { "$ref": "#/$defs/id" }, "judgement": { "enum": [ "PASS", "BLOCKED" ] }, "counts": { "$ref": "#/$defs/counts" },
+        "effectiveResults": { "type": "array", "items": { "type": "object", "required": [ "instanceId", "runId", "status", "executionId" ], "properties": { "instanceId": { "$ref": "#/$defs/id" }, "runId": { "$ref": "#/$defs/id" }, "status": { "$ref": "#/$defs/status" }, "executionId": { "anyOf": [ { "$ref": "#/$defs/id" }, { "type": "null" } ] } } } },
+        "gates": { "type": "array", "minItems": 10, "items": { "type": "object", "required": [ "gateId", "judgement", "reason" ], "properties": { "gateId": { "type": "string", "pattern": "^G-(0[1-9]|10)$" }, "judgement": { "enum": [ "PASS", "BLOCKED", "NOT_EVALUATED" ] }, "reason": { "$ref": "#/$defs/id" } } } },
+        "reasons": { "type": "array", "items": { "type": "string" } }, "confirmationRef": { "$ref": "#/$defs/ref" }, "artifactRefs": { "$ref": "#/$defs/refs" }, "checker": { "type": "object", "required": [ "name", "executor", "sourceHash", "independentReview" ] },
+        "startedAt": { "$ref": "#/$defs/time" }, "endedAt": { "$ref": "#/$defs/time" }, "toolExitCode": { "type": "integer", "enum": [ 0, 1, 2 ] }, "fullProjectAcceptance": { "const": false }
+      }
+    }
+  }
+}

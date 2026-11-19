@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Geex.Abstractions;
 using MongoDB.Bson;
+using MongoDB.Entities;
 
 namespace Geex.Tests.FeatureTests
 {
@@ -46,6 +47,83 @@ namespace Geex.Tests.FeatureTests
 
             // Assert
             responseData["data"]["users"]["totalCount"].GetValue<int>().ShouldBeGreaterThanOrEqualTo(0);
+        }
+
+        [Fact]
+        public async Task QueryUsersWithOrgsShouldLoadEachUsersOrganizations()
+        {
+            var prefix = $"batchload_{ObjectId.GenerateNewId()}";
+            var orgCodes = new[] { $"{prefix}_org1", $"{prefix}_org2", $"{prefix}_unrelated" };
+            var expectedCodes = new[] { orgCodes.Take(2).ToArray(), new[] { orgCodes[1] }, Array.Empty<string>() };
+
+            using (var scope = ScopedService.CreateScope())
+            {
+                var setupUow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                foreach (var code in orgCodes)
+                {
+                    await setupUow.Request(new CreateOrgRequest
+                    {
+                        Code = code,
+                        Name = code,
+                        OrgType = OrgTypeEnum.Default
+                    });
+                }
+                for (var index = 0; index < expectedCodes.Length; index++)
+                {
+                    await setupUow.Request(new CreateUserRequest
+                    {
+                        Username = $"{prefix}_{index}",
+                        Password = "Password123!",
+                        Nickname = $"Batch load user {index}",
+                        IsEnable = true,
+                        RoleIds = [],
+                        OrgCodes = expectedCodes[index].ToList()
+                    });
+                }
+                await setupUow.SaveChanges();
+            }
+
+            using (var scope = ScopedService.CreateScope())
+            {
+                var queryUow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                var loadedUsers = queryUow.Query<IUser>().Where(user => user.Username.StartsWith(prefix))
+                    .BatchLoad(user => user.Orgs).ToList();
+                loadedUsers.Count.ShouldBe(3);
+                for (var index = 0; index < expectedCodes.Length; index++)
+                {
+                    var user = loadedUsers.Single(user => user.Username == $"{prefix}_{index}");
+                    user.Orgs.ToList().Select(org => org.Code).OrderBy(code => code)
+                        .ShouldBe(expectedCodes[index].OrderBy(code => code));
+                }
+            }
+
+            var query = """
+                query($prefix: String!) {
+                    users(skip: 0, take: 10, filter: { username: { startsWith: $prefix }}) {
+                        items {
+                            username
+                            orgs { code name }
+                        }
+                        totalCount
+                    }
+                }
+                """;
+
+            var (responseData, _) = await SuperAdminClient.PostGqlRequest(query, new { prefix });
+            responseData["errors"].ShouldBeNull();
+            var users = responseData["data"]!["users"]!;
+            users["totalCount"]!.GetValue<int>().ShouldBe(3);
+            var items = users["items"]!.AsArray();
+            items.Count.ShouldBe(3);
+            for (var index = 0; index < expectedCodes.Length; index++)
+            {
+                var user = items.Single(item => item!["username"]!.GetValue<string>() == $"{prefix}_{index}")!;
+                var orgs = user["orgs"]!.AsArray();
+                orgs.Select(org => org!["code"]!.GetValue<string>()).OrderBy(code => code)
+                    .ShouldBe(expectedCodes[index].OrderBy(code => code));
+                foreach (var org in orgs)
+                    org!["name"]!.GetValue<string>().ShouldBe(org["code"]!.GetValue<string>());
+            }
         }
 
         [Fact]

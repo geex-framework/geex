@@ -3,14 +3,13 @@
            (nzChange)="change($event)"
            [nzRemove]="nzRemove || handleRemove"
            [nzPreview]="handlePreview"
-           [nzDisabled]="disabled"
+           [nzDisabled]="disabled || nzDisabled"
            [nzLimit]="nzLimit"
            [nzSize]="nzSize"
            [nzListType]="nzListType"
            [nzMultiple]="nzMultiple"
            [nzType]="$any(nzType)"
            [(nzFileList)]="fileList"
-           [nzDisabled]="nzDisabled"
            [nzAction]="nzAction"
            [nzDirectory]="nzDirectory"
            [nzOpenFileDialogOnClick]="nzOpenFileDialogOnClick"
@@ -20,15 +19,12 @@
            [nzHeaders]="nzHeaders"
            [nzData]="nzData"
            [nzName]="nzName"
-           [nzShowUploadList]="nzShowUploadList"
            [nzWithCredentials]="nzWithCredentials"
            [nzBeforeUpload]="beforeUpload"
-           [nzPreview]="handlePreview"
            [nzPreviewFile]="nzPreviewFile"
            [nzDownload]="nzDownload"
            [nzTransformFile]="nzTransformFile"
-           (nzChange)="change($event)"
-           [nzShowButton]="fileList.length < nzLimit">
+           [nzShowButton]="nzShowButton && (nzLimit === 0 || fileList.length < nzLimit)">
 
 
   <ng-container *ngTemplateOutlet="uploadButton"></ng-container>

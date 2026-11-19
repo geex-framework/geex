@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 
 using Cronos;
 
@@ -47,12 +48,56 @@ namespace Geex.Extensions.BackgroundJob.Core
 
         private IServiceProvider ServiceProvider { get; set; }
 
+        private readonly object _timerGate = new();
+        private System.Timers.Timer? _timer;
+
         /// <inheritdoc />
         protected override Task ScheduleJob(CancellationToken cancellationToken)
         {
-            var next = this.Cron.GetNextOccurrence(DateTime.UtcNow, ScheduleTimeZone).GetValueOrDefault().ToLocalTime();
-            _logger.LogInformation("Job scheduled: [{JobName}], next execution will be at {next}", typeof(TImplementation).Name, next);
-            return base.ScheduleJob(cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.CompletedTask;
+            }
+            var now = DateTimeOffset.UtcNow;
+            var next = this.Cron.GetNextOccurrence(now, ScheduleTimeZone);
+            if (next is null)
+            {
+                return Task.CompletedTask;
+            }
+            // EasyCronJob 2.1.0 在边界秒会以非正间隔创建 System.Timers.Timer 并抛
+            // ArgumentException 杀死进程；这里自行调度并保证间隔至少 1ms。
+            var delay = next.Value - now;
+            if (delay <= TimeSpan.Zero)
+            {
+                delay = TimeSpan.FromMilliseconds(1);
+            }
+            var interval = Math.Max(1d, delay.TotalMilliseconds);
+            var timer = new System.Timers.Timer(interval) { AutoReset = false };
+            timer.Elapsed += async (_, _) =>
+            {
+                timer.Dispose();
+                lock (_timerGate)
+                {
+                    if (ReferenceEquals(_timer, timer)) _timer = null;
+                }
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+                await DoWork(cancellationToken);
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    await ScheduleJob(cancellationToken);
+                }
+            };
+            lock (_timerGate)
+            {
+                _timer?.Dispose();
+                _timer = timer;
+            }
+            timer.Start();
+            _logger.LogInformation("Job scheduled: [{JobName}], next execution will be at {next}", typeof(TImplementation).Name, next.Value.ToLocalTime());
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -119,6 +164,11 @@ namespace Geex.Extensions.BackgroundJob.Core
             _logger.LogInformation("Job stopping: [{JobName}]", typeof(TImplementation).Name);
             try
             {
+                lock (_timerGate)
+                {
+                    _timer?.Dispose();
+                    _timer = null;
+                }
                 await base.StopAsync(cancellationToken);
             }
             catch (Exception e)

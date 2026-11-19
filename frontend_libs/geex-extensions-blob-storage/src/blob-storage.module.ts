@@ -41,13 +41,13 @@ export function createBlobStorageModule(
     deleteDocument: GQL_DELETE_BLOB_OBJECT,
     create: async (variables, context) => {
       const result = await firstValueFrom(
-        apollo().mutate({ mutation: GQL_CREATE_BLOB_OBJECT, variables, context }),
+        apollo().mutate({ mutation: GQL_CREATE_BLOB_OBJECT, variables, context, errorPolicy: "none" }),
       );
       return result.data;
     },
     list: async variables => {
       const result = await firstValueFrom(
-        apollo().query({ query: GQL_BLOB_OBJECTS, variables }),
+        apollo().query({ query: GQL_BLOB_OBJECTS, variables, fetchPolicy: "no-cache", errorPolicy: "none" }),
       );
       return result.data;
     },

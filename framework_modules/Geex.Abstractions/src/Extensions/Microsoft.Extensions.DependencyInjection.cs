@@ -96,7 +96,7 @@ namespace Microsoft.Extensions.DependencyInjection
             foreach (var classEnumType in classEnumTypes)
             {
                 var typeName = classEnumType.Name;
-                if ((classEnumType.GetClassEnumRealType().BaseType.GetProperty(nameof(Enumeration.DynamicValues)).GetValue(null) as IEnumerable<IEnumeration>).Any())
+                if ((classEnumType.GetEnumerationFamilyType().GetProperty(nameof(Enumeration.DynamicValues)).GetValue(null) as IEnumerable<IEnumeration>).Any())
                 {
                     var enumGqlType = typeof(EnumerationType<>).MakeGenericType(classEnumType);
                     schemaBuilder.AddType(enumGqlType);

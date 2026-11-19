@@ -16,6 +16,17 @@ using Shouldly;
 
 namespace Geex.Tests.FeatureTests;
 
+public class AuditReadTestQuery : QueryExtension<AuditReadTestQuery>
+{
+    protected override void Configure(IObjectTypeDescriptor<AuditReadTestQuery> descriptor)
+    {
+        descriptor.Field(x => x.AuditRead(default!)).Audit();
+        base.Configure(descriptor);
+    }
+
+    public string AuditRead(string marker) => marker;
+}
+
 public class AuditWriteTestMutation : MutationExtension<AuditWriteTestMutation>
 {
     protected override void Configure(IObjectTypeDescriptor<AuditWriteTestMutation> descriptor)
@@ -132,6 +143,28 @@ public class AuditLogsApiTests : TestsBase
         rows[0].Variables!["marker"]!.GetValue<string>().ShouldBe(marker);
         rows[0].Result!.GetValue<string>().ShouldBe(marker);
         await WriteEvidence(nameof(EnabledOperationIsPersistedBeforeResponseCompletes), new { query, variables }, response, rows);
+    }
+
+    [Fact]
+    public async Task AuditedQueryPersistsWhileOperationTrackingIsDisabled()
+    {
+        var operation = "auditRead" + Guid.NewGuid().ToString("N");
+        var marker = "read-" + Guid.NewGuid().ToString("N");
+        var query = $"query {operation}($marker: String!) {{ unitOfWorkTracking queryProviderTracking auditRead(marker: $marker) }}";
+        var variables = new { marker };
+        var (response, body) = await SuperAdminClient.PostGqlRequest(query, variables);
+
+        body.ShouldNotContain("errors");
+        response["data"]["unitOfWorkTracking"].GetValue<bool>().ShouldBeFalse();
+        response["data"]["queryProviderTracking"].GetValue<bool>().ShouldBeFalse();
+        response["data"]["auditRead"].GetValue<string>().ShouldBe(marker);
+        var rows = ReadOperationLogs(operation);
+        rows.Length.ShouldBe(1);
+        rows[0].IsSuccess.ShouldBeTrue();
+        rows[0].OperationType.ShouldBe(OperationType.Query);
+        rows[0].Variables!["marker"]!.GetValue<string>().ShouldBe(marker);
+        rows[0].Result!.GetValue<string>().ShouldBe(marker);
+        await WriteEvidence(nameof(AuditedQueryPersistsWhileOperationTrackingIsDisabled), new { query, variables }, response, rows);
     }
 
     [Fact]

@@ -9,6 +9,10 @@ namespace Geex.Extensions.Authorization
         {
         }
 
+        internal AuthorizationPermission(string name, string value) : base(name, value)
+        {
+        }
+
         public static AuthorizationPermission Authorize { get; } = new AuthorizationPermission("mutation_authorize");
     }
 }

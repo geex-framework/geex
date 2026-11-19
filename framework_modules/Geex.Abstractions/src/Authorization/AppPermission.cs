@@ -26,6 +26,10 @@
 
     public abstract class AppPermission<TImplementation> : AppPermission
     {
+        protected AppPermission(string name, string value) : base(name, value)
+        {
+        }
+
         protected AppPermission(string value) : base((PermissionString)value)
         {
 

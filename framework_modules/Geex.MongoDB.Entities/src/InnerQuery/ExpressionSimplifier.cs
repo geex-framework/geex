@@ -266,6 +266,14 @@ namespace MongoDB.Entities.InnerQuery
                                     unwrappedArg0, arg1));
                         }
 
+                    case nameof(MemoryExtensions.Contains)
+                        when methodCall.Arguments is [var arg0, var arg1, ConstantExpression { Value: null }]
+                        && TryUnwrapSpanImplicitCast(arg0, out var unwrappedArg0):
+                        return Visit(
+                            Expression.Call(
+                                EnumerableMethods.Contains.MakeGenericMethod(methodCall.Method.GetGenericArguments()[0]),
+                                unwrappedArg0, arg1));
+
                     case nameof(MemoryExtensions.SequenceEqual)
                         when methodCall.Arguments is [var arg0, var arg1]
                         && TryUnwrapSpanImplicitCast(arg0, out var unwrappedArg0)

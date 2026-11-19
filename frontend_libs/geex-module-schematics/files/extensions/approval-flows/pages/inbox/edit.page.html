@@ -1,0 +1,40 @@
+<page-header [title]="I18N.ApprovalFlows.inboxEditTitle" [autoBreadcrumb]="true" />
+<nz-card style="margin-bottom: 72px">
+  <form nz-form [formGroup]="form" nzLayout="vertical">
+    <div nz-row [nzGutter]="16">
+      <div nz-col [nzXs]="24" [nzMd]="12">
+        <nz-form-item>
+          <nz-form-label nzRequired>{{ I18N.ApprovalFlows.name }}</nz-form-label>
+          <nz-form-control>
+            <input nz-input [formControl]="form.controls.name" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+      <div nz-col [nzSpan]="24">
+        <nz-form-item>
+          <nz-form-label nzRequired>{{ I18N.ApprovalFlows.description }}</nz-form-label>
+          <nz-form-control>
+            <textarea nz-input rows="3" [formControl]="form.controls.description"></textarea>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+
+    <app-approval-flow-nodes-editor [nodes]="nodes" mode="runtime" />
+  </form>
+</nz-card>
+
+<footer-toolbar>
+  <button nz-button type="button" (click)="cancel()">{{ I18N.Common.action.cancel }}</button>
+  <button
+    nz-button
+    nzType="primary"
+    type="button"
+    class="ml-sm"
+    [disabled]="form.invalid || !nodes.length"
+    [nzLoading]="saving()"
+    (click)="submit()"
+  >
+    {{ I18N.Common.action.save }}
+  </button>
+</footer-toolbar>

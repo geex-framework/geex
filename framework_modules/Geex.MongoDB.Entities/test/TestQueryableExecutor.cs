@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using MongoDB.Bson;
 using MongoDB.Driver;
+using MongoDB.Entities.InnerQuery;
 using MongoDB.Entities.Tests.Fixtures;
 using MongoDB.Entities.Tests.Models;
 
@@ -723,6 +724,57 @@ namespace MongoDB.Entities.Tests
                 dbContext.Query<TestEntity>().Where(x => nestedArray.array.Contains(x.Id)).Any().ShouldBe(true);
                 dbContext.Query<TestEntity>().Any(x => nestedArray.array.Contains(x.Id)).ShouldBe(true);
             }
+        }
+
+        [TestMethod]
+        public void queryable_contains_should_match_projected_local_values()
+        {
+            using var dbContext = new DbContext();
+            var sources = new[] { new[] { "a1", "b2", "a1" }, new[] { "missing" } }.AsQueryable();
+
+            dbContext.Query<TestEntity>()
+                .Where(x => sources.SelectMany(values => values).Distinct().Contains(x.Name))
+                .ToList().Select(x => x.Name).OrderBy(x => x).ShouldBe(new[] { "a1", "b2" });
+            dbContext.Query<TestEntity>()
+                .Where(x => !sources.SelectMany(values => values).Contains(x.Name))
+                .ToList().Select(x => x.Name).OrderBy(x => x).ShouldBe(new[] { "a2", "b1" });
+            dbContext.Query<TestEntity>()
+                .Where(x => sources.SelectMany(values => values).Contains(x.Name) && x.Value > 1)
+                .Single().Name.ShouldBe("b2");
+        }
+
+        [TestMethod]
+        public void queryable_contains_should_handle_empty_sources()
+        {
+            using var dbContext = new DbContext();
+            var names = Array.Empty<string>().AsQueryable();
+
+            dbContext.Query<TestEntity>().Where(x => names.Contains(x.Name)).ToList().ShouldBeEmpty();
+            dbContext.Query<TestEntity>().Where(x => !names.Contains(x.Name))
+                .ToList().Select(x => x.Name).OrderBy(x => x).ShouldBe(new[] { "a1", "a2", "b1", "b2" });
+        }
+
+        [TestMethod]
+        public void queryable_contains_should_preserve_object_id_comparisons()
+        {
+            using var dbContext = new DbContext();
+            var targetId = dbContext.Query<TestEntity>().Single(x => x.Name == "a1").Id;
+            var ids = new[] { targetId, ObjectId.GenerateNewId().ToString() }.AsQueryable();
+
+            dbContext.Query<TestEntity>().Where(x => ids.Contains(x.Id)).Single().Name.ShouldBe("a1");
+            dbContext.Query<TestEntity>().Where(x => !ids.Contains(x.Id))
+                .ToList().Select(x => x.Name).OrderBy(x => x).ShouldBe(new[] { "a2", "b1", "b2" });
+        }
+
+        [TestMethod]
+        public void queryable_contains_with_custom_comparer_should_be_rejected()
+        {
+            using var dbContext = new DbContext();
+            var names = new[] { "A1" }.AsQueryable();
+
+            Should.Throw<InvalidQueryException>(() => dbContext.Query<TestEntity>()
+                .Where(x => names.Contains(x.Name, StringComparer.OrdinalIgnoreCase)).ToList())
+                .Message.ShouldBe("Unsupported Call Expression for method Contains");
         }
 
         [TestMethod]
