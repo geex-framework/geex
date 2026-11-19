@@ -166,8 +166,7 @@ public partial class Backup : Entity<Backup>
         }
     }
 
-    internal async Task CompensateAsync(BackupStatus status, string message, Func<Task>? ensureOwned = null,
-        CancellationToken cancellationToken = default)
+    internal async Task CompensateAsync(BackupStatus status, string message)
     {
         try { _abort?.Cancel(); }
         catch (ObjectDisposedException) { }
@@ -176,20 +175,16 @@ public partial class Backup : Entity<Backup>
             try { await _backupTask; }
             catch { /* The original failure has already been observed by the caller. */ }
         }
-        await RecordFailureAndCleanAsync(status, message, ensureOwned, cancellationToken);
-        if (ensureOwned != null) await ensureOwned();
+        await RecordFailureAndCleanAsync(status, message);
         await PublishChangedAsync(_services ?? ServiceProvider, Id);
         await SaveResultMessageAsync(_services ?? ServiceProvider, Id);
     }
 
-    private async Task RecordFailureAndCleanAsync(BackupStatus status, string message, Func<Task>? ensureOwned = null,
-        CancellationToken cancellationToken = default)
+    private async Task RecordFailureAndCleanAsync(BackupStatus status, string message)
     {
-        using var cleanupTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cleanupTimeout.CancelAfter(TimeSpan.FromSeconds(30));
+        using var cleanupTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         try
         {
-            if (ensureOwned != null) await ensureOwned();
             using var scope = (_services ?? ServiceProvider).CreateScope();
             var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
             var collection = work.DbContext.Collection<Backup>();
@@ -200,13 +195,11 @@ public partial class Backup : Entity<Backup>
                 Builders<Backup>.Update.Set(x => x.Status, status).Set(x => x.ErrorMessage, message)
                     .Set(x => x.FinishedAt, DateTimeOffset.UtcNow), cancellationToken: cleanupTimeout.Token);
             await RemoveFilesAsync(work, stored, cleanupTimeout.Token);
-            if (ensureOwned != null) await ensureOwned();
             await collection.UpdateOneAsync(x => x.Id == Id,
                 Builders<Backup>.Update.Set(x => x.BlobObjectId, null), cancellationToken: cleanupTimeout.Token);
         }
         catch (Exception)
         {
-            if (ensureOwned != null) throw;
             (_services ?? ServiceProvider).GetService<ILogger<Backup>>()?.LogError(
                 "Backup {BackupId} needs cleanup on the next execution.", Id);
         }
