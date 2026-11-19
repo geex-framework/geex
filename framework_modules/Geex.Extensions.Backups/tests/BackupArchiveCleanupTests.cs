@@ -114,7 +114,7 @@ public sealed class BackupArchiveCleanupTests(BackupFixture fixture) : IAsyncLif
         return BsonSerializer.Deserialize<Backup>(new BsonDocument
         {
             { "_id", id }, { "DatabaseName", fixture.DatabaseName },
-            { "ScheduledAt", new BsonDateTime(DateTime.UtcNow) }, { "StartedAt", new BsonDateTime(DateTime.UtcNow) },
+            { "ScheduledAt", new BsonDateTime(BackupIntegrationTests.NextSlot().UtcDateTime) }, { "StartedAt", new BsonDateTime(DateTime.UtcNow) },
             { "Source", "Manual" }, { "Status", BackupStatus.Failed.ToString() },
             { "RequestedByUserId", ObjectId.GenerateNewId().ToString() }, { "ResultMessageId", ObjectId.GenerateNewId().ToString() }
         });
