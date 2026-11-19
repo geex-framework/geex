@@ -158,3 +158,17 @@ test("only persisted statuses are exposed and cleared archives retain their hist
   assert.equal(page.statusLabel("Expired"), "Cleaned up");
   page.database = "missing"; page.search(); assert.equal(page.emptyTitle(), text.noMatches);
 });
+
+
+test("force confirmation explains overlap and sends the explicit flag with the existing permission", async () => {
+  const submitted = [];
+  const { page, confirmations } = await setup({ startTracked: async force => { submitted.push(force); return "accepted"; } });
+  page.confirmStart(true);
+  assert.equal(confirmations[0].nzContent, text.forceScope);
+  assert.equal(confirmations[0].nzOkDanger, true);
+  await confirmations[0].nzOnOk();
+  assert.deepEqual(submitted, [true]);
+  const denied = await setup({}, false);
+  denied.page.confirmStart(true);
+  assert.equal(denied.confirmations.length, 0);
+});

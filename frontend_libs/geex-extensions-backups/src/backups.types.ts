@@ -31,8 +31,8 @@ export interface BackupsModule extends GeexModule<{
   startTrackedDocument: DocumentNode;
   expireDocument: DocumentNode;
   list(variables: BackupsVariables): Promise<BackupsList>;
-  start(): Promise<boolean>;
-  startTracked(): Promise<string | null>;
+  start(force?: boolean): Promise<boolean>;
+  startTracked(force?: boolean): Promise<string | null>;
   expire(id: string): Promise<boolean>;
 }> {}
 

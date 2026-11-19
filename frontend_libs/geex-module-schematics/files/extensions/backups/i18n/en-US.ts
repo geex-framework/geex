@@ -1,4 +1,7 @@
 export default {
+  forceStart: "Force backup", forceConfirm: "Force a new backup?",
+  forceScope: "Requests cancellation of active backups and starts a new one immediately. Backups may overlap until earlier processes stop.",
+
   view: "View backups",
   disconnected: "Live updates disconnected. Reconnecting will refresh the list.",
   title: "Backups", database: "Database", status: "Status", scheduledAt: "Triggered at",

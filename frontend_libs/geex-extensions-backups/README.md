@@ -19,8 +19,8 @@ For manual npm publication, first run `./release.ps1 -Version <version> -Mode Pr
 | Frontend method | GraphQL operation | Result | Permission |
 | --- | --- | --- | --- |
 | `geex.backups.list(variables)` | `backups` / `backupsEnabled` | Paginated records and automatic scheduling status | `Backups_query_backups` |
-| `geex.backups.start()` | `startBackup` | Boolean acceptance result | `Backups_mutation_startBackup` |
-| `geex.backups.startTracked()` | `startBackupTracked` | Persisted record ID, or null when busy/stopping | `Backups_mutation_startBackup` |
+| `geex.backups.start(force = false)` | `startBackup` | Boolean acceptance result | `Backups_mutation_startBackup` |
+| `geex.backups.startTracked(force = false)` | `startBackupTracked` | Persisted record ID, or null when busy/stopping | `Backups_mutation_startBackup` |
 | `geex.backups.expire(id)` | `expireBackup` | Boolean expiration result | `Backups_mutation_expireBackup` |
 
 Grant these permissions through host role management and generate the host's `AppPermission` enum from the backend schema. Queries bypass the Apollo cache. All operations use `errorPolicy: "none"` so GraphQL errors propagate. Missing required response fields are errors.
@@ -50,3 +50,5 @@ pwsh ./scripts/testing/test-backups.ps1 -Scope Frontend
 ```
 
 The script builds the package and workspace dependencies, compiles the page with strict Angular template checking, and runs API/page behavior and schematics tests. Logs are stored under ignored `.test-evidence/database-backup/<run-id>` and template compiler output under `.test-evidence/database-backup/page`. The PIMS host additionally runs real browser workflows through its dedicated `scripts/testing/run-backups-e2e.ps1` isolated environment. See the [test guide](../../framework_modules/Geex.Extensions.Backups/TESTING.md) for host acceptance checks.
+
+Forced starts request cancellation of earlier backups and may overlap them until those processes exit. They require the existing create permission. The management page explains this in its force confirmation. Ordinary starts remain blocked while any execution registration remains.

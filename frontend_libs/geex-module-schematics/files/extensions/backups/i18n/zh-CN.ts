@@ -1,4 +1,7 @@
 export default {
+  forceStart: "强制备份", forceConfirm: "强制开始新的备份?",
+  forceScope: "将尝试取消正在执行的备份并立即开始新备份. 旧备份尚未退出时, 两者可能同时运行.",
+
   view: "查看备份",
   disconnected: "实时连接已断开, 重连后将自动更新.",
   title: "备份管理", database: "数据库", status: "状态", scheduledAt: "触发时间",

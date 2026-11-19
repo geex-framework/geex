@@ -62,6 +62,12 @@ public class BackupSchemaTests
         Assert.IsType<StringType>(mutation.Fields["startBackupTracked"].Type);
         Assert.IsType<BooleanType>(Assert.IsType<NonNullType>(mutation.Fields["expireBackup"].Type).Type);
         Assert.IsType<StringType>(Assert.IsType<NonNullType>(mutation.Fields["expireBackup"].Arguments["id"].Type).Type);
+        foreach (var name in new[] { "startBackup", "startBackupTracked" })
+        {
+            var force = mutation.Fields[name].Arguments["force"];
+            Assert.IsType<BooleanType>(Assert.IsType<NonNullType>(force.Type).Type);
+            Assert.False(Assert.IsType<BooleanValueNode>(force.DefaultValue).Value);
+        }
         var definition = Utf8GraphQLParser.Parse(schema.ToString()).Definitions.OfType<ObjectTypeDefinitionNode>()
             .Single(x => x.Name.Value == "Mutation");
         foreach (var field in new[] { "startBackup", "startBackupTracked", "expireBackup" })

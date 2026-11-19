@@ -49,7 +49,7 @@ public sealed class BackupOwnershipTests(BackupFixture fixture) : IAsyncLifetime
     [InlineData(true)]
     public async Task ArchiveOwnerIsSavedBeforeWritingAndUnboundRecoveryPreservesSameNameUserFiles(bool sharedContent)
     {
-        var backup = Sample(BackupStatus.Running);
+        var backup = Sample(BackupStatus.Failed);
         await DB.Collection<Backup>().InsertOneAsync(backup);
         using var scope = fixture.Services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -97,7 +97,7 @@ public sealed class BackupOwnershipTests(BackupFixture fixture) : IAsyncLifetime
             sentinels.Add((blob, saved.ToBson(), sample.Content, blob.GetFilePath()));
         }
 
-        await Backup.RecoverAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
+        await Backup.CleanupFailedAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
         Assert.False(await DB.Collection<BlobObject>().Find(x => x.Id == orphan.Id).AnyAsync());
         Assert.False(await DB.Collection<BlobObject>().Find(x => x.StorageOwnerTag == ownerTag).AnyAsync());
         Assert.Equal(sharedContent, File.Exists(orphanPath));

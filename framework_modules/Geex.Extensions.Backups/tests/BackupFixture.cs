@@ -14,12 +14,17 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Entities;
 using Xunit;
+using StackExchange.Redis.Extensions.Core;
+using StackExchange.Redis.Extensions.Core.Abstractions;
+using StackExchange.Redis.Extensions.Core.Configuration;
 
 namespace Geex.Extensions.Backups.Tests;
 
 public sealed class BackupFixture : IAsyncLifetime
 {
     private Process? _mongo;
+    private Process? _redis;
+    public int RedisPort { get; private set; }
     private bool _externalMongo;
     private readonly List<string> _additionalDatabases = [];
     public string Root { get; } = Path.Combine(Environment.GetEnvironmentVariable("GEEX_BACKUP_TEST_EVIDENCE") ?? Path.Combine(AppContext.BaseDirectory, ".test-evidence", "database-backup"), "geex-backup-tests-" + Guid.NewGuid().ToString("N"));
@@ -79,12 +84,24 @@ public sealed class BackupFixture : IAsyncLifetime
             WorkingDirectory = Path.Combine(Root, "backup"),
             MongodumpPath = Environment.GetEnvironmentVariable("GEEX_BACKUP_MONGODUMP") ?? "mongodump"
         };
+        using var redisListener = new TcpListener(IPAddress.Loopback, 0);
+        redisListener.Start();
+        RedisPort = ((IPEndPoint)redisListener.LocalEndpoint).Port;
+        redisListener.Stop();
+        var redisInfo = new ProcessStartInfo("redis-server") { UseShellExecute = false, CreateNoWindow = true };
+        foreach (var arg in new[] { "--bind", "127.0.0.1", "--port", RedisPort.ToString(), "--dir", Root,
+            "--save", "", "--appendonly", "no", "--logfile", Path.Combine(Root, "redis.log") })
+            redisInfo.ArgumentList.Add(arg);
+        _redis = Process.Start(redisInfo) ?? throw new InvalidOperationException("Could not start isolated Redis.");
         Services = CreateServices();
+        await Services.GetRequiredService<IRedisDatabase>().Database.PingAsync();
     }
 
     public ServiceProvider CreateServices() => new ServiceCollection().AddLogging()
             .AddSingleton(Options)
-            .AddSingleton(new GeexCoreModuleOptions { ConnectionString = Uri })
+            .AddSingleton(new GeexCoreModuleOptions { ConnectionString = Uri, Redis = new RedisConfiguration {
+                Hosts = [new RedisHost { Host = "127.0.0.1", Port = RedisPort }], Database = 1, PoolSize = 1 } })
+            .AddStackExchangeRedisExtensions()
             .AddSingleton(new BlobStorageModuleOptions { FileSystemStoragePath = Path.Combine(Root, "blobs") })
             .AddScoped<IUnitOfWork>(sp => new GeexDbContext(sp))
             .BuildServiceProvider();
@@ -140,6 +157,14 @@ public sealed class BackupFixture : IAsyncLifetime
                 }
             });
             _mongo.Dispose();
+        }
+        if (_redis != null)
+        {
+            await Cleanup(async () =>
+            {
+                if (!_redis.HasExited) { _redis.Kill(true); await _redis.WaitForExitAsync(); }
+            });
+            _redis.Dispose();
         }
         // Only this fixture's freshly created directory is removed.
         await Cleanup(async () =>

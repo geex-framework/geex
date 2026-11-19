@@ -18,10 +18,10 @@ export const BACKUPS = gql`
   }
 `;
 export const START_BACKUP = gql`
-  mutation startBackup { startBackup }
+  mutation startBackup($force: Boolean! = false) { startBackup(force: $force) }
 `;
 export const START_BACKUP_TRACKED = gql`
-  mutation startBackupTracked { startBackupTracked }
+  mutation startBackupTracked($force: Boolean! = false) { startBackupTracked(force: $force) }
 `;
 export const EXPIRE_BACKUP = gql`
   mutation expireBackup($id: String!) { expireBackup(id: $id) }
@@ -45,13 +45,13 @@ export function createBackupsModule(injector: Injector): BackupsModule {
         throw new Error("Incomplete database backup data returned.");
       return result.data;
     },
-    start: async () => {
-      const result = await firstValueFrom(apollo().mutate<{ startBackup: boolean }>({ mutation: START_BACKUP, errorPolicy: "none" }));
+    start: async (force = false) => {
+      const result = await firstValueFrom(apollo().mutate<{ startBackup: boolean }>({ mutation: START_BACKUP, variables: { force }, errorPolicy: "none" }));
       if (typeof result.data?.startBackup !== "boolean") throw new Error("Missing backup start result.");
       return result.data.startBackup;
     },
-    startTracked: async () => {
-      const result = await firstValueFrom(apollo().mutate<{ startBackupTracked: string | null }>({ mutation: START_BACKUP_TRACKED, errorPolicy: "none" }));
+    startTracked: async (force = false) => {
+      const result = await firstValueFrom(apollo().mutate<{ startBackupTracked: string | null }>({ mutation: START_BACKUP_TRACKED, variables: { force }, errorPolicy: "none" }));
       const id = result.data?.startBackupTracked;
       if (id !== null && (typeof id !== "string" || !id.trim())) throw new Error("Missing backup tracking result.");
       return id;

@@ -11,6 +11,8 @@
   @if (acl.can('Backups_mutation_startBackup')) {
     <button nz-button nzType="primary" type="button" data-testid="backup-start"
       [nzLoading]="pendingAction()?.kind === 'start'" [disabled]="acting()" (click)="confirmStart()">{{ text.start }}</button>
+    <button nz-button nzDanger type="button" data-testid="backup-force"
+      [disabled]="acting()" (click)="confirmStart(true)">{{ text.forceStart }}</button>
   }
 </ng-template>
 

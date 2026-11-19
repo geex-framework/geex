@@ -67,3 +67,15 @@ test("transport failures propagate instead of reporting success", async () => {
   const module = createBackupsModule({ get: () => ({ mutate: () => throwError(() => new Error("offline")) }) });
   await assert.rejects(() => module.start(), /offline/);
 });
+
+
+test("normal and forced starts send the requested force flag", async () => {
+  const calls = [];
+  const module = createBackupsModule({ get: () => ({ mutate: options => {
+    calls.push(options.variables);
+    return of({ data: { startBackup: true, startBackupTracked: "accepted" } });
+  } }) });
+  await module.start(); await module.start(true);
+  await module.startTracked(); await module.startTracked(true);
+  assert.deepEqual(calls, [{ force: false }, { force: true }, { force: false }, { force: true }]);
+});

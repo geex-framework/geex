@@ -24,7 +24,7 @@ import { NzEmptyModule } from "ng-zorro-antd/empty";
 import type zhCN from "../i18n/zh-CN";
 
 type BackupQuery = { filter: Record<string, unknown>; pageIndex: number; pageSize: number };
-type BackupAction = { kind: "start" | "expire"; id?: string };
+type BackupAction = { kind: "start" | "expire"; id?: string; force?: boolean };
 
 @Component({
   selector: "app-backups-list",
@@ -279,9 +279,9 @@ export class BackupsListPage implements OnInit {
       !this.isCleaning(item) && !this.unverifiedDownloads().has(item.id);
   }
 
-  confirmStart(): void {
+  confirmStart(force = false): void {
     if (!this.isCurrent(this.generation) || this.confirmation || this.acting() || !this.acl.can("Backups_mutation_startBackup")) return;
-    this.openConfirmation({ kind: "start" });
+    this.openConfirmation({ kind: "start", force });
   }
   confirmExpire(item: Backup): void {
     if (!this.isCurrent(this.generation) || this.confirmation || this.acting() || this.loadError() ||
@@ -292,10 +292,10 @@ export class BackupsListPage implements OnInit {
   private openConfirmation(action: BackupAction, item?: Backup): void {
     const generation = this.generation;
     const ref: NzModalRef = this.modal.confirm({
-      nzClassName: "backup-confirm", nzTitle: action.kind === "start" ? this.text.startConfirm : this.text.expireConfirm,
-      nzContent: action.kind === "start" ? this.text.startScope : this.expireDetails,
-      nzData: item, nzOkDanger: action.kind === "expire", nzMaskClosable: false,
-      nzOkText: action.kind === "start" ? this.text.startAction : this.text.expire,
+      nzClassName: "backup-confirm", nzTitle: action.kind === "start" ? (action.force ? this.text.forceConfirm : this.text.startConfirm) : this.text.expireConfirm,
+      nzContent: action.kind === "start" ? (action.force ? this.text.forceScope : this.text.startScope) : this.expireDetails,
+      nzData: item, nzOkDanger: action.kind === "expire" || action.force === true, nzMaskClosable: false,
+      nzOkText: action.kind === "start" ? (action.force ? this.text.forceStart : this.text.startAction) : this.text.expire,
       nzOnOk: () => this.perform(action, generation, ref),
     });
     this.confirmation = ref;
@@ -315,7 +315,7 @@ export class BackupsListPage implements OnInit {
     ref.updateConfig({ nzCancelDisabled: true, nzKeyboard: false });
     if (action.id) this.unverifiedDownloads.set(new Set([...this.unverifiedDownloads(), action.id]));
     try {
-      const accepted = action.kind === "start" ? (await geex.backups.startTracked()) !== null : await geex.backups.expire(action.id!);
+      const accepted = action.kind === "start" ? (await geex.backups.startTracked(action.force ?? false)) !== null : await geex.backups.expire(action.id!);
       if (!this.isCurrent(generation)) return true;
       if (accepted) {
         if (action.kind === "start") {
