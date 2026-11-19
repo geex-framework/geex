@@ -32,6 +32,7 @@ Geex 是一个模块化、业务友好、以绝佳开发体验为终极目标的
 
 ## 仓库文档
 
+- 开发指南: [项目结构与实体 partial 约定](private/platform_v2/client/docs/ClientApp/docs/getting-started/project-structure.md).
 - 公共能力: [Enumeration API](docs/enumeration.md) / [MongoDB 查询](framework_modules/Geex.MongoDB.Entities/README.md).
 - 模块与前端: [BlobStorage](framework_modules/Geex.Extensions.BlobStorage/README.md) / [Backups](framework_modules/Geex.Extensions.Backups/README.md) / [Geex Angular](frontend_libs/geex-angular/README.md).
 - 开发验证: [测试规范](docs/Geex项目AI测试硬性规范.md) / [测试编写指南](scripts/testing/README.md).

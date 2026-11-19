@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Geex.Storage;
@@ -44,6 +45,12 @@ public partial class MockRule : Entity<MockRule>
     }
 
     public void SetEnabled(bool enabled) => Enabled = enabled;
+
+    public static string CreateOpaqueToken(int byteLength = 32)
+    {
+        var bytes = RandomNumberGenerator.GetBytes(Math.Max(16, byteLength));
+        return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
 
     public bool Matches(MockTargetEnum target, string operation, JsonNode? input)
     {
