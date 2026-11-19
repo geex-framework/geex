@@ -160,9 +160,11 @@ public class BackupLockTests(BackupFixture fixture)
                 await File.WriteAllTextAsync(Path.Combine(evidence, "cases", "global-backup-processes.json"), JsonSerializer.Serialize(new
                 {
                     testCase = nameof(IndependentProcessesAndDatabasesShareTheLockAndForceCancellation),
-                    firstProcess = first.Id, previousBackup = firstId, previousStatus = previous.GetProperty("status").GetString(),
-                    forcedBackup = forced.GetProperty("id").GetString(), forcedStatus = forced.GetProperty("status").GetString(),
-                    otherDatabaseRejected = true, previousMongodumpExited = child.HasExited, lockReleased = true
+                    observations = new[] { new {
+                        firstProcess = first.Id, previousBackup = firstId, previousStatus = previous.GetProperty("status").GetString(),
+                        forcedBackup = forced.GetProperty("id").GetString(), forcedStatus = forced.GetProperty("status").GetString(),
+                        otherDatabaseRejected = true, previousMongodumpExited = child.HasExited, lockReleased = true
+                    } }
                 }));
             }
         }
