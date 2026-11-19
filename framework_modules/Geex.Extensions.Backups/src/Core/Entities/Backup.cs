@@ -290,6 +290,23 @@ public partial class Backup : Entity<Backup>
         }
     }
 
+    internal async Task RecoverExecutionAsync(CancellationToken token, Func<Task> ensureOwned)
+    {
+        await ensureOwned();
+        if (Status is BackupStatus.Running or BackupStatus.Failed or BackupStatus.Cancelled)
+        {
+            await CompensateAsync(BackupStatus.Failed, "Previous backup execution was interrupted.", ensureOwned, token);
+            await ensureOwned();
+            var options = ServiceProvider.GetRequiredService<BackupsModuleOptions>();
+            var root = ServiceProvider.GetService<IHostEnvironment>()?.ContentRootPath ?? AppContext.BaseDirectory;
+            var directory = GetWorkingDirectory(options.WorkingDirectory, root, Id);
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
+        await ensureOwned();
+        await RepairResultMessageTimeAsync(Uow, this, token);
+        await SaveResultMessageAsync(ServiceProvider, Id);
+    }
+
     internal static async Task RecoverAsync(IServiceProvider services, string database, CancellationToken token, string? activeId = null)
     {
         using var scope = services.CreateScope();
