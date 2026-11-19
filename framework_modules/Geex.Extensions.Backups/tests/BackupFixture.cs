@@ -82,9 +82,8 @@ public sealed class BackupFixture : IAsyncLifetime
         Services = CreateServices();
     }
 
-    public ServiceProvider CreateServices(IBackupArchiveExporter? exporter = null) => new ServiceCollection().AddLogging()
+    public ServiceProvider CreateServices() => new ServiceCollection().AddLogging()
             .AddSingleton(Options)
-            .AddSingleton<IBackupArchiveExporter>(exporter ?? new MongodumpProcess())
             .AddSingleton(new GeexCoreModuleOptions { ConnectionString = Uri })
             .AddSingleton(new BlobStorageModuleOptions { FileSystemStoragePath = Path.Combine(Root, "blobs") })
             .AddScoped<IUnitOfWork>(sp => new GeexDbContext(sp))

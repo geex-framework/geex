@@ -6,11 +6,8 @@ using MongoDB.Driver;
 
 namespace Geex.Extensions.Backups.Core;
 
-internal sealed class MongodumpProcess : IBackupArchiveExporter
+internal static class MongodumpProcess
 {
-    public Task ExportAsync(string executable, string connectionString, string database, string directory, string archive,
-        CancellationToken cancellationToken) => RunAsync(executable, connectionString, database, directory, archive, cancellationToken);
-
     internal static ProcessStartInfo CreateStartInfo(string executable, string database, string config, string archive)
     {
         var info = new ProcessStartInfo(executable)

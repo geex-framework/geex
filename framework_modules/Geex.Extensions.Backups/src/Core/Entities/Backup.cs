@@ -27,8 +27,7 @@ public partial class Backup : Entity<Backup>
     internal Backup() { }
 
     internal Backup(IUnitOfWork uow, DateTimeOffset scheduledAt, CancellationToken cancellationToken = default,
-        bool recoverInterrupted = false, BackupSource source = BackupSource.Manual, string? requestedByUserId = null,
-        ManualBackupExecution? execution = null)
+        bool recoverInterrupted = false, BackupSource source = BackupSource.Manual, string? requestedByUserId = null)
     {
         ArgumentNullException.ThrowIfNull(uow);
         var options = uow.ServiceProvider.GetRequiredService<BackupsModuleOptions>();
@@ -41,15 +40,6 @@ public partial class Backup : Entity<Backup>
         Status = BackupStatus.Running;
         Source = source;
         RequestedByUserId = source == BackupSource.Manual ? requestedByUserId : null;
-        if (execution != null)
-        {
-#pragma warning disable CS0618
-            Id = execution.BackupId;
-            CreatedOn = ModifiedOn = StartedAt;
-#pragma warning restore CS0618
-            ExecutionKey = execution.ExecutionKey;
-            execution.EnsureMatches(this);
-        }
         ResultMessageId = string.IsNullOrWhiteSpace(RequestedByUserId) ? null : ObjectId.GenerateNewId().ToString();
         _services = uow.ServiceProvider;
         uow.Attach(this);
@@ -66,7 +56,6 @@ public partial class Backup : Entity<Backup>
             StartedAt = StartedAt,
             Status = Status,
             Source = Source,
-            ExecutionKey = ExecutionKey,
             RequestedByUserId = RequestedByUserId,
             ResultMessageId = ResultMessageId
         };
@@ -91,7 +80,6 @@ public partial class Backup : Entity<Backup>
     public DateTimeOffset? FinishedAt { get; private set; }
     public BackupStatus Status { get; private set; }
     public BackupSource Source { get; private set; }
-    public string? ExecutionKey { get; private set; }
     public string? RequestedByUserId { get; private set; }
     public string? ResultMessageId { get; private set; }
     public bool ResultNotificationSaved { get; private set; }
@@ -135,8 +123,7 @@ public partial class Backup : Entity<Backup>
             token.ThrowIfCancellationRequested();
             Directory.CreateDirectory(directory);
             var archive = Path.Combine(directory, $"backup-{Id}.archive.gz");
-            await scope.ServiceProvider.GetRequiredService<IBackupArchiveExporter>()
-                .ExportAsync(options.MongodumpPath, connectionString, DatabaseName, directory, archive, token);
+            await MongodumpProcess.RunAsync(options.MongodumpPath, connectionString, DatabaseName, directory, archive, token);
 
             stage = "Archive storage";
             blob = new BlobObject(new CreateBlobObjectRequest
@@ -288,23 +275,6 @@ public partial class Backup : Entity<Backup>
             }
             throw;
         }
-    }
-
-    internal async Task RecoverExecutionAsync(CancellationToken token, Func<Task> ensureOwned)
-    {
-        await ensureOwned();
-        if (Status is BackupStatus.Running or BackupStatus.Failed or BackupStatus.Cancelled)
-        {
-            await CompensateAsync(BackupStatus.Failed, "Previous backup execution was interrupted.", ensureOwned, token);
-            await ensureOwned();
-            var options = ServiceProvider.GetRequiredService<BackupsModuleOptions>();
-            var root = ServiceProvider.GetService<IHostEnvironment>()?.ContentRootPath ?? AppContext.BaseDirectory;
-            var directory = GetWorkingDirectory(options.WorkingDirectory, root, Id);
-            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
-        }
-        await ensureOwned();
-        await RepairResultMessageTimeAsync(Uow, this, token);
-        await SaveResultMessageAsync(ServiceProvider, Id);
     }
 
     internal static async Task RecoverAsync(IServiceProvider services, string database, CancellationToken token, string? activeId = null)

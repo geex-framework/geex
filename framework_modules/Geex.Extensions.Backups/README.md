@@ -35,9 +35,7 @@ The connection string must explicitly select the application's business database
 
 The task uses a separate scope for the running record and BlobObject, without recursively saving its caller's unit of work. A non-public constructor supports materialization. Query records with `uow.Query<Backup>()`.
 
-Programmatic callers use `TryStartManualWithIdAsync(requestedByUserId)`. Workflows that persist their progress can supply `ManualBackupExecution` and an explicit cancellation token to the overload of the same method. Persist that identity before starting: its execution key and database determine the backup ID, while requester and scheduled time are checked on replay. Matching records return the same ID; conflicting identities fail. `TryRecoverManualAsync(execution)` acquires the database lease and recovers only the matching execution, including its owned storage and result notification. Retry a failed business operation with a new persisted execution key.
-
-`IBackupArchiveExporter` writes the archive and observes cancellation. The default implementation runs `mongodump`. Applications can replace this dependency through their service registrations; it receives the captured executable, connection string, database and output paths for each execution. Backup state, database leases, BlobStorage and result notifications remain managed by the backup lifecycle. An exporter must finish with a non-empty archive or throw.
+Programmatic callers use `TryStartManualWithIdAsync(requestedByUserId)`. Each accepted invocation creates a new backup and returns its persisted ID. Callers can store that ID with their own completed operation result. Export runs through `MongodumpProcess.RunAsync` using the configured tool and observes timeout/shutdown cancellation. Database leases, BlobStorage ownership, failure compensation and result notifications remain managed by the backup lifecycle.
 
 ## Management
 

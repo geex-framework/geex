@@ -20,7 +20,6 @@ public class BackupsModule : GeexModule<BackupsModule, BackupsModuleOptions>
 
     internal static void RegisterJobs(IServiceCollection services, BackupsModuleOptions options)
     {
-        services.TryAddSingleton<IBackupArchiveExporter, MongodumpProcess>();
         // Execution has a shutdown lifecycle even when no Cron job is registered.
         services.AddSingleton<BackupsExecution>();
         services.AddHostedService(sp => sp.GetRequiredService<BackupsExecution>());
