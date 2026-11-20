@@ -59,6 +59,10 @@ public class MessagingApiTests : TestsBase
         var created = items.First(x => x!["id"]!.GetValue<string>() == messageId);
         created!["title"]!.GetValue<string>().ShouldBe("meta field");
         created["meta"]!["ApprovalFlowId"]!.GetValue<string>().ShouldBe("flow-1");
+        await TestExtensions.WriteBusinessEvidence(nameof(MessageMetaShouldBeQueryable), new
+        {
+            endpoint = "/graphql", request = new { query }, response = responseData, messageId
+        });
     }
 
     [Fact]
@@ -128,5 +132,10 @@ public class MessagingApiTests : TestsBase
             .ToList();
         redistributed.Count.ShouldBe(1);
         redistributed[0].IsRead.ShouldBeFalse();
+        await TestExtensions.WriteBusinessEvidence(nameof(RedistributeSameMessageShouldRemarkUnread), new
+        {
+            messageId = message.Id, toUserId,
+            distributions = redistributed.Select(x => new { x.Id, x.MessageId, x.ToUserId, x.IsRead }).ToArray()
+        });
     }
 }

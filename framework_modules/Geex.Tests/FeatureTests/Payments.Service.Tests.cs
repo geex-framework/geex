@@ -147,6 +147,10 @@ public class PaymentsServiceTests : TestsBase
 
         refund.Status.ShouldBe(PaymentRefundStatusEnum.Succeeded);
         refund.Amount.ShouldBe(4m);
+        await TestExtensions.WriteBusinessEvidence(nameof(CreateRefundServiceShouldWork), new
+        {
+            clientSn, refund.RefundRequestNo, refund.Amount, status = refund.Status.Name
+        });
     }
 
     [Fact]

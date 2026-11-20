@@ -7,6 +7,16 @@ namespace Geex.Tests
 {
     internal static class TestExtensions
     {
+        public static async Task WriteBusinessEvidence(string testCase, object observation)
+        {
+            var root = Environment.GetEnvironmentVariable("PP_BACKEND_EVIDENCE");
+            if (string.IsNullOrWhiteSpace(root)) return;
+            var directory = Path.Combine(root, "cases");
+            Directory.CreateDirectory(directory);
+            await File.WriteAllTextAsync(Path.Combine(directory, $"{testCase}-{Guid.NewGuid():N}.json"),
+                JsonSerializer.Serialize(new { testCase, observations = new[] { observation } }));
+        }
+
         /// <summary>
         /// 解析GraphQL响应并返回dynamic对象，方便访问结果
         /// </summary>

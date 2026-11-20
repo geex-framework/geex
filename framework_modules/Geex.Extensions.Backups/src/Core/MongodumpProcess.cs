@@ -42,12 +42,15 @@ internal static class MongodumpProcess
             }
             finally
             {
-                if (!process.HasExited)
+                try
                 {
-                    process.Kill(entireProcessTree: true);
-                    await process.WaitForExitAsync(CancellationToken.None);
+                    if (!process.HasExited) process.Kill(entireProcessTree: true);
                 }
-                await Task.WhenAll(stdout, stderr);
+                finally
+                {
+                    await process.WaitForExitAsync(CancellationToken.None);
+                    await Task.WhenAll(stdout, stderr);
+                }
             }
             if (process.ExitCode != 0)
                 throw new InvalidOperationException($"mongodump failed with exit code {process.ExitCode}: {SummarizeError(await stderr, connectionString)}");

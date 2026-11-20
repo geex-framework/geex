@@ -23,6 +23,7 @@ public static class RedisWorker
     public static async Task Main(string[] args)
     {
         if (args.Length == 0) return;
+        if (args[0] == "backup") { await BackupWorker.RunAsync(args); return; }
         var config = new GeexCoreModuleOptions { AppName = "cross-process", ConnectionString = args[3],
             Redis = new RedisConfiguration { Hosts = [new RedisHost { Host = "127.0.0.1", Port = int.Parse(args[1]) }], Database = 1, PoolSize = 1 } };
         var services = new ServiceCollection().AddLogging().AddSingleton(config);

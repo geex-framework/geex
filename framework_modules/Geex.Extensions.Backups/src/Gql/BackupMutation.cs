@@ -12,26 +12,26 @@ public sealed class BackupMutation(IUnitOfWork work, BackupsExecution execution)
 {
     protected override void Configure(IObjectTypeDescriptor<BackupMutation> descriptor)
     {
-        descriptor.Field(x => x.StartBackup()).Authorize(BackupsPermission.Create);
-        descriptor.Field(x => x.StartBackupTracked()).Authorize(BackupsPermission.Create);
+        descriptor.Field(x => x.StartBackup(default)).Authorize(BackupsPermission.Create);
+        descriptor.Field(x => x.StartBackupTracked(default)).Authorize(BackupsPermission.Create);
         descriptor.Field(x => x.ExpireBackup(default!, default)).Authorize(BackupsPermission.Expire);
         base.Configure(descriptor);
     }
 
-    public Task<bool> StartBackup() => execution.TryStartManualAsync(work.ServiceProvider.GetService<Geex.Extensions.Authentication.ICurrentUser>()?.UserId);
+    public Task<bool> StartBackup(bool force = false) => execution.TryStartManualAsync(work.ServiceProvider.GetService<Geex.Extensions.Authentication.ICurrentUser>()?.UserId, force);
 
-    public Task<string?> StartBackupTracked() => execution.TryStartManualWithIdAsync(work.ServiceProvider.GetService<Geex.Extensions.Authentication.ICurrentUser>()?.UserId);
+    public Task<string?> StartBackupTracked(bool force = false) => execution.TryStartManualWithIdAsync(work.ServiceProvider.GetService<Geex.Extensions.Authentication.ICurrentUser>()?.UserId, force);
 
     public async Task<bool> ExpireBackup(string id, CancellationToken cancellationToken)
     {
-        await using var lease = await BackupLease.AcquireAsync(DB.DefaultDb, DateTimeOffset.UtcNow, cancellationToken, deduplicateSlot: false);
-        if (lease == null)
+        await using var execution = await BackupLock.AcquireAsync(work.ServiceProvider, cancellationToken);
+        if (execution == null)
             return false;
         using var scope = work.ServiceProvider.CreateScope();
         var currentWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         var backup = currentWork.Query<Backup>().FirstOrDefault(x => x.Id == id)
             ?? throw new InvalidOperationException("Backup not found.");
-        await backup.ExpireAsync(lease.Token, lease.EnsureOwnedAsync);
+        await backup.ExpireAsync(execution.Token);
         return true;
     }
 }

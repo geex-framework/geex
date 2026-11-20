@@ -1,3 +1,4 @@
+using Geex.Extensions.Backups.Core;
 using Geex.Extensions.Backups.Core.Entities;
 using Geex.Extensions.Backups.Core.Jobs;
 using Geex.Extensions.Messaging.Core.Entities;

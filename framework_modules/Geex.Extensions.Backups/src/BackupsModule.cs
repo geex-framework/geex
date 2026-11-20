@@ -1,7 +1,9 @@
 using Geex.Extensions.BackgroundJob;
 using Geex.Extensions.BlobStorage;
 using Geex.Extensions.Backups.Core.Jobs;
+using Geex.Extensions.Backups.Core;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp.Modularity;
 
 namespace Geex.Extensions.Backups;

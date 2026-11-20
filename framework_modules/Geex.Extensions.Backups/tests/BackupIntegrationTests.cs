@@ -16,6 +16,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Entities;
 using Xunit;
+using StackExchange.Redis.Extensions.Core.Abstractions;
 
 namespace Geex.Extensions.Backups.Tests;
 
@@ -23,7 +24,7 @@ namespace Geex.Extensions.Backups.Tests;
 public class BackupIntegrationTests(BackupFixture fixture)
 {
     private static long _slot;
-    private static DateTimeOffset NextSlot() => DateTimeOffset.UtcNow.AddDays(Interlocked.Increment(ref _slot));
+    internal static DateTimeOffset NextSlot() => DateTimeOffset.UtcNow.AddDays(Interlocked.Increment(ref _slot));
 
     [Fact]
     public async Task ConstructorSaveAndRestorePreserveDocumentsTypesAndIndexes()
@@ -36,7 +37,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
             { "Amount", new BsonDecimal128(12.75m) }, { "Time", DateTime.UtcNow }, { "Bytes", new BsonBinaryData(new byte[] { 1, 2, 3 }) } };
         await data.InsertOneAsync(document);
         await data.Indexes.CreateOneAsync(new CreateIndexModel<BsonDocument>(Builders<BsonDocument>.IndexKeys.Ascending("Code"), new CreateIndexOptions { Unique = true, Name = "unique_code" }));
-        var unrelated = DB.DefaultDb.Client.GetDatabase("unrelated_" + Guid.NewGuid().ToString("N"));
+        var unrelated = DB.DefaultDb.Client.GetDatabase(fixture.AllocateDatabaseName("unrelated"));
         await unrelated.GetCollection<BsonDocument>("sentinel").InsertOneAsync(new BsonDocument("value", 1));
         using var scope = fixture.Services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -63,7 +64,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         await loadedWork.SaveChanges();
         Assert.Equal(blobId, roundtrip.BlobObjectId);
 
-        var restoredName = "restored_" + Guid.NewGuid().ToString("N");
+        var restoredName = fixture.AllocateDatabaseName("restored");
         var info = new ProcessStartInfo(Environment.GetEnvironmentVariable("GEEX_BACKUP_MONGORESTORE") ?? "mongorestore")
         { UseShellExecute = false, CreateNoWindow = true, RedirectStandardError = true, RedirectStandardOutput = true };
         foreach (var arg in new[] { "--uri", fixture.Uri, "--archive=" + blob.GetFilePath(), "--gzip",
@@ -207,23 +208,19 @@ public class BackupIntegrationTests(BackupFixture fixture)
     }
 
     [Fact]
-    public async Task LeaseDeduplicatesSlotsAndCancelsWhenOwnershipChanges()
+    public async Task ScheduledSlotsRemainDeduplicatedAfterGlobalLockRelease()
     {
         var slot = NextSlot();
-        await using var first = await BackupLease.AcquireAsync(DB.DefaultDb, slot, CancellationToken.None);
-        Assert.NotNull(first);
-        Assert.Null(await BackupLease.AcquireAsync(DB.DefaultDb, slot, CancellationToken.None));
-        Assert.Null(await BackupLease.AcquireAsync(DB.DefaultDb, slot.AddDays(1), CancellationToken.None));
-        var leases = DB.DefaultDb.GetCollection<BsonDocument>("_geex_database_backup_leases");
-        await leases.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", fixture.DatabaseName),
-            Builders<BsonDocument>.Update.Set("Owner", "replacement"));
-        await Assert.ThrowsAsync<OperationCanceledException>(() => first.EnsureOwnedAsync());
-        Assert.True(first.Token.IsCancellationRequested);
-        await leases.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", fixture.DatabaseName),
-            Builders<BsonDocument>.Update.Set("ExpiresAt", DateTime.UnixEpoch));
-        Assert.Null(await BackupLease.AcquireAsync(DB.DefaultDb, slot, CancellationToken.None));
-        await using var next = await BackupLease.AcquireAsync(DB.DefaultDb, slot.AddDays(1), CancellationToken.None);
+        await using (var first = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None))
+        {
+            Assert.NotNull(first);
+            Assert.True(await BackupsExecution.TryClaimScheduledSlotAsync(DB.DefaultDb, slot, first.Token));
+            Assert.Null(await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None));
+        }
+        await using var next = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None);
         Assert.NotNull(next);
+        Assert.False(await BackupsExecution.TryClaimScheduledSlotAsync(DB.DefaultDb, slot, next.Token));
+        Assert.True(await BackupsExecution.TryClaimScheduledSlotAsync(DB.DefaultDb, NextSlot(), next.Token));
     }
 
     [Fact]
@@ -269,8 +266,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(15));
             while (true)
             {
-                await using var lease = await BackupLease.AcquireAsync(DB.DefaultDb, DateTimeOffset.UtcNow,
-                    deadline.Token, deduplicateSlot: false);
+                await using var lease = await BackupLock.AcquireAsync(fixture.Services, deadline.Token);
                 if (lease != null) break;
                 await Task.Delay(20, deadline.Token);
             }
@@ -317,7 +313,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
     }
 
     [Fact]
-    public async Task InterruptedBackupRecoversFileAndTemporaryDirectory()
+    public async Task FailedBackupCleansFileAndTemporaryDirectory()
     {
         using var scope = fixture.Services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -328,12 +324,44 @@ public class BackupIntegrationTests(BackupFixture fixture)
         var directory = Path.Combine(fixture.Options.WorkingDirectory, backup.Id);
         Directory.CreateDirectory(directory);
         await File.WriteAllTextAsync(Path.Combine(directory, "partial"), "incomplete");
-        await Backup.RecoverAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
+        await DB.Collection<Backup>().UpdateOneAsync(x => x.Id == backup.Id,
+            Builders<Backup>.Update.Set(x => x.Status, BackupStatus.Failed));
+        await Backup.CleanupFailedAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
         var recovered = await DB.Collection<Backup>().Find(x => x.Id == backup.Id).SingleAsync();
         Assert.Equal(BackupStatus.Failed, recovered.Status);
         Assert.Null(recovered.BlobObjectId);
         Assert.False(File.Exists(blob.GetFilePath()));
         Assert.False(Directory.Exists(directory));
+    }
+
+    [Fact]
+    public async Task NewBackupPreservesUnconfirmedRunningRecordsAndTheirFiles()
+    {
+        using var scope = fixture.Services.CreateScope();
+        var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var previous = new Backup(work, NextSlot());
+        await work.SaveChanges();
+        var blob = previous.File!;
+        await DB.Collection<Backup>().UpdateOneAsync(x => x.Id == previous.Id,
+            Builders<Backup>.Update.Set(x => x.Status, BackupStatus.Running));
+        var execution = new BackupsExecution(fixture.Services);
+        try
+        {
+            var id = await execution.TryStartManualWithIdAsync();
+            Assert.NotNull(id);
+            Assert.Equal(BackupStatus.Succeeded, (await WaitForCompletionAsync(id)).Status);
+            var unchanged = await DB.Collection<Backup>().Find(x => x.Id == previous.Id).SingleAsync();
+            Assert.Equal(BackupStatus.Running, unchanged.Status);
+            Assert.Equal(blob.Id, unchanged.BlobObjectId);
+            Assert.True(File.Exists(blob.GetFilePath()));
+        }
+        finally
+        {
+            await execution.StopAsync(CancellationToken.None);
+            await DB.Collection<Backup>().UpdateOneAsync(x => x.Id == previous.Id,
+                Builders<Backup>.Update.Set(x => x.Status, BackupStatus.Cancelled));
+            await Backup.CleanupFailedAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
+        }
     }
 
     [Fact]
@@ -374,6 +402,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         if (automaticEnabled && !jobsDisabled) jobs.JobConfigs[nameof(BackupsJob)] = "0 0 3 * * *";
         var services = new ServiceCollection().AddLogging().AddSingleton(options).AddSingleton(jobs)
             .AddSingleton(fixture.Services.GetRequiredService<GeexCoreModuleOptions>())
+            .AddSingleton(fixture.Services.GetRequiredService<IRedisDatabase>())
             .AddSingleton(fixture.Services.GetRequiredService<BlobStorageModuleOptions>())
             .AddScoped<IUnitOfWork>(sp => new GeexDbContext(sp));
         BackupsModule.RegisterJobs(services, options);
@@ -474,8 +503,6 @@ public class BackupIntegrationTests(BackupFixture fixture)
         listener.Start();
         var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
         core.ConnectionString = $"mongodb://127.0.0.1:{port}/{fixture.DatabaseName}";
-        await DB.DefaultDb.GetCollection<BsonDocument>("_geex_database_backup_leases")
-            .DeleteManyAsync(FilterDefinition<BsonDocument>.Empty);
         var job = new BackupsExecution(fixture.Services);
         var running = job.RunScheduledAsync(NextSlot(), CancellationToken.None);
         try
@@ -503,30 +530,29 @@ public class BackupIntegrationTests(BackupFixture fixture)
     }
 
     [Fact]
-    public async Task ConcurrentLeaseClaimsHaveExactlyOneOwner()
+    public async Task ConcurrentGlobalLockClaimsHaveExactlyOneExecutor()
     {
-        var database = DB.DefaultDb.Client.GetDatabase("lease_test_" + Guid.NewGuid().ToString("N"));
-        var slot = DateTimeOffset.UtcNow;
-        var claims = await Task.WhenAll(Enumerable.Range(0, 8)
-            .Select(_ => BackupLease.AcquireAsync(database, slot, CancellationToken.None)));
-        var owner = Assert.Single(claims.Where(x => x != null));
-        await owner!.DisposeAsync();
-        Assert.Null(await BackupLease.AcquireAsync(database, slot, CancellationToken.None));
+        var claims = await Task.WhenAll(Enumerable.Range(0, 3)
+            .Select(_ => BackupLock.AcquireAsync(fixture.Services, CancellationToken.None)));
+        var executor = Assert.Single(claims.Where(x => x != null));
+        await executor!.DisposeAsync();
+        await using var next = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None);
+        Assert.NotNull(next);
     }
 
     [Fact]
-    public async Task ManualClaimsShareLeaseWithoutConsumingScheduledSlots()
+    public async Task ManualClaimsShareGlobalLockWithoutConsumingScheduledSlots()
     {
-        var database = DB.DefaultDb.Client.GetDatabase("manual_lease_" + Guid.NewGuid().ToString("N"));
-        var slot = DateTimeOffset.UtcNow;
-        await using (var manual = await BackupLease.AcquireAsync(database, slot.AddMinutes(1), CancellationToken.None, false))
+        var slot = NextSlot();
+        await using (var manual = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None))
         {
             Assert.NotNull(manual);
-            Assert.Null(await BackupLease.AcquireAsync(database, slot, CancellationToken.None));
-            Assert.Null(await BackupLease.AcquireAsync(database, slot.AddMinutes(2), CancellationToken.None, false));
+            var scheduled = new BackupsExecution(fixture.Services);
+            await scheduled.RunScheduledAsync(slot, CancellationToken.None);
+            await scheduled.StopAsync(CancellationToken.None);
+            Assert.Null(await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None));
         }
-        await using var scheduled = await BackupLease.AcquireAsync(database, slot, CancellationToken.None);
-        Assert.NotNull(scheduled);
+        Assert.True(await BackupsExecution.TryClaimScheduledSlotAsync(DB.DefaultDb, slot, CancellationToken.None));
     }
 
     [Fact]
@@ -571,7 +597,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         if (deletionStage >= 1) File.Delete(path);
         if (deletionStage >= 2) await blob.DeleteAsync();
 
-        await Backup.RecoverAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
+        await Backup.CleanupFailedAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
         var unchanged = await DB.Collection<Backup>().Find(x => x.Id == backup.Id).SingleAsync();
         Assert.Equal(BackupStatus.Succeeded, unchanged.Status);
         Assert.Equal(blob.Id, unchanged.BlobObjectId);
@@ -620,7 +646,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
             Assert.NotNull(newBackupId);
             Assert.Equal(BackupStatus.Succeeded, (await WaitForCompletionAsync(newBackupId)).Status);
             Directory.Delete(blockedPath);
-            await Backup.RecoverAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
+            await Backup.CleanupFailedAsync(fixture.Services, fixture.DatabaseName, CancellationToken.None);
             var unchanged = await DB.Collection<Backup>().Find(x => x.Id == previous.Id).SingleAsync();
             Assert.Equal(BackupStatus.Succeeded, unchanged.Status);
             Assert.Equal(error, unchanged.ErrorMessage);
@@ -687,7 +713,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
     }
 
     [Fact]
-    public async Task ExpirationRejectsBusyLeaseAndReadsCurrentState()
+    public async Task ExpirationRejectsBusyGlobalLockAndReadsCurrentState()
     {
         using var scope = fixture.Services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -695,7 +721,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         await work.SaveChanges();
         var blob = Assert.IsType<BlobObject>(backup.File);
         var mutation = new BackupMutation(work, new BackupsExecution(fixture.Services));
-        await using (var lease = await BackupLease.AcquireAsync(DB.DefaultDb, DateTimeOffset.UtcNow, CancellationToken.None, false))
+        await using (var lease = await BackupLock.AcquireAsync(fixture.Services, CancellationToken.None))
         {
             Assert.NotNull(lease);
             Assert.False(await mutation.ExpireBackup(backup.Id, CancellationToken.None));
@@ -721,7 +747,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
     }
 
     [Fact]
-    public async Task ExpirationCancellationAndLostLeaseLeaveArchiveUntouched()
+    public async Task ExpirationCancellationLeavesArchiveUntouched()
     {
         using var scope = fixture.Services.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -733,93 +759,12 @@ public class BackupIntegrationTests(BackupFixture fixture)
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => backup.ExpireAsync(cancellation.Token));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             BackupsExecution.PruneAsync(fixture.Services, fixture.DatabaseName, 0, cancellation.Token));
-        var leases = DB.DefaultDb.GetCollection<BsonDocument>("_geex_database_backup_leases");
-        await using (var lease = await BackupLease.AcquireAsync(DB.DefaultDb, DateTimeOffset.UtcNow, CancellationToken.None, false))
-        {
-            Assert.NotNull(lease);
-            await leases.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", fixture.DatabaseName),
-                Builders<BsonDocument>.Update.Set("Owner", "expiration-test-replacement"));
-            try
-            {
-                await Assert.ThrowsAsync<OperationCanceledException>(() => lease.EnsureOwnedAsync());
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => backup.ExpireAsync(lease.Token));
-                var stored = await DB.Collection<Backup>().Find(x => x.Id == backup.Id).SingleAsync();
-                Assert.Equal(BackupStatus.Succeeded, stored.Status);
-                Assert.Null(stored.ErrorMessage);
-                Assert.Equal(blob.Id, stored.BlobObjectId);
-                Assert.True(File.Exists(blob.GetFilePath()));
-            }
-            finally
-            {
-                await leases.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", fixture.DatabaseName),
-                    Builders<BsonDocument>.Update.Set("ExpiresAt", DateTime.UnixEpoch));
-            }
-        }
+        var stored = await DB.Collection<Backup>().Find(x => x.Id == backup.Id).SingleAsync();
+        Assert.Equal(BackupStatus.Succeeded, stored.Status);
+        Assert.Null(stored.ErrorMessage);
+        Assert.Equal(blob.Id, stored.BlobObjectId);
+        Assert.True(File.Exists(blob.GetFilePath()));
         await backup.ExpireAsync();
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task CleanupRechecksLeaseAfterDeletionBeforeRecordingCompletion(bool automatic)
-    {
-        using var originalScope = fixture.Services.CreateScope();
-        var originalWork = originalScope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var backup = new Backup(originalWork, NextSlot(), source: BackupSource.Automatic);
-        await originalWork.SaveChanges();
-        var blob = backup.File!;
-        var path = blob.GetFilePath();
-        var leases = DB.DefaultDb.GetCollection<BsonDocument>("_geex_database_backup_leases");
-        var replaceOwner = 1;
-        await using var services = new ServiceCollection().AddLogging()
-            .AddSingleton(fixture.Options)
-            .AddSingleton(fixture.Services.GetRequiredService<GeexCoreModuleOptions>())
-            .AddSingleton(fixture.Services.GetRequiredService<BlobStorageModuleOptions>())
-            .AddScoped<IUnitOfWork>(sp =>
-            {
-                var work = new GeexDbContext(sp);
-                work.PostSaveChanges += async () =>
-                {
-                    if (Interlocked.Exchange(ref replaceOwner, 0) != 1) return;
-                    Assert.False(File.Exists(path));
-                    Assert.Null(await DB.Collection<BlobObject>().Find(x => x.Id == blob.Id).FirstOrDefaultAsync());
-                    await leases.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", fixture.DatabaseName),
-                        Builders<BsonDocument>.Update.Set("Owner", "cleanup-completion-test-replacement"));
-                };
-                return work;
-            }).BuildServiceProvider();
-        try
-        {
-            if (automatic)
-            {
-                await using var lease = await BackupLease.AcquireAsync(DB.DefaultDb, DateTimeOffset.UtcNow, CancellationToken.None, false);
-                Assert.NotNull(lease);
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                    BackupsExecution.PruneAsync(services, fixture.DatabaseName, 0, lease.Token, lease.EnsureOwnedAsync));
-                Assert.True(lease.Token.IsCancellationRequested);
-            }
-            else
-            {
-                using var scope = services.CreateScope();
-                var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                var mutation = new BackupMutation(work, new BackupsExecution(services));
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => mutation.ExpireBackup(backup.Id, CancellationToken.None));
-            }
-            Assert.Equal(0, replaceOwner);
-            var stored = await DB.Collection<Backup>().Find(x => x.Id == backup.Id).SingleAsync();
-            Assert.Equal(BackupStatus.Succeeded, stored.Status);
-            Assert.Equal(blob.Id, stored.BlobObjectId);
-            Assert.Null(stored.ErrorMessage);
-            Assert.False(File.Exists(path));
-            Assert.Null(await DB.Collection<BlobObject>().Find(x => x.Id == blob.Id).FirstOrDefaultAsync());
-        }
-        finally
-        {
-            Interlocked.Exchange(ref replaceOwner, 0);
-            await leases.UpdateOneAsync(Builders<BsonDocument>.Filter.Eq("_id", fixture.DatabaseName),
-                Builders<BsonDocument>.Update.Set("ExpiresAt", DateTime.UnixEpoch));
-            await backup.ExpireAsync();
-        }
     }
 
     [Fact]
@@ -829,6 +774,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         await using var services = new ServiceCollection().AddLogging()
             .AddSingleton(fixture.Options)
             .AddSingleton(fixture.Services.GetRequiredService<GeexCoreModuleOptions>())
+            .AddSingleton(fixture.Services.GetRequiredService<IRedisDatabase>())
             .AddSingleton(fixture.Services.GetRequiredService<BlobStorageModuleOptions>())
             .AddScoped<IUnitOfWork>(sp =>
             {
@@ -881,6 +827,7 @@ public class BackupIntegrationTests(BackupFixture fixture)
         await using var services = new ServiceCollection().AddLogging()
             .AddSingleton(fixture.Options)
             .AddSingleton(fixture.Services.GetRequiredService<GeexCoreModuleOptions>())
+            .AddSingleton(fixture.Services.GetRequiredService<IRedisDatabase>())
             .AddSingleton(fixture.Services.GetRequiredService<BlobStorageModuleOptions>())
             .AddScoped<IUnitOfWork>(sp =>
             {
