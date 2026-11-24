@@ -216,6 +216,14 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
         AssertSuccess(response);
         Assert.Equal(3, response["data"]!["favorites"]!["totalCount"]!.GetValue<int>());
         Assert.Equal(ids[2], response["data"]!["favorites"]!["items"]![0]!["entityId"]!.GetValue<string>());
+        var ascending = await Execute(client, """
+            { favorites(entityType: ApprovalFlow, skip: 2, take: 1, sort: [{ createdOn: ascend }, { id: ascend }]) {
+                totalCount items { entityId }
+            } }
+            """);
+        AssertSuccess(ascending);
+        Assert.Equal(4, ascending["data"]!["favorites"]!["totalCount"]!.GetValue<int>());
+        Assert.Equal(ids[2], ascending["data"]!["favorites"]!["items"]![0]!["entityId"]!.GetValue<string>());
     }
 
     [Fact]
