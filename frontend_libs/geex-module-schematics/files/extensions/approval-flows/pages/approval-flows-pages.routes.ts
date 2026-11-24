@@ -1,4 +1,5 @@
 import { Routes } from "@angular/router";
+import { resolveFavoriteTypes } from "@geexcode/geex-extensions-favorites";
 
 import { ApprovalFlowTemplateEditPage } from "./edit/edit.page";
 import { InboxDetailPage } from "./inbox/detail.page";
@@ -12,7 +13,7 @@ export const approvalFlowsPagesRoutes: Routes = [
   { path: "", component: ApprovalFlowTemplateListPage },
   { path: "edit", component: ApprovalFlowTemplateEditPage },
   { path: "edit/:id", component: ApprovalFlowTemplateEditPage },
-  { path: "inbox", component: InboxListPage },
+  { path: "inbox", component: InboxListPage, resolve: { favoriteTypes: resolveFavoriteTypes } },
   { path: "inbox/:id/edit", component: InboxEditPage },
-  { path: "inbox/:id", component: InboxDetailPage },
+  { path: "inbox/:id", component: InboxDetailPage, resolve: { favoriteTypes: resolveFavoriteTypes } },
 ];

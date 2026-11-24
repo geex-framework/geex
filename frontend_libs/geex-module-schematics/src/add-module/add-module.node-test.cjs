@@ -190,8 +190,19 @@ describe("add-module schematic", () => {
     assert.doesNotMatch(registry, /path: "favorites"|favorites\.menuContribution/);
     assert.equal(tree.files.some(file => /favorites.*routes/.test(file)), false);
     const manifest = JSON.parse(tree.read("package.json").toString("utf8"));
-    assert.equal(manifest.dependencies["@geexcode/geex-extensions-favorites"], "^0.0.1");
+    assert.equal(manifest.dependencies["@geexcode/geex-extensions-favorites"], version);
     assert.equal(manifest.dependencies.retained, "1.0.0");
+  });
+
+  it("preserves the host's explicit favorites dependency in each manifest section", async () => {
+    const runner = new SchematicTestRunner("geex-module-schematics", collectionPath);
+    for (const section of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"]) {
+      const app = createAppTree();
+      const manifest = { [section]: { "@geexcode/geex-extensions-favorites": "file:../favorites" } };
+      app.create("package.json", JSON.stringify(manifest));
+      const tree = await runner.runSchematic("add-module", { name: "favorites", path: "src/app/modules" }, app);
+      assert.deepEqual(JSON.parse(tree.read("package.json").toString("utf8")), manifest);
+    }
   });
 
   it("updates the current registry's shared locale factory", async () => {

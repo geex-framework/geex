@@ -1,4 +1,5 @@
-import { DestroyRef, Injectable, Injector, signal } from "@angular/core";
+import { DestroyRef, inject, Injectable, Injector, signal } from "@angular/core";
+import type { ResolveFn } from "@angular/router";
 import { Apollo } from "apollo-angular";
 import { OAuthService } from "angular-oauth2-oidc";
 import { firstValueFrom } from "rxjs";
@@ -13,6 +14,7 @@ export class FavoritesService {
   private readonly apollo: Apollo;
   private readonly oauth: OAuthService;
   private generation = 0;
+  private configurationRequest = 0;
   private initialized?: Promise<void>;
   private readonly queued = new Map<string, Set<string>>();
   private scheduled = false;
@@ -23,7 +25,7 @@ export class FavoritesService {
     this.oauth = injector.get(OAuthService);
     const events = this.oauth.events.subscribe(event => {
       if (["logout", "session_terminated", "session_error"].includes(event.type)) this.reset();
-      if (event.type === "token_received") void this.init(true).catch(error => console.error(error));
+      if (event.type === "token_received") void this.init(true);
     });
     injector.get(DestroyRef).onDestroy(() => { this.reset(); events.unsubscribe(); });
   }
@@ -35,6 +37,7 @@ export class FavoritesService {
 
   reset(): void {
     this.generation++;
+    this.configurationRequest++;
     this.initialized = undefined;
     this.queued.clear();
     this.versions.clear();
@@ -44,15 +47,15 @@ export class FavoritesService {
   }
 
   async refresh(): Promise<void> {
-    const generation = ++this.generation;
-    this.queued.clear();
-    this.types.set([]);
-    this.states.set({});
+    const request = ++this.configurationRequest;
     const response = await firstValueFrom(this.apollo.query<{ favoriteEntityTypes: FavoriteTypeConfiguration[] }>({
       query: FAVORITE_TYPES, fetchPolicy: "no-cache", errorPolicy: "none",
     }));
     if (!response.data?.favoriteEntityTypes) throw new Error("Missing favoriteEntityTypes response");
-    if (generation !== this.generation) return;
+    if (request !== this.configurationRequest) return;
+    this.generation++;
+    this.queued.clear();
+    this.states.set({});
     this.types.set(response.data.favoriteEntityTypes);
     this.changes.update(value => value + 1);
   }
@@ -151,3 +154,5 @@ export class FavoritesService {
     return response.data.favorites;
   }
 }
+
+export const resolveFavoriteTypes: ResolveFn<void> = () => inject(FavoritesService, { optional: true })?.refresh();

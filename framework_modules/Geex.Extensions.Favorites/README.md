@@ -4,9 +4,9 @@
 
 ## 数据与配置
 
-`Favorite` 保存 `TenantCode` / `UserId` / `EntityType` / `EntityId` / `CreatedOn`. 唯一索引为前四个字段的组合, 宿主租户统一存储为空字符串. 标题不入库, 列表读取目标实体当前的显示字段. 重复添加保留原收藏时间, 取消后重新添加生成新的收藏时间.
+`Favorite` 保存 `TenantCode` / `UserId` / `EntityType` / `EntityId` / `Title` / `CreatedOn`. 前四个字段构成唯一索引, 宿主租户存储为空字符串. 首次添加时保存标题和时间. 重复添加保留首次快照, 取消后重新收藏会重新取值. 升级前没有标题快照的收藏显示实体 ID.
 
-Setting 的持久化键和 GraphQL 枚举值均为 `Favorites_EntityTypes`. 支持 Global / Tenant, 租户配置整项覆盖全局配置. JSON 数组顺序决定个人中心的 tab 顺序:
+Setting 的持久化键和 GraphQL 枚举值均为 `Favorites_EntityTypes`. 支持 Global / Tenant, 租户配置整项覆盖全局配置. 个人中心按 JSON 数组顺序展示 tab.
 
 ```json
 [
@@ -18,9 +18,9 @@ Setting 的持久化键和 GraphQL 枚举值均为 `Favorites_EntityTypes`. 支�
 ]
 ```
 
-`NameField` 使用 C# 属性名, 必须是 GraphQL 公开可读/没有字段授权指令的顶层字符串属性. 字段为空时展示实体 ID. `DetailRoute` 可省略或设为 null, 此时名称展示为普通文本. 路径必须以单个 `/` 开始, 支持 `{id}` 占位符.
+`NameField` 使用公开的直接映射字符串属性名. 涉及自定义展示或字段权限时, 由业务注册相同的授权取值逻辑. 读取目标或标题被拒绝时, 后端记录一条错误日志并保存 ID. 可读取的空标题也使用 ID. `DetailRoute` 可省略或设为 null, 此时标题显示为普通文本. 路径以单个 `/` 开始, 支持 `{id}` 占位符.
 
-有效配置为 `[]` 时, 公共按钮和个人中心 section 自动隐藏. 禁用类型保留原收藏记录, 重新启用后恢复展示. 无访问权限的目标暂时隐藏, 真实删除目标通过 `EntityDeletedEvent<T>` 清理收藏引用. 应用应使用工作单元删除 API 触发实体生命周期事件; 直接操作数据库需要应用自行处理引用清理.
+配置为 `[]` 时, 公共按钮和个人中心的"我的收藏"随之隐藏. 禁用类型保留原记录. 保存设置或恢复继承后, 下次进入审批页或个人中心时重新读取配置. 配置中失效的单个条目会被跳过并记录日志, 修正后恢复原收藏. 租户设置编辑页的"恢复继承全局"会删除该租户的覆盖值.
 
 ## GraphQL
 
@@ -30,7 +30,7 @@ Setting 的持久化键和 GraphQL 枚举值均为 `Favorites_EntityTypes`. 支�
 | --- | --- |
 | `favoriteEntityTypes` | 返回当前有效的类型/显示字段/详情路径配置 |
 | `favoriteStatuses(entityType, entityIds)` | 批量查询收藏状态及原收藏时间, 最多 500 个 ID |
-| `favorites(entityType, filter, sort, skip, take)` | 当前用户的可见收藏, 返回 `items` / `totalCount` / `pageInfo` |
+| `favorites(entityType, filter, sort, skip, take)` | 当前用户在该类型下的收藏, 返回 `items` / `totalCount` / `pageInfo` |
 | `addFavorite(request)` | 幂等添加, 返回 `FavoriteStatus` |
 | `removeFavorite(request)` | 幂等取消, 返回 Boolean |
 
@@ -56,7 +56,7 @@ query {
 }
 ```
 
-目标实体查询保留工作单元的数据过滤器, 收藏服务额外校验目标的租户. 当前列表实现批量读取当前用户/类型的收藏目标, 在可见集合上应用过滤/排序后分页, 因此 `totalCount` 不包含无权访问的目标. 收藏量很大的应用应评估这一批量读取成本.
+个人中心直接按当前用户/租户/类型查询收藏记录, 按收藏时间筛选和排序后分页. 目标改名/删除或业务权限收回时, 原标题和数量保持可见, 用户可继续取消收藏. 点击标题时, 详情页执行当前业务权限和存在性检查.
 
 ## Angular 与 Schematics
 
@@ -84,7 +84,7 @@ pnpm install
 
 ## 应用扩展类型
 
-在应用已加载的模块程序集内注册 Enumeration 成员:
+在应用已加载的模块程序集内注册 Enumeration 成员.
 
 ```csharp
 public sealed class ApplicationFavoriteEntityType(string value, Type entityType)
@@ -93,6 +93,8 @@ public sealed class ApplicationFavoriteEntityType(string value, Type entityType)
     public static FavoriteEntityType Document { get; } = new ApplicationFavoriteEntityType("Document", typeof(Document));
 }
 ```
+
+自定义标题字段可在枚举构造函数中调用 `RegisterTitleField(name, readAuthorizedTitle)`. 委托接收工作单元/目标实体/取消令牌, 复用详情的业务取值方法, 返回 `null` 表示该字段不可读.
 
 随后在 Setting 中添加 `Document` 的字段和路由, 并添加 `Favorites.entityTypes.Document` 翻译. 类型值应为稳定的 GraphQL 枚举标识符. 业务读权限若没有实现为实体数据过滤器, 应在该注册类型重写 `Query(IUnitOfWork, string[])` 并追加访问约束.
 

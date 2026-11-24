@@ -8,6 +8,8 @@ using Geex.Extensions.Favorites;
 using Geex.Extensions.Favorites.Core;
 using Geex.Extensions.Identity.Requests;
 using Geex.Extensions.Settings;
+using Geex.Extensions.Settings.Core;
+using Geex.Extensions.Authorization;
 using Geex.MultiTenant;
 using HotChocolate.Execution;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,16 +71,18 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
         var tenantB = "favorites_b_" + ObjectId.GenerateNewId();
         var flowA = await CreateFlow(tenantA, "Tenant A");
         var flowB = await CreateFlow(tenantB, "Tenant B");
-        await As(user, null, service => service.Add(Reference(host)));
-        await As(user, tenantA, service => service.Add(Reference(flowA)));
-        await As(user, tenantB, service => service.Add(Reference(flowB)));
-        Assert.Equal(host, Assert.Single(await As(user, null, async service => (await service.Query(Type)).ToArray())).EntityId);
-        Assert.Equal(flowA, Assert.Single(await As(user, tenantA, async service => (await service.Query(Type)).ToArray())).EntityId);
-        Assert.Empty(await As(other, tenantA, async service => (await service.Query(Type)).ToArray()));
-        await Assert.ThrowsAsync<BusinessException>(() => As(user, null, service => service.Add(Reference(flowA))));
-        await Assert.ThrowsAsync<BusinessException>(() => As(user, tenantA, service => service.Add(Reference(flowB))));
-        await As(other, tenantA, service => service.Remove(Reference(flowA)));
-        Assert.True(Assert.Single(await As(user, tenantA, service => service.Statuses(Type, [flowA]))).IsFavorite);
+        await As(user, null, work => Favorite.Add(work, Reference(host)));
+        await As(user, tenantA, work => Favorite.Add(work, Reference(flowA)));
+        await As(user, tenantB, work => Favorite.Add(work, Reference(flowB)));
+        Assert.Equal(host, Assert.Single(await As(user, null, async work => (await work.Favorites(Type)).ToArray())).EntityId);
+        Assert.Equal(flowA, Assert.Single(await As(user, tenantA, async work => (await work.Favorites(Type)).ToArray())).EntityId);
+        Assert.Empty(await As(other, tenantA, async work => (await work.Favorites(Type)).ToArray()));
+        await As(user, tenantA, work => Favorite.Add(work, Reference(flowB)));
+        var unavailable = await As(user, tenantA, async work => (await work.Favorites(Type)).Single(item => item.EntityId == flowB));
+        Assert.Equal(flowB, unavailable.DisplayValue);
+        Assert.True(await As(user, tenantA, work => Favorite.Remove(work, Reference(flowB))));
+        await As(other, tenantA, work => Favorite.Remove(work, Reference(flowA)));
+        Assert.True(Assert.Single(await As(user, tenantA, work => work.FavoriteStatuses(Type, [flowA]))).IsFavorite);
     }
 
     [Fact]
@@ -88,20 +92,20 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
         var user = ObjectId.GenerateNewId().ToString();
         var id = await CreateFlow(tenant, "Configured");
         await Configure(Configuration());
-        Assert.Single(await As(user, tenant, service => service.GetTypes()));
-        await As(user, tenant, service => service.Add(Reference(id)));
+        Assert.Single(await As(user, tenant, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
+        await As(user, tenant, work => Favorite.Add(work, Reference(id)));
         await Configure(new JsonArray(), tenant);
-        Assert.Empty(await As(user, tenant, service => service.GetTypes()));
-        Assert.Empty(await As(user, tenant, async service => (await service.Query(Type)).ToArray()));
-        Assert.Single(await As(user, null, service => service.GetTypes()));
-        await Assert.ThrowsAsync<BusinessException>(() => As(user, tenant, service => service.Add(Reference(id))));
+        Assert.Empty(await As(user, tenant, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
+        Assert.Empty(await As(user, tenant, async work => (await work.Favorites(Type)).ToArray()));
+        Assert.Single(await As(user, null, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
+        await Assert.ThrowsAsync<BusinessException>(() => As(user, tenant, work => Favorite.Add(work, Reference(id))));
         await Configure(Configuration("Description", null), tenant);
-        var restored = Assert.Single(await As(user, tenant, async service => (await service.Query(Type)).ToArray()));
-        Assert.Equal("Live description", restored.DisplayValue);
+        var restored = Assert.Single(await As(user, tenant, async work => (await work.Favorites(Type)).ToArray()));
+        Assert.Equal("Configured", restored.DisplayValue);
         Assert.Null(restored.DetailUrl);
         await Configure(new JsonArray());
-        Assert.Empty(await As(user, null, service => service.GetTypes()));
-        Assert.Single(await As(user, tenant, service => service.GetTypes()));
+        Assert.Empty(await As(user, null, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
+        Assert.Single(await As(user, tenant, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
         await Configure(Configuration());
     }
 
@@ -116,7 +120,7 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
     {
         await Configure(Configuration());
         await Assert.ThrowsAsync<BusinessException>(() => Configure(JsonNode.Parse(json)!));
-        Assert.Single(await As(GeexConstants.SuperAdminId, null, service => service.GetTypes()));
+        Assert.Single(await As(GeexConstants.SuperAdminId, null, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
     }
 
     [Fact]
@@ -154,39 +158,40 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
             new JsonObject { ["EntityType"] = "ApprovalFlow", ["NameField"] = "Name" }));
         var user = await CreateUser();
         var id = await CreateFlow(null, "Multiple types");
-        var types = await As(user, null, service => service.GetTypes());
+        var types = await As(user, null, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work));
         Assert.Equal(["ApprovalFlowReview", "ApprovalFlow"], types.Select(type => type.EntityType.Value).ToArray());
-        await As(user, null, service => service.Add(new FavoriteReference { EntityType = FavoriteTestEntityTypes.Review, EntityId = id }));
-        Assert.Empty(await As(user, null, async service => (await service.Query(Type)).ToArray()));
-        Assert.Equal("Live description", Assert.Single(await As(user, null, async service => (await service.Query(FavoriteTestEntityTypes.Review)).ToArray())).DisplayValue);
+        await As(user, null, work => Favorite.Add(work, new FavoriteReference { EntityType = FavoriteTestEntityTypes.Review, EntityId = id }));
+        Assert.Empty(await As(user, null, async work => (await work.Favorites(Type)).ToArray()));
+        Assert.Equal("Live description", Assert.Single(await As(user, null, async work => (await work.Favorites(FavoriteTestEntityTypes.Review)).ToArray())).DisplayValue);
         await Configure(Configuration());
     }
 
     [Fact]
-    public async Task Names_are_live_and_unreadable_records_are_hidden_until_access_returns_and_deleted_targets_are_cleaned()
+    public async Task Stored_titles_and_counts_survive_rename_access_loss_and_physical_deletion()
     {
         await Configure(Configuration());
         var user = await CreateUser();
         var id = await CreateFlow(null, "Original");
-        await As(user, null, service => service.Add(Reference(id)));
+        await As(user, null, work => Favorite.Add(work, Reference(id)));
         await EditFlow(id, flow => flow.Name = "Renamed");
-        var item = Assert.Single(await As(user, null, async service => (await service.Query(Type)).ToArray()));
-        Assert.Equal("Renamed", item.DisplayValue);
+        var item = Assert.Single(await As(user, null, async work => (await work.Favorites(Type)).ToArray()));
+        Assert.Equal("Original", item.DisplayValue);
         Assert.Equal($"/approval-flows/inbox/{id}", item.DetailUrl);
         await EditFlow(id, flow => { flow.Name = " "; flow.OrgCode = "unavailable"; });
-        Assert.Empty(await As(user, null, async service => (await service.Query(Type)).ToArray()));
-        Assert.False(Assert.Single(await As(user, null, service => service.Statuses(Type, [id]))).IsFavorite);
-        Assert.Equal(id, Assert.Single(await As(user, null, async service => (await service.Query(Type)).ToArray(), "unavailable")).DisplayValue);
+        Assert.True(Assert.Single(await As(user, null, work => work.FavoriteStatuses(Type, [id]))).IsFavorite);
+        Assert.Equal("Original", Assert.Single(await As(user, null, async work => (await work.Favorites(Type)).ToArray())).DisplayValue);
         using var scope = RootService.CreateScope();
         var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
         using var filters = work.DbContext.DisableAllDataFilters();
         await work.DeleteAsync<ApprovalFlow>(id);
         await work.SaveChanges();
+        Assert.Equal("Original", Assert.Single(await As(user, null, async read => (await read.Favorites(Type)).ToArray())).DisplayValue);
+        await As(user, null, write => Favorite.Remove(write, Reference(id)));
         Assert.Equal(0, await DB.Collection<Favorite>().CountDocumentsAsync(favorite => favorite.EntityId == id));
     }
 
     [Fact]
-    public async Task GraphQL_filters_and_sorts_before_paging_and_excludes_hidden_records_from_count()
+    public async Task GraphQL_filters_and_sorts_snapshots_before_paging_including_revoked_targets()
     {
         await Configure(Configuration());
         var user = await CreateUser();
@@ -195,7 +200,7 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
         {
             var id = await CreateFlow(null, $"Page {i}");
             ids.Add(id);
-            await As(user, null, service => service.Add(Reference(id)));
+            await As(user, null, work => Favorite.Add(work, Reference(id)));
             await DB.Collection<Favorite>().UpdateOneAsync(favorite => favorite.EntityId == id && favorite.UserId == user,
                 Builders<Favorite>.Update.Set(favorite => favorite.CreatedOn, new DateTimeOffset(2026, 11, 20 + i, 12, 0, 0, TimeSpan.Zero)));
         }
@@ -209,35 +214,137 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
                 sort: [{ createdOn: descend }, { id: descend }]) { totalCount items { entityId createdOn } } }
             """);
         AssertSuccess(response);
-        Assert.Equal(2, response["data"]!["favorites"]!["totalCount"]!.GetValue<int>());
-        Assert.Equal(ids[1], response["data"]!["favorites"]!["items"]![0]!["entityId"]!.GetValue<string>());
+        Assert.Equal(3, response["data"]!["favorites"]!["totalCount"]!.GetValue<int>());
+        Assert.Equal(ids[2], response["data"]!["favorites"]!["items"]![0]!["entityId"]!.GetValue<string>());
     }
 
     [Fact]
-    public async Task Broad_deletion_events_keep_favorites_when_the_target_still_exists()
+    public async Task Concurrent_adds_preserve_one_snapshot_and_legacy_or_unreadable_targets_display_their_id()
     {
         await Configure(Configuration());
         var user = await CreateUser();
-        var id = await CreateFlow(null, "Same ID in another collection");
-        await As(user, null, service => service.Add(Reference(id)));
-        await EditFlow(id, flow => flow.OrgCode = "unavailable");
+        var id = await CreateFlow(null, "First title");
+        var results = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => As(user, null, work => Favorite.Add(work, Reference(id)))));
+        Assert.Single(results.Select(result => result.CreatedOn).Distinct());
+        Assert.Equal(1, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.UserId == user && item.EntityId == id));
+        await DB.Collection<Favorite>().UpdateOneAsync(item => item.UserId == user && item.EntityId == id, Builders<Favorite>.Update.Unset(item => item.Title));
+        var legacy = Assert.Single(await As(user, null, async work => (await work.Favorites(Type)).ToArray()));
+        Assert.Equal(id, legacy.DisplayValue);
+        Assert.Equal(results[0].CreatedOn, legacy.CreatedOn);
+        var missing = ObjectId.GenerateNewId().ToString();
+        await As(user, null, work => Favorite.Add(work, Reference(missing)));
+        var fallback = await As(user, null, async work => (await work.Favorites(Type)).Single(item => item.EntityId == missing));
+        Assert.Equal(missing, fallback.DisplayValue);
+        Assert.True(await As(user, null, work => Favorite.Remove(work, Reference(missing))));
+    }
+
+    [Fact]
+    public async Task Failed_multi_field_mutation_rolls_back_the_add_or_removal()
+    {
+        await Configure(Configuration());
+        using var client = SuperAdminClient;
+        var id = await CreateFlow(null, "Atomic mutation");
+        var add = $"addFavorite(request: {{ entityType: ApprovalFlow, entityId: \"{id}\" }}) {{ isFavorite }}";
+        var remove = $"removeFavorite(request: {{ entityType: ApprovalFlow, entityId: \"{id}\" }})";
+        const string invalid = "invalid: addFavorite(request: { entityType: ApprovalFlow, entityId: \"\" }) { isFavorite }";
+        Assert.NotNull((await Execute(client, $"mutation {{ {add} {invalid} }}"))["errors"]);
+        Assert.Equal(0, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.EntityId == id));
+        AssertSuccess(await Execute(client, $"mutation {{ {add} }}"));
+        Assert.NotNull((await Execute(client, $"mutation {{ {remove} {invalid} }}"))["errors"]);
+        Assert.Equal(1, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.EntityId == id));
+    }
+
+    [Fact]
+    public async Task Setting_writes_share_the_transaction_and_rollback_cache_with_other_mutation_fields()
+    {
+        await Configure(Configuration());
+        using var client = SuperAdminClient;
+        var id = await CreateFlow(null, "Same operation");
+        var response = await Execute(client, $$"""
+            mutation {
+                editSetting(request: { name: Favorites_EntityTypes, scope: Global, value: [] }) { name }
+                addFavorite(request: { entityType: ApprovalFlow, entityId: "{{id}}" }) { isFavorite }
+            }
+            """);
+        Assert.NotNull(response["errors"]);
+        Assert.Single(await As(GeexConstants.SuperAdminId, null, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
+        Assert.Equal(0, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.EntityId == id));
+    }
+
+    [Fact]
+    public async Task Authorized_host_and_current_tenant_can_manage_only_their_intended_overrides()
+    {
+        await Configure(Configuration());
+        var user = await CreateUser();
+        var tenant = "managed_" + ObjectId.GenerateNewId();
+        Task<ISetting> Set(IUnitOfWork work, string key) => work.GetSettingService()!
+            .SetAsync(FavoritesSettings.EntityTypes, SettingScopeEnumeration.Tenant, key, new JsonArray());
+        await Assert.ThrowsAsync<BusinessException>(() => As(user, null, work => Set(work, tenant)));
+        await Assert.ThrowsAsync<BusinessException>(() => As(user, tenant, work => Set(work, "other")));
         using var scope = RootService.CreateScope();
-        var handler = scope.ServiceProvider.GetRequiredService<MediatX.IEventHandler<Geex.Notifications.EntityDeletedEvent<IEntityBase>>>();
-        await handler.Handle(new Geex.Notifications.EntityDeletedEvent<IEntityBase>(id), default);
-        await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChanges();
-        Assert.Equal(1, await DB.Collection<Favorite>().CountDocumentsAsync(favorite => favorite.EntityId == id && favorite.UserId == user));
+        await scope.ServiceProvider.GetRequiredService<IRbacEnforcer>().SetPermissionsAsync(user, [SettingsPermission.Edit.Value]);
+        await As(user, null, work => Set(work, tenant));
+        Assert.Empty(await As(user, tenant, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
+        await As(user, null, work => work.GetSettingService()!.RestoreTenantInheritanceAsync(FavoritesSettings.EntityTypes, tenant));
+        Assert.Single(await As(user, tenant, work => FavoritesSettings.EntityTypes.GetEffectiveTypes(work)));
+    }
+
+    [Fact]
+    public async Task Invalid_historical_scopes_are_ignored_and_only_invalid_type_entries_are_disabled()
+    {
+        await Configure(Configuration());
+        var user = await CreateUser();
+        var tenant = "historical_" + ObjectId.GenerateNewId();
+        var stored = Configuration().AsArray();
+        stored.Insert(0, new JsonObject { ["EntityType"] = "Missing", ["NameField"] = "Name" });
+        var legacy = new Setting(FavoritesSettings.EntityTypes, new JsonArray(), SettingScopeEnumeration.User, user);
+        var partial = new Setting(FavoritesSettings.EntityTypes, stored, SettingScopeEnumeration.Tenant, tenant);
+        using var scope = RootService.CreateScope();
+        var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        work.Attach(legacy);
+        work.Attach(partial);
+        await work.SaveChanges();
+        await As(user, tenant, async context =>
+        {
+            var service = context.GetSettingService()!;
+            var single = await service.GetSetting(FavoritesSettings.EntityTypes);
+            var bulk = (await service.GetActiveSettings()).Single(item => item.Name == FavoritesSettings.EntityTypes);
+            Assert.Equal(SettingScopeEnumeration.Tenant, single.Scope);
+            Assert.True(JsonNode.DeepEquals(single.Value, bulk.Value));
+            Assert.Equal(Type, Assert.Single(await FavoritesSettings.EntityTypes.GetEffectiveTypes(context)).EntityType);
+            return true;
+        });
+        Assert.Equal(1, await DB.Collection<Setting>().CountDocumentsAsync(item => item.Id == legacy.Id));
+    }
+
+    [Fact]
+    public async Task Custom_authorized_reader_provides_the_title_or_falls_back_to_id()
+    {
+        var user = await CreateUser();
+        var id = await CreateFlow(null, "Custom title");
+        var type = FavoriteTestEntityTypes.Review;
+        var reference = new FavoriteReference { EntityType = type, EntityId = id };
+        foreach (var (field, expected) in new[] { ("DisplayLabel", "CUSTOM TITLE"), ("RestrictedLabel", id) })
+        {
+            await Configure(new JsonArray(new JsonObject { ["EntityType"] = type.Value, ["NameField"] = field }));
+            await As(user, null, work => Favorite.Add(work, reference));
+            Assert.Equal(expected, Assert.Single(await As(user, null, async work => (await work.Favorites(type)).ToArray())).DisplayValue);
+            await As(user, null, work => Favorite.Remove(work, reference));
+        }
+        await Configure(Configuration());
     }
 
     private static FavoriteReference Reference(string id) => new() { EntityType = Type, EntityId = id };
-    private async Task<T> As<T>(string user, string? tenant, Func<FavoriteService, Task<T>> action, params string[] orgCodes)
+    private async Task<T> As<T>(string user, string? tenant, Func<IUnitOfWork, Task<T>> action, params string[] orgCodes)
     {
         using var scope = RootService.CreateScope();
         using var actor = scope.ServiceProvider.GetRequiredService<ICurrentUser>().Change(user);
         ((CurrentUser)scope.ServiceProvider.GetRequiredService<ICurrentUser>())._claimsIdentity = new System.Security.Claims.ClaimsIdentity(
             orgCodes.Select(code => new System.Security.Claims.Claim(GeexClaimType._Org, code)), "Test");
         using var tenancy = scope.ServiceProvider.GetRequiredService<ICurrentTenant>().Change(tenant);
-        var result = await action(scope.ServiceProvider.GetRequiredService<FavoriteService>());
-        await scope.ServiceProvider.GetRequiredService<IUnitOfWork>().SaveChanges();
+        var work = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+        var result = await action(work);
+        await work.SaveChanges();
         return result;
     }
     private async Task Configure(JsonNode value, string? tenant = null)
@@ -285,7 +392,13 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
     private static void AssertSuccess(JsonNode response) => Assert.True(response["errors"] == null, response.ToJsonString());
 }
 
-public sealed class FavoriteTestEntityTypes(string value, Type entityType) : FavoriteEntityType(value, entityType)
+public sealed class FavoriteTestEntityTypes : FavoriteEntityType
 {
+    private FavoriteTestEntityTypes(string value, Type entityType) : base(value, entityType)
+    {
+        RegisterTitleField("DisplayLabel", (_, entity, _) => Task.FromResult<string?>(((ApprovalFlow)entity).Name.ToUpperInvariant()));
+        RegisterTitleField("RestrictedLabel", (_, _, _) => throw new UnauthorizedAccessException());
+    }
+
     public static FavoriteEntityType Review { get; } = new FavoriteTestEntityTypes("ApprovalFlowReview", typeof(ApprovalFlow));
 }

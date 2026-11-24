@@ -80,7 +80,8 @@ export class FavoriteButtonComponent {
       const type = this.entityType();
       const id = this.entityId();
       const visible = this.visible();
-      if (visible && id) untracked(() => this.favorites?.requestStatus(type, id));
+      const status = this.state();
+      if (visible && id && !status?.loaded && !status?.pending) untracked(() => this.favorites?.requestStatus(type, id));
     });
   }
 

@@ -1,6 +1,7 @@
 ﻿using HotChocolate.Types;
 
 using MongoDB.Bson.Serialization;
+using Geex.Extensions.Settings.Core.Handlers;
 
 namespace Geex.Extensions.Settings.Core;
 
@@ -30,6 +31,8 @@ public partial class Setting
         {
             descriptor.BindFieldsImplicitly();
             descriptor.Implements<InterfaceType<ISetting>>();
+            descriptor.Field("canRestoreTenantInheritance").Type<NonNullType<BooleanType>>()
+                .Resolve(context => context.Service<SettingHandler>().CanRestoreTenantInheritance(context.Parent<Setting>().Name));
 
             descriptor.Field(x => x.Id).Resolve(x =>
             {

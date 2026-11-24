@@ -6,6 +6,10 @@ mutation editSetting($request: EditSettingRequest!) {
 }
 
 
+mutation restoreTenantSettingInheritance($name: SettingDefinition!, $tenantCode: String) {
+  restoreTenantSettingInheritance(name: $name, tenantCode: $tenantCode)
+}
+
 query settings($request: GetSettingsRequest!, $skip: Int, $take: Int, $filter: ISettingFilterInput, $includeDetail: Boolean!) {
   settings(request: $request, skip: $skip, take: $take, filter: $filter) {
     items {
@@ -34,5 +38,7 @@ fragment SettingBrief on Setting {
 fragment SettingDetail on Setting {
   scope
   scopedKey
+  validScopes
+  canRestoreTenantInheritance
 }
 # 系统备份

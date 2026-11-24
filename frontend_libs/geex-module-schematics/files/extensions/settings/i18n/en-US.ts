@@ -8,6 +8,7 @@ export default {
   columnName: "Definition",
   columnValue: "Value",
   columnActions: "Actions",
+  restoreInheritance: "Restore global inheritance",
   editSuccess: "Updated successfully",
   invalidJson: "Enter valid JSON.",
   editTitle: "Edit setting value",

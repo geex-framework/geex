@@ -123,3 +123,16 @@ test("date filtering covers whole local dates and ordering precedes remote pagin
   assert.equal(favoriteListVariables("Other", second).filter, undefined);
   assert.deepEqual(favoriteListVariables("Other", second).sort, [{ createdOn: "descend" }, { id: "descend" }]);
 });
+
+test("re-entering a favorites route reads the new configuration and propagates query errors", async () => {
+  let answer = of({ data: { favoriteEntityTypes: configuration } });
+  const { service, dispose } = setup({ query: () => answer });
+  await service.init();
+  answer = of({ data: { favoriteEntityTypes: [] } });
+  assert.equal(service.enabled("ApprovalFlow"), true);
+  await service.refresh();
+  assert.equal(service.enabled("ApprovalFlow"), false);
+  answer = throwError(() => new Error("settings unavailable"));
+  await assert.rejects(service.refresh(), /settings unavailable/);
+  dispose();
+});

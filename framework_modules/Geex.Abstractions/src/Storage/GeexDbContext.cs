@@ -73,6 +73,36 @@ namespace Geex.Storage
             return entity;
         }
 
+        private readonly List<Func<CancellationToken, Task>> _deferredDeletes = new();
+
+        public async Task RemoveOnSave<T>(T entity, CancellationToken token = default) where T : class, IEntityBase
+        {
+            if (TryDiscardNew(entity)) return;
+            if (SupportTransaction)
+            {
+                if (!Session.IsInTransaction) Session.StartTransaction();
+                await DeleteAsync(entity, token);
+            }
+            else
+            {
+                Detach(entity);
+                _deferredDeletes.Add(cancellation => DeleteAsync<T>(entity.Id, cancellation));
+            }
+        }
+
+        private bool TryDiscardNew<T>(T entity) where T : class, IEntityBase
+        {
+            var created = DomainEvents.OfType<EntityCreatedEvent<T>>().FirstOrDefault(item => ReferenceEquals(item.entity, entity));
+            if (created == null) return false;
+            for (int i = DomainEvents.Count; i > 0; i--)
+            {
+                var pending = DomainEvents.Dequeue();
+                if (!ReferenceEquals(pending, created)) DomainEvents.Enqueue(pending);
+            }
+            Detach(entity);
+            return true;
+        }
+
         public override IEnumerable<T> Attach<T>(IEnumerable<T> entities)
         {
             return entities.Select(this.Attach).ToList();
@@ -122,6 +152,9 @@ namespace Geex.Storage
             {
                 entity.ValidateOnAttach().WaitAndUnwrapException(cancellation);
             }
+
+            foreach (var remove in _deferredDeletes) await remove(cancellation);
+            _deferredDeletes.Clear();
 
             if (this.DomainEvents.Any())
             {

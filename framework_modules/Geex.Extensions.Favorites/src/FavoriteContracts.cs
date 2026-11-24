@@ -5,6 +5,7 @@ public sealed class FavoriteTypeConfiguration
     public FavoriteEntityType EntityType { get; init; } = null!;
     public string NameField { get; init; } = "";
     public string? DetailRoute { get; init; }
+    internal System.Reflection.PropertyInfo? TitleProperty { get; init; }
 }
 
 public sealed class FavoriteReference
@@ -28,5 +29,7 @@ public sealed class FavoriteItem
     public string EntityId { get; init; } = "";
     public DateTimeOffset CreatedOn { get; init; }
     public string DisplayValue { get; init; } = "";
-    public string? DetailUrl { get; init; }
+    [HotChocolate.GraphQLIgnore]
+    public string? DetailRoute { get; init; }
+    public string? DetailUrl => DetailRoute?.Replace("{id}", Uri.EscapeDataString(EntityId), StringComparison.Ordinal);
 }

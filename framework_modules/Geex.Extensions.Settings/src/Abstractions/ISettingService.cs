@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Geex.Extensions.Settings
@@ -18,6 +19,8 @@ namespace Geex.Extensions.Settings
         /// <param name="value">Setting value</param>
         /// <returns>Setting entity</returns>
         Task<ISetting> SetAsync(SettingDefinition settingDefinition, SettingScopeEnumeration scope, string? scopedKey, JsonNode? value);
+
+        Task<bool> RestoreTenantInheritanceAsync(SettingDefinition definition, string? tenantCode, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all active settings (user, tenant, and global)

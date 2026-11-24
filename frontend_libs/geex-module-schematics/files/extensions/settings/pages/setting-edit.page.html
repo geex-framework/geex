@@ -22,12 +22,9 @@
 </nz-tabs> -->
 </ng-template>
 <ng-template #phActionTpl>
-  <!-- <button nz-button
-  nzType="primary">
-  <i nz-icon
-  nzType="audit"></i>
-  审批
-</button> -->
+  @if (entity?.canRestoreTenantInheritance) {
+    <button nz-button type="button" (click)="restoreInheritance()">{{ I18N.Settings.restoreInheritance }}</button>
+  }
 </ng-template>
 </page-header>
 <nz-card>
