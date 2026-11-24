@@ -8,6 +8,7 @@ const OVERLAY_TEMPLATES = new Set([
   "blob-storage",
   "backups",
   "approval-flows",
+  "favorites",
   "mocking",
   "authentication",
   "settings",

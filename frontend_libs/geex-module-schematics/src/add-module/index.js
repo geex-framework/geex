@@ -1,4 +1,5 @@
 const { strings } = require("@angular-devkit/core");
+const { ensureFavoritesDependency } = require("../favorites-dependency");
 const {
   chain,
   MergeStrategy,
@@ -44,7 +45,7 @@ function updateRegistry(tree, options, context) {
   );
 
   // authentication is mounted outside authenticated shell via authenticationLoadChildren
-  if (name !== "authentication" && !source.includes(`path: "${name}"`)) {
+  if (name !== "authentication" && name !== "favorites" && !source.includes(`path: "${name}"`)) {
     const routeEntry = `  { path: "${name}", loadChildren: () => import("./${name}/${name}.routes").then(m => m.${alias}Routes) },\n`;
     source = source.replace(
       /(export const authenticatedModuleChildren: Routes = \[[\s\S]*?)(\];)/,
@@ -53,7 +54,7 @@ function updateRegistry(tree, options, context) {
   }
 
   // Place menu contribution into 系统及配置 group children by default
-  if (name !== "mocking" && name !== "authentication" && !source.includes(`...${alias}.menuContribution`)) {
+  if (name !== "mocking" && name !== "authentication" && name !== "favorites" && !source.includes(`...${alias}.menuContribution`)) {
     source = source.replace(
       /(\[\.\.\.identity\.menuContribution, \.\.\.settings\.menuContribution, \.\.\.multiTenant\.menuContribution)/,
       `[...identity.menuContribution, ...settings.menuContribution, ...multiTenant.menuContribution, ...${alias}.menuContribution`,
@@ -61,6 +62,9 @@ function updateRegistry(tree, options, context) {
   }
 
   const i18nKey = strings.classify(name);
+  if (source.includes("function pickModuleI18n") && !source.includes(`${i18nKey}: ${alias}.i18n[locale]`)) {
+    source = source.replace(/(function pickModuleI18n[\s\S]*?return \{)/, `$1\n    ${i18nKey}: ${alias}.i18n[locale],`);
+  }
   if (name !== "authentication" && name !== "identity" && name !== "multi-tenant") {
     if (!source.includes(`${i18nKey}: ${alias}.i18n["zh-CN"]`)) {
       source = source.replace(
@@ -130,6 +134,7 @@ function addModule(options) {
     rules.push(
       (t, ctx) => {
         updateRegistry(t, { ...options, name }, ctx);
+        ensureFavoritesDependency(t, name);
         updateModulesJson(t, { ...options, name }, selectedTemplate);
         return t;
       },

@@ -99,6 +99,8 @@ export default {
   },
   widget: {
     selectOrg: "选择组织",
+    selectUser: "选择用户",
+    selectRole: "选择角色",
     permissionsAll: "全部",
     permissionsSearchPlaceholder: "搜索",
   },

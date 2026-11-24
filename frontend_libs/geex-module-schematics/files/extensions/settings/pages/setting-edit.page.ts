@@ -55,6 +55,7 @@ export class SettingEditComponent extends RoutedEditComponent<
         })
         .firstValuePromise();
       let setting = res.data.settings.items[0];
+      this.structuredValue = setting.value !== null && typeof setting.value === "object";
       let controls = {
         scope: new FormControl(setting.scope),
         scopedKey: new FormControl(setting.scopedKey),
@@ -78,6 +79,7 @@ export class SettingEditComponent extends RoutedEditComponent<
     },
   };
   tenant: Partial<Tenant>;
+  private structuredValue = false;
 
   private buildSchema(): SFSchema {
     return {
@@ -86,7 +88,6 @@ export class SettingEditComponent extends RoutedEditComponent<
           type: "string",
           title: this.I18N.Settings.columnName,
           readOnly: true,
-          enum: [...Object.entries(SettingDefinition).map(x => x[1])],
         },
         value: {
           type: "string",
@@ -104,6 +105,15 @@ export class SettingEditComponent extends RoutedEditComponent<
   async submit(value: Partial<EditSettingRequest>): Promise<void> {
     if (!!!this.name) {
     } else {
+      let settingValue = value.value;
+      if (this.structuredValue && typeof settingValue === "string") {
+        try {
+          settingValue = JSON.parse(settingValue);
+        } catch {
+          this.msgSrv.error(this.I18N.Settings.invalidJson);
+          return;
+        }
+      }
       let res = await this.apollo
         .mutate({
           mutation: editSetting,
@@ -112,14 +122,16 @@ export class SettingEditComponent extends RoutedEditComponent<
               scope: this.tenant?.code ? SettingScopeEnumeration.Tenant : SettingScopeEnumeration.Global,
               scopedKey: this.tenant?.code,
               name: value.name,
-              value: value.value,
+              value: settingValue,
             },
           },
         })
         .firstValuePromise();
       if (res.data.editSetting) {
+        await geex.settings.init(true);
+        await geex.favorites?.refresh();
         this.msgSrv.success(this.I18N.Settings.editSuccess);
-        await this.router.navigate(["/setting"], { relativeTo: this.route, replaceUrl: true, forceReload: true });
+        await this.router.navigate(["."], { relativeTo: this.route.parent, replaceUrl: true, forceReload: true });
       }
     }
   }

@@ -1,0 +1,68 @@
+{
+  "name": "@geexcode/geex-extensions-favorites",
+  "version": "0.0.1",
+  "description": "Shared personal favorites service and components for Geex Angular apps.",
+  "sideEffects": false,
+  "peerDependencies": {
+    "@angular/core": "^20.0.0",
+    "@geexcode/geex-angular": ">=0.0.41",
+    "angular-oauth2-oidc": "^20.0.0",
+    "apollo-angular": "^14.0.0",
+    "graphql": "^16.8.0",
+    "rxjs": "^7.8.0",
+    "@angular/common": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@delon/abc": "^20.0.0",
+    "@delon/theme": "^20.0.0",
+    "@delon/util": "^20.0.0",
+    "@delon/acl": "^20.0.0",
+    "ng-zorro-antd": "^20.1.0"
+  },
+  "dependencies": {
+    "tslib": "^2.6.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "module": "dist/fesm2022/geexcode-geex-extensions-favorites.mjs",
+  "typings": "dist/index.d.ts",
+  "exports": {
+    "./package.json": {
+      "default": "./package.json"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/fesm2022/geexcode-geex-extensions-favorites.mjs",
+      "default": "./dist/fesm2022/geexcode-geex-extensions-favorites.mjs"
+    }
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "ng-packagr -p ng-package.json -c tsconfig.lib.json",
+    "test": "node --test tests/favorites.test.mjs",
+    "prepublishOnly": "npm run build",
+    "publish:public": "npm publish ./dist --access public"
+  },
+  "devDependencies": {
+    "@angular/compiler": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@geexcode/geex-angular": "workspace:*",
+    "angular-oauth2-oidc": "^20.0.2",
+    "apollo-angular": "^14.1.0",
+    "graphql": "^16.9.0",
+    "ng-packagr": "^20.0.0",
+    "rimraf": "^5.0.5",
+    "rxjs": "^7.8.2",
+    "typescript": "~5.8.3",
+    "@angular/common": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@delon/abc": "^20.0.0",
+    "@delon/theme": "^20.0.0",
+    "@delon/util": "^20.0.0",
+    "@delon/acl": "^20.0.0",
+    "ng-zorro-antd": "^20.1.0"
+  }
+}

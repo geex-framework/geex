@@ -1,6 +1,7 @@
 import { EnvironmentProviders, InjectionToken, Injector, makeEnvironmentProviders } from "@angular/core";
 import { provideGeexModuleContribution } from "@geexcode/geex-angular";
 import { createApprovalFlowsModule } from "./approval-flows.module";
+import { provideGeexFavorites } from "@geexcode/geex-extensions-favorites";
 import {
   DEFAULT_GEEX_APPROVE_STATUS_OPTIONS,
   type ApprovalFlowsModule,
@@ -23,6 +24,7 @@ export function provideGeexApprovalFlows(
   options: Readonly<GeexApprovalFlowsOptions> = {},
 ): EnvironmentProviders {
   return makeEnvironmentProviders([
+    provideGeexFavorites(),
     { provide: GEEX_APPROVAL_FLOWS_OPTIONS, useValue: options },
     provideGeexModuleContribution({
       createModules: ({ injector }) => ({

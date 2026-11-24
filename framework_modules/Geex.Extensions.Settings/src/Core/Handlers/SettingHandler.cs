@@ -33,14 +33,16 @@ namespace Geex.Extensions.Settings.Core.Handlers
         private readonly DbContext _dbContext;
         private readonly IRedisDatabase _redisClient;
         private readonly Dictionary<string, Setting> _pendingRedisSync = new();
+        private readonly IEnumerable<ISettingValueValidator> _valueValidators;
 
-        public SettingHandler(IRedisDatabase redisClient, IEnumerable<GeexModule> modules, DbContext dbContext, ICurrentUser currentUser, ILogger<SettingHandler> logger, LazyService<ICurrentTenant> currentTenant)
+        public SettingHandler(IRedisDatabase redisClient, IEnumerable<GeexModule> modules, DbContext dbContext, ICurrentUser currentUser, ILogger<SettingHandler> logger, LazyService<ICurrentTenant> currentTenant, IEnumerable<ISettingValueValidator>? valueValidators = null)
         {
             Logger = logger;
             _redisClient = redisClient;
             _dbContext = dbContext;
             _currentUser = currentUser;
             _currentTenant = currentTenant;
+            _valueValidators = valueValidators ?? [];
             _dbContext.PostSaveChanges += FlushPendingRedisSyncAsync;
             if (_settingDefinitions == default)
             {
@@ -116,6 +118,11 @@ namespace Geex.Extensions.Settings.Core.Handlers
             if (isEmptyTenant != true && scope == SettingScopeEnumeration.Global)
             {
                 throw new BusinessException(GeexExceptionType.ValidationFailed, message: "cannot update global setting in tenant.");
+            }
+
+            foreach (var validator in _valueValidators)
+            {
+                await validator.ValidateAsync(definition, value);
             }
 
             var setting = _dbContext.Query<Setting>().SingleOrDefault(x => x.Name == settingDefinition && x.Scope == scope && x.ScopedKey == scopedKey);
@@ -210,7 +217,7 @@ namespace Geex.Extensions.Settings.Core.Handlers
             var userId = _currentUser.UserId;
             var tenantCode = scopedKey ?? _currentTenant?.Value?.Code;
 
-            if (!userId.IsNullOrEmpty())
+            if (!userId.IsNullOrEmpty() && settingDefinition.ValidScopes.Contains(SettingScopeEnumeration.User))
             {
                 var userSetting = await TryGetStoredSettingAsync(settingDefinition, SettingScopeEnumeration.User, userId);
                 if (userSetting != null)
@@ -219,7 +226,7 @@ namespace Geex.Extensions.Settings.Core.Handlers
                 }
             }
 
-            if (!tenantCode.IsNullOrEmpty())
+            if (!tenantCode.IsNullOrEmpty() && settingDefinition.ValidScopes.Contains(SettingScopeEnumeration.Tenant))
             {
                 var tenantSetting = await TryGetStoredSettingAsync(settingDefinition, SettingScopeEnumeration.Tenant, tenantCode);
                 if (tenantSetting != null)

@@ -71,6 +71,13 @@
   <ng-template #headerExtra><button nz-button nzType="primary" (click)="start()">发起审批</button></ng-template>
 </list-page-layout>
 
+<ng-template #nameTpl let-item>
+  <span class="d-inline-flex align-items-center">
+    <geex-favorite-button class="mr-xs" entityType="ApprovalFlow" [entityId]="item.id" appearance="icon" />
+    <span>{{ item.name }}</span>
+  </span>
+</ng-template>
+
 <ng-template #progressTpl let-item>
   <div nz-tooltip [nzTooltipTitle]="progressTooltip(item)">
     <nz-progress

@@ -99,6 +99,8 @@ export default {
   },
   widget: {
     selectOrg: "Select organization",
+    selectUser: "Select user",
+    selectRole: "Select role",
     permissionsAll: "All",
     permissionsSearchPlaceholder: "Search",
   },

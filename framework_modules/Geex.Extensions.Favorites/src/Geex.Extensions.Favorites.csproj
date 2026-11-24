@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Geex.Extensions.Settings/src/Geex.Extensions.Settings.csproj" />
+    <ProjectReference Include="../../Geex.Extensions.MultiTenant/src/Abstractions/Geex.Extensions.MultiTenant.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

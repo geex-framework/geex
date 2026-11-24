@@ -1,4 +1,5 @@
 const { strings } = require("@angular-devkit/core");
+const { ensureFavoritesDependency } = require("../favorites-dependency");
 const {
   chain,
   MergeStrategy,
@@ -63,6 +64,7 @@ function syncOneModule(options, name) {
       );
     }
     rules.push(t => {
+      ensureFavoritesDependency(t, name);
       const nextManifest = JSON.parse(t.read(manifestPath).toString("utf8"));
       nextManifest.modules[name] = {
         ...nextManifest.modules[name],

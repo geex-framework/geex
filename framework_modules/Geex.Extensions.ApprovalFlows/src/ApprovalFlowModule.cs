@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Geex.Extensions.Settings;
 using Geex.Extensions.BlobStorage;
+using Geex.Extensions.Favorites;
 
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -13,6 +14,7 @@ namespace Geex.Extensions.ApprovalFlows;
     typeof(GeexCoreModule),
     typeof(IdentityModule),
     typeof(SettingsModule),
+    typeof(FavoritesModule),
     typeof(BlobStorageModule)
 )]
 public class ApprovalFlowModule : GeexModule<ApprovalFlowModule, ApprovalFlowModuleOptions>

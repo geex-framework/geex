@@ -3,6 +3,7 @@ import { Router } from "@angular/router";
 import type { STChange, STColumn } from "@delon/abc/st";
 import { GEEX_I18N } from "@geexcode/geex-angular";
 import { Apollo } from "apollo-angular";
+import { FavoriteButtonComponent } from "@geexcode/geex-extensions-favorites";
 
 import { StartApprovalFlowService } from "../../components/start-flow/start-flow.component";
 import { approvalFlowTags, approvalFlows, type ApprovalFlowBrief } from "../../graphql/operations.gql";
@@ -13,7 +14,7 @@ import { SharedModule } from "@/shared/shared.module";
 @Component({
   selector: "app-approval-flow-inbox-list",
   standalone: true,
-  imports: [SharedModule],
+  imports: [SharedModule, FavoriteButtonComponent],
   templateUrl: "./list.page.html",
 })
 export class InboxListPage implements OnInit, AfterViewInit {
@@ -23,6 +24,7 @@ export class InboxListPage implements OnInit, AfterViewInit {
   private readonly startFlow = inject(StartApprovalFlowService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly progressTpl = viewChild.required<TemplateRef<{ $implicit: ApprovalFlowBrief; index: number }>>("progressTpl");
+  private readonly nameTpl = viewChild.required<TemplateRef<{ $implicit: ApprovalFlowBrief; index: number }>>("nameTpl");
   readonly loading = signal(false);
   readonly data = signal<ApprovalFlowBrief[]>([]);
   readonly total = signal(0);
@@ -54,7 +56,7 @@ export class InboxListPage implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.columns.set([
-      { title: this.I18N.ApprovalFlows.name, index: "name" },
+      { title: this.I18N.ApprovalFlows.name, index: "name", render: this.nameTpl() },
       { title: this.I18N.ApprovalFlows.description, index: "description" },
       { title: "流程分类", format: item => item.tags.join(" / ") },
       { title: this.I18N.ApprovalFlows.orgCode, index: "orgCode" },
