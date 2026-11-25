@@ -1,3 +1,5 @@
+using Geex.MultiTenant;
+using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using StackExchange.Redis.Extensions.Core.Abstractions;
 
@@ -9,8 +11,8 @@ internal sealed class FavoriteWriteScope : IDisposable
     private readonly IDatabase _redis;
     private readonly IUnitOfWork _work;
     private readonly RedisValue _token = Guid.NewGuid().ToString("N");
-    private readonly Dictionary<FavoriteOwner, RedisKey> _leases = [];
-    private readonly Dictionary<(FavoriteOwner, FavoriteEntityType, string), Favorite?> _writes = [];
+    private readonly HashSet<RedisKey> _leases = [];
+    private readonly Dictionary<(string TenantCode, string UserId, FavoriteEntityType Type, string EntityId), Favorite?> _writes = [];
     private bool _startedTransaction;
 
     public FavoriteWriteScope(IUnitOfWork work, IRedisDatabase redis)
@@ -22,15 +24,27 @@ internal sealed class FavoriteWriteScope : IDisposable
         work.PostSaveChanges += AfterSave;
     }
 
-    public async Task Enter(FavoriteOwner owner, CancellationToken cancellationToken)
+    public async Task<Favorite?> FindForUpdate(FavoriteEntityType type, string id, CancellationToken cancellationToken)
     {
-        if (_leases.ContainsKey(owner)) return;
-        RedisKey key = $"Geex:Favorites:{_work.DbContext.DefaultDb.DatabaseNamespace.DatabaseName}:{Uri.EscapeDataString(owner.Tenant)}:{Uri.EscapeDataString(owner.User)}";
+        var userId = _work.RequireUserId();
+        var tenantCode = _work.ServiceProvider.GetService<ICurrentTenant>()?.Code ?? "";
+        RedisKey lease = $"Geex:Favorites:{_work.DbContext.DefaultDb.DatabaseNamespace.DatabaseName}:{Uri.EscapeDataString(tenantCode)}:{Uri.EscapeDataString(userId)}";
+        await Enter(lease, cancellationToken);
+        return _writes.TryGetValue((tenantCode, userId, type, id), out var record) ? record :
+            _work.FavoritesFor(type).SingleOrDefault(item => item.EntityId == id);
+    }
+
+    public void Remember(Favorite record, bool removed = false)
+        => _writes[(record.TenantCode ?? "", record.UserId, record.EntityType, record.EntityId)] = removed ? null : record;
+
+    private async Task Enter(RedisKey key, CancellationToken cancellationToken)
+    {
+        if (_leases.Contains(key)) return;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(30));
         while (!await _redis.LockTakeAsync(key, _token, LeaseDuration))
             await Task.Delay(TimeSpan.FromMilliseconds(50), timeout.Token);
-        _leases.Add(owner, key);
+        _leases.Add(key);
         // The owner lease makes concurrent callers observe the first committed title and timestamp.
         // Keep it through the outer transaction, including other fields in the same GraphQL mutation.
         if (_work.DbContext.SupportTransaction)
@@ -44,16 +58,9 @@ internal sealed class FavoriteWriteScope : IDisposable
         }
     }
 
-    public Favorite? Find(FavoriteOwner owner, FavoriteEntityType type, string id) =>
-        _writes.TryGetValue((owner, type, id), out var record) ? record :
-            _work.FavoritesFor(owner, type).SingleOrDefault(item => item.EntityId == id);
-
-    public void Remember(FavoriteOwner owner, FavoriteEntityType type, string id, Favorite? record)
-        => _writes[(owner, type, id)] = record;
-
     private async Task BeforePersisting(CancellationToken token)
     {
-        foreach (var key in _leases.Values)
+        foreach (var key in _leases)
             if (!await _redis.LockExtendAsync(key, _token, LeaseDuration))
                 throw new BusinessException(GeexExceptionType.Conflict, message: "收藏写入已超时, 请重试.");
     }
@@ -62,7 +69,7 @@ internal sealed class FavoriteWriteScope : IDisposable
 
     private async Task ReleaseAsync()
     {
-        var keys = _leases.Values.ToArray();
+        var keys = _leases.ToArray();
         _startedTransaction = false;
         _leases.Clear();
         _writes.Clear();

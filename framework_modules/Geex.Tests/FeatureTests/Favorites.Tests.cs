@@ -86,6 +86,42 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
     }
 
     [Fact]
+    public async Task Host_can_switch_tenant_and_cancel_only_its_host_favorite_in_the_same_unit_of_work()
+    {
+        await Configure(Configuration());
+        var userId = await CreateUser();
+        var tenantCode = "favorites_switch_" + ObjectId.GenerateNewId();
+        var id = await CreateFlow(tenantCode, "Shared reference");
+        var reference = Reference(id);
+        var tenantFavorite = await As(userId, null, async work =>
+        {
+            var tenant = work.ServiceProvider.GetRequiredService<ICurrentTenant>();
+            await Favorite.Add(work, reference);
+            FavoriteStatus saved;
+            using (tenant.Change(tenantCode))
+            {
+                saved = await Favorite.Add(work, reference);
+            }
+            await work.SaveChanges();
+
+            Assert.Equal(id, Assert.Single((await work.Favorites(Type)).ToArray()).EntityId);
+            await Favorite.Remove(work, reference);
+            using (tenant.Change(tenantCode))
+            {
+                Assert.True(Assert.Single(await work.FavoriteStatuses(Type, [id])).IsFavorite);
+                var repeated = await Favorite.Add(work, reference);
+                Assert.Equal(saved.CreatedOn, repeated.CreatedOn);
+            }
+            return saved;
+        });
+
+        Assert.Empty(await As(userId, null, async context => (await context.Favorites(Type)).ToArray()));
+        var remaining = Assert.Single(await As(userId, tenantCode, async context => (await context.Favorites(Type)).ToArray()));
+        Assert.Equal(id, remaining.EntityId);
+        Assert.Equal(tenantFavorite.CreatedOn, remaining.CreatedOn);
+    }
+
+    [Fact]
     public async Task Settings_override_whole_arrays_and_keep_disabled_records()
     {
         var tenant = "favorites_settings_" + ObjectId.GenerateNewId();
