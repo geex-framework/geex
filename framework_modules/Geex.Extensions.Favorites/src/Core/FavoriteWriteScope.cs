@@ -12,8 +12,7 @@ internal sealed class FavoriteWriteScope : IDisposable
     private readonly IUnitOfWork _work;
     private readonly RedisValue _token = Guid.NewGuid().ToString("N");
     private readonly HashSet<RedisKey> _leases = [];
-    private readonly Dictionary<(string TenantCode, string UserId, FavoriteEntityType Type, string EntityId), Favorite?> _writes = [];
-    private bool _startedTransaction;
+    private readonly HashSet<string> _deferredRemovals = [];
 
     public FavoriteWriteScope(IUnitOfWork work, IRedisDatabase redis)
     {
@@ -28,14 +27,23 @@ internal sealed class FavoriteWriteScope : IDisposable
     {
         var userId = _work.RequireUserId();
         var tenantCode = _work.ServiceProvider.GetService<ICurrentTenant>()?.Code ?? "";
-        RedisKey lease = $"Geex:Favorites:{_work.DbContext.DefaultDb.DatabaseNamespace.DatabaseName}:{Uri.EscapeDataString(tenantCode)}:{Uri.EscapeDataString(userId)}";
+        var database = _work.DbContext.DefaultDb.DatabaseNamespace.DatabaseName;
+        RedisKey lease = $"Geex:Favorites:{database}:{Uri.EscapeDataString(tenantCode)}:{Uri.EscapeDataString(userId)}:{Uri.EscapeDataString(type.Value)}:{Uri.EscapeDataString(id)}";
         await Enter(lease, cancellationToken);
-        return _writes.TryGetValue((tenantCode, userId, type, id), out var record) ? record :
-            _work.FavoritesFor(type).SingleOrDefault(item => item.EntityId == id);
+        var records = _work.FavoritesFor(type).Where(item => item.EntityId == id);
+        if (_deferredRemovals.Count > 0)
+        {
+            var removedIds = _deferredRemovals.ToArray();
+            records = records.Where(item => !removedIds.Contains(item.Id));
+        }
+        return records.SingleOrDefault();
     }
 
-    public void Remember(Favorite record, bool removed = false)
-        => _writes[(record.TenantCode ?? "", record.UserId, record.EntityType, record.EntityId)] = removed ? null : record;
+    public void ExcludeDeferredRemoval(string favoriteId)
+    {
+        // Without transactions a stored row remains visible in MongoDB until SaveChanges.
+        if (!_work.DbContext.SupportTransaction) _deferredRemovals.Add(favoriteId);
+    }
 
     private async Task Enter(RedisKey key, CancellationToken cancellationToken)
     {
@@ -45,17 +53,9 @@ internal sealed class FavoriteWriteScope : IDisposable
         while (!await _redis.LockTakeAsync(key, _token, LeaseDuration))
             await Task.Delay(TimeSpan.FromMilliseconds(50), timeout.Token);
         _leases.Add(key);
-        // The owner lease makes concurrent callers observe the first committed title and timestamp.
-        // Keep it through the outer transaction, including other fields in the same GraphQL mutation.
+        // A competing request can read the first snapshot once the outer transaction commits.
         if (_work.DbContext.SupportTransaction)
-        {
-            if (!_work.DbContext.Session.IsInTransaction)
-            {
-                _work.DbContext.Session.StartTransaction();
-                _startedTransaction = true;
-            }
             _work.DbContext.AfterCommit(this, ReleaseAsync);
-        }
     }
 
     private async Task BeforePersisting(CancellationToken token)
@@ -70,9 +70,8 @@ internal sealed class FavoriteWriteScope : IDisposable
     private async Task ReleaseAsync()
     {
         var keys = _leases.ToArray();
-        _startedTransaction = false;
         _leases.Clear();
-        _writes.Clear();
+        _deferredRemovals.Clear();
         foreach (var key in keys) await _redis.LockReleaseAsync(key, _token);
     }
 
@@ -83,10 +82,6 @@ internal sealed class FavoriteWriteScope : IDisposable
         _work.DbContext.PersistingTransaction -= BeforePersisting;
         _work.DbContext.TransactionAborted -= Release;
         _work.PostSaveChanges -= AfterSave;
-        try
-        {
-            if (_startedTransaction && _work.DbContext.Session.IsInTransaction) _work.DbContext.Session.AbortTransaction();
-        }
-        finally { Release(); }
+        Release();
     }
 }

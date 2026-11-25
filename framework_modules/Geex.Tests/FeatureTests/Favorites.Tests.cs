@@ -282,6 +282,85 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
         Assert.True(await As(user, null, work => Favorite.Remove(work, Reference(missing))));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_different_favorite_can_commit_while_the_first_is_pending(bool sameEntityId)
+    {
+        await Configure(new JsonArray(
+            new JsonObject { ["EntityType"] = "ApprovalFlow", ["NameField"] = "Name" },
+            new JsonObject { ["EntityType"] = "ApprovalFlowReview", ["NameField"] = "Description" }));
+        var user = await CreateUser();
+        var first = Reference(await CreateFlow(null, "First flow"));
+        var second = sameEntityId
+            ? new FavoriteReference { EntityType = FavoriteTestEntityTypes.Review, EntityId = first.EntityId }
+            : Reference(await CreateFlow(null, "Second flow"));
+
+        await As(user, null, async work =>
+        {
+            await Favorite.Add(work, first);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await As(user, null, other => Favorite.Add(other, second, timeout.Token));
+            var committed = Assert.Single(await DB.Collection<Favorite>().Find(item => item.UserId == user).ToListAsync());
+            Assert.Equal(second.EntityType, committed.EntityType);
+            Assert.Equal(second.EntityId, committed.EntityId);
+            return true;
+        });
+        Assert.Equal(2, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.UserId == user));
+    }
+
+    [Fact]
+    public async Task A_competing_add_waits_for_the_outer_transaction_to_commit()
+    {
+        await Configure(Configuration());
+        var user = await CreateUser();
+        var reference = Reference(await CreateFlow(null, "Outer transaction"));
+        await As(user, null, async work =>
+        {
+            await using var transaction = work.StartExplicitTransaction();
+            var first = await Favorite.Add(work, reference);
+            await work.SaveChanges();
+            using var waiting = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => As(user, null, other => Favorite.Add(other, reference, waiting.Token)));
+
+            await work.CommitExplicitTransaction();
+            using var released = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            var repeated = await As(user, null, other => Favorite.Add(other, reference, released.Token));
+            Assert.Equal(first.CreatedOn, repeated.CreatedOn);
+            return true;
+        });
+        Assert.Equal(1, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.UserId == user));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Removing_and_readding_in_one_unit_of_work_creates_a_new_snapshot(bool supportTransaction)
+    {
+        await Configure(Configuration());
+        var user = await CreateUser();
+        var reference = Reference(await CreateFlow(null, "First title"));
+        await As(user, null, work => Favorite.Add(work, reference));
+        var favorites = DB.Collection<Favorite>().Find(item => item.UserId == user);
+        var first = await favorites.SingleAsync();
+        await EditFlow(reference.EntityId, flow => flow.Name = "Updated title");
+
+        var status = await As(user, null, async work =>
+        {
+            work.DbContext.SupportTransaction = supportTransaction;
+            await Favorite.Remove(work, reference);
+            var added = await Favorite.Add(work, reference);
+            Assert.Equal(added.CreatedOn, (await Favorite.Add(work, reference)).CreatedOn);
+            await Favorite.Remove(work, reference);
+            return await Favorite.Add(work, reference);
+        });
+        var saved = await favorites.SingleAsync();
+        Assert.NotEqual(first.Id, saved.Id);
+        Assert.Equal("Updated title", saved.Title);
+        Assert.Equal(status.CreatedOn, saved.CreatedOn);
+    }
+
     [Fact]
     public async Task Failed_multi_field_mutation_rolls_back_the_add_or_removal()
     {

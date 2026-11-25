@@ -9,8 +9,16 @@ public partial class Favorite : Entity<Favorite>, ITenantFilteredEntity
     private string _tenantCode = "";
     private Favorite() { }
 
-    private Favorite(string userId, FavoriteEntityType type, string entityId, string title)
-        => (UserId, EntityType, EntityId, Title) = (userId, type, entityId, title);
+    private Favorite(FavoriteEntityType type, string entityId, string title, IUnitOfWork work)
+    {
+        UserId = work.RequireUserId();
+        EntityType = type;
+        EntityId = entityId;
+        Title = title;
+        work.Attach(this);
+        // MongoDB stores milliseconds. The first response and a subsequent read must agree.
+        CreatedOn = DateTimeOffset.FromUnixTimeMilliseconds(CreatedOn.ToUnixTimeMilliseconds());
+    }
 
     public string? TenantCode { get => _tenantCode; set => _tenantCode = value ?? ""; }
     public string UserId { get; private set; } = "";
@@ -20,7 +28,7 @@ public partial class Favorite : Entity<Favorite>, ITenantFilteredEntity
 
     public static async Task<FavoriteStatus> Add(IUnitOfWork work, FavoriteReference reference, CancellationToken token = default)
     {
-        var userId = work.RequireUserId();
+        work.RequireUserId();
         var type = reference.EntityType;
         var id = FavoriteQueries.NormalizeId(reference.EntityId);
         var config = (await FavoritesSettings.EntityTypes.GetEffectiveTypes(work, token)).SingleOrDefault(item => item.EntityType == type)
@@ -30,9 +38,7 @@ public partial class Favorite : Entity<Favorite>, ITenantFilteredEntity
         if (record == null)
         {
             var title = await type.ReadTitle(work, config, id, token);
-            record = work.Attach(new Favorite(userId, type, id, title));
-            record.CreatedOn = DateTimeOffset.FromUnixTimeMilliseconds(record.CreatedOn.ToUnixTimeMilliseconds());
-            writes.Remember(record);
+            record = new Favorite(type, id, title, work);
         }
         return new() { EntityType = type, EntityId = id, IsFavorite = true, CreatedOn = record.CreatedOn.ToUniversalTime() };
     }
@@ -44,7 +50,7 @@ public partial class Favorite : Entity<Favorite>, ITenantFilteredEntity
         if (await writes.FindForUpdate(reference.EntityType, id, token) is { } record)
         {
             await work.DbContext.RemoveOnSave(record, token);
-            writes.Remember(record, removed: true);
+            writes.ExcludeDeferredRemoval(record.Id);
         }
         return true;
     }
