@@ -73,7 +73,7 @@ namespace Geex.Storage
             return entity;
         }
 
-        private readonly List<Func<CancellationToken, Task>> _deferredDeletes = new();
+        private readonly List<(IEntityBase Entity, Func<CancellationToken, Task> Delete)> _deferredDeletes = new();
 
         public async Task RemoveOnSave<T>(T entity, CancellationToken token = default) where T : class, IEntityBase
         {
@@ -86,7 +86,7 @@ namespace Geex.Storage
             else
             {
                 Detach(entity);
-                _deferredDeletes.Add(cancellation => DeleteAsync<T>(entity.Id, cancellation));
+                _deferredDeletes.Add((entity, cancellation => DeleteAsync<T>(entity.Id, cancellation)));
             }
         }
 
@@ -153,7 +153,7 @@ namespace Geex.Storage
                 entity.ValidateOnAttach().WaitAndUnwrapException(cancellation);
             }
 
-            foreach (var remove in _deferredDeletes) await remove(cancellation);
+            foreach (var pending in _deferredDeletes) await pending.Delete(cancellation);
             _deferredDeletes.Clear();
 
             if (this.DomainEvents.Any())
@@ -263,7 +263,10 @@ namespace Geex.Storage
         /// <inheritdoc />
         public IQueryable<T> Query<T>() where T : IEntityBase
         {
-            return base.Query<T>();
+            var query = base.Query<T>();
+            if (_deferredDeletes.Count == 0) return query;
+            var removedIds = _deferredDeletes.Where(item => item.Entity is T).Select(item => item.Entity.Id).ToArray();
+            return removedIds.Length == 0 ? query : query.Where(entity => !removedIds.Contains(entity.Id));
         }
 
         protected internal virtual async Task MigrateAsync(DbMigration migration)

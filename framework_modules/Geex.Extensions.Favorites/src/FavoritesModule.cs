@@ -1,4 +1,3 @@
-using Geex.Extensions.Favorites.Core;
 using Geex.Extensions.Favorites.Gql;
 using Geex.Extensions.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +11,6 @@ public class FavoritesModule : GeexModule<FavoritesModule, FavoritesModuleOption
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         base.ConfigureServices(context);
-        context.Services.AddScoped<FavoriteWriteScope>();
         SchemaBuilder.TryAddTypeInterceptor<FavoriteTitleFieldInterceptor>();
     }
 }

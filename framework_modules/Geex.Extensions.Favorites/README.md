@@ -31,8 +31,10 @@ Setting 的持久化键和 GraphQL 枚举值均为 `Favorites_EntityTypes`. 支�
 | `favoriteEntityTypes` | 返回当前有效的类型/显示字段/详情路径配置 |
 | `favoriteStatuses(entityType, entityIds)` | 批量查询收藏状态及原收藏时间, 最多 500 个 ID |
 | `favorites(entityType, filter, sort, skip, take)` | 当前用户在该类型下的收藏, 返回 `items` / `totalCount` / `pageInfo` |
-| `addFavorite(request)` | 幂等添加, 返回 `FavoriteStatus` |
+| `addFavorite(request)` | 添加收藏并返回 `FavoriteStatus`. 已收藏时返回首次收藏时间 |
 | `removeFavorite(request)` | 幂等取消, 返回 Boolean |
+
+并发请求同时首次添加同一条收藏时, 联合唯一索引保证只保存一条记录. 遇到唯一键冲突的调用方可重新发起 `addFavorite`, 读取已提交的收藏状态和时间.
 
 ```graphql
 mutation {

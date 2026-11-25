@@ -198,6 +198,8 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
         Assert.Equal(["ApprovalFlowReview", "ApprovalFlow"], types.Select(type => type.EntityType.Value).ToArray());
         await As(user, null, work => Favorite.Add(work, new FavoriteReference { EntityType = FavoriteTestEntityTypes.Review, EntityId = id }));
         Assert.Empty(await As(user, null, async work => (await work.Favorites(Type)).ToArray()));
+        await As(user, null, work => Favorite.Add(work, Reference(id)));
+        Assert.Equal("Multiple types", Assert.Single(await As(user, null, async work => (await work.Favorites(Type)).ToArray())).DisplayValue);
         Assert.Equal("Live description", Assert.Single(await As(user, null, async work => (await work.Favorites(FavoriteTestEntityTypes.Review)).ToArray())).DisplayValue);
         await Configure(Configuration());
     }
@@ -263,18 +265,16 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
     }
 
     [Fact]
-    public async Task Concurrent_adds_preserve_one_snapshot_and_legacy_or_unreadable_targets_display_their_id()
+    public async Task Legacy_or_unreadable_targets_display_their_id()
     {
         await Configure(Configuration());
         var user = await CreateUser();
         var id = await CreateFlow(null, "First title");
-        var results = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => As(user, null, work => Favorite.Add(work, Reference(id)))));
-        Assert.Single(results.Select(result => result.CreatedOn).Distinct());
-        Assert.Equal(1, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.UserId == user && item.EntityId == id));
+        var first = await As(user, null, work => Favorite.Add(work, Reference(id)));
         await DB.Collection<Favorite>().UpdateOneAsync(item => item.UserId == user && item.EntityId == id, Builders<Favorite>.Update.Unset(item => item.Title));
         var legacy = Assert.Single(await As(user, null, async work => (await work.Favorites(Type)).ToArray()));
         Assert.Equal(id, legacy.DisplayValue);
-        Assert.Equal(results[0].CreatedOn, legacy.CreatedOn);
+        Assert.Equal(first.CreatedOn, legacy.CreatedOn);
         var missing = ObjectId.GenerateNewId().ToString();
         await As(user, null, work => Favorite.Add(work, Reference(missing)));
         var fallback = await As(user, null, async work => (await work.Favorites(Type)).Single(item => item.EntityId == missing));
@@ -282,55 +282,50 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
         Assert.True(await As(user, null, work => Favorite.Remove(work, Reference(missing))));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task A_different_favorite_can_commit_while_the_first_is_pending(bool sameEntityId)
+    [Fact]
+    public async Task Concurrent_first_adds_keep_the_committed_snapshot_and_a_retry_reads_it()
     {
-        await Configure(new JsonArray(
-            new JsonObject { ["EntityType"] = "ApprovalFlow", ["NameField"] = "Name" },
-            new JsonObject { ["EntityType"] = "ApprovalFlowReview", ["NameField"] = "Description" }));
+        await Configure(Configuration());
         var user = await CreateUser();
-        var first = Reference(await CreateFlow(null, "First flow"));
-        var second = sameEntityId
-            ? new FavoriteReference { EntityType = FavoriteTestEntityTypes.Review, EntityId = first.EntityId }
-            : Reference(await CreateFlow(null, "Second flow"));
+        var reference = Reference(await CreateFlow(null, "Pending title"));
 
-        await As(user, null, async work =>
+        var conflict = await Assert.ThrowsAsync<MongoBulkWriteException<Favorite>>(() => As(user, null, async pending =>
         {
-            await Favorite.Add(work, first);
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            await As(user, null, other => Favorite.Add(other, second, timeout.Token));
-            var committed = Assert.Single(await DB.Collection<Favorite>().Find(item => item.UserId == user).ToListAsync());
-            Assert.Equal(second.EntityType, committed.EntityType);
-            Assert.Equal(second.EntityId, committed.EntityId);
-            return true;
-        });
-        Assert.Equal(2, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.UserId == user));
+            var attempted = await Favorite.Add(pending, reference);
+            await EditFlow(reference.EntityId, flow => flow.Name = "Committed title");
+            await As(user, null, other => Favorite.Add(other, reference));
+            return attempted;
+        }));
+        Assert.Contains(conflict.WriteErrors, error => error.Category == ServerErrorCategory.DuplicateKey);
+
+        var records = DB.Collection<Favorite>().Find(item => item.UserId == user && item.EntityId == reference.EntityId);
+        var saved = await records.SingleAsync();
+        Assert.Equal("Committed title", saved.Title);
+        await EditFlow(reference.EntityId, flow => flow.Name = "Later title");
+        var retry = await As(user, null, work => Favorite.Add(work, reference));
+        Assert.Equal(saved.CreatedOn, retry.CreatedOn);
+        var afterRetry = await records.SingleAsync();
+        Assert.Equal(saved.Id, afterRetry.Id);
+        Assert.Equal(saved.Title, afterRetry.Title);
     }
 
     [Fact]
-    public async Task A_competing_add_waits_for_the_outer_transaction_to_commit()
+    public async Task A_favorite_becomes_visible_when_the_outer_transaction_commits()
     {
         await Configure(Configuration());
         var user = await CreateUser();
         var reference = Reference(await CreateFlow(null, "Outer transaction"));
-        await As(user, null, async work =>
+        var records = DB.Collection<Favorite>().Find(item => item.UserId == user);
+        var status = await As(user, null, async work =>
         {
             await using var transaction = work.StartExplicitTransaction();
             var first = await Favorite.Add(work, reference);
             await work.SaveChanges();
-            using var waiting = new CancellationTokenSource(TimeSpan.FromSeconds(1));
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => As(user, null, other => Favorite.Add(other, reference, waiting.Token)));
-
+            Assert.Empty(await records.ToListAsync());
             await work.CommitExplicitTransaction();
-            using var released = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            var repeated = await As(user, null, other => Favorite.Add(other, reference, released.Token));
-            Assert.Equal(first.CreatedOn, repeated.CreatedOn);
-            return true;
+            return first;
         });
-        Assert.Equal(1, await DB.Collection<Favorite>().CountDocumentsAsync(item => item.UserId == user));
+        Assert.Equal(status.CreatedOn, (await records.SingleAsync()).CreatedOn);
     }
 
     [Theory]
@@ -350,6 +345,7 @@ public sealed class FavoritesTests(ApprovalFlowLifecycleFactory factory) : Tests
         {
             work.DbContext.SupportTransaction = supportTransaction;
             await Favorite.Remove(work, reference);
+            Assert.False(Assert.Single(await work.FavoriteStatuses(Type, [reference.EntityId])).IsFavorite);
             var added = await Favorite.Add(work, reference);
             Assert.Equal(added.CreatedOn, (await Favorite.Add(work, reference)).CreatedOn);
             await Favorite.Remove(work, reference);

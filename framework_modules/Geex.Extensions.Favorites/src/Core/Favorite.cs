@@ -1,6 +1,5 @@
 using Geex.MultiTenant;
 using Geex.Storage;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Geex.Extensions.Favorites.Core;
 
@@ -28,13 +27,12 @@ public partial class Favorite : Entity<Favorite>, ITenantFilteredEntity
 
     public static async Task<FavoriteStatus> Add(IUnitOfWork work, FavoriteReference reference, CancellationToken token = default)
     {
-        work.RequireUserId();
         var type = reference.EntityType;
+        var records = work.FavoritesFor(type);
         var id = FavoriteQueries.NormalizeId(reference.EntityId);
         var config = (await FavoritesSettings.EntityTypes.GetEffectiveTypes(work, token)).SingleOrDefault(item => item.EntityType == type)
             ?? throw new BusinessException(GeexExceptionType.ValidationFailed, message: "当前实体类型未启用收藏.");
-        var writes = work.ServiceProvider.GetRequiredService<FavoriteWriteScope>();
-        var record = await writes.FindForUpdate(type, id, token);
+        var record = records.SingleOrDefault(item => item.EntityId == id);
         if (record == null)
         {
             var title = await type.ReadTitle(work, config, id, token);
@@ -46,12 +44,9 @@ public partial class Favorite : Entity<Favorite>, ITenantFilteredEntity
     public static async Task<bool> Remove(IUnitOfWork work, FavoriteReference reference, CancellationToken token = default)
     {
         var id = FavoriteQueries.NormalizeId(reference.EntityId);
-        var writes = work.ServiceProvider.GetRequiredService<FavoriteWriteScope>();
-        if (await writes.FindForUpdate(reference.EntityType, id, token) is { } record)
-        {
+        var record = work.FavoritesFor(reference.EntityType).SingleOrDefault(item => item.EntityId == id);
+        if (record != null)
             await work.DbContext.RemoveOnSave(record, token);
-            writes.ExcludeDeferredRemoval(record.Id);
-        }
         return true;
     }
 }
