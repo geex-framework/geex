@@ -10,6 +10,14 @@ export type editSettingVariables = Types.Exact<{
 
 export type editSettingResult = { __typename?: 'Mutation', editSetting: { __typename?: 'Setting', name: Types.SettingDefinition, value?: any | null } };
 
+export type restoreTenantSettingInheritanceVariables = Types.Exact<{
+  name: Types.SettingDefinition;
+  tenantCode?: Types.InputMaybe<Types.Scalars['String']['input']>;
+}>;
+
+
+export type restoreTenantSettingInheritanceResult = { __typename?: 'Mutation', restoreTenantSettingInheritance: boolean };
+
 export type settingsVariables = Types.Exact<{
   request: Types.GetSettingsRequest;
   skip?: Types.InputMaybe<Types.Scalars['Int']['input']>;
@@ -19,7 +27,7 @@ export type settingsVariables = Types.Exact<{
 }>;
 
 
-export type settingsResult = { __typename?: 'Query', settings?: { __typename?: 'SettingsCollectionSegment', totalCount: number, items?: Array<{ __typename?: 'Setting', id: string, name: Types.SettingDefinition, value?: any | null, scope: Types.SettingScopeEnumeration, scopedKey?: string | null } | null> | null, pageInfo: { __typename?: 'CollectionSegmentInfo', hasPreviousPage: boolean, hasNextPage: boolean } } | null };
+export type settingsResult = { __typename?: 'Query', settings?: { __typename?: 'SettingsCollectionSegment', totalCount: number, items?: Array<{ __typename?: 'Setting', id: string, name: Types.SettingDefinition, value?: any | null, scope: Types.SettingScopeEnumeration, scopedKey?: string | null, validScopes: Array<Types.SettingScopeEnumeration>, canRestoreTenantInheritance: boolean } | null> | null, pageInfo: { __typename?: 'CollectionSegmentInfo', hasPreviousPage: boolean, hasNextPage: boolean } } | null };
 
 export type activeSettingsVariables = Types.Exact<{ [key: string]: never; }>;
 
@@ -28,7 +36,7 @@ export type activeSettingsResult = { __typename?: 'Query', activeSettings: Array
 
 export type SettingBrief = { __typename?: 'Setting', id: string, name: Types.SettingDefinition, value?: any | null };
 
-export type SettingDetail = { __typename?: 'Setting', scope: Types.SettingScopeEnumeration, scopedKey?: string | null };
+export type SettingDetail = { __typename?: 'Setting', scope: Types.SettingScopeEnumeration, scopedKey?: string | null, validScopes: Array<Types.SettingScopeEnumeration>, canRestoreTenantInheritance: boolean };
 
 export const SettingBrief = gql`
     fragment SettingBrief on Setting {
@@ -41,6 +49,8 @@ export const SettingDetail = gql`
     fragment SettingDetail on Setting {
   scope
   scopedKey
+  validScopes
+  canRestoreTenantInheritance
 }
     ` as unknown as DocumentNode<SettingDetail, unknown>;
 export const editSetting = gql`
@@ -51,6 +61,11 @@ export const editSetting = gql`
   }
 }
     ` as unknown as DocumentNode<editSettingResult, editSettingVariables>;
+export const restoreTenantSettingInheritance = gql`
+    mutation restoreTenantSettingInheritance($name: SettingDefinition!, $tenantCode: String) {
+  restoreTenantSettingInheritance(name: $name, tenantCode: $tenantCode)
+}
+    ` as unknown as DocumentNode<restoreTenantSettingInheritanceResult, restoreTenantSettingInheritanceVariables>;
 export const settings = gql`
     query settings($request: GetSettingsRequest!, $skip: Int, $take: Int, $filter: ISettingFilterInput, $includeDetail: Boolean!) {
   settings(request: $request, skip: $skip, take: $take, filter: $filter) {

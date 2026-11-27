@@ -236,6 +236,7 @@ namespace Geex.Tests.FeatureTests
 
             using (var scope = ScopedService.CreateScope())
             {
+                using var tenant = scope.ServiceProvider.GetRequiredService<Geex.MultiTenant.ICurrentTenant>().Change(tenantCode);
                 var setupUow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 await setupUow.Request(new EditSettingRequest
                 {

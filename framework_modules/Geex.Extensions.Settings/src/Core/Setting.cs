@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Geex.Validation;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
@@ -11,7 +11,7 @@ namespace Geex.Extensions.Settings.Core;
 [DebuggerDisplay("{Name}")]
 public partial class Setting : Entity<Setting>, ISetting
 {
-    public Setting(SettingDefinition name, JsonNode value, SettingScopeEnumeration scope, string? scopedKey = default)
+    public Setting(SettingDefinition name, JsonNode? value, SettingScopeEnumeration scope, string? scopedKey = default)
     {
         if (value is JsonValue jsonValue && jsonValue.TryGetValue<string>(out var strValue) &&
             (strValue.StartsWith("{") || strValue.StartsWith("[")))

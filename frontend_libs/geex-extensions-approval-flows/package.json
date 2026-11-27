@@ -5,7 +5,8 @@
   "sideEffects": false,
   "peerDependencies": {
     "@angular/core": "^20.0.0",
-    "@geexcode/geex-angular": ">=0.0.41"
+    "@geexcode/geex-angular": ">=0.0.41",
+    "@geexcode/geex-extensions-favorites": ">=0.0.1"
   },
   "dependencies": {
     "tslib": "^2.6.3"
@@ -39,6 +40,7 @@
     "@geexcode/geex-angular": "workspace:*",
     "ng-packagr": "^20.0.0",
     "rimraf": "^5.0.5",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "@geexcode/geex-extensions-favorites": "workspace:*"
   }
 }

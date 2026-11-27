@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, QueryList, signal, ViewChildren } 
 import { ActivatedRoute, Router } from "@angular/router";
 import { GEEX_I18N } from "@geexcode/geex-angular";
 import { Apollo } from "apollo-angular";
+import { FavoriteButtonComponent } from "@geexcode/geex-extensions-favorites";
 import { NzDescriptionsModule } from "ng-zorro-antd/descriptions";
 import { NzEmptyModule } from "ng-zorro-antd/empty";
 import { NzMessageService } from "ng-zorro-antd/message";
@@ -32,7 +33,7 @@ type NodeAction = "approve" | "reject" | "transfer" | "consult" | "reply" | "clo
 @Component({
   selector: "app-approval-flow-inbox-detail",
   standalone: true,
-  imports: [SharedModule, NzDescriptionsModule, NzEmptyModule, ApprovalDynamicFormComponent],
+  imports: [SharedModule, NzDescriptionsModule, NzEmptyModule, ApprovalDynamicFormComponent, FavoriteButtonComponent],
   templateUrl: "./detail.page.html",
 })
 export class InboxDetailPage implements OnInit {

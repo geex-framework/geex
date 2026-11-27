@@ -22,7 +22,7 @@ export function createSettingsModule(injector: Injector): SettingsModule {
           try {
             type ActiveSettingsResponse = { data: { activeSettings: SettingItem[] } };
             const res = (await firstValueFrom(
-              injector.get(Apollo).query<ActiveSettingsResponse>({ query: GQL_ACTIVE_SETTINGS }),
+              injector.get(Apollo).query<ActiveSettingsResponse>({ query: GQL_ACTIVE_SETTINGS, fetchPolicy: "no-cache", errorPolicy: "none" }),
             )) as unknown as ActiveSettingsResponse;
             _settingsSignal.set(res.data.activeSettings);
             _initialized = true;

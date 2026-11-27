@@ -15,6 +15,7 @@ import { changePassword } from "../../graphql/user.operations.gql";
 import type { User, Org } from "@geexcode/geex-extensions-identity";
 import { generatePersonalAccessToken } from "../../graphql/me.operations.gql";
 import { GeexMessageActions } from "@geexcode/geex-extensions-messaging";
+import { FavoritesSectionComponent } from "@geexcode/geex-extensions-favorites";
 
 type UnreadMessageBrief = {
   id: string;
@@ -29,7 +30,7 @@ type UnreadMessageBrief = {
   selector: "app-my-profile",
   templateUrl: "./my-profile.page.html",
   standalone: true,
-  imports: [SharedModule],
+  imports: [SharedModule, FavoritesSectionComponent],
 })
 export class MyProfilePage extends RoutedComponent<{}> {
   override routeParamsMappings: {} = {};

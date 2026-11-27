@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc",
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSources": true,
+    "types": []
+  },
+  "exclude": ["**/*.spec.ts", "**/*.node-test.mjs"],
+  "angularCompilerOptions": {
+    "compilationMode": "partial",
+    "strictMetadataEmit": true,
+    "enableResourceInlining": true
+  }
+}

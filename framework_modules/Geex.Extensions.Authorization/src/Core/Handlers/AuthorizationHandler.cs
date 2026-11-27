@@ -14,6 +14,7 @@ using MediatX;
 namespace Geex.Extensions.Authorization.Core.Handlers
 {
     public class AuthorizationHandler : IRequestHandler<UserRoleChangeRequest>,
+        IRequestHandler<CheckSubjectPermissionRequest, bool>,
         IRequestHandler<GetSubjectPermissionsRequest, IEnumerable<string>>,
         IRequestHandler<AuthorizeRequest>
     {
@@ -28,6 +29,8 @@ namespace Geex.Extensions.Authorization.Core.Handlers
         }
 
         private IRbacEnforcer _enforcer { get; init; }
+        public Task<bool> Handle(CheckSubjectPermissionRequest request, CancellationToken cancellationToken)
+            => _enforcer.EnforceAsync(request.Subject, request.Permission);
         public async Task Handle(UserRoleChangeRequest notification, CancellationToken cancellationToken)
         {
             _roleAssignments.Set(notification.UserId, notification.RoleIds);

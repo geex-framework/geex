@@ -7,10 +7,9 @@ import { SharedModule } from "@/shared/shared.module";
 import type { EditSettingRequest } from "@/gql";
 import { SettingDefinition } from "@/gql";
 import { SettingScopeEnumeration } from "@/gql";
-import { settings, editSetting } from "../graphql/operations.gql";
-import type { SettingDetail } from "../graphql/operations.gql";
+import { settings, editSetting, restoreTenantSettingInheritance } from "../graphql/operations.gql";
+import type { SettingBrief, SettingDetail } from "../graphql/operations.gql";
 import { NzCodeEditorModule } from "ng-zorro-antd/code-editor";
-import type { Tenant } from "@geexcode/geex-extensions-identity";
 type SettingEditFormSchema = Pick<EditSettingRequest, "scope" | "scopedKey" | "value">;
 
 @Component({
@@ -32,11 +31,10 @@ type SettingEditFormSchema = Pick<EditSettingRequest, "scope" | "scopedKey" | "v
 })
 export class SettingEditComponent extends RoutedEditComponent<
   { id?: string; name?: SettingDefinition },
-  { id?: string } & SettingDetail,
+  SettingBrief & SettingDetail,
   SettingEditFormSchema
 > {
   override async onRouted(params: { name?: SettingDefinition }) {
-    this.tenant = geex.multiTenant.current();
     this.name = params.name;
     if (params.name) {
       let res = await this.apollo
@@ -68,7 +66,7 @@ export class SettingEditComponent extends RoutedEditComponent<
   routeParamsMappings: RouteParamsMappings<{ name?: SettingDefinition }> = {
     name: { position: "pathParams", default: undefined },
   };
-  name: string;
+  name: SettingDefinition;
   @ViewChild("sf")
   readonly sf!: SFComponent;
   schema: SFSchema = this.buildSchema();
@@ -77,7 +75,6 @@ export class SettingEditComponent extends RoutedEditComponent<
       spanLabel: 3,
     },
   };
-  tenant: Partial<Tenant>;
 
   private buildSchema(): SFSchema {
     return {
@@ -86,7 +83,6 @@ export class SettingEditComponent extends RoutedEditComponent<
           type: "string",
           title: this.I18N.Settings.columnName,
           readOnly: true,
-          enum: [...Object.entries(SettingDefinition).map(x => x[1])],
         },
         value: {
           type: "string",
@@ -102,25 +98,34 @@ export class SettingEditComponent extends RoutedEditComponent<
   }
 
   async submit(value: Partial<EditSettingRequest>): Promise<void> {
-    if (!!!this.name) {
-    } else {
-      let res = await this.apollo
-        .mutate({
-          mutation: editSetting,
-          variables: {
-            request: {
-              scope: this.tenant?.code ? SettingScopeEnumeration.Tenant : SettingScopeEnumeration.Global,
-              scopedKey: this.tenant?.code,
-              name: value.name,
-              value: value.value,
-            },
-          },
-        })
-        .firstValuePromise();
-      if (res.data.editSetting) {
-        this.msgSrv.success(this.I18N.Settings.editSuccess);
-        await this.router.navigate(["/setting"], { relativeTo: this.route, replaceUrl: true, forceReload: true });
-      }
-    }
+    if (!this.entity) return;
+    const tenantCode = geex.multiTenant.current()?.code;
+    const tenantOverride = tenantCode && this.entity.validScopes.includes(SettingScopeEnumeration.Tenant);
+    const result = await this.apollo.mutate({
+      mutation: editSetting,
+      variables: { request: {
+        name: this.entity.name,
+        scope: tenantOverride ? SettingScopeEnumeration.Tenant : this.entity.scope,
+        scopedKey: tenantOverride ? tenantCode : this.entity.scopedKey,
+        value: value.value,
+      } },
+    }).firstValuePromise();
+    if (result.data.editSetting) await this.finishSave();
+  }
+
+  async restoreInheritance(): Promise<void> {
+    const result = await this.apollo.mutate({
+      mutation: restoreTenantSettingInheritance,
+      variables: { name: this.name, tenantCode: geex.multiTenant.current()?.code },
+    }).firstValuePromise();
+    if (result.data.restoreTenantSettingInheritance) await this.finishSave();
+  }
+
+  private async finishSave(): Promise<void> {
+    this.msgSrv.success(this.I18N.Settings.editSuccess);
+    await Promise.all([
+      geex.settings.init(true),
+      this.router.navigate(["/settings"], { relativeTo: this.route, replaceUrl: true, closeCurrentTab: true, forceReload: true }),
+    ]);
   }
 }

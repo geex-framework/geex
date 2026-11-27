@@ -11,6 +11,7 @@ packages:
   - geex-extensions-blob-storage
   - geex-extensions-backups
   - geex-extensions-approval-flows
+  - geex-extensions-favorites
   - geex-extensions-messaging
   - geex-extensions-captcha
   - geex-extensions-audit-logs

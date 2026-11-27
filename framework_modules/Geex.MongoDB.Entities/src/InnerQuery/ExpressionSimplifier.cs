@@ -296,7 +296,7 @@ namespace MongoDB.Entities.InnerQuery
                                       .Select(c => new
                                       {
                                           MemberAssignment = (MemberAssignment)c,
-                                          Expression = base.Visit(((MemberAssignment)c).Expression)
+                                          Expression = Visit(((MemberAssignment)c).Expression)
                                       })
                                       .ToArray();
 

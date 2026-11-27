@@ -180,6 +180,41 @@ export const moduleI18nEnUS = {
 }
 
 describe("add-module schematic", () => {
+  it("installs favorites translations and dependency without a route or menu", async () => {
+    const runner = new SchematicTestRunner("geex-module-schematics", collectionPath);
+    const appTree = createAppTree();
+    appTree.create("package.json", JSON.stringify({ dependencies: { retained: "1.0.0" } }));
+    const tree = await runner.runSchematic("add-module", { name: "favorites", path: "src/app/modules" }, appTree);
+    const registry = tree.read("src/app/modules/module-registry.ts").toString("utf8");
+    assert.match(registry, /Favorites: favorites\.i18n\["zh-CN"\]/);
+    assert.doesNotMatch(registry, /path: "favorites"|favorites\.menuContribution/);
+    assert.equal(tree.files.some(file => /favorites.*routes/.test(file)), false);
+    const manifest = JSON.parse(tree.read("package.json").toString("utf8"));
+    assert.equal(manifest.dependencies["@geexcode/geex-extensions-favorites"], version);
+    assert.equal(manifest.dependencies.retained, "1.0.0");
+  });
+
+  it("preserves the host's explicit favorites dependency in each manifest section", async () => {
+    const runner = new SchematicTestRunner("geex-module-schematics", collectionPath);
+    for (const section of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"]) {
+      const app = createAppTree();
+      const manifest = { [section]: { "@geexcode/geex-extensions-favorites": "file:../favorites" } };
+      app.create("package.json", JSON.stringify(manifest));
+      const tree = await runner.runSchematic("add-module", { name: "favorites", path: "src/app/modules" }, app);
+      assert.deepEqual(JSON.parse(tree.read("package.json").toString("utf8")), manifest);
+    }
+  });
+
+  it("updates the current registry's shared locale factory", async () => {
+    const runner = new SchematicTestRunner("geex-module-schematics", collectionPath);
+    const tree = createAppTree();
+    tree.overwrite("src/app/modules/module-registry.ts", `export const installedModules = {\n} as const;
+function pickModuleI18n(locale) { return {\n}; }
+export const moduleI18nZhCN = pickModuleI18n("zh-CN");`);
+    const generated = await runner.runSchematic("add-module", { name: "favorites", path: "src/app/modules" }, tree);
+    assert.match(generated.read("src/app/modules/module-registry.ts").toString("utf8"), /Favorites: favorites\.i18n\[locale\]/);
+  });
+
   it("computes camel aliases for module names", () => {
     assert.equal(toCamelAlias("settings"), "settings");
     assert.equal(toCamelAlias("geex-mod-geex"), "geexModGeex");

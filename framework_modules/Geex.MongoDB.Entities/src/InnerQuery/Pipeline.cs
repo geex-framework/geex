@@ -1138,8 +1138,7 @@ namespace MongoDB.Entities.InnerQuery
 
                     if (constExp.Type == typeof(string))
                     {
-                        // Build an expression concatenating the string with nothing else
-                        return new BsonDocument("$concat", new BsonArray([new BsonString((string)constExp.Value)]));
+                        return new BsonDocument("$literal", constExp.Value == null ? BsonNull.Value : new BsonString((string)constExp.Value));
                     }
 
                     if (constExp.Type == typeof(bool))
